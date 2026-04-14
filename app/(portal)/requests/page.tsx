@@ -79,7 +79,11 @@ export default async function PortalRequestsPage() {
         <PortalRequestDialog projects={projects} />
       </div>
 
-      <PortalRequestList requests={requests} />
+      <PortalRequestList
+        requests={requests}
+        currentUserId={user.id}
+        userRole={isAdmin ? 'admin' : profile?.role || 'client'}
+      />
     </div>
   );
 }

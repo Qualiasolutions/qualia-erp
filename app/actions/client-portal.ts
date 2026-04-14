@@ -983,7 +983,11 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
         clientProjectIds.length > 0
           ? supabase
               .from('activity_log')
-              .select('id, action_type, action_data, created_at, project:projects(id, name)')
+              .select(
+                `id, action_type, action_data, created_at,
+                 actor:profiles!activity_log_actor_id_fkey(id, full_name, avatar_url),
+                 project:projects!activity_log_project_id_fkey(id, name)`
+              )
               .eq('is_client_visible', true)
               .in('project_id', clientProjectIds)
               .order('created_at', { ascending: false })
@@ -995,6 +999,7 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
 
     const normalizedActivity = (recentActivity || []).map((a) => ({
       ...a,
+      actor: Array.isArray(a.actor) ? a.actor[0] || null : a.actor,
       project: Array.isArray(a.project) ? a.project[0] || null : a.project,
     }));
 

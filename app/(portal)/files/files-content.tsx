@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   Download,
+  Eye,
   File,
   FileText,
   FileImage,
@@ -22,6 +23,7 @@ import { cn, formatRelativeTime } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getFileDownloadUrl } from '@/app/actions/project-files';
 import { Button } from '@/components/ui/button';
+import { FilePreviewModal } from '@/components/portal/file-preview-modal';
 import type { PortalFileWithProject } from './page';
 
 /* ------------------------------------------------------------------ */
@@ -64,6 +66,153 @@ function formatFileSize(bytes: number): string {
 }
 
 /* ------------------------------------------------------------------ */
+/* Helpers                                                              */
+/* ------------------------------------------------------------------ */
+
+function isPreviewable(mimeType: string | null): boolean {
+  if (!mimeType) return false;
+  return mimeType.startsWith('image/') || mimeType === 'application/pdf';
+}
+
+function groupFilesByPhase(
+  files: PortalFileWithProject[]
+): { phaseName: string; files: PortalFileWithProject[] }[] {
+  const phaseMap = new Map<string, PortalFileWithProject[]>();
+
+  for (const file of files) {
+    const phase = file.phase_name?.trim() || 'General';
+    const existing = phaseMap.get(phase);
+    if (existing) {
+      existing.push(file);
+    } else {
+      phaseMap.set(phase, [file]);
+    }
+  }
+
+  // Put "General" first, then alphabetical
+  const entries = Array.from(phaseMap.entries());
+  entries.sort((a, b) => {
+    if (a[0] === 'General') return -1;
+    if (b[0] === 'General') return 1;
+    return a[0].localeCompare(b[0]);
+  });
+
+  return entries.map(([phaseName, phaseFiles]) => ({ phaseName, files: phaseFiles }));
+}
+
+/* ------------------------------------------------------------------ */
+/* PhaseSubSection (collapsible sub-group within a project)             */
+/* ------------------------------------------------------------------ */
+
+function PhaseSubSection({
+  phaseName,
+  files,
+  downloadingFileId,
+  onDownload,
+  onPreview,
+}: {
+  phaseName: string;
+  files: PortalFileWithProject[];
+  downloadingFileId: string | null;
+  onDownload: (fileId: string, fileName: string) => void;
+  onPreview: (file: PortalFileWithProject) => void;
+}) {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  return (
+    <div>
+      {/* Phase header */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={cn(
+          'flex w-full items-center gap-2.5 bg-muted/20 px-5 py-2.5 text-left transition-colors duration-150',
+          'hover:bg-muted/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30',
+          'cursor-pointer border-t border-border/30'
+        )}
+        aria-expanded={isExpanded}
+      >
+        {isExpanded ? (
+          <ChevronDown className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/50" />
+        ) : (
+          <ChevronRight className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/50" />
+        )}
+        <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {phaseName}
+        </span>
+        <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground/70">
+          {files.length}
+        </span>
+      </button>
+
+      {/* File rows */}
+      {isExpanded &&
+        files.map((file, index) => (
+          <div
+            key={file.id}
+            className={cn(
+              'flex items-center gap-4 px-5 py-4 transition-colors duration-150',
+              'hover:bg-muted/30',
+              index < files.length - 1 && 'border-b border-border/20'
+            )}
+          >
+            {/* File icon */}
+            <div className="flex-shrink-0">{getFileIcon(file.mime_type)}</div>
+
+            {/* File info */}
+            <div className="min-w-0 flex-1">
+              <p
+                className="truncate text-sm font-medium text-foreground"
+                title={file.original_name}
+              >
+                {file.original_name}
+              </p>
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground/70">
+                <span>{formatFileSize(file.file_size)}</span>
+                {file.uploader_name && <span>by {file.uploader_name}</span>}
+                {file.created_at && <span>{formatRelativeTime(file.created_at)}</span>}
+              </div>
+              {file.description && (
+                <p className="mt-1 line-clamp-1 text-xs text-muted-foreground/60">
+                  {file.description}
+                </p>
+              )}
+            </div>
+
+            {/* Preview button (for images and PDFs) */}
+            {isPreviewable(file.mime_type) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onPreview(file)}
+                className="min-h-[44px] min-w-[44px] flex-shrink-0 cursor-pointer"
+                aria-label={`Preview ${file.original_name}`}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            )}
+
+            {/* Download button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDownload(file.id, file.original_name)}
+              disabled={downloadingFileId === file.id}
+              className="min-h-[44px] min-w-[44px] flex-shrink-0 cursor-pointer"
+              aria-label={`Download ${file.original_name}`}
+            >
+              {downloadingFileId === file.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        ))}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* ProjectSection (collapsible)                                         */
 /* ------------------------------------------------------------------ */
 
@@ -73,14 +222,19 @@ function ProjectSection({
   files,
   downloadingFileId,
   onDownload,
+  onPreview,
 }: {
   projectId: string;
   projectName: string;
   files: PortalFileWithProject[];
   downloadingFileId: string | null;
   onDownload: (fileId: string, fileName: string) => void;
+  onPreview: (file: PortalFileWithProject) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const phaseGroups = groupFilesByPhase(files);
+  const hasMultiplePhases =
+    phaseGroups.length > 1 || (phaseGroups.length === 1 && phaseGroups[0].phaseName !== 'General');
 
   return (
     <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
@@ -106,58 +260,81 @@ function ProjectSection({
         </span>
       </button>
 
-      {/* File list */}
+      {/* File list grouped by phase */}
       {isExpanded && (
-        <div className="border-t border-border/30">
-          {files.map((file, index) => (
-            <div
-              key={file.id}
-              className={cn(
-                'flex items-center gap-4 px-5 py-4 transition-colors duration-150',
-                'hover:bg-muted/30',
-                index < files.length - 1 && 'border-b border-border/30'
-              )}
-            >
-              {/* File icon */}
-              <div className="flex-shrink-0">{getFileIcon(file.mime_type)}</div>
-
-              {/* File info */}
-              <div className="min-w-0 flex-1">
-                <p
-                  className="truncate text-sm font-medium text-foreground"
-                  title={file.original_name}
+        <div>
+          {hasMultiplePhases ? (
+            /* Render phase sub-sections */
+            phaseGroups.map((group) => (
+              <PhaseSubSection
+                key={group.phaseName}
+                phaseName={group.phaseName}
+                files={group.files}
+                downloadingFileId={downloadingFileId}
+                onDownload={onDownload}
+                onPreview={onPreview}
+              />
+            ))
+          ) : (
+            /* Single group (all General) — render flat list without phase header */
+            <div className="border-t border-border/30">
+              {files.map((file, index) => (
+                <div
+                  key={file.id}
+                  className={cn(
+                    'flex items-center gap-4 px-5 py-4 transition-colors duration-150',
+                    'hover:bg-muted/30',
+                    index < files.length - 1 && 'border-b border-border/30'
+                  )}
                 >
-                  {file.original_name}
-                </p>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground/70">
-                  <span>{formatFileSize(file.file_size)}</span>
-                  {file.uploader_name && <span>by {file.uploader_name}</span>}
-                  {file.created_at && <span>{formatRelativeTime(file.created_at)}</span>}
+                  <div className="flex-shrink-0">{getFileIcon(file.mime_type)}</div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="truncate text-sm font-medium text-foreground"
+                      title={file.original_name}
+                    >
+                      {file.original_name}
+                    </p>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground/70">
+                      <span>{formatFileSize(file.file_size)}</span>
+                      {file.uploader_name && <span>by {file.uploader_name}</span>}
+                      {file.created_at && <span>{formatRelativeTime(file.created_at)}</span>}
+                    </div>
+                    {file.description && (
+                      <p className="mt-1 line-clamp-1 text-xs text-muted-foreground/60">
+                        {file.description}
+                      </p>
+                    )}
+                  </div>
+                  {isPreviewable(file.mime_type) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onPreview(file)}
+                      className="min-h-[44px] min-w-[44px] flex-shrink-0 cursor-pointer"
+                      aria-label={`Preview ${file.original_name}`}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDownload(file.id, file.original_name)}
+                    disabled={downloadingFileId === file.id}
+                    className="min-h-[44px] min-w-[44px] flex-shrink-0 cursor-pointer"
+                    aria-label={`Download ${file.original_name}`}
+                  >
+                    {downloadingFileId === file.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
-                {file.description && (
-                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground/60">
-                    {file.description}
-                  </p>
-                )}
-              </div>
-
-              {/* Download button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDownload(file.id, file.original_name)}
-                disabled={downloadingFileId === file.id}
-                className="min-h-[44px] min-w-[44px] flex-shrink-0 cursor-pointer"
-                aria-label={`Download ${file.original_name}`}
-              >
-                {downloadingFileId === file.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-              </Button>
+              ))}
             </div>
-          ))}
+          )}
 
           {/* Link to project files tab */}
           <div className="border-t border-border/30 px-5 py-3">
@@ -190,6 +367,12 @@ interface PortalFilesContentProps {
 export function PortalFilesContent({ files }: PortalFilesContentProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<{
+    id: string;
+    original_name: string;
+    mime_type: string;
+    url: string;
+  } | null>(null);
 
   /* ---- Download handler ---- */
   const handleDownload = async (fileId: string, fileName: string) => {
@@ -208,6 +391,27 @@ export function PortalFilesContent({ files }: PortalFilesContentProps) {
       toast.error('Download Failed', { description: 'An unexpected error occurred' });
     } finally {
       setDownloadingFileId(null);
+    }
+  };
+
+  /* ---- Preview handler ---- */
+  const handlePreview = async (file: PortalFileWithProject) => {
+    try {
+      const result = await getFileDownloadUrl(file.id);
+      if (result.success && result.data) {
+        const { url } = result.data as { url: string; filename: string };
+        setPreviewFile({
+          id: file.id,
+          original_name: file.original_name,
+          mime_type: file.mime_type || '',
+          url,
+        });
+      } else {
+        toast.error('Preview Failed', { description: result.error || 'Could not load preview' });
+      }
+    } catch (error) {
+      console.error('Preview error:', error);
+      toast.error('Preview Failed', { description: 'An unexpected error occurred' });
     }
   };
 
@@ -303,9 +507,19 @@ export function PortalFilesContent({ files }: PortalFilesContentProps) {
             files={group.files}
             downloadingFileId={downloadingFileId}
             onDownload={handleDownload}
+            onPreview={handlePreview}
           />
         ))}
       </div>
+
+      {/* File preview modal */}
+      <FilePreviewModal
+        open={!!previewFile}
+        onOpenChange={(open) => {
+          if (!open) setPreviewFile(null);
+        }}
+        file={previewFile}
+      />
     </div>
   );
 }

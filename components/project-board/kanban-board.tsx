@@ -120,10 +120,11 @@ function DroppableColumn(props: Omit<DroppableColumnProps, 'isOver'>) {
 interface KanbanBoardProps {
   tasks: BoardTask[];
   projectId: string;
-  onStatusChange: (taskId: string, newStatus: StatusColumnId) => void;
+  onStatusChange?: (taskId: string, newStatus: StatusColumnId) => void;
+  readOnly?: boolean;
 }
 
-export function KanbanBoard({ tasks, projectId, onStatusChange }: KanbanBoardProps) {
+export function KanbanBoard({ tasks, projectId, onStatusChange, readOnly }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -165,7 +166,7 @@ export function KanbanBoard({ tasks, projectId, onStatusChange }: KanbanBoardPro
       const fromStatus = (active.data.current as { status: StatusColumnId } | undefined)?.status;
       const toStatus = over.id as StatusColumnId;
 
-      if (fromStatus && fromStatus !== toStatus) {
+      if (fromStatus && fromStatus !== toStatus && onStatusChange) {
         onStatusChange(String(active.id), toStatus);
       }
     },
@@ -175,6 +176,43 @@ export function KanbanBoard({ tasks, projectId, onStatusChange }: KanbanBoardPro
   const handleDragCancel = useCallback(() => {
     setActiveId(null);
   }, []);
+
+  // Read-only: render static columns without drag-and-drop or quick-add
+  if (readOnly) {
+    return (
+      <div className="flex flex-col gap-4 md:flex-row md:overflow-x-auto">
+        {STATUS_COLUMNS.map((col) => (
+          <div key={col.id} className="flex min-w-0 flex-1 flex-col md:min-w-[250px]">
+            <div className="flex min-h-[200px] flex-1 flex-col rounded-lg border border-border bg-muted/20 transition-colors duration-200">
+              {/* Column header */}
+              <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+                <span className={cn('h-2 w-2 rounded-full', col.dotColor)} aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-foreground">{col.label}</h3>
+                <span
+                  className={cn(
+                    'ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium tabular-nums',
+                    col.badgeBg,
+                    col.badgeText
+                  )}
+                >
+                  {tasksByStatus[col.id].length}
+                </span>
+              </div>
+
+              {/* Task list — static, no dragging, no quick-add */}
+              <div className="flex flex-1 flex-col gap-2 p-2">
+                {tasksByStatus[col.id].length === 0 ? (
+                  <p className="py-8 text-center text-xs text-muted-foreground">No tasks</p>
+                ) : (
+                  tasksByStatus[col.id].map((task) => <TaskCard key={task.id} task={task} />)
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <DndContext

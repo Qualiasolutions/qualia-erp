@@ -579,6 +579,16 @@ export const dashboardNoteContentSchema = z
 // =====================
 // Owner Update Schemas
 // =====================
+// =====================
+// Request Comment Schemas
+// =====================
+export const requestCommentSchema = z.object({
+  requestId: z.string().uuid(),
+  content: z.string().min(1, 'Comment cannot be empty').max(5000, 'Comment too long'),
+});
+
+export type RequestCommentInput = z.infer<typeof requestCommentSchema>;
+
 export const createOwnerUpdateSchema = z.object({
   workspaceId: z.string().uuid('Invalid workspace ID'),
   title: z.string().min(1, 'Title is required').max(200, 'Title too long'),

@@ -96,10 +96,12 @@ interface ProjectBoardProps {
   userRole?: string;
 }
 
-export function ProjectBoard({ projectId }: ProjectBoardProps) {
+export function ProjectBoard({ projectId, userRole }: ProjectBoardProps) {
   const { tasks: rawTasks, isLoading, isError, error, revalidate } = useProjectTasks(projectId);
   const [activeView, setActiveView] = useState<BoardView>('board');
   const [isPending, startTransition] = useTransition();
+
+  const isReadOnly = userRole === 'client';
 
   // Filter out notes and resources; convert to BoardTask shape
   const boardTasks = useMemo(
@@ -192,12 +194,23 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
       </div>
 
       {activeView === 'board' && (
-        <KanbanBoard tasks={boardTasks} projectId={projectId} onStatusChange={handleStatusChange} />
+        <KanbanBoard
+          tasks={boardTasks}
+          projectId={projectId}
+          onStatusChange={isReadOnly ? undefined : handleStatusChange}
+          readOnly={isReadOnly}
+        />
       )}
 
       {activeView === 'table' && <TableView tasks={boardTasks} />}
 
-      {activeView === 'list' && <ListView tasks={boardTasks} onStatusChange={handleStatusChange} />}
+      {activeView === 'list' && (
+        <ListView
+          tasks={boardTasks}
+          onStatusChange={isReadOnly ? undefined : handleStatusChange}
+          readOnly={isReadOnly}
+        />
+      )}
     </div>
   );
 }

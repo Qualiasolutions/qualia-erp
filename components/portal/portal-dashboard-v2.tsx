@@ -27,6 +27,7 @@ interface RecentActivityItem {
   action_type: string;
   action_data: Record<string, unknown>;
   created_at: string;
+  actor?: { id: string; full_name: string | null; avatar_url: string | null } | null;
   project: { id: string; name: string } | null;
 }
 
@@ -291,9 +292,17 @@ function RecentActivitySection({
 }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
-      <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Recent Activity
-      </h2>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Recent Activity
+        </h2>
+        <Link
+          href="/activity"
+          className="cursor-pointer text-xs font-medium text-muted-foreground transition-colors duration-150 hover:text-primary"
+        >
+          View all
+        </Link>
+      </div>
 
       {isLoading ? (
         <ActivityLoading />
@@ -307,30 +316,58 @@ function RecentActivitySection({
         </div>
       ) : (
         <div className="space-y-0.5">
-          {activity.slice(0, 8).map((item) => (
-            <div
-              key={item.id}
-              className="flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 hover:bg-muted/30"
-            >
-              <span
-                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/40"
-                aria-hidden="true"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-medium text-foreground">
-                  {formatActivityLabel(item.action_type)}
-                </p>
-                {item.project && (
-                  <p className="truncate text-[11px] text-muted-foreground/50">
-                    {item.project.name}
-                  </p>
+          {activity.slice(0, 8).map((item) => {
+            const actorInitial = item.actor?.full_name
+              ? item.actor.full_name.charAt(0).toUpperCase()
+              : null;
+
+            const inner = (
+              <div
+                className={cn(
+                  'flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 hover:bg-muted/30',
+                  item.project ? 'cursor-pointer' : ''
                 )}
+              >
+                {/* Actor initial or dot */}
+                {actorInitial ? (
+                  <span
+                    className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary"
+                    aria-hidden="true"
+                  >
+                    {actorInitial}
+                  </span>
+                ) : (
+                  <span
+                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/40"
+                    aria-hidden="true"
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-medium text-foreground">
+                    {formatActivityLabel(item.action_type)}
+                  </p>
+                  {item.project && (
+                    <p className="truncate text-[11px] text-muted-foreground/50">
+                      {item.project.name}
+                    </p>
+                  )}
+                </div>
+                <span className="shrink-0 text-[11px] text-muted-foreground/40">
+                  {formatRelativeTime(item.created_at)}
+                </span>
               </div>
-              <span className="shrink-0 text-[11px] text-muted-foreground/40">
-                {formatRelativeTime(item.created_at)}
-              </span>
-            </div>
-          ))}
+            );
+
+            if (item.project) {
+              return (
+                <Link key={item.id} href={`/projects/${item.project.id}`}>
+                  {inner}
+                </Link>
+              );
+            }
+
+            return <div key={item.id}>{inner}</div>;
+          })}
         </div>
       )}
     </div>

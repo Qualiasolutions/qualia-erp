@@ -124,6 +124,8 @@ export default async function PortalLayout({ children }: { children: React.React
   const allAppKeys = [
     'home',
     'projects',
+    'tasks',
+    'activity',
     'messages',
     'files',
     'billing',

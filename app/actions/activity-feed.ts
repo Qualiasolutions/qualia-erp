@@ -108,6 +108,72 @@ export async function getProjectActivityFeed(
 }
 
 /**
+ * Get cross-project activity feed for multiple projects.
+ * Used by the standalone /activity page.
+ * @param projectIds - Array of project IDs to fetch activity for
+ * @param limit - Maximum entries to return (default: 30)
+ * @param cursor - Optional ISO timestamp for cursor-based pagination
+ */
+export async function getCrossProjectActivityFeed(
+  projectIds: string[],
+  limit = 30,
+  cursor?: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  if (!projectIds.length) {
+    return { success: true, data: { items: [], hasMore: false, nextCursor: null } };
+  }
+
+  let query = supabase
+    .from('activity_log')
+    .select(
+      `
+      id, project_id, action_type, actor_id, action_data, is_client_visible, created_at,
+      actor:profiles!activity_log_actor_id_fkey(id, full_name, avatar_url),
+      project:projects!activity_log_project_id_fkey(id, name)
+    `
+    )
+    .in('project_id', projectIds)
+    .eq('is_client_visible', true)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (cursor) {
+    query = query.lt('created_at', cursor);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('[getCrossProjectActivityFeed] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  const normalized = (data || []).map((entry) => ({
+    ...entry,
+    actor: normalizeFKResponse(entry.actor),
+    project: normalizeFKResponse(entry.project),
+  }));
+
+  const hasMore = normalized.length === limit;
+  const lastItem = normalized[normalized.length - 1];
+
+  return {
+    success: true,
+    data: { items: normalized, hasMore, nextCursor: lastItem?.created_at || null },
+  };
+}
+
+/**
  * Create a new activity log entry
  */
 export async function createActivityLogEntry(data: CreateActivityLogInput): Promise<ActionResult> {

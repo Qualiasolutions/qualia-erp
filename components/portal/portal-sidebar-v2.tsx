@@ -77,6 +77,8 @@ const inboxItem: NavItemDef = {
 // Core apps shown after Home/Inbox (everyone sees these)
 const coreApps: NavItemDef[] = [
   { name: 'Projects', href: '/projects', icon: FolderKanban, appKey: 'projects' },
+  { name: 'Tasks', href: '/tasks', icon: ClipboardList, appKey: 'tasks' },
+  { name: 'Activity', href: '/activity', icon: Activity, appKey: 'activity' },
 ];
 
 // Client-facing extras (Messages, Files, Requests — clients access these standalone,

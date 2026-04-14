@@ -39,10 +39,11 @@ function isOverdue(dueDate: string, status: string): boolean {
 
 interface ListViewProps {
   tasks: BoardTask[];
-  onStatusChange: (taskId: string, newStatus: StatusColumnId) => void;
+  onStatusChange?: (taskId: string, newStatus: StatusColumnId) => void;
+  readOnly?: boolean;
 }
 
-export function ListView({ tasks, onStatusChange }: ListViewProps) {
+export function ListView({ tasks, onStatusChange, readOnly }: ListViewProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<StatusColumnId>>(
     () => new Set(['Todo', 'In Progress', 'Done'])
   );
@@ -76,6 +77,7 @@ export function ListView({ tasks, onStatusChange }: ListViewProps) {
 
   const handleCheckboxChange = useCallback(
     (task: BoardTask) => {
+      if (!onStatusChange) return;
       const newStatus: StatusColumnId = task.status === 'Done' ? 'Todo' : 'Done';
       onStatusChange(task.id, newStatus);
     },
@@ -138,17 +140,19 @@ export function ListView({ tasks, onStatusChange }: ListViewProps) {
                         key={task.id}
                         className="flex items-center gap-3 border-t border-border/50 px-4 py-2.5 transition-colors duration-150 hover:bg-muted/20"
                       >
-                        {/* Checkbox */}
-                        <input
-                          type="checkbox"
-                          checked={task.status === 'Done'}
-                          onChange={() => handleCheckboxChange(task)}
-                          className={cn(
-                            'h-4 w-4 shrink-0 cursor-pointer rounded border-border',
-                            'accent-primary focus-visible:ring-2 focus-visible:ring-primary/30'
-                          )}
-                          aria-label={`Mark "${task.title}" as ${task.status === 'Done' ? 'todo' : 'done'}`}
-                        />
+                        {/* Checkbox — hidden in readOnly mode */}
+                        {!readOnly && (
+                          <input
+                            type="checkbox"
+                            checked={task.status === 'Done'}
+                            onChange={() => handleCheckboxChange(task)}
+                            className={cn(
+                              'h-4 w-4 shrink-0 cursor-pointer rounded border-border',
+                              'accent-primary focus-visible:ring-2 focus-visible:ring-primary/30'
+                            )}
+                            aria-label={`Mark "${task.title}" as ${task.status === 'Done' ? 'todo' : 'done'}`}
+                          />
+                        )}
 
                         {/* Title */}
                         <span

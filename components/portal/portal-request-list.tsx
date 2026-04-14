@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { RichText } from '@/components/ui/rich-text';
 import { Lightbulb, MessageSquare, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { RequestCommentThread } from './request-comment-thread';
+import { getRequestCommentCounts } from '@/app/actions/request-comments';
 
 interface FeatureRequest {
   id: string;
@@ -21,6 +23,8 @@ interface FeatureRequest {
 
 interface PortalRequestListProps {
   requests: FeatureRequest[];
+  currentUserId: string;
+  userRole: string;
 }
 
 const statusTabs = [
@@ -89,10 +93,11 @@ function getPriorityColor(priority: string) {
   }
 }
 
-export function PortalRequestList({ requests }: PortalRequestListProps) {
+export function PortalRequestList({ requests, currentUserId, userRole }: PortalRequestListProps) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
 
   const toggleExpanded = (id: string) => {
     setExpandedIds((prev) => {
@@ -102,6 +107,15 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
       return next;
     });
   };
+
+  // Fetch comment counts for all requests on mount
+  useEffect(() => {
+    const ids = requests.map((r) => r.id);
+    if (ids.length === 0) return;
+    getRequestCommentCounts(ids).then((counts) => {
+      setCommentCounts(counts);
+    });
+  }, [requests]);
 
   const filtered = useMemo(() => {
     let result = [...requests];
@@ -242,44 +256,51 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
                 </div>
               </div>
 
-              {/* Expand/collapse for admin response */}
-              {request.admin_response && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 shrink-0 cursor-pointer p-0"
-                  onClick={() => toggleExpanded(request.id)}
-                  aria-expanded={expandedIds.has(request.id)}
-                  aria-label={expandedIds.has(request.id) ? 'Collapse response' : 'Expand response'}
-                >
-                  {expandedIds.has(request.id) ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
+              {/* Expand/collapse for comment thread */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 shrink-0 cursor-pointer p-0"
+                onClick={() => toggleExpanded(request.id)}
+                aria-expanded={expandedIds.has(request.id)}
+                aria-label={expandedIds.has(request.id) ? 'Collapse comments' : 'Expand comments'}
+              >
+                {expandedIds.has(request.id) ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
             </div>
 
-            {request.admin_response && expandedIds.has(request.id) && (
-              <div className="mt-4 rounded-lg border border-primary/10 bg-primary/[0.04] p-3 dark:border-primary/20 dark:bg-primary/[0.06]">
-                <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-primary">
-                  <MessageSquare className="h-3 w-3" />
-                  Response from Qualia
-                </div>
-                <p className="text-sm text-foreground/80">{request.admin_response}</p>
-              </div>
-            )}
-
-            {/* Indicator that there's a response */}
-            {request.admin_response && !expandedIds.has(request.id) && (
+            {/* Comment count + legacy response indicator */}
+            {!expandedIds.has(request.id) && (
               <button
                 onClick={() => toggleExpanded(request.id)}
-                className="mt-2 flex cursor-pointer items-center gap-1 text-xs text-primary transition-colors duration-150 hover:text-primary/80"
+                className="mt-2 flex cursor-pointer items-center gap-1.5 text-xs text-primary transition-colors duration-150 hover:text-primary/80"
               >
                 <MessageSquare className="h-3 w-3" />
-                View response
+                {(commentCounts[request.id] || 0) > 0 ? (
+                  <span>
+                    {commentCounts[request.id]} comment
+                    {commentCounts[request.id] !== 1 ? 's' : ''}
+                  </span>
+                ) : request.admin_response ? (
+                  <span>Has response</span>
+                ) : (
+                  <span>Add comment</span>
+                )}
               </button>
+            )}
+
+            {/* Comment thread (expanded) */}
+            {expandedIds.has(request.id) && (
+              <RequestCommentThread
+                requestId={request.id}
+                currentUserId={currentUserId}
+                userRole={userRole}
+                legacyAdminResponse={request.admin_response}
+              />
             )}
           </div>
         ))}

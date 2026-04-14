@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Download,
+  Eye,
   File,
   FileText,
   FileImage,
@@ -23,9 +24,15 @@ import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
 
 interface PortalFileListProps {
   files: ProjectFile[];
+  onPreview?: (file: { id: string; original_name: string; mime_type: string }) => void;
 }
 
-export function PortalFileList({ files }: PortalFileListProps) {
+function isPreviewable(mimeType: string | null): boolean {
+  if (!mimeType) return false;
+  return mimeType.startsWith('image/') || mimeType === 'application/pdf';
+}
+
+export function PortalFileList({ files, onPreview }: PortalFileListProps) {
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
 
   const getFileIcon = (mimeType: string | null) => {
@@ -135,24 +142,43 @@ export function PortalFileList({ files }: PortalFileListProps) {
                 Uploaded {formatRelativeTime(file.created_at)}
               </p>
 
-              {/* Download Button */}
-              <Button
-                onClick={() => handleDownload(file.id, file.original_name)}
-                disabled={downloadingFileId === file.id}
-                className="min-h-[44px] w-full"
-              >
-                {downloadingFileId === file.id ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Downloading...
-                  </>
-                ) : (
-                  <>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
-                  </>
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                {onPreview && isPreviewable(file.mime_type) && (
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      onPreview({
+                        id: file.id,
+                        original_name: file.original_name,
+                        mime_type: file.mime_type || '',
+                      })
+                    }
+                    className="min-h-[44px] flex-1 cursor-pointer"
+                    aria-label={`Preview ${file.original_name}`}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
+                  </Button>
                 )}
-              </Button>
+                <Button
+                  onClick={() => handleDownload(file.id, file.original_name)}
+                  disabled={downloadingFileId === file.id}
+                  className={`min-h-[44px] ${onPreview && isPreviewable(file.mime_type) ? 'flex-1' : 'w-full'}`}
+                >
+                  {downloadingFileId === file.id ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         );

@@ -1086,6 +1086,43 @@ export async function unscheduleTask(taskId: string): Promise<ActionResult> {
 }
 
 /**
+ * Get tasks visible to a client (or any user) across multiple projects.
+ * Filters out canceled tasks and returns a lean projection for the portal tasks view.
+ */
+export async function getClientVisibleTasks(projectIds: string[]): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  if (!projectIds.length) return { success: true, data: [] };
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .select(
+      'id, title, status, priority, due_date, project_id, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!tasks_project_id_fkey(id, name)'
+    )
+    .in('project_id', projectIds)
+    .in('item_type', ['task', 'issue'])
+    .not('status', 'eq', 'Canceled')
+    .order('status', { ascending: true })
+    .order('priority', { ascending: true })
+    .limit(200);
+
+  if (error) return { success: false, error: error.message };
+
+  // Normalize FK arrays
+  const normalized = (data || []).map((t) => ({
+    ...t,
+    assignee: Array.isArray(t.assignee) ? t.assignee[0] || null : t.assignee,
+    project: Array.isArray(t.project) ? t.project[0] || null : t.project,
+  }));
+
+  return { success: true, data: normalized };
+}
+
+/**
  * Get backlog tasks (unscheduled, not done)
  */
 export async function getBacklogTasks(workspaceId?: string | null): Promise<Task[]> {
