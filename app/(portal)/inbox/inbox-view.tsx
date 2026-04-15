@@ -294,11 +294,11 @@ export function InboxView({ initialTasks }: InboxViewProps) {
   const [priorityFilter, setPriorityFilter] = useState<FilterPriority>('all');
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // Fetch completed tasks on demand when toggle is turned on
+  // Fetch completed tasks on demand — always re-fetches when toggling on
   const handleToggleCompleted = useCallback(async () => {
     const next = !showCompleted;
     setShowCompleted(next);
-    if (next && completedTasks.length === 0) {
+    if (next) {
       setLoadingCompleted(true);
       try {
         const done = await getTasks(null, { inboxOnly: true, status: ['Done'] });
@@ -309,7 +309,7 @@ export function InboxView({ initialTasks }: InboxViewProps) {
         setLoadingCompleted(false);
       }
     }
-  }, [showCompleted, completedTasks.length]);
+  }, [showCompleted]);
 
   // Merge active + completed when toggled on
   const allTasks = useMemo(() => {

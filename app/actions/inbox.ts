@@ -58,15 +58,25 @@ async function getEffectiveUser(
 /**
  * Get project IDs that are finished (Done, Archived, Canceled).
  * Tasks from these projects should be excluded from inbox views.
+ * Cached for 5s to avoid duplicate queries when multiple inbox
+ * functions run in the same request cycle.
  */
+let _finishedCache: { ids: Set<string>; ts: number } | null = null;
+const FINISHED_CACHE_TTL = 5_000;
+
 async function getFinishedProjectIds(
   supabase: Awaited<ReturnType<typeof createClient>>
 ): Promise<Set<string>> {
+  if (_finishedCache && Date.now() - _finishedCache.ts < FINISHED_CACHE_TTL) {
+    return _finishedCache.ids;
+  }
   const { data } = await supabase
     .from('projects')
     .select('id')
     .in('status', ['Done', 'Archived', 'Canceled']);
-  return new Set((data || []).map((p) => p.id));
+  const ids = new Set((data || []).map((p) => p.id));
+  _finishedCache = { ids, ts: Date.now() };
+  return ids;
 }
 
 /**

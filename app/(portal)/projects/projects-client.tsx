@@ -317,8 +317,8 @@ export function ProjectsClient({
           </div>
           <div className="rounded-xl border border-qualia-500/20 bg-qualia-500/5 p-3">
             <div
-              className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-              style={{ gridTemplateRows: 'repeat(2, auto)' }}
+              className="grid max-h-[132px] grid-cols-2 gap-2 overflow-hidden sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+              style={{ gridTemplateRows: 'repeat(2, 60px)', gridAutoRows: 0 }}
             >
               {(done as ProjectData[]).map((project) => (
                 <DoneTile key={project.id} project={project} ariaHidden={false} />
