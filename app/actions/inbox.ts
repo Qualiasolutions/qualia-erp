@@ -56,6 +56,20 @@ async function getEffectiveUser(
 }
 
 /**
+ * Get project IDs that are finished (Done, Archived, Canceled).
+ * Tasks from these projects should be excluded from inbox views.
+ */
+async function getFinishedProjectIds(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<Set<string>> {
+  const { data } = await supabase
+    .from('projects')
+    .select('id')
+    .in('status', ['Done', 'Archived', 'Canceled']);
+  return new Set((data || []).map((p) => p.id));
+}
+
+/**
  * Check if a task with requires_attachment can be marked as Done.
  * Returns null if OK, or error string if blocked.
  */
@@ -230,6 +244,14 @@ export async function getTasks(
   // Filter for inbox-only tasks
   if (options.inboxOnly) {
     query = query.eq('show_in_inbox', true);
+
+    // Exclude tasks from finished projects (Done/Archived/Canceled)
+    const finishedIds = await getFinishedProjectIds(supabase);
+    if (finishedIds.size > 0) {
+      // PostgREST .not().in() excludes these project_id values;
+      // tasks with null project_id (personal tasks) are kept.
+      query = query.not('project_id', 'in', `(${[...finishedIds].join(',')})`);
+    }
   }
 
   if (options.status && options.status.length > 0) {
@@ -335,6 +357,10 @@ export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> 
         : `assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId}`;
   }
 
+  // Exclude tasks from finished projects
+  const finishedIds = await getFinishedProjectIds(supabase);
+  const finishedFilter = finishedIds.size > 0 ? `(${[...finishedIds].join(',')})` : null;
+
   // Build scoped queries — apply the .or() filter when non-elevated
   let previewQuery = supabase
     .from('tasks')
@@ -343,6 +369,7 @@ export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> 
     .eq('show_in_inbox', true)
     .neq('item_type', 'note')
     .in('status', openStatuses);
+  if (finishedFilter) previewQuery = previewQuery.not('project_id', 'in', finishedFilter);
   if (scopeFilter) previewQuery = previewQuery.or(scopeFilter);
   previewQuery = previewQuery
     .order('due_date', { ascending: true, nullsFirst: false })
@@ -356,6 +383,7 @@ export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> 
     .eq('show_in_inbox', true)
     .neq('item_type', 'note')
     .in('status', openStatuses);
+  if (finishedFilter) totalOpenQuery = totalOpenQuery.not('project_id', 'in', finishedFilter);
   if (scopeFilter) totalOpenQuery = totalOpenQuery.or(scopeFilter);
 
   let overdueQuery = supabase
@@ -366,6 +394,7 @@ export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> 
     .neq('item_type', 'note')
     .in('status', openStatuses)
     .lt('due_date', todayStartIso);
+  if (finishedFilter) overdueQuery = overdueQuery.not('project_id', 'in', finishedFilter);
   if (scopeFilter) overdueQuery = overdueQuery.or(scopeFilter);
 
   const [previewResult, totalOpenResult, overdueResult] = await Promise.all([
