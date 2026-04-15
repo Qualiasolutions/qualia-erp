@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { format } from 'date-fns';
+import { useState, useCallback, useMemo } from 'react';
+import { format, isThisWeek } from 'date-fns';
 import { m, AnimatePresence } from '@/lib/lazy-motion';
 import {
   FlaskConical,
@@ -17,6 +17,19 @@ import {
   CheckCircle2,
   Link2,
   Save,
+  Target,
+  BarChart3,
+  Bot,
+  Mic,
+  Handshake,
+  BookOpen,
+  TrendingUp,
+  DollarSign,
+  ExternalLink,
+  Globe,
+  Clock,
+  Layers,
+  ChevronDown,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -53,6 +66,86 @@ interface ResearchPageClientProps {
   initialEntries: ResearchEntry[];
 }
 
+/* ─── Category → Icon mapping ───────────────────────────────── */
+const CATEGORY_ICONS: Record<string, React.ElementType> = {
+  lead_generation: Target,
+  competitor_analysis: BarChart3,
+  ai_tools: Bot,
+  voice_ai: Mic,
+  partnerships: Handshake,
+  industry_research: BookOpen,
+  marketing: TrendingUp,
+  pricing: DollarSign,
+  general: FlaskConical,
+};
+
+const CATEGORY_ACCENT: Record<string, string> = {
+  lead_generation: 'bg-green-500',
+  competitor_analysis: 'bg-red-500',
+  ai_tools: 'bg-purple-500',
+  voice_ai: 'bg-blue-500',
+  partnerships: 'bg-amber-500',
+  industry_research: 'bg-cyan-500',
+  marketing: 'bg-pink-500',
+  pricing: 'bg-emerald-500',
+  general: 'bg-muted-foreground/30',
+};
+
+/* ─── Source Links renderer ─────────────────────────────────── */
+function SourceLinks({ text }: { text: string }) {
+  const lines = text.split('\n').filter((l) => l.trim());
+  const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/;
+
+  return (
+    <div className="space-y-2">
+      {lines.map((line, i) => {
+        const match = line.match(urlRegex);
+        if (match) {
+          const url = match[1].replace(/[.,;:!?)]+$/, '');
+          const label = line
+            .replace(match[1], '')
+            .replace(/^[-•*]\s*/, '')
+            .replace(/^\d+[.)]\s*/, '')
+            .trim();
+          let domain = '';
+          try {
+            domain = new URL(url).hostname.replace('www.', '');
+          } catch {
+            domain = url;
+          }
+
+          return (
+            <a
+              key={i}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-lg border border-border bg-muted/20 p-3 transition-all hover:border-primary/20 hover:bg-muted/40"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Globe className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">{label || domain}</p>
+                <p className="truncate text-xs text-muted-foreground">{domain}</p>
+              </div>
+              <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            </a>
+          );
+        }
+        // Non-URL line — render as text
+        return (
+          <p key={i} className="text-sm text-muted-foreground">
+            {line}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── Research Card ─────────────────────────────────────────── */
 function ResearchCard({
   entry,
   onView,
@@ -63,60 +156,107 @@ function ResearchCard({
   onDelete: () => void;
 }) {
   const colors = CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.general;
+  const CategoryIcon = CATEGORY_ICONS[entry.category] || FlaskConical;
+  const accent = CATEGORY_ACCENT[entry.category] || 'bg-muted-foreground/30';
+
+  const sourceCount = entry.sources ? (entry.sources.match(/https?:\/\//g) || []).length : 0;
+  const hasFindings = !!entry.key_findings;
+  const hasActions = !!entry.action_items;
 
   return (
     <m.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="group relative rounded-xl border border-border bg-gradient-to-br from-card to-card/50 p-5 transition-all hover:border-border/80 hover:shadow-md"
+      className="group relative overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-border/80 hover:shadow-md"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span
-              className={cn(
-                'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                colors.bg,
-                colors.text,
-                colors.border
-              )}
-            >
-              {getCategoryLabel(entry.category)}
-            </span>
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Calendar className="h-3 w-3" />
-              {format(new Date(entry.research_date), 'MMM d, yyyy')}
-            </span>
+      {/* Category accent line */}
+      <div className={cn('h-0.5', accent)} />
+
+      <div className="p-5">
+        <div className="flex items-start gap-4">
+          {/* Category icon */}
+          <div
+            className={cn(
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+              colors.bg
+            )}
+          >
+            <CategoryIcon className={cn('h-5 w-5', colors.text)} />
           </div>
 
-          <h3 className="mb-1 font-semibold text-foreground">{entry.title}</h3>
-          <p className="text-sm text-muted-foreground">{entry.topic}</p>
-
-          {entry.summary && (
-            <p className="mt-3 line-clamp-2 text-sm text-muted-foreground/80">{entry.summary}</p>
-          )}
-
-          {entry.author && (
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <User className="h-3 w-3" />
-              <span>{entry.author.full_name || entry.author.email}</span>
+          <div className="min-w-0 flex-1">
+            <div className="mb-1.5 flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
+                  colors.bg,
+                  colors.text,
+                  colors.border
+                )}
+              >
+                {getCategoryLabel(entry.category)}
+              </span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                {format(new Date(entry.research_date), 'MMM d, yyyy')}
+              </span>
             </div>
-          )}
-        </div>
 
-        <div className="relative z-10 flex shrink-0 items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onView}>
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive"
-            onClick={onDelete}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+            <h3 className="mb-1 text-[15px] font-semibold leading-snug text-foreground">
+              {entry.title}
+            </h3>
+            <p className="text-sm text-muted-foreground">{entry.topic}</p>
+
+            {entry.summary && (
+              <p className="mt-2.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground/80">
+                {entry.summary}
+              </p>
+            )}
+
+            {/* Metadata indicators */}
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              {entry.author && (
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <User className="h-3 w-3" />
+                  {entry.author.full_name || entry.author.email}
+                </span>
+              )}
+              {sourceCount > 0 && (
+                <span className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400">
+                  <Link2 className="h-3 w-3" />
+                  {sourceCount} source{sourceCount !== 1 ? 's' : ''}
+                </span>
+              )}
+              {hasFindings && (
+                <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                  <Lightbulb className="h-3 w-3" />
+                  Findings
+                </span>
+              )}
+              {hasActions && (
+                <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Actions
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="relative z-10 flex shrink-0 items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onView}>
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-destructive hover:text-destructive"
+              onClick={onDelete}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -129,6 +269,30 @@ function ResearchCard({
   );
 }
 
+/* ─── Section helper ────────────────────────────────────────── */
+function Section({
+  icon: Icon,
+  title,
+  color,
+  children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  color: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-border/50 bg-muted/10 p-4">
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+        <Icon className={cn('h-4 w-4', color)} />
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+/* ─── Research Detail Modal ─────────────────────────────────── */
 function ResearchDetailModal({
   entry,
   open,
@@ -141,6 +305,8 @@ function ResearchDetailModal({
   if (!entry) return null;
 
   const colors = CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.general;
+  const CategoryIcon = CATEGORY_ICONS[entry.category] || FlaskConical;
+  const accent = CATEGORY_ACCENT[entry.category] || 'bg-muted-foreground/30';
 
   const handleDownloadMarkdown = () => {
     const markdown = `# ${entry.title}
@@ -179,116 +345,157 @@ ${entry.raw_content ? `## Raw Research Content\n${entry.raw_content}` : ''}
     toast.success('Research downloaded as Markdown');
   };
 
+  // Count sections that have content
+  const sectionCount = [
+    entry.summary,
+    entry.key_findings,
+    entry.action_items,
+    entry.sources,
+  ].filter(Boolean).length;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
-        <DialogHeader className="border-b border-border pb-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div
-                className={cn('flex h-10 w-10 items-center justify-center rounded-xl', colors.bg)}
-              >
-                <FlaskConical className={cn('h-5 w-5', colors.text)} />
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
+        {/* Header with accent */}
+        <div className={cn('h-1', accent)} />
+
+        <div className="overflow-y-auto px-6 pb-6 pt-4">
+          <DialogHeader className="border-b border-border pb-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn('flex h-11 w-11 items-center justify-center rounded-xl', colors.bg)}
+                >
+                  <CategoryIcon className={cn('h-5 w-5', colors.text)} />
+                </div>
+                <div>
+                  <DialogTitle className="text-lg font-semibold">{entry.title}</DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground">
+                    {entry.topic}
+                  </DialogDescription>
+                </div>
               </div>
-              <div>
-                <DialogTitle className="text-lg font-semibold">{entry.title}</DialogTitle>
-                <DialogDescription className="text-sm text-muted-foreground">
-                  {entry.topic}
-                </DialogDescription>
-              </div>
+              <Button variant="outline" size="sm" onClick={handleDownloadMarkdown}>
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
             </div>
-            <Button variant="outline" size="sm" onClick={handleDownloadMarkdown}>
-              <Download className="mr-2 h-4 w-4" />
-              Download
-            </Button>
-          </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <span
-              className={cn(
-                'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                colors.bg,
-                colors.text,
-                colors.border
-              )}
-            >
-              {getCategoryLabel(entry.category)}
-            </span>
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Calendar className="h-3 w-3" />
-              {format(new Date(entry.research_date), 'MMMM d, yyyy')}
-            </span>
-            {entry.author && (
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <User className="h-3 w-3" />
-                {entry.author.full_name || entry.author.email}
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
+                  colors.bg,
+                  colors.text,
+                  colors.border
+                )}
+              >
+                {getCategoryLabel(entry.category)}
               </span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                {format(new Date(entry.research_date), 'MMMM d, yyyy')}
+              </span>
+              {entry.author && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <User className="h-3 w-3" />
+                  {entry.author.full_name || entry.author.email}
+                </span>
+              )}
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Layers className="h-3 w-3" />
+                {sectionCount} section{sectionCount !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-5 pt-5">
+            {entry.summary && (
+              <Section icon={FileText} title="Summary" color="text-blue-500">
+                <RichText className="text-muted-foreground">{entry.summary}</RichText>
+              </Section>
             )}
+
+            {entry.key_findings && (
+              <Section icon={Lightbulb} title="Key Findings" color="text-amber-500">
+                <RichText className="text-muted-foreground">{entry.key_findings}</RichText>
+              </Section>
+            )}
+
+            {entry.action_items && (
+              <Section icon={CheckCircle2} title="Action Items" color="text-green-500">
+                <RichText className="text-muted-foreground">{entry.action_items}</RichText>
+              </Section>
+            )}
+
+            {entry.sources && (
+              <Section icon={Link2} title="Sources & References" color="text-purple-500">
+                <SourceLinks text={entry.sources} />
+              </Section>
+            )}
+
+            {entry.raw_content && <RawContentSection content={entry.raw_content} />}
           </div>
-        </DialogHeader>
-
-        <div className="space-y-6 py-4">
-          {entry.summary && (
-            <Section icon={FileText} title="Summary" color="text-blue-500">
-              <RichText className="text-muted-foreground">{entry.summary}</RichText>
-            </Section>
-          )}
-
-          {entry.key_findings && (
-            <Section icon={Lightbulb} title="Key Findings" color="text-amber-500">
-              <RichText className="text-muted-foreground">{entry.key_findings}</RichText>
-            </Section>
-          )}
-
-          {entry.action_items && (
-            <Section icon={CheckCircle2} title="Action Items" color="text-green-500">
-              <RichText className="text-muted-foreground">{entry.action_items}</RichText>
-            </Section>
-          )}
-
-          {entry.sources && (
-            <Section icon={Link2} title="Sources" color="text-purple-500">
-              <RichText className="text-muted-foreground">{entry.sources}</RichText>
-            </Section>
-          )}
-
-          {entry.raw_content && (
-            <Section icon={FileText} title="Raw Research Content" color="text-gray-500">
-              <div className="max-h-64 overflow-y-auto rounded-lg bg-muted/30 p-4">
-                <p className="whitespace-pre-wrap font-mono text-xs text-muted-foreground">
-                  {entry.raw_content}
-                </p>
-              </div>
-            </Section>
-          )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-function Section({
-  icon: Icon,
+/* ─── Collapsible Raw Content ───────────────────────────────── */
+function RawContentSection({ content }: { content: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="rounded-lg border border-border/50 bg-muted/10 p-4">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between text-sm font-semibold text-foreground"
+      >
+        <span className="flex items-center gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          Raw Research Content
+        </span>
+        <ChevronDown
+          className={cn(
+            'h-4 w-4 text-muted-foreground transition-transform',
+            expanded && 'rotate-180'
+          )}
+        />
+      </button>
+      {expanded && (
+        <div className="mt-3 max-h-64 overflow-y-auto rounded-lg bg-background/80 p-4">
+          <p className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-muted-foreground">
+            {content}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Form Section Divider ──────────────────────────────────── */
+function FormSection({
   title,
-  color,
+  description,
   children,
 }: {
-  icon: React.ElementType;
   title: string;
-  color: string;
+  description?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
-        <Icon className={cn('h-4 w-4', color)} />
-        {title}
-      </h3>
+    <div className="space-y-3">
+      <div className="border-b border-border/50 pb-2">
+        <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+        {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
+      </div>
       {children}
     </div>
   );
 }
 
+/* ─── New Research Modal ────────────────────────────────────── */
 function NewResearchModal({
   open,
   onClose,
@@ -324,7 +531,7 @@ function NewResearchModal({
     setIsSubmitting(false);
 
     if (result.success && result.data) {
-      toast.success('Research entry logged successfully');
+      toast.success('Research entry logged');
       onSuccess(result.data);
       setFormData({
         title: '',
@@ -345,143 +552,197 @@ function NewResearchModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FlaskConical className="h-5 w-5 text-primary" />
-            Log Research
-          </DialogTitle>
-          <DialogDescription>
-            Record your daily research findings from Gemini Deep Research and NotebookLM.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden p-0">
+        {/* Header */}
+        <div className="border-b border-border bg-muted/30 px-6 py-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <FlaskConical className="h-4 w-4 text-primary" />
+              </div>
+              Log Research
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Record findings from Deep Research, NotebookLM, or your own investigation.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 py-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                placeholder="E.g., AI Tools for Lead Generation"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
+        <form onSubmit={handleSubmit} className="overflow-y-auto px-6 pb-6 pt-4">
+          <div className="space-y-6">
+            {/* Section 1: What did you research? */}
+            <FormSection title="What did you research?">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="title" className="text-xs">
+                    Title <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="title"
+                    placeholder="e.g. AI Tools for Lead Generation"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="topic" className="text-xs">
+                    Topic <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="topic"
+                    placeholder="e.g. New AI tools and platforms"
+                    value={formData.topic}
+                    onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="category" className="text-xs">
+                    Category
+                  </Label>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) => setFormData({ ...formData, category: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RESEARCH_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="research_date" className="text-xs">
+                    Date
+                  </Label>
+                  <Input
+                    id="research_date"
+                    type="date"
+                    value={formData.research_date}
+                    onChange={(e) => setFormData({ ...formData, research_date: e.target.value })}
+                  />
+                </div>
+              </div>
+            </FormSection>
+
+            {/* Section 2: Summary */}
+            <FormSection title="Summary" description="What did you find? Give a brief overview.">
+              <Textarea
+                id="summary"
+                placeholder="Brief summary of what you discovered and why it matters..."
+                value={formData.summary}
+                onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                rows={4}
+                className="resize-none"
               />
+            </FormSection>
+
+            {/* Section 3: Findings & follow-up */}
+            <FormSection title="Findings & Follow-up" description="Key takeaways and next steps.">
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="key_findings" className="flex items-center gap-1.5 text-xs">
+                    <Lightbulb className="h-3 w-3 text-amber-500" />
+                    Key Findings
+                  </Label>
+                  <Textarea
+                    id="key_findings"
+                    placeholder="- Finding one&#10;- Finding two&#10;- Finding three"
+                    value={formData.key_findings}
+                    onChange={(e) => setFormData({ ...formData, key_findings: e.target.value })}
+                    rows={3}
+                    className="resize-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="action_items" className="flex items-center gap-1.5 text-xs">
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    Action Items
+                  </Label>
+                  <Textarea
+                    id="action_items"
+                    placeholder="- Try out tool X&#10;- Share with team&#10;- Schedule follow-up"
+                    value={formData.action_items}
+                    onChange={(e) => setFormData({ ...formData, action_items: e.target.value })}
+                    rows={3}
+                    className="resize-none"
+                  />
+                </div>
+              </div>
+            </FormSection>
+
+            {/* Section 4: Sources & references */}
+            <FormSection
+              title="Sources & References"
+              description="Paste links, one per line. They'll be rendered as clickable cards."
+            >
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="sources" className="flex items-center gap-1.5 text-xs">
+                    <Link2 className="h-3 w-3 text-purple-500" />
+                    Source URLs
+                  </Label>
+                  <Textarea
+                    id="sources"
+                    placeholder="https://example.com/article&#10;https://github.com/repo&#10;Tool Name https://tool.com"
+                    value={formData.sources}
+                    onChange={(e) => setFormData({ ...formData, sources: e.target.value })}
+                    rows={3}
+                    className="resize-none font-mono text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="raw_content" className="flex items-center gap-1.5 text-xs">
+                    <FileText className="h-3 w-3 text-muted-foreground" />
+                    Raw Output
+                    <span className="text-muted-foreground">(optional — paste full AI output)</span>
+                  </Label>
+                  <Textarea
+                    id="raw_content"
+                    placeholder="Paste the full Gemini/NotebookLM output here for reference..."
+                    value={formData.raw_content}
+                    onChange={(e) => setFormData({ ...formData, raw_content: e.target.value })}
+                    rows={3}
+                    className="resize-none font-mono text-xs"
+                  />
+                </div>
+              </div>
+            </FormSection>
+          </div>
+
+          {/* Actions */}
+          <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+            <p className="text-xs text-muted-foreground">
+              <span className="text-destructive">*</span> Required fields
+            </p>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  'Saving...'
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Research
+                  </>
+                )}
+              </Button>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="research_date">Research Date</Label>
-              <Input
-                id="research_date"
-                type="date"
-                value={formData.research_date}
-                onChange={(e) => setFormData({ ...formData, research_date: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="topic">Topic *</Label>
-              <Input
-                id="topic"
-                placeholder="E.g., New AI tools and platforms"
-                value={formData.topic}
-                onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {RESEARCH_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="summary">Summary</Label>
-            <Textarea
-              id="summary"
-              placeholder="Brief summary of the research findings..."
-              value={formData.summary}
-              onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="key_findings">Key Findings</Label>
-            <Textarea
-              id="key_findings"
-              placeholder="• Finding 1&#10;• Finding 2&#10;• Finding 3"
-              value={formData.key_findings}
-              onChange={(e) => setFormData({ ...formData, key_findings: e.target.value })}
-              rows={4}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="action_items">Action Items</Label>
-            <Textarea
-              id="action_items"
-              placeholder="• Action 1&#10;• Action 2&#10;• Action 3"
-              value={formData.action_items}
-              onChange={(e) => setFormData({ ...formData, action_items: e.target.value })}
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="sources">Sources</Label>
-            <Textarea
-              id="sources"
-              placeholder="Links to sources, references, or tools discovered..."
-              value={formData.sources}
-              onChange={(e) => setFormData({ ...formData, sources: e.target.value })}
-              rows={2}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="raw_content">Raw Research Content (Optional)</Label>
-            <Textarea
-              id="raw_content"
-              placeholder="Paste the full Gemini/NotebookLM output here for reference..."
-              value={formData.raw_content}
-              onChange={(e) => setFormData({ ...formData, raw_content: e.target.value })}
-              rows={4}
-              className="font-mono text-xs"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                'Saving...'
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Research
-                </>
-              )}
-            </Button>
           </div>
         </form>
       </DialogContent>
@@ -489,6 +750,7 @@ function NewResearchModal({
   );
 }
 
+/* ─── Main Page ─────────────────────────────────────────────── */
 export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) {
   const [entries, setEntries] = useState<ResearchEntry[]>(initialEntries);
   const [searchQuery, setSearchQuery] = useState('');
@@ -496,6 +758,19 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
   const [selectedEntry, setSelectedEntry] = useState<ResearchEntry | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [confirmState, setConfirmState] = useState<{ action: () => void } | null>(null);
+
+  // Stats
+  const stats = useMemo(() => {
+    const thisWeek = entries.filter((e) => {
+      try {
+        return isThisWeek(new Date(e.research_date));
+      } catch {
+        return false;
+      }
+    });
+    const categories = new Set(entries.map((e) => e.category));
+    return { total: entries.length, thisWeek: thisWeek.length, categories: categories.size };
+  }, [entries]);
 
   // Filter entries
   const filteredEntries = entries.filter((entry) => {
@@ -537,7 +812,27 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+        <div className="space-y-5 p-4 sm:p-6 lg:p-8">
+          {/* Stats bar */}
+          {entries.length > 0 && (
+            <div className="flex flex-wrap items-center gap-4 rounded-lg border border-border/50 bg-muted/20 px-4 py-2.5 text-sm">
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <FlaskConical className="h-3.5 w-3.5 text-primary" />
+                <span className="font-medium text-foreground">{stats.total}</span> entries
+              </span>
+              <span className="hidden h-3.5 w-px bg-border sm:block" />
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" />
+                <span className="font-medium text-foreground">{stats.thisWeek}</span> this week
+              </span>
+              <span className="hidden h-3.5 w-px bg-border sm:block" />
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Layers className="h-3.5 w-3.5" />
+                <span className="font-medium text-foreground">{stats.categories}</span> categories
+              </span>
+            </div>
+          )}
+
           {/* Search and Filters */}
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="relative flex-1">
@@ -581,17 +876,19 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
               const count = entries.filter((e) => e.category === cat.value).length;
               if (count === 0) return null;
               const colors = CATEGORY_COLORS[cat.value] || CATEGORY_COLORS.general;
+              const CatIcon = CATEGORY_ICONS[cat.value] || FlaskConical;
               return (
                 <button
                   key={cat.value}
                   onClick={() => setSelectedCategory(cat.value)}
                   className={cn(
-                    'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                    'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
                     selectedCategory === cat.value
                       ? `${colors.border} ${colors.bg} ${colors.text}`
                       : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50'
                   )}
                 >
+                  <CatIcon className="h-3 w-3" />
                   {cat.label} ({count})
                 </button>
               );
@@ -601,12 +898,14 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
           {/* Research Entries */}
           {filteredEntries.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
-              <FlaskConical className="mb-4 h-12 w-12 text-muted-foreground/30" />
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5">
+                <FlaskConical className="h-8 w-8 text-muted-foreground/30" />
+              </div>
               <h3 className="mb-2 font-medium text-foreground">No research entries yet</h3>
-              <p className="mb-4 text-sm text-muted-foreground">
+              <p className="mb-4 max-w-sm text-center text-sm text-muted-foreground">
                 {searchQuery || selectedCategory !== 'all'
-                  ? 'Try adjusting your filters'
-                  : 'Log your first research findings to get started'}
+                  ? 'Try adjusting your filters or search terms'
+                  : 'Log your first research findings from Deep Research, NotebookLM, or your own investigation'}
               </p>
               {!searchQuery && selectedCategory === 'all' && (
                 <Button onClick={() => setShowNewModal(true)}>
@@ -616,7 +915,7 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
               )}
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <AnimatePresence mode="popLayout">
                 {filteredEntries.map((entry) => (
                   <ResearchCard
