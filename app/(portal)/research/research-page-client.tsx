@@ -353,14 +353,16 @@ ${entry.raw_content ? `## Raw Research Content\n${entry.raw_content}` : ''}
     entry.sources,
   ].filter(Boolean).length;
 
+  const hasRightColumn = !!entry.action_items || !!entry.sources;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
-        {/* Header with accent */}
-        <div className={cn('h-1', accent)} />
+      <DialogContent className="flex max-h-[90vh] max-w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1100px]">
+        <div className={cn('h-1 shrink-0', accent)} />
 
-        <div className="overflow-y-auto px-6 pb-6 pt-4">
-          <DialogHeader className="border-b border-border pb-4">
+        {/* Sticky header */}
+        <div className="shrink-0 border-b border-border px-6 pb-5 pt-6 sm:px-8">
+          <DialogHeader>
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div
@@ -408,34 +410,63 @@ ${entry.raw_content ? `## Raw Research Content\n${entry.raw_content}` : ''}
               </span>
             </div>
           </DialogHeader>
+        </div>
 
-          <div className="space-y-5 pt-5">
-            {entry.summary && (
-              <Section icon={FileText} title="Summary" color="text-blue-500">
-                <RichText className="text-muted-foreground">{entry.summary}</RichText>
-              </Section>
-            )}
-
-            {entry.key_findings && (
-              <Section icon={Lightbulb} title="Key Findings" color="text-amber-500">
-                <RichText className="text-muted-foreground">{entry.key_findings}</RichText>
-              </Section>
-            )}
-
-            {entry.action_items && (
-              <Section icon={CheckCircle2} title="Action Items" color="text-green-500">
-                <RichText className="text-muted-foreground">{entry.action_items}</RichText>
-              </Section>
-            )}
-
-            {entry.sources && (
-              <Section icon={Link2} title="Sources & References" color="text-purple-500">
-                <SourceLinks text={entry.sources} />
-              </Section>
-            )}
-
-            {entry.raw_content && <RawContentSection content={entry.raw_content} />}
-          </div>
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8">
+          {hasRightColumn ? (
+            <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+              <div className="space-y-5">
+                {entry.summary && (
+                  <Section icon={FileText} title="Summary" color="text-blue-500">
+                    <RichText className="text-muted-foreground">{entry.summary}</RichText>
+                  </Section>
+                )}
+                {entry.key_findings && (
+                  <Section icon={Lightbulb} title="Key Findings" color="text-amber-500">
+                    <RichText className="text-muted-foreground">{entry.key_findings}</RichText>
+                  </Section>
+                )}
+                {entry.raw_content && <RawContentSection content={entry.raw_content} />}
+              </div>
+              <div className="space-y-5">
+                {entry.action_items && (
+                  <Section icon={CheckCircle2} title="Action Items" color="text-green-500">
+                    <RichText className="text-muted-foreground">{entry.action_items}</RichText>
+                  </Section>
+                )}
+                {entry.sources && (
+                  <Section icon={Link2} title="Sources & References" color="text-purple-500">
+                    <SourceLinks text={entry.sources} />
+                  </Section>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {entry.summary && (
+                <Section icon={FileText} title="Summary" color="text-blue-500">
+                  <RichText className="text-muted-foreground">{entry.summary}</RichText>
+                </Section>
+              )}
+              {entry.key_findings && (
+                <Section icon={Lightbulb} title="Key Findings" color="text-amber-500">
+                  <RichText className="text-muted-foreground">{entry.key_findings}</RichText>
+                </Section>
+              )}
+              {entry.action_items && (
+                <Section icon={CheckCircle2} title="Action Items" color="text-green-500">
+                  <RichText className="text-muted-foreground">{entry.action_items}</RichText>
+                </Section>
+              )}
+              {entry.sources && (
+                <Section icon={Link2} title="Sources & References" color="text-purple-500">
+                  <SourceLinks text={entry.sources} />
+                </Section>
+              )}
+              {entry.raw_content && <RawContentSection content={entry.raw_content} />}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -552,9 +583,9 @@ function NewResearchModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden p-0">
-        {/* Header */}
-        <div className="border-b border-border bg-muted/30 px-6 py-4">
+      <DialogContent className="flex max-h-[90vh] max-w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[800px]">
+        {/* Sticky header */}
+        <div className="shrink-0 border-b border-border bg-muted/30 px-6 py-4">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
@@ -568,163 +599,167 @@ function NewResearchModal({
           </DialogHeader>
         </div>
 
-        <form onSubmit={handleSubmit} className="overflow-y-auto px-6 pb-6 pt-4">
-          <div className="space-y-6">
-            {/* Section 1: What did you research? */}
-            <FormSection title="What did you research?">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="title" className="text-xs">
-                    Title <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="title"
-                    placeholder="e.g. AI Tools for Lead Generation"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    required
-                  />
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="space-y-6">
+              {/* Section 1: What did you research? */}
+              <FormSection title="What did you research?">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="title" className="text-xs">
+                      Title <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="title"
+                      placeholder="e.g. AI Tools for Lead Generation"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="topic" className="text-xs">
+                      Topic <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="topic"
+                      placeholder="e.g. New AI tools and platforms"
+                      value={formData.topic}
+                      onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="topic" className="text-xs">
-                    Topic <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="topic"
-                    placeholder="e.g. New AI tools and platforms"
-                    value={formData.topic}
-                    onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="category" className="text-xs">
+                      Category
+                    </Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RESEARCH_CATEGORIES.map((cat) => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            {cat.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="category" className="text-xs">
-                    Category
-                  </Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData({ ...formData, category: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {RESEARCH_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="research_date" className="text-xs">
+                      Date
+                    </Label>
+                    <Input
+                      id="research_date"
+                      type="date"
+                      value={formData.research_date}
+                      onChange={(e) => setFormData({ ...formData, research_date: e.target.value })}
+                    />
+                  </div>
                 </div>
+              </FormSection>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="research_date" className="text-xs">
-                    Date
-                  </Label>
-                  <Input
-                    id="research_date"
-                    type="date"
-                    value={formData.research_date}
-                    onChange={(e) => setFormData({ ...formData, research_date: e.target.value })}
-                  />
+              {/* Section 2: Summary */}
+              <FormSection title="Summary" description="What did you find? Give a brief overview.">
+                <Textarea
+                  id="summary"
+                  placeholder="Brief summary of what you discovered and why it matters..."
+                  value={formData.summary}
+                  onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                  rows={4}
+                  className="resize-none"
+                />
+              </FormSection>
+
+              {/* Section 3: Findings & follow-up */}
+              <FormSection title="Findings & Follow-up" description="Key takeaways and next steps.">
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="key_findings" className="flex items-center gap-1.5 text-xs">
+                      <Lightbulb className="h-3 w-3 text-amber-500" />
+                      Key Findings
+                    </Label>
+                    <Textarea
+                      id="key_findings"
+                      placeholder="- Finding one&#10;- Finding two&#10;- Finding three"
+                      value={formData.key_findings}
+                      onChange={(e) => setFormData({ ...formData, key_findings: e.target.value })}
+                      rows={3}
+                      className="resize-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="action_items" className="flex items-center gap-1.5 text-xs">
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                      Action Items
+                    </Label>
+                    <Textarea
+                      id="action_items"
+                      placeholder="- Try out tool X&#10;- Share with team&#10;- Schedule follow-up"
+                      value={formData.action_items}
+                      onChange={(e) => setFormData({ ...formData, action_items: e.target.value })}
+                      rows={3}
+                      className="resize-none"
+                    />
+                  </div>
                 </div>
-              </div>
-            </FormSection>
+              </FormSection>
 
-            {/* Section 2: Summary */}
-            <FormSection title="Summary" description="What did you find? Give a brief overview.">
-              <Textarea
-                id="summary"
-                placeholder="Brief summary of what you discovered and why it matters..."
-                value={formData.summary}
-                onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                rows={4}
-                className="resize-none"
-              />
-            </FormSection>
+              {/* Section 4: Sources & references */}
+              <FormSection
+                title="Sources & References"
+                description="Paste links, one per line. They'll be rendered as clickable cards."
+              >
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sources" className="flex items-center gap-1.5 text-xs">
+                      <Link2 className="h-3 w-3 text-purple-500" />
+                      Source URLs
+                    </Label>
+                    <Textarea
+                      id="sources"
+                      placeholder="https://example.com/article&#10;https://github.com/repo&#10;Tool Name https://tool.com"
+                      value={formData.sources}
+                      onChange={(e) => setFormData({ ...formData, sources: e.target.value })}
+                      rows={3}
+                      className="resize-none font-mono text-xs"
+                    />
+                  </div>
 
-            {/* Section 3: Findings & follow-up */}
-            <FormSection title="Findings & Follow-up" description="Key takeaways and next steps.">
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="key_findings" className="flex items-center gap-1.5 text-xs">
-                    <Lightbulb className="h-3 w-3 text-amber-500" />
-                    Key Findings
-                  </Label>
-                  <Textarea
-                    id="key_findings"
-                    placeholder="- Finding one&#10;- Finding two&#10;- Finding three"
-                    value={formData.key_findings}
-                    onChange={(e) => setFormData({ ...formData, key_findings: e.target.value })}
-                    rows={3}
-                    className="resize-none"
-                  />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="raw_content" className="flex items-center gap-1.5 text-xs">
+                      <FileText className="h-3 w-3 text-muted-foreground" />
+                      Raw Output
+                      <span className="text-muted-foreground">
+                        (optional — paste full AI output)
+                      </span>
+                    </Label>
+                    <Textarea
+                      id="raw_content"
+                      placeholder="Paste the full Gemini/NotebookLM output here for reference..."
+                      value={formData.raw_content}
+                      onChange={(e) => setFormData({ ...formData, raw_content: e.target.value })}
+                      rows={3}
+                      className="resize-none font-mono text-xs"
+                    />
+                  </div>
                 </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="action_items" className="flex items-center gap-1.5 text-xs">
-                    <CheckCircle2 className="h-3 w-3 text-green-500" />
-                    Action Items
-                  </Label>
-                  <Textarea
-                    id="action_items"
-                    placeholder="- Try out tool X&#10;- Share with team&#10;- Schedule follow-up"
-                    value={formData.action_items}
-                    onChange={(e) => setFormData({ ...formData, action_items: e.target.value })}
-                    rows={3}
-                    className="resize-none"
-                  />
-                </div>
-              </div>
-            </FormSection>
-
-            {/* Section 4: Sources & references */}
-            <FormSection
-              title="Sources & References"
-              description="Paste links, one per line. They'll be rendered as clickable cards."
-            >
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="sources" className="flex items-center gap-1.5 text-xs">
-                    <Link2 className="h-3 w-3 text-purple-500" />
-                    Source URLs
-                  </Label>
-                  <Textarea
-                    id="sources"
-                    placeholder="https://example.com/article&#10;https://github.com/repo&#10;Tool Name https://tool.com"
-                    value={formData.sources}
-                    onChange={(e) => setFormData({ ...formData, sources: e.target.value })}
-                    rows={3}
-                    className="resize-none font-mono text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="raw_content" className="flex items-center gap-1.5 text-xs">
-                    <FileText className="h-3 w-3 text-muted-foreground" />
-                    Raw Output
-                    <span className="text-muted-foreground">(optional — paste full AI output)</span>
-                  </Label>
-                  <Textarea
-                    id="raw_content"
-                    placeholder="Paste the full Gemini/NotebookLM output here for reference..."
-                    value={formData.raw_content}
-                    onChange={(e) => setFormData({ ...formData, raw_content: e.target.value })}
-                    rows={3}
-                    className="resize-none font-mono text-xs"
-                  />
-                </div>
-              </div>
-            </FormSection>
+              </FormSection>
+            </div>
           </div>
 
-          {/* Actions */}
-          <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+          {/* Sticky footer */}
+          <div className="flex shrink-0 items-center justify-between border-t border-border px-6 py-4">
             <p className="text-xs text-muted-foreground">
               <span className="text-destructive">*</span> Required fields
             </p>
