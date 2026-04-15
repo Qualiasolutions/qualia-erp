@@ -428,7 +428,11 @@ export function useInboxTasks(): UseInboxTasksReturn {
     isLoading,
     isValidating,
     mutate: revalidate,
-  } = useSWR(cacheKeys.inboxTasks, () => getTasks(null, { inboxOnly: true }), autoRefreshConfig);
+  } = useSWR(
+    cacheKeys.inboxTasks,
+    () => getTasks(null, { inboxOnly: true, status: ['Todo', 'In Progress'] }),
+    autoRefreshConfig
+  );
 
   return {
     tasks: data || [],

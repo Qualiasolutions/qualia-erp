@@ -47,6 +47,7 @@ import {
   toggleTaskInbox,
   createTask,
   deleteTask,
+  getTasks,
   type Task,
 } from '@/app/actions/inbox';
 import {
@@ -65,7 +66,6 @@ interface InboxViewProps {
   initialTasks: Task[];
 }
 
-type FilterStatus = 'all' | 'todo' | 'in_progress' | 'done';
 type FilterPriority = 'all' | 'urgent' | 'high' | 'medium' | 'low';
 
 function formatDueTime(dueDate: string): string {
@@ -288,9 +288,37 @@ export function InboxView({ initialTasks }: InboxViewProps) {
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [quickAddValue, setQuickAddValue] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
+  const [loadingCompleted, setLoadingCompleted] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<FilterPriority>('all');
   const parentRef = useRef<HTMLDivElement>(null);
+
+  // Fetch completed tasks on demand when toggle is turned on
+  const handleToggleCompleted = useCallback(async () => {
+    const next = !showCompleted;
+    setShowCompleted(next);
+    if (next && completedTasks.length === 0) {
+      setLoadingCompleted(true);
+      try {
+        const done = await getTasks(null, { inboxOnly: true, status: ['Done'] });
+        setCompletedTasks(done);
+      } catch {
+        toast.error('Failed to load completed tasks');
+      } finally {
+        setLoadingCompleted(false);
+      }
+    }
+  }, [showCompleted, completedTasks.length]);
+
+  // Merge active + completed when toggled on
+  const allTasks = useMemo(() => {
+    if (!showCompleted) return optimisticTasks;
+    // Deduplicate — a task toggled Done optimistically may already be in completedTasks
+    const ids = new Set(optimisticTasks.map((t) => t.id));
+    const extra = completedTasks.filter((t) => !ids.has(t.id));
+    return [...optimisticTasks, ...extra];
+  }, [optimisticTasks, completedTasks, showCompleted]);
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
@@ -302,7 +330,7 @@ export function InboxView({ initialTasks }: InboxViewProps) {
       'No Priority': 4,
     };
 
-    return optimisticTasks
+    return allTasks
       .filter((task) => {
         // Search filter
         if (searchQuery) {
@@ -310,17 +338,6 @@ export function InboxView({ initialTasks }: InboxViewProps) {
           const matchesTitle = task.title.toLowerCase().includes(query);
           const matchesProject = task.project?.name.toLowerCase().includes(query);
           if (!matchesTitle && !matchesProject) return false;
-        }
-
-        // Status filter
-        if (statusFilter !== 'all') {
-          const statusMap: Record<FilterStatus, string> = {
-            all: '',
-            todo: 'Todo',
-            in_progress: 'In Progress',
-            done: 'Done',
-          };
-          if (task.status !== statusMap[statusFilter]) return false;
         }
 
         // Priority filter
@@ -338,11 +355,14 @@ export function InboxView({ initialTasks }: InboxViewProps) {
         return true;
       })
       .sort((a, b) => {
+        // Active tasks first, completed at the bottom
+        if (a.status === 'Done' && b.status !== 'Done') return 1;
+        if (a.status !== 'Done' && b.status === 'Done') return -1;
         const aPriority = PRIORITY_ORDER[a.priority ?? 'No Priority'] ?? 4;
         const bPriority = PRIORITY_ORDER[b.priority ?? 'No Priority'] ?? 4;
         return aPriority - bPriority;
       });
-  }, [optimisticTasks, searchQuery, statusFilter, priorityFilter]);
+  }, [allTasks, searchQuery, priorityFilter]);
 
   // Virtual list
   const virtualizer = useVirtualizer({
@@ -463,14 +483,12 @@ export function InboxView({ initialTasks }: InboxViewProps) {
   }, []);
 
   const stats = useMemo(() => {
-    const todo = optimisticTasks.filter((t) => t.status === 'Todo').length;
-    const inProgress = optimisticTasks.filter((t) => t.status === 'In Progress').length;
-    const done = optimisticTasks.filter((t) => t.status === 'Done').length;
-    const overdue = optimisticTasks.filter(
-      (t) => isOverdue(t.due_date) && t.status !== 'Done'
-    ).length;
+    const todo = allTasks.filter((t) => t.status === 'Todo').length;
+    const inProgress = allTasks.filter((t) => t.status === 'In Progress').length;
+    const done = allTasks.filter((t) => t.status === 'Done').length;
+    const overdue = allTasks.filter((t) => isOverdue(t.due_date) && t.status !== 'Done').length;
     return { todo, inProgress, done, overdue };
-  }, [optimisticTasks]);
+  }, [allTasks]);
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -552,17 +570,16 @@ export function InboxView({ initialTasks }: InboxViewProps) {
         {/* Filters */}
         <div className="flex items-center gap-2">
           <Filter className="size-4 text-muted-foreground" />
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as FilterStatus)}>
-            <SelectTrigger className="h-9 w-32 text-sm">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="todo">Todo</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="done">Done</SelectItem>
-            </SelectContent>
-          </Select>
+          <Button
+            variant={showCompleted ? 'secondary' : 'outline'}
+            size="sm"
+            className="h-9 gap-1.5 text-sm"
+            onClick={handleToggleCompleted}
+            disabled={loadingCompleted}
+          >
+            <CheckCircle2 className="size-3.5" />
+            {loadingCompleted ? 'Loading...' : showCompleted ? 'Hide completed' : 'Show completed'}
+          </Button>
           <Select
             value={priorityFilter}
             onValueChange={(v) => setPriorityFilter(v as FilterPriority)}
@@ -641,12 +658,10 @@ export function InboxView({ initialTasks }: InboxViewProps) {
               <CheckCircle2 className="size-8 text-emerald-500" />
             </div>
             <p className="text-lg font-medium text-foreground">
-              {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all'
-                ? 'No matching tasks'
-                : 'Inbox zero!'}
+              {searchQuery || priorityFilter !== 'all' ? 'No matching tasks' : 'Inbox zero!'}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all'
+              {searchQuery || priorityFilter !== 'all'
                 ? 'Try adjusting your filters'
                 : 'All tasks are complete'}
             </p>

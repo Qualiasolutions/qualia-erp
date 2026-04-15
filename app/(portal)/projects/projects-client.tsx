@@ -194,7 +194,6 @@ export function ProjectsClient({
 
   const [selectedDemo, setSelectedDemo] = useState<ProjectData | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [doneOpen, setDoneOpen] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -306,28 +305,27 @@ export function ProjectsClient({
         />
       </div>
 
-      {/* Done — collapsible */}
+      {/* Done — always visible in 2 rows */}
       {done.length > 0 && (
-        <Collapsible open={doneOpen} onOpenChange={setDoneOpen}>
-          <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground">
-            <ChevronRight
-              className={cn(
-                'h-3.5 w-3.5 transition-transform duration-200',
-                doneOpen && 'rotate-90'
-              )}
-            />
+        <div className="shrink-0">
+          <div className="mb-2 flex items-center gap-2 px-1">
             <CheckCircle2 className="h-3.5 w-3.5 text-qualia-500" />
-            <span className="font-medium">Done</span>
-            <span className="rounded-full bg-qualia-500/10 px-2 py-0.5 text-xs text-qualia-500">
+            <span className="text-sm font-medium text-foreground">Done</span>
+            <span className="rounded-full bg-qualia-500/10 px-2 py-0.5 text-xs font-semibold text-qualia-500">
               {done.length}
             </span>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="mt-2 rounded-xl border border-qualia-500/20 bg-qualia-500/5 p-3">
-              <DoneMarquee projects={done as ProjectData[]} />
+          </div>
+          <div className="rounded-xl border border-qualia-500/20 bg-qualia-500/5 p-3">
+            <div
+              className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+              style={{ gridTemplateRows: 'repeat(2, auto)' }}
+            >
+              {(done as ProjectData[]).map((project) => (
+                <DoneTile key={project.id} project={project} ariaHidden={false} />
+              ))}
             </div>
-          </CollapsibleContent>
-        </Collapsible>
+          </div>
+        </div>
       )}
 
       {/* Archived — collapsible */}
@@ -362,43 +360,6 @@ export function ProjectsClient({
       {selectedDemo && (
         <DemoSheet open={sheetOpen} onOpenChange={setSheetOpen} demo={selectedDemo} />
       )}
-    </div>
-  );
-}
-
-// ─── Done Marquee ───────────────────────────────────────────────────────────
-// Uniform-height tiles scrolling leftward forever. Duplicated once so
-// translateX(-50%) loops seamlessly. Pauses on hover. Honors reduced motion.
-
-function DoneMarquee({ projects }: { projects: ProjectData[] }) {
-  if (projects.length === 0) return null;
-
-  // Slow pace: ~6s per tile, minimum 40s so short lists don't look frantic.
-  const duration = Math.max(40, projects.length * 6);
-  const loop = [...projects, ...projects];
-
-  return (
-    <div
-      className="group/marquee relative overflow-hidden"
-      style={{
-        maskImage:
-          'linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%)',
-        WebkitMaskImage:
-          'linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%)',
-      }}
-    >
-      <div
-        className="flex w-max animate-marquee gap-2 group-focus-within/marquee:[animation-play-state:paused] group-hover/marquee:[animation-play-state:paused] motion-reduce:animate-none"
-        style={{ animationDuration: `${duration}s` }}
-      >
-        {loop.map((project, i) => (
-          <DoneTile
-            key={`${project.id}-${i}`}
-            project={project}
-            ariaHidden={i >= projects.length}
-          />
-        ))}
-      </div>
     </div>
   );
 }

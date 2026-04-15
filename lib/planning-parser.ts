@@ -230,15 +230,20 @@ export function parseStateTable(
   const lines = content.split('\n');
 
   for (const line of lines) {
-    // Match table rows like: | 3.1 | Guard Module | in progress | 2026-03-27 | — |
-    const rowMatch = line.match(
-      /^\|\s*(\d+\.\d+(?:–\d+\.\d+)?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|/
+    // Match 5-column rows: | 3.1 | Guard Module | in progress | 2026-03-27 | — |
+    const rowMatch5 = line.match(
+      /^\|\s*(\d+(?:\.\d+)?(?:–\d+(?:\.\d+)?)?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|/
     );
-    if (rowMatch) {
-      const phaseRange = rowMatch[1];
-      const status = rowMatch[3].trim().toLowerCase();
-      const started = rowMatch[4].trim();
-      const completed = rowMatch[5].trim();
+    // Match 3-column rows: | 1 | Supabase Foundation | Verified |
+    const rowMatch3 = !rowMatch5
+      ? line.match(/^\|\s*(\d+(?:\.\d+)?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/)
+      : null;
+
+    if (rowMatch5) {
+      const phaseRange = rowMatch5[1];
+      const status = rowMatch5[3].trim().toLowerCase();
+      const started = rowMatch5[4].trim();
+      const completed = rowMatch5[5].trim();
 
       // Handle ranges like "0.1–0.9"
       const rangeMatch = phaseRange.match(/^(\d+)\.(\d+)–\d+\.(\d+)$/);
@@ -260,6 +265,17 @@ export function parseStateTable(
           completed: completed === '—' ? null : completed,
         });
       }
+    } else if (rowMatch3) {
+      // 3-column: phase number, name, status — no dates
+      const phaseKey = rowMatch3[1];
+      const rawStatus = rowMatch3[3].trim();
+      // Skip header/separator rows
+      if (/^[-:|]+$/.test(rawStatus) || /^status$/i.test(rawStatus)) continue;
+      map.set(phaseKey, {
+        status: normalizeStatus(rawStatus),
+        started: null,
+        completed: null,
+      });
     }
   }
   return map;
@@ -271,7 +287,8 @@ export function normalizeStatus(raw: string): string {
     s.includes('complete') ||
     s.includes('done') ||
     s.includes('verified') ||
-    s.includes('shipped')
+    s.includes('shipped') ||
+    s.includes('executed')
   )
     return 'completed';
   if (s.includes('progress')) return 'in_progress';
@@ -374,6 +391,7 @@ export function parseStateRoadmap(content: string): ParsedMilestone[] {
       lower.includes('complete') ||
       lower.includes('verified') ||
       lower.includes('shipped') ||
+      lower.includes('executed') ||
       rawStatus === '✓'
     ) {
       status = 'completed';

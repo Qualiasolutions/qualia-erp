@@ -19,24 +19,12 @@ export default async function PortalInboxPage() {
     );
   }
 
-  const tasksRaw = await getTasks(workspaceId, {
-    status: ['Todo', 'In Progress', 'Done'],
+  // Hide completed tasks by default — keeps inbox clean for everyone
+  const tasks = (await getTasks(workspaceId, {
+    status: ['Todo', 'In Progress'],
     limit: 200,
     inboxOnly: true,
-  });
-
-  const today = new Date().toISOString().split('T')[0];
-  const tasks = tasksRaw
-    .filter((t) => {
-      if (t.item_type !== 'task') return false;
-      if (t.status !== 'Done') return true;
-      return t.completed_at?.startsWith(today);
-    })
-    .map((t) => ({
-      ...t,
-      status: t.status as 'Todo' | 'In Progress' | 'Done',
-      priority: t.priority as 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low',
-    })) as Task[];
+  })) as Task[];
 
   return <InboxView initialTasks={tasks} />;
 }
