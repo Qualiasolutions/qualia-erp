@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { FolderKanban, Calendar, Clock, TrendingUp } from 'lucide-react';
+import { FolderKanban, Calendar, Clock, TrendingUp, Lock } from 'lucide-react';
 import { useEmployeeAssignments } from '@/lib/swr';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { InboxWidget } from '@/components/portal/inbox-widget';
 import { PROJECT_STATUS_COLORS, type ProjectStatusKey } from '@/lib/color-constants';
+import { useClockGate } from '@/components/clock-gate-provider';
 
 interface EmployeeDashboardContentProps {
   userId: string;
@@ -103,6 +104,7 @@ function StatCard({
 
 export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashboardContentProps) {
   const { data: assignments, isLoading } = useEmployeeAssignments(userId);
+  const { isGated } = useClockGate();
   const typedAssignments = (assignments || []) as Assignment[];
 
   const activeProjects = typedAssignments.filter(
@@ -135,7 +137,23 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
         </h1>
       </section>
 
-      {/* Stats */}
+      {/* Clock-in notice when gated */}
+      {isGated && (
+        <section
+          className="animate-fade-in-up"
+          style={{ animationDelay: '40ms', animationFillMode: 'both' }}
+        >
+          <div className="flex items-center gap-3 rounded-xl border-2 border-primary/20 bg-primary/5 px-5 py-4">
+            <Lock className="size-5 text-primary/60" />
+            <p className="text-sm text-primary/80">
+              <span className="font-semibold text-primary">Clock in</span> from the sidebar to
+              unlock your tasks, projects, and tools.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* Stats — always visible (just numbers) */}
       <section
         className="animate-fade-in-up"
         style={{ animationDelay: '60ms', animationFillMode: 'both' }}
@@ -164,17 +182,23 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
         </div>
       </section>
 
-      {/* Inbox preview */}
+      {/* Inbox preview — disabled when gated */}
       <section
-        className="animate-fade-in-up"
+        className={cn(
+          'animate-fade-in-up',
+          isGated && 'pointer-events-none select-none opacity-50'
+        )}
         style={{ animationDelay: '120ms', animationFillMode: 'both' }}
       >
         <InboxWidget />
       </section>
 
-      {/* Quick actions */}
+      {/* Quick actions — disabled when gated */}
       <section
-        className="animate-fade-in-up"
+        className={cn(
+          'animate-fade-in-up',
+          isGated && 'pointer-events-none select-none opacity-50'
+        )}
         style={{ animationDelay: '180ms', animationFillMode: 'both' }}
       >
         <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground/60">
@@ -205,9 +229,12 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
         </div>
       </section>
 
-      {/* Assigned projects list */}
+      {/* Assigned projects list — disabled when gated */}
       <section
-        className="animate-fade-in-up"
+        className={cn(
+          'animate-fade-in-up',
+          isGated && 'pointer-events-none select-none opacity-50'
+        )}
         style={{ animationDelay: '240ms', animationFillMode: 'both' }}
       >
         <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground/60">

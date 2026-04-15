@@ -6,6 +6,7 @@ import { getPortalAuthUser, getPortalProfile, getViewAsCookieId } from '@/lib/po
 import { PortalSidebarV2 } from '@/components/portal/portal-sidebar-v2';
 import { PageTransition } from '@/components/page-transition';
 import { ViewAsBanner } from '@/components/portal/view-as-banner';
+import { ClockGateProvider } from '@/components/clock-gate-provider';
 import { getEnabledAppsForClient, getPortalBranding } from '@/app/actions/portal-admin';
 
 export const metadata: Metadata = {
@@ -172,33 +173,38 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg"
-      >
-        Skip to main content
-      </a>
-      <PortalSidebarV2
-        displayName={displayName}
-        displayEmail={displayEmail}
-        isAdminViewing={isAdminViewing}
-        companyName={companyName}
-        userId={effectiveUserId}
-        enabledApps={enabledApps}
-        branding={branding}
-        userRole={effectiveRole}
-      />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* View-as banner — only shows when admin is actively impersonating someone */}
-        {isAdminViewing && viewAsName && (
-          <ViewAsBanner viewAsName={viewAsName} viewAsRole={viewAsRole || 'client'} />
-        )}
+    <ClockGateProvider userRole={effectiveRole}>
+      <div className="flex h-screen w-full overflow-hidden bg-background">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg"
+        >
+          Skip to main content
+        </a>
+        <PortalSidebarV2
+          displayName={displayName}
+          displayEmail={displayEmail}
+          isAdminViewing={isAdminViewing}
+          companyName={companyName}
+          userId={effectiveUserId}
+          enabledApps={enabledApps}
+          branding={branding}
+          userRole={effectiveRole}
+        />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* View-as banner — only shows when admin is actively impersonating someone */}
+          {isAdminViewing && viewAsName && (
+            <ViewAsBanner viewAsName={viewAsName} viewAsRole={viewAsRole || 'client'} />
+          )}
 
-        <main id="main-content" className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
-          <PageTransition>{children}</PageTransition>
-        </main>
+          <main
+            id="main-content"
+            className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth"
+          >
+            <PageTransition>{children}</PageTransition>
+          </main>
+        </div>
       </div>
-    </div>
+    </ClockGateProvider>
   );
 }

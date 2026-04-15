@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 import { LogOut, Clock, AlertCircle, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import {
@@ -52,6 +53,7 @@ export function ClockOutModal({
   session,
   onSuccess,
 }: ClockOutModalProps) {
+  const router = useRouter();
   const [summary, setSummary] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -117,6 +119,8 @@ export function ClockOutModal({
       invalidateTodaysSessions(workspaceId, true);
       onSuccess();
       onOpenChange(false);
+      // Redirect to dashboard — re-engages clock-in gate for employees
+      router.push('/');
     });
   };
 

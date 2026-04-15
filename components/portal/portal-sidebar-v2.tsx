@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -38,10 +38,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { createClient } from '@/lib/supabase/client';
-import { useUnreadMessageCount, useActiveSession, useCurrentWorkspaceId } from '@/lib/swr';
+import {
+  useUnreadMessageCount,
+  invalidateActiveSession,
+  invalidateTodaysSessions,
+} from '@/lib/swr';
 import { ViewAsDialog } from './view-as-dialog';
 import { ClockInModal } from '@/components/today-dashboard/clock-in-modal';
 import { ClockOutModal } from '@/components/clock-out-modal';
+import { useClockGate } from '@/components/clock-gate-provider';
 import { format as formatDate } from 'date-fns';
 
 /* ------------------------------------------------------------------ */
@@ -146,11 +151,13 @@ function NavLink({
   isActive,
   onClick,
   badge,
+  disabled,
 }: {
   item: NavItemDef;
   isActive: boolean;
   onClick?: () => void;
   badge?: React.ReactNode;
+  disabled?: boolean;
 }) {
   const inner = (
     <>
@@ -178,9 +185,9 @@ function NavLink({
       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
   );
 
-  if (item.comingSoon || !item.href) {
+  if (disabled || item.comingSoon || !item.href) {
     return (
-      <div className={cn(baseClasses, 'cursor-default opacity-70')} aria-disabled="true">
+      <div className={cn(baseClasses, 'cursor-default opacity-40')} aria-disabled="true">
         {inner}
       </div>
     );
@@ -282,15 +289,7 @@ function UserMenu({
 function ClockWidget({ userId }: { userId: string | null }) {
   const [showClockIn, setShowClockIn] = useState(false);
   const [showClockOut, setShowClockOut] = useState(false);
-  const { workspaceId } = useCurrentWorkspaceId();
-  const { session: activeSession, isLoading } = useActiveSession(workspaceId ?? null);
-
-  // Auto-open clock-in modal when user has no active session (mandatory on login)
-  useEffect(() => {
-    if (!isLoading && !activeSession && workspaceId && userId) {
-      setShowClockIn(true);
-    }
-  }, [isLoading, activeSession, workspaceId, userId]);
+  const { session: activeSession, isLoading, workspaceId } = useClockGate();
 
   if (!workspaceId || isLoading) return null;
 
@@ -330,23 +329,29 @@ function ClockWidget({ userId }: { userId: string | null }) {
   }
 
   return (
-    <div className="border-t border-border/30 px-3 py-2.5">
+    <div className="border-t border-primary/20 bg-primary/[0.04] px-3 py-3">
       <button
         type="button"
         onClick={() => setShowClockIn(true)}
-        className="flex w-full items-center gap-2.5 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 text-left text-[13px] font-medium text-muted-foreground transition-all duration-150 hover:border-primary/40 hover:bg-primary/[0.05] hover:text-foreground"
+        className="flex w-full items-center gap-3 rounded-xl border-2 border-primary/30 bg-primary/10 px-4 py-3 text-left transition-all duration-200 hover:border-primary/50 hover:bg-primary/15 hover:shadow-md"
       >
-        <LogIn className="size-4 shrink-0" />
+        <div className="flex size-9 items-center justify-center rounded-lg bg-primary/20">
+          <LogIn className="size-4 text-primary" />
+        </div>
         <div className="min-w-0 flex-1">
-          <div className="font-semibold">Clock in</div>
-          <div className="text-[11px] opacity-60">Start a work session</div>
+          <div className="text-[13px] font-bold text-primary">Clock in to start</div>
+          <div className="text-[11px] text-primary/60">Begin your work session</div>
         </div>
       </button>
       <ClockInModal
         open={showClockIn}
         workspaceId={workspaceId}
         currentUserId={userId}
-        onSuccess={() => setShowClockIn(false)}
+        onSuccess={() => {
+          setShowClockIn(false);
+          invalidateActiveSession(workspaceId, true);
+          invalidateTodaysSessions(workspaceId, true);
+        }}
         onDismiss={() => setShowClockIn(false)}
       />
     </div>
@@ -370,6 +375,7 @@ function SidebarContent({
 }: PortalSidebarV2Props & { onLinkClick?: () => void }) {
   const pathname = usePathname();
   const { total } = useUnreadMessageCount(userId ?? null);
+  const { isGated } = useClockGate();
 
   const isActive = (item: NavItemDef) => {
     if (!item.href) return false;
@@ -464,6 +470,7 @@ function SidebarContent({
             isActive={isActive(item)}
             onClick={onLinkClick}
             badge={item.name === 'Messages' ? unreadBadge : undefined}
+            disabled={isGated && item.appKey !== 'home'}
           />
         ))}
 
