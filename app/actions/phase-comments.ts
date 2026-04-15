@@ -168,9 +168,9 @@ export async function getPhaseComments(
  * Delete a phase comment
  * Only admin or comment author can delete
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function deletePhaseComment(
   commentId: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   projectId: string
 ): Promise<ActionResult> {
   const supabase = await createClient();
