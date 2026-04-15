@@ -87,7 +87,7 @@ function StageColumn({
   const { isSuperAdmin } = useAdminContext();
 
   return (
-    <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-elevation-1">
+    <div className="flex flex-col rounded-xl border border-border bg-card shadow-elevation-1">
       {/* Column header */}
       <div
         className={cn(
@@ -109,8 +109,8 @@ function StageColumn({
         </span>
       </div>
 
-      {/* Scrollable project list */}
-      <div className="flex-1 overflow-y-auto p-3">
+      {/* Project list — shows all items, page scrolls */}
+      <div className="p-3">
         {projects.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className={cn('mb-3 rounded-xl p-4', config.bgColor)}>
@@ -231,7 +231,7 @@ export function ProjectsClient({
   }, [building, preProduction, live]);
 
   return (
-    <div className="flex h-full w-full flex-col gap-5 overflow-hidden p-5 md:p-6">
+    <div className="flex h-full w-full flex-col gap-5 overflow-y-auto p-5 md:p-6">
       {/* Stats strip */}
       <div className="flex shrink-0 items-center gap-2 overflow-x-auto">
         <div className="flex items-center gap-2 rounded-lg border border-border bg-card/60 px-3 py-1.5">
@@ -276,8 +276,8 @@ export function ProjectsClient({
         )}
       </div>
 
-      {/* Four-column pipeline */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-4">
+      {/* Four-column pipeline — show at least 5 items per column */}
+      <div className="grid shrink-0 grid-cols-1 gap-5 lg:grid-cols-4">
         <StageColumn
           stage="demo"
           projects={demos}
