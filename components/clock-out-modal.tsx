@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { clockOut } from '@/app/actions/work-sessions';
 import { invalidateActiveSession, invalidateTodaysSessions } from '@/lib/swr';
 import { createClient as createBrowserClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
 
 // ============ TYPES ============
 
@@ -120,7 +121,10 @@ export function ClockOutModal({
   };
 
   const startedAtFormatted = format(parseISO(session.started_at), 'h:mm a');
-  const canSubmit = summary.trim() && !isPending;
+  // "Other" sessions (no project) don't require a report; project sessions do
+  const isOtherSession = !session.project;
+  const reportRequired = !isOtherSession && !reportUrl;
+  const canSubmit = summary.trim() && !isPending && !reportRequired;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -152,7 +156,16 @@ export function ClockOutModal({
         <div className="space-y-2">
           <Label className="text-[13px] font-medium">
             Session Report{' '}
-            <span className="text-[11px] font-normal text-muted-foreground">(optional)</span>
+            {isOtherSession ? (
+              <span className="text-[11px] font-normal text-muted-foreground">(optional)</span>
+            ) : (
+              <span className="text-[11px] font-normal text-destructive">
+                (required){' '}
+                <span className="text-muted-foreground">
+                  — run <code className="font-mono">/qualia-report</code>
+                </span>
+              </span>
+            )}
           </Label>
 
           {checkingReport ? (
@@ -181,14 +194,32 @@ export function ClockOutModal({
               </a>
             </div>
           ) : (
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
-              <XCircle className="size-4 shrink-0 text-muted-foreground" />
+            <div
+              className={cn(
+                'flex items-center gap-2 rounded-lg border px-3 py-2.5',
+                reportRequired
+                  ? 'border-destructive/30 bg-destructive/5'
+                  : 'border-border bg-muted/30'
+              )}
+            >
+              <XCircle
+                className={cn(
+                  'size-4 shrink-0',
+                  reportRequired ? 'text-destructive' : 'text-muted-foreground'
+                )}
+              />
               <div className="min-w-0 flex-1">
-                <span className="text-[12px] font-medium text-muted-foreground">
+                <span
+                  className={cn(
+                    'text-[12px] font-medium',
+                    reportRequired ? 'text-destructive' : 'text-muted-foreground'
+                  )}
+                >
                   No report attached
                 </span>
                 <p className="text-[10px] text-muted-foreground/60">
-                  Run <code className="font-mono">/qualia-report</code> to attach one (optional)
+                  Run <code className="font-mono">/qualia-report</code> to attach one
+                  {isOtherSession && ' (optional)'}
                 </p>
               </div>
               <Button

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -221,6 +221,13 @@ function SidebarContent({
   const { session: activeSession, isLoading: sessionLoading } = useActiveSession(
     canTrackTime && workspaceId ? workspaceId : null
   );
+
+  // Auto-open clock-in modal when user has no active session (mandatory on login)
+  useEffect(() => {
+    if (canTrackTime && !sessionLoading && !activeSession && workspaceId && userId) {
+      setShowClockIn(true);
+    }
+  }, [canTrackTime, sessionLoading, activeSession, workspaceId, userId]);
 
   const isActive = (href: string) =>
     pathname === href || (href !== '/' && pathname.startsWith(href));

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -284,6 +284,13 @@ function ClockWidget({ userId }: { userId: string | null }) {
   const [showClockOut, setShowClockOut] = useState(false);
   const { workspaceId } = useCurrentWorkspaceId();
   const { session: activeSession, isLoading } = useActiveSession(workspaceId ?? null);
+
+  // Auto-open clock-in modal when user has no active session (mandatory on login)
+  useEffect(() => {
+    if (!isLoading && !activeSession && workspaceId && userId) {
+      setShowClockIn(true);
+    }
+  }, [isLoading, activeSession, workspaceId, userId]);
 
   if (!workspaceId || isLoading) return null;
 
