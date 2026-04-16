@@ -367,21 +367,20 @@ export function ProjectsClient({
 function DoneTile({ project, ariaHidden }: { project: ProjectData; ariaHidden: boolean }) {
   const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
   const TypeIcon = typeConfig?.icon || Folder;
+  const { isAdmin } = useAdminContext();
 
-  return (
-    <Link
-      href={`/projects/${project.id}`}
-      aria-hidden={ariaHidden || undefined}
-      tabIndex={ariaHidden ? -1 : 0}
-      className="group flex h-[60px] w-[240px] flex-shrink-0 items-center gap-3 rounded-lg border border-qualia-500/25 bg-qualia-500/5 px-3 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/10"
-    >
+  const content = (
+    <>
       <EntityAvatar
         src={project.logo_url}
         fallbackIcon={<TypeIcon className="h-3.5 w-3.5" />}
         fallbackBgColor={typeConfig?.bg || 'bg-muted'}
         fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
         size="md"
-        className="flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+        className={cn(
+          'flex-shrink-0 transition-transform duration-200',
+          isAdmin && 'group-hover:scale-105'
+        )}
       />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium leading-tight text-foreground">
@@ -391,6 +390,30 @@ function DoneTile({ project, ariaHidden }: { project: ProjectData; ariaHidden: b
           <div className="truncate text-xs text-muted-foreground">{project.client_name}</div>
         )}
       </div>
+    </>
+  );
+
+  if (!isAdmin) {
+    return (
+      <div
+        aria-hidden={ariaHidden || undefined}
+        aria-disabled="true"
+        title="View-only — contact an admin for access"
+        className="flex h-[60px] w-[240px] flex-shrink-0 cursor-default items-center gap-3 rounded-lg border border-qualia-500/25 bg-qualia-500/5 px-3 opacity-90"
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={`/projects/${project.id}`}
+      aria-hidden={ariaHidden || undefined}
+      tabIndex={ariaHidden ? -1 : 0}
+      className="group flex h-[60px] w-[240px] flex-shrink-0 items-center gap-3 rounded-lg border border-qualia-500/25 bg-qualia-500/5 px-3 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/10"
+    >
+      {content}
     </Link>
   );
 }

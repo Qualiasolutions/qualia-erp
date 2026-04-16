@@ -141,7 +141,7 @@ async function ProjectListLoader() {
     has_github: githubProjectIds.has(p.id as string),
   }));
 
-  // Filter for employees: only assigned projects
+  // Filter for employees: only assigned projects (except Done — everyone sees all Done projects)
   const visibleProjects = assignedProjectIds
     ? allProjects.filter((p) => assignedProjectIds.has(p.id))
     : allProjects;
@@ -154,7 +154,8 @@ async function ProjectListLoader() {
   const building = activeDelayed.filter((p) => !p.is_pre_production).sort(sortByOrder);
   const preProduction = activeDelayed.filter((p) => p.is_pre_production).sort(sortByOrder);
   const live = visibleProjects.filter((p) => p.status === 'Launched').sort(sortByOrder);
-  const done = visibleProjects.filter((p) => p.status === 'Done').sort(sortByOrder);
+  // Done: show all Done projects to everyone (admins + employees). Employees get read-only view.
+  const done = allProjects.filter((p) => p.status === 'Done').sort(sortByOrder);
   const archived = visibleProjects
     .filter((p) => ['Archived', 'Canceled'].includes(p.status))
     .sort(sortByOrder);
