@@ -7,6 +7,7 @@ import { getClientWorkspaces } from '@/app/actions/portal-workspaces';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
 import { EmployeeDashboardContent } from './employee-dashboard-content';
 import { AdminDashboardContent } from './admin-dashboard-content';
+import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 
 export default async function PortalDashboard({
   searchParams,
@@ -52,10 +53,19 @@ export default async function PortalDashboard({
   if (isPortalAdminRole(effectiveRole)) {
     // No workspace selected -> show admin dashboard with workspace grid
     if (!workspaceId) {
-      const result = await getClientWorkspaces();
+      const [result, currentWorkspaceId] = await Promise.all([
+        getClientWorkspaces(),
+        getCurrentWorkspaceId(),
+      ]);
       const workspaces = (result.success ? result.data : []) as ClientWorkspace[];
 
-      return <AdminDashboardContent workspaces={workspaces} displayName={displayName} />;
+      return (
+        <AdminDashboardContent
+          workspaces={workspaces}
+          displayName={displayName}
+          workspaceId={currentWorkspaceId}
+        />
+      );
     }
 
     // Workspace selected: resolve client + primary contact email in ONE query

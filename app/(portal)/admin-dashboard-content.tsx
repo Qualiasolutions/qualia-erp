@@ -5,10 +5,12 @@ import { PortalWorkspaceGrid } from '@/components/portal/portal-workspace-grid';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
 import { cn } from '@/lib/utils';
 import { InboxWidget } from '@/components/portal/inbox-widget';
+import { AdminUpdatesPanel } from '@/components/today-dashboard/admin-updates-panel';
 
 interface AdminDashboardContentProps {
   workspaces: ClientWorkspace[];
   displayName: string;
+  workspaceId: string | null;
 }
 
 function getGreeting(): string {
@@ -84,7 +86,11 @@ function StatCard({
 /* Admin Dashboard                                                     */
 /* ------------------------------------------------------------------ */
 
-export function AdminDashboardContent({ workspaces, displayName }: AdminDashboardContentProps) {
+export function AdminDashboardContent({
+  workspaces,
+  displayName,
+  workspaceId,
+}: AdminDashboardContentProps) {
   const firstName = displayName.split(' ')[0];
   const totalProjects = workspaces.reduce((sum, ws) => sum + ws.projectCount, 0);
   const activeProjects = workspaces.reduce(
@@ -145,12 +151,21 @@ export function AdminDashboardContent({ workspaces, displayName }: AdminDashboar
         </div>
       </section>
 
-      {/* Inbox preview */}
+      {/* Inbox + Updates — side-by-side on lg+, stacked on mobile */}
       <section
         className="animate-fade-in-up"
         style={{ animationDelay: '120ms', animationFillMode: 'both' }}
       >
-        <InboxWidget />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <InboxWidget />
+          {workspaceId ? (
+            <AdminUpdatesPanel workspaceId={workspaceId} />
+          ) : (
+            <div className="rounded-xl border border-dashed border-border/60 bg-card/40 p-6 text-center text-sm text-muted-foreground">
+              Join a workspace to post team updates.
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Workspace grid */}
