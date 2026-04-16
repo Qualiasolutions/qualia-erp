@@ -26,6 +26,7 @@ import {
   Timer,
   UserPlus,
   BarChart3,
+  Palette,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -68,6 +69,7 @@ const adminNav = [
   { name: 'Assignments', href: '/admin/assignments', icon: UserPlus },
   { name: 'Attendance', href: '/admin/attendance', icon: ClipboardList },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3 },
+  { name: 'Board', href: '/admin/board', icon: Palette },
   { name: 'Financials', href: '/payments', icon: Wallet },
 ];
 
