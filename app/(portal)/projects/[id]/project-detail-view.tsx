@@ -7,6 +7,7 @@ import { MobileMenuButton } from '@/components/mobile-menu-button';
 import {
   ArrowLeft,
   Folder,
+  FolderOpen,
   Trash2,
   User,
   Bot,
@@ -320,6 +321,20 @@ export function ProjectDetailView({
             <div className="hidden items-center gap-1.5 sm:flex">
               <ProjectIntegrationsDisplay projectId={project.id} userRole={userRole} />
             </div>
+
+            {/* Files — quick link to project files page */}
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="h-9 gap-1.5 rounded-lg text-muted-foreground hover:text-foreground"
+              title="Project files"
+            >
+              <Link href={`/projects/${project.id}/files`}>
+                <FolderOpen className="h-4 w-4" />
+                <span className="hidden sm:inline">Files</span>
+              </Link>
+            </Button>
 
             {/* Panel toggle (below xl only) */}
             <Button
