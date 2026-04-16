@@ -130,6 +130,13 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: 'activity_log_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'activity_log_project_id_fkey';
             columns: ['project_id'];
             isOneToOne: false;
@@ -356,6 +363,63 @@ export type Database = {
             columns: ['workspace_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      api_tokens: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          expires_at: string;
+          id: string;
+          last_used_at: string | null;
+          name: string;
+          profile_id: string;
+          revoked_at: string | null;
+          scope: string;
+          token_hash: string;
+          token_prefix: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string;
+          id?: string;
+          last_used_at?: string | null;
+          name: string;
+          profile_id: string;
+          revoked_at?: string | null;
+          scope?: string;
+          token_hash: string;
+          token_prefix: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string;
+          id?: string;
+          last_used_at?: string | null;
+          name?: string;
+          profile_id?: string;
+          revoked_at?: string | null;
+          scope?: string;
+          token_hash?: string;
+          token_prefix?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'api_tokens_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'api_tokens_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
         ];
@@ -1167,6 +1231,42 @@ export type Database = {
           zoho_id?: string;
         };
         Relationships: [];
+      };
+      idempotency_keys: {
+        Row: {
+          created_at: string;
+          key: string;
+          profile_id: string | null;
+          report_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          key: string;
+          profile_id?: string | null;
+          report_id: string;
+        };
+        Update: {
+          created_at?: string;
+          key?: string;
+          profile_id?: string | null;
+          report_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'idempotency_keys_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'idempotency_keys_report_id_fkey';
+            columns: ['report_id'];
+            isOneToOne: false;
+            referencedRelation: 'session_reports';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       issue_assignees: {
         Row: {
@@ -3170,6 +3270,45 @@ export type Database = {
           },
         ];
       };
+      request_comments: {
+        Row: {
+          author_id: string;
+          content: string;
+          created_at: string | null;
+          id: string;
+          request_id: string;
+        };
+        Insert: {
+          author_id: string;
+          content: string;
+          created_at?: string | null;
+          id?: string;
+          request_id: string;
+        };
+        Update: {
+          author_id?: string;
+          content?: string;
+          created_at?: string | null;
+          id?: string;
+          request_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'request_comments_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'request_comments_request_id_fkey';
+            columns: ['request_id'];
+            isOneToOne: false;
+            referencedRelation: 'client_feature_requests';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       research_entries: {
         Row: {
           action_items: string | null;
@@ -3301,6 +3440,92 @@ export type Database = {
             columns: ['workspace_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      session_reports: {
+        Row: {
+          auth_method: string | null;
+          client: string | null;
+          commits: string[] | null;
+          created_at: string | null;
+          deployed_url: string | null;
+          gap_cycles: number | null;
+          gap_cycles_raw: Json | null;
+          id: string;
+          idempotency_key: string | null;
+          lifetime: Json | null;
+          milestone: number | null;
+          notes: string | null;
+          phase: number | null;
+          phase_name: string | null;
+          project_name: string;
+          status: string | null;
+          submitted_at: string | null;
+          submitted_by: string | null;
+          tasks_done: number | null;
+          tasks_total: number | null;
+          token_id: string | null;
+          total_phases: number | null;
+          verification: string | null;
+        };
+        Insert: {
+          auth_method?: string | null;
+          client?: string | null;
+          commits?: string[] | null;
+          created_at?: string | null;
+          deployed_url?: string | null;
+          gap_cycles?: number | null;
+          gap_cycles_raw?: Json | null;
+          id?: string;
+          idempotency_key?: string | null;
+          lifetime?: Json | null;
+          milestone?: number | null;
+          notes?: string | null;
+          phase?: number | null;
+          phase_name?: string | null;
+          project_name: string;
+          status?: string | null;
+          submitted_at?: string | null;
+          submitted_by?: string | null;
+          tasks_done?: number | null;
+          tasks_total?: number | null;
+          token_id?: string | null;
+          total_phases?: number | null;
+          verification?: string | null;
+        };
+        Update: {
+          auth_method?: string | null;
+          client?: string | null;
+          commits?: string[] | null;
+          created_at?: string | null;
+          deployed_url?: string | null;
+          gap_cycles?: number | null;
+          gap_cycles_raw?: Json | null;
+          id?: string;
+          idempotency_key?: string | null;
+          lifetime?: Json | null;
+          milestone?: number | null;
+          notes?: string | null;
+          phase?: number | null;
+          phase_name?: string | null;
+          project_name?: string;
+          status?: string | null;
+          submitted_at?: string | null;
+          submitted_by?: string | null;
+          tasks_done?: number | null;
+          tasks_total?: number | null;
+          token_id?: string | null;
+          total_phases?: number | null;
+          verification?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'session_reports_token_id_fkey';
+            columns: ['token_id'];
+            isOneToOne: false;
+            referencedRelation: 'api_tokens';
             referencedColumns: ['id'];
           },
         ];
@@ -3858,10 +4083,12 @@ export type Database = {
       work_sessions: {
         Row: {
           clock_in_note: string | null;
+          clock_in_reason: string | null;
           created_at: string;
           duration_minutes: number | null;
           ended_at: string | null;
           id: string;
+          planned_duration_minutes: number | null;
           profile_id: string;
           project_id: string | null;
           report_url: string | null;
@@ -3871,10 +4098,12 @@ export type Database = {
         };
         Insert: {
           clock_in_note?: string | null;
+          clock_in_reason?: string | null;
           created_at?: string;
           duration_minutes?: number | null;
           ended_at?: string | null;
           id?: string;
+          planned_duration_minutes?: number | null;
           profile_id: string;
           project_id?: string | null;
           report_url?: string | null;
@@ -3884,10 +4113,12 @@ export type Database = {
         };
         Update: {
           clock_in_note?: string | null;
+          clock_in_reason?: string | null;
           created_at?: string;
           duration_minutes?: number | null;
           ended_at?: string | null;
           id?: string;
+          planned_duration_minutes?: number | null;
           profile_id?: string;
           project_id?: string | null;
           report_url?: string | null;
@@ -4494,7 +4725,6 @@ export const Constants = {
   },
 } as const;
 
-// ============ Convenience aliases ============
 export type Client = Tables<'clients'>;
 export type ProjectFile = Tables<'project_files'>;
 export type ProjectIntegration = Tables<'project_integrations'>;
