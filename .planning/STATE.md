@@ -1,13 +1,23 @@
 # State — Portal v2
 
 ## Current Phase
-Phase 7 partial — Pre-Ship Hardening. 4 of 7 tasks shipped. Remainder deferred to Phase 8.
+Phase 8 — Hardening + Polish Follow-up. SHIPPED.
 
 ## Status
 shipped
 
 ## Active Work
-None actively running — two deploys landed today (2026-04-17):
+None — Portal v2 is production-live on `portal.qualiasolutions.net`. Three deploys today (2026-04-17):
+
+**Deploy 3 (`dpl_4RTZH1Z8i99wcX5gnLgKb1xhJHdL`) — Phase 8 (5 of 6 tasks, Task 6 = deploy itself):**
+- Task 1: App Library server-side bypass guards on 7 portal pages + `/files` employee branch + dashboard quickActions filter
+- Task 2: `assertNotImpersonating` guard on 14 mutation entry points across 5 action files + view-as "Read-only" warning
+- Task 3: AI agent role filter + `meetings.getMeetings(scopeToUserId)` + 5 settings notification toggles
+- Task 4: Admin sidebar exposes all 7 subpages · `canAccessProject` parallelized · `getProjects`/`getProjectStats` use `getCachedUserRole` · `_finishedCache` → `React.cache()`
+- Task 5: 8 new loading/error boundaries · portal-hub htmlFor/id · npm audit 0 vulns in lockfile
+- Smoke: portal 307 · login 200 · health 200 (all green)
+
+
 
 **Deploy 1 (`dpl_C2TyijNfQ29bxh6T7fbYXvj7znYS`) — Phases 5, 6, auto-assign removal, clock-out hotfix:**
 - Portal Settings admin tab (auth policies / notification defaults / custom domain)
@@ -66,8 +76,10 @@ Out-of-band: framework v3.4.2-compat layer shipped to prod 2026-04-17 (commit `f
 - [x] Phase 3: Project Boards — DONE (verified 2026-04-13)
 - [x] Optimization sweep — ALL WAVES COMPLETE (2026-04-14)
 - [x] Phase 4: Portal Apps — DONE (shipped 2026-04-14, commit `e02c3b8`)
-- [ ] Phase 5: Admin Controls
-- [ ] Phase 6: Polish & Ship
+- [x] Phase 5: Admin Controls — DONE (verified 2026-04-17)
+- [x] Phase 6: Polish & Ship — DONE (shipped 2026-04-17)
+- [x] Phase 7: Pre-Ship Hardening — PARTIAL (4/7 shipped 2026-04-17, remainder in Phase 8)
+- [x] Phase 8: Hardening + Polish Follow-up — DONE (shipped 2026-04-17, `dpl_4RTZH1Z8i99wcX5gnLgKb1xhJHdL`)
 
 ## Phase 4 Deliverables
 - **Client Task Board**: Read-only ProjectBoard for clients + standalone /tasks route with cross-project view

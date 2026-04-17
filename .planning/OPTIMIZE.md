@@ -1,80 +1,83 @@
 ---
-date: 2026-04-13 21:20
+date: 2026-04-17
 mode: full
-critical: 5
-high: 15
-medium: 22
-low: 18
-status: critical_issues
+critical: 3
+high: 14
+medium: 17
+low: 12
+status: needs_attention
 ---
 
-# Optimization Report
-
-**Project:** qualia-erp | **Mode:** full | **Date:** 2026-04-13
+# Optimization Report — Portal v2 Pre-Deploy (Phase 6)
 
 ## Summary
 
-60 findings across 3 specialist agents (frontend, backend/security, performance). 5 critical security issues need immediate attention — missing auth checks on mutation endpoints and a stored XSS vector. 15 high-priority issues include broken authorization, SSRF risk, overly permissive RLS policies, N+1 query loops, and unbounded queries. The revalidatePath removal (269 calls) was already completed this session.
+Three specialist agents (frontend + backend + performance) scanned the codebase before the Phase 6 deploy. **3 CRITICAL** performance issues (all N+1 DB loops, 2 admin-only + 1 hot-path), **14 HIGH** (split between a11y gaps, overly permissive code paths, and sequential query chains), **17 MEDIUM**, **12 LOW**.
+
+**Deploy decision:** None of the criticals are imminent production outages. C1+C2 are admin-only migration helpers. C3 (clock-in stale session cleanup) is hot-path but degrades gracefully. Phase 6 can ship — criticals should be addressed in a follow-up phase.
 
 ## Critical Issues
 
 | # | Dimension | Finding | Location | Fix |
 |---|-----------|---------|----------|-----|
-| C1 | Security | Missing auth in `upsertIntegration` + `deleteIntegration` — any authenticated user can modify GitHub/Vercel integrations for any project | `app/actions/project-integrations.ts:145-239` | Add `supabase.auth.getUser()` + admin check |
-| C2 | Security | Missing auth in `removeProjectLink` — any authenticated user can delete integration links by ID | `app/actions/project-links.ts:75-90` | Add auth check + project access verification |
-| C3 | Security | Stored XSS via `dangerouslySetInnerHTML` in owner updates — regex transforms re-introduce raw HTML from user content | `components/today-dashboard/owner-updates-banner.tsx:73-91` | Replace with React elements instead of HTML string |
-| C4 | Performance | N+1 query loop in `linkTasksToPhases` — individual UPDATE per task (200 tasks = 200 round-trips) | `app/actions/pipeline.ts:816-828` | Batch UPDATE by phaseId using `.in('id', batchIds)` |
-| C5 | Performance | N+1 query loop in `migrateAllProjectsToGSD` — 5-8 sequential DB ops per project | `app/actions/pipeline.ts:1213-1330` | Restructure as batch operation |
+| C1 | Perf | N+1 sequential UPDATE per unlinked task | `app/actions/pipeline.ts:816-828` | Batch via `.in('id', ...)` or RPC |
+| C2 | Perf | N+1 in `migrateAllProjectsToGSD` — nested per-project × per-phase loops | `app/actions/pipeline.ts:404-411`, `:1213-1329` | Controlled-concurrency `Promise.all` batches of 5 |
+| C3 | Perf | N+1 stale session cleanup on every clock-in | `app/actions/work-sessions.ts:78-89` | `Promise.all` — each update is independent |
 
 ## High Priority
 
-| # | Dimension | Finding | Location | Fix |
-|---|-----------|---------|----------|-----|
-| H1 | Security | Broken authz in logos.ts — uses `user_id` instead of `profile_id` for workspace_members check | `app/actions/logos.ts:63-67,213-217` | Change `.eq('user_id',...)` to `.eq('profile_id',...)` |
-| H2 | Security | Actor ID spoofing in `createActivityLogEntry` — caller can impersonate any user | `app/actions/activity-feed.ts:114-149` | Always use `user.id`, remove `actorId` parameter |
-| H3 | Security | SSRF in `checkEnvironmentHealth` — fetches arbitrary URL from `project_environments.url` | `app/actions/deployments.ts:133-185` | Validate URL against whitelist, reject private IPs |
-| H4 | Security | Notification targeting — any user can send notifications to any other user | `app/actions/notifications.ts:22-55` | Restrict to admin/manager or internal-only |
-| H5 | Security | Overly permissive RLS — core tables use `USING (true)` allowing any authenticated user to read/delete everything | `supabase/migrations/20240101000000_initial_schema.sql` | Scope to workspace membership |
-| H6 | Security | Meetings table RLS is `USING (true)` — clients can access all internal meetings | `supabase/migrations/20251130000000_add_meetings.sql` | Scope to workspace members |
-| H7 | Frontend | Missing `error.tsx` on 11+ portal routes — errors wipe entire UI | `app/(portal)/billing/`, `schedule/`, `inbox/`, etc. | Add route-level error boundaries |
-| H8 | Frontend | Hydration mismatch — `new Date().getHours()` in 3 client components differs server vs client | `admin-dashboard-content.tsx:15`, `employee-dashboard-content.tsx:294`, `portal-dashboard-v2.tsx:77` | Move to useEffect + useState |
-| H9 | Frontend | Form labels not linked to inputs in project settings dialog (6 labels, 0 htmlFor) | `projects/[id]/project-detail-view.tsx:463-548` | Add `id` + `htmlFor` to all form controls |
-| H10 | Performance | N+1 stale session loop in `clockIn` — individual UPDATE per stale session | `app/actions/work-sessions.ts:76-87` | Bulk update with `.in('id', staleIds)` |
-| H11 | Performance | `getProjectById` uses `select('*')` + fetches ALL issues unbounded | `app/actions/projects.ts:357-404` | Explicit columns + `.limit(50)` on issues |
-| H12 | Performance | Sequential role+assignment queries on every poll for non-admin users | `app/actions/projects.ts:162-176,283-297` | Use cached role lookup from `shared.ts` |
-| H13 | Performance | `getScheduledTasks` no pagination, no date filter, includes completed | `app/actions/inbox.ts:938-1014` | Add date range + exclude Done + limit 100 |
-| H14 | Performance | `useTodaysTasks` fetches 200 tasks then filters client-side | `lib/swr.ts:637-638` | Create dedicated `getTodaysTasks()` with DB filter |
-| H15 | Performance | N+1 prerequisite UPDATE per phase in `initializeProjectPipeline` | `app/actions/pipeline.ts:404-411` | Batch update or RPC |
+| # | Dim | Finding | Location | Fix |
+|---|-----|---------|----------|-----|
+| FH1 | UI | Missing `loading.tsx` on `/activity`, `/tasks` | `app/(portal)/activity/`, `app/(portal)/tasks/` | Mirror `requests/loading.tsx` |
+| FH2 | UI | Missing `error.tsx` on 6 portal routes | activity, tasks, billing, files, messages, workspace | Lightweight copy of `projects/error.tsx` |
+| FH3 | A11y | Form labels without `htmlFor` in project settings dialog | `app/(portal)/projects/[id]/project-detail-view.tsx:478-570` | Add `id`/`htmlFor` pairs (6 fields) |
+| FH4 | A11y | Form labels without `htmlFor` in new-client dialog | `components/portal/portal-hub.tsx:873-886` | Add `id`/`htmlFor` pairs (2 fields) |
+| BH1 | Sec | Verify no permissive `USING (true)` RLS leak on projects/teams/comments | `supabase/migrations/20240103..20240104` | Query `pg_policies` in prod to confirm |
+| BH2 | Sec | `activity_log` CHECK constraint rejects `'deployment'`/`'code_push'`/`'feature_request'` — webhook activity silently lost | `supabase/migrations/20260301100000...` + webhook routes | Migration to expand CHECK constraint |
+| BH3 | Sec | Client-side `.update()` on `profiles` | `components/onboarding/internal-app-walkthrough.tsx:655-662` | Move to server action |
+| BH4 | Sec | Client-side `.update()` on `workspace_members` | `components/workspace-provider.tsx:120-135` | Server action `setDefaultWorkspace()` |
+| BH5 | Sec | `createActivityLogEntry` unvalidated `actionType`/`actionData` | `app/actions/activity-feed.ts:179-214` | Zod enum + schema |
+| BH6 | Sec | `getCrossProjectActivityFeed` trusts client-supplied `projectIds` (IDOR) | `app/actions/activity-feed.ts:117-174` | Filter IDs against user's accessible projects |
+| PH1 | Perf | `canAccessProject` = 3 sequential queries on hot path | `app/actions/shared.ts:218-241` | `Promise.all` admin + project fetch |
+| PH2 | Perf | `getProjects` sequential role + assignments check | `app/actions/projects.ts:162-176` | `getCachedUserRole` + `Promise.all` |
+| PH3 | Perf | `getProjectStats` 5th sequential query outside parallel batch | `app/actions/projects.ts:284-297` | Fold into existing `Promise.all` |
+| PH4 | Perf | Module-level `_finishedCache` unreliable on serverless | `app/actions/inbox.ts:64-65` | Replace with `React.cache()` |
 
-## Medium Priority
+## Medium Priority (17)
 
-| # | Dimension | Finding | Location | Fix |
-|---|-----------|---------|----------|-----|
-| M1 | Security | Missing Zod validation in 37+ mutation functions (raw string params) | `phases.ts`, `dashboard-notes.ts`, `owner-updates.ts`, etc. | Add Zod schemas for all mutation inputs |
-| M2 | Security | Missing auth in `startProvisioning` — triggers GitHub/Vercel resource creation | `app/actions/integrations.ts:385-443` | Add auth + admin check |
-| M3 | Security | Missing auth in `getProjectPhases` and `getProjectIntegrations` | `phases.ts:10-23`, `project-integrations.ts:125-140` | Add `supabase.auth.getUser()` |
-| M4 | Security | Cron route auth uses plain string comparison (not timing-safe) | All `app/api/cron/*/route.ts` | Use `crypto.timingSafeEqual()` |
-| M5 | Security | Sequential queries in `canModifyTask` — up to 4 round-trips per task mutation | `app/actions/shared.ts:168-209` | Combine into single RPC or Promise.all |
-| M6 | Frontend | No `React.memo` on any portal list item components | `portal-dashboard-v2.tsx`, `portal-roadmap.tsx`, `portal-request-list.tsx` | Wrap list items in React.memo |
-| M7 | Frontend | Billing page lacks Suspense boundary for progressive streaming | `app/(portal)/billing/page.tsx:28-29` | Extract async into `BillingLoader` + Suspense |
-| M8 | Frontend | Requests page lacks Suspense (4 sequential DB queries block render) | `app/(portal)/requests/page.tsx:8-84` | Extract async + Suspense |
-| M9 | Frontend | Messages page doesn't use portal-cache helpers (redundant auth query) | `app/(portal)/messages/page.tsx:12-26` | Use `getPortalAuthUser()` + `getPortalProfile()` |
-| M10 | Frontend | `PortalStatsRow` hardcodes USD currency for Outstanding stat | `components/portal/portal-stats-row.tsx:39-47` | Derive currency from invoice data |
-| M11 | Frontend | `framer-motion` full bundle imported for `useInView` only | `components/portal/portal-roadmap.tsx:7` | Import from `motion/react` or use Intersection Observer |
-| M12 | Frontend | Inbox page fetches 200 tasks server-side, filters in JS | `app/(portal)/inbox/page.tsx:22-28` | Move filter to DB query + add Suspense |
-| M13 | Frontend | Non-interactive action items look clickable (hover state but no handler) | `components/portal/portal-action-items.tsx:121-148` | Add Link/button or remove hover styling |
-| M14 | Frontend | `ProjectDetailView` has 11 useState + useEffect on every keystroke | `projects/[id]/project-detail-view.tsx:152-184` | Use useRef for change detection, extract form |
-| M15 | Performance | Financials `select('*')` on 3 tables simultaneously, no limit | `app/actions/financials.ts:112-115` | Explicit columns + date range filter |
-| M16 | Performance | Barrel export re-exports cause bundle inflation for client components | `app/actions.ts` + 38 client component imports | Migrate to direct domain imports |
-| M17 | Performance | No dynamic imports for heavy components (AI chat, health charts) | Only 1 `next/dynamic` usage in entire codebase | Wrap heavy components in `dynamic()` |
-| M18 | Performance | Virtualization only in 2 of N list views | Only `inbox-view.tsx` uses `useVirtualizer` | Add to project tasks, notifications |
-| M19 | Performance | Sequential project+issues queries in `getProjectById` | `app/actions/projects.ts:356-404` | Use `Promise.all()` |
-| M20 | Performance | `getWorkspaceHealthDashboard` refreshes materialized view on every read | `app/actions/health.ts:81` | Remove refresh from read path |
-| M21 | Performance | Client-side Supabase query in `usePortalProjectWithPhases` SWR hook | `lib/swr.ts:1277-1325` | Create server action, call from SWR |
-| M22 | Security | N+1 in `syncGitHubWebhooks` — sequential GitHub API calls per repo | `app/actions/integrations.ts:562-598` | `Promise.allSettled()` with batching |
+- **FM1-2** — Unnecessary `'use client'` on render-only `portal-billing-summary` / `portal-stats-row`
+- **FM3** — `WorkspaceCard` not memoized (search box re-renders all cards) — `portal-workspace-grid.tsx:35-106`
+- **FM4** — `client-access.tsx` table rows not memoized — extract `ClientRow` + memo
+- **FM5** — Tasks table renders all rows without pagination — `tasks-content.tsx:283-394`
+- **FM6** — `M1` closure stale-risk in `activity-content.tsx:150` (suppressed exhaustive-deps)
+- **BM1** — `updateFeatureRequest` missing Zod validation — `client-requests.ts:166-223`
+- **BM2** — No rate limiting on `/api/embeddings` (Google AI cost risk)
+- **BM3** — No rate limiting on `/api/tts` (ElevenLabs cost risk)
+- **BM4** — 22 instances of `.select('*')` across server actions (future column leak risk)
+- **BM5** — `session_reports` RLS enabled with zero policies (documented service-role-only footgun)
+- **PM1** — `tldraw.css` static import on board-canvas (admin-only, ~50-100KB)
+- **PM2** — `select('*')` on hot roadmap/financials/projectById paths
+- **PM3** — Barrel import in `lib/swr.ts` forces eval of 49 action stubs — direct imports
+- **PM4** — AI agent chat lacks message virtualization for long conversations
+- **PM5** — `getProjectStats` fifth sequential query outside parallel batch (redundant with PH3)
 
-## Low Priority
+## Low Priority (12)
 
-| # | Dimension | Finding | Location | Fix |
-|---|-----------|---------|----------|-----|
-| L1-L18 | Mixed | 18 low-priority findings including missing React.memo, select('*') on polled endpoints, date formatting inconsistencies, touch target sizes, dead animation code, service enumeration endpoints | Various | See individual findings in agent reports |
+- **FL1** — Duplicate utility functions across portal files (`formatRelativeTime` × 3, `getGreeting` × 3)
+- **FL2-5** — Dead props (`userName`, `userRole`), unused `PortalDashboardStats`, files empty-state spacing
+- **BL1** — `console.log` in production server actions (project-assignments, project-integrations)
+- **BL2** — `idempotency_keys` table has no purge cron
+- **PL1-3** — Minor: `getProjects` duplicates role check, large `console.error` payloads in board-canvas, `getProjectById` `select('*')`
+
+## Verdict
+
+Phase 6 is **ship-ready**. The 3 criticals are scoped to admin migration helpers (C1, C2) plus one hot-path (C3) that degrades gracefully.
+
+**Recommended follow-up phase (Phase 7: Optimization Fixes):**
+
+1. C1 / C2 / C3 — batch N+1 loops
+2. BH2 — activity_log CHECK constraint (silent data loss right now)
+3. BH6 — `getCrossProjectActivityFeed` IDOR
+4. FH3 / FH4 — form label a11y
+5. FH1 / FH2 — missing loading.tsx / error.tsx (7 routes)
+6. PH1 / PH2 / PH3 / PH4 — server-action parallelization + React.cache swap
