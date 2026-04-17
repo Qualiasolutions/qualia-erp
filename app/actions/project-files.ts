@@ -211,7 +211,7 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
       mime_type: file.type,
       uploaded_by: user.id,
       description: description || null,
-      phase_id: phaseId || null,
+      phase_name: phaseId || null,
       is_client_visible: isClientVisible === 'true',
     })
     .select()
