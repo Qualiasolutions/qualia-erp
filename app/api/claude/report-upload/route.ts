@@ -1,27 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { safeCompare } from '@/lib/auth-utils';
+import { extractBearer, hashToken, TOKEN_PREFIX, LEGACY_DEPRECATION_HEADERS } from '@/lib/api-auth';
 
 /**
  * POST /api/claude/report-upload
  *
  * Receives session reports from /qualia-report and stores them.
  * Links the report to the user's active work session.
- * Auth: X-API-Key header must match CLAUDE_API_KEY env var.
+ *
+ * Auth (dual path, v3.4.2 compat):
+ *   1. Authorization: Bearer qlt_* — per-user token, resolves to profile_id
+ *      (preferred — employee_email in the form body is IGNORED in this case)
+ *   2. X-API-Key: <CLAUDE_API_KEY> — legacy shared key, grandfathered
+ *      (employee_email form field is required to resolve the profile)
  *
  * Body (multipart/form-data):
  *   - file: The report DOCX/MD file
- *   - employee_email: The employee's email
+ *   - employee_email: The employee's email (required only for legacy auth)
  *   - project_name: The project name (for context)
  */
 export async function POST(request: NextRequest) {
-  const apiKey = request.headers.get('x-api-key');
-  const expectedKey = process.env.CLAUDE_API_KEY;
-
-  if (!expectedKey || !safeCompare(apiKey, expectedKey)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -30,6 +29,45 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  // ── Auth: try Bearer token first, fall back to X-API-Key (legacy) ──────
+  const bearer = extractBearer(request.headers.get('authorization'));
+  let tokenProfileId: string | null = null;
+  let isLegacyAuth = false;
+
+  if (bearer && bearer.startsWith(TOKEN_PREFIX)) {
+    const hash = hashToken(bearer);
+    const { data: token } = await supabase
+      .from('api_tokens')
+      .select('id, profile_id, expires_at, revoked_at')
+      .eq('token_hash', hash)
+      .maybeSingle();
+
+    if (!token) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+    if (token.revoked_at) {
+      return NextResponse.json({ error: 'Token revoked' }, { status: 401 });
+    }
+    if (new Date(token.expires_at) < new Date()) {
+      return NextResponse.json({ error: 'Token expired' }, { status: 401 });
+    }
+    tokenProfileId = token.profile_id;
+    // Fire-and-forget last_used_at
+    supabase
+      .from('api_tokens')
+      .update({ last_used_at: new Date().toISOString() })
+      .eq('id', token.id)
+      .then(() => {});
+  } else {
+    // Legacy X-API-Key path (sunset 2026-05-17)
+    const apiKey = request.headers.get('x-api-key');
+    const expectedKey = process.env.CLAUDE_API_KEY;
+    if (!expectedKey || !safeCompare(apiKey, expectedKey)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    isLegacyAuth = true;
+  }
 
   let formData: FormData;
   try {
@@ -46,27 +84,37 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing file' }, { status: 400 });
   }
 
-  if (!employeeEmail) {
-    return NextResponse.json({ error: 'Missing employee_email' }, { status: 400 });
-  }
+  // Resolve the profile: prefer the per-user token's owner. Only fall back
+  // to the form-supplied email when using the legacy shared key.
+  let profile: { id: string } | null = null;
 
-  // Find the employee profile — try exact email first, then domain match by first name
-  const emailNorm = employeeEmail.trim().toLowerCase();
-  let { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('email', emailNorm)
-    .single();
-
-  if (!profile) {
-    // Fallback: extract local part and try @qualiasolutions.net
-    const localPart = emailNorm.split('@')[0];
-    const { data: fallback } = await supabase
+  if (tokenProfileId) {
+    profile = { id: tokenProfileId };
+  } else {
+    if (!employeeEmail) {
+      return NextResponse.json(
+        { error: 'Missing employee_email (required for legacy auth)' },
+        { status: 400 }
+      );
+    }
+    const emailNorm = employeeEmail.trim().toLowerCase();
+    const { data: byEmail } = await supabase
       .from('profiles')
       .select('id')
-      .eq('email', `${localPart}@qualiasolutions.net`)
+      .eq('email', emailNorm)
       .single();
-    profile = fallback;
+    profile = byEmail;
+
+    if (!profile) {
+      // Fallback: extract local part and try @qualiasolutions.net
+      const localPart = emailNorm.split('@')[0];
+      const { data: fallback } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', `${localPart}@qualiasolutions.net`)
+        .single();
+      profile = fallback;
+    }
   }
 
   if (!profile) {
@@ -125,10 +173,15 @@ export async function POST(request: NextRequest) {
     await supabase.from('work_sessions').update({ report_url: publicUrl }).eq('id', session.id);
   }
 
-  return NextResponse.json({
-    success: true,
-    report_url: publicUrl,
-    session_id: session?.id || null,
-    project: projectName,
-  });
+  const responseHeaders = isLegacyAuth ? LEGACY_DEPRECATION_HEADERS : undefined;
+
+  return NextResponse.json(
+    {
+      success: true,
+      report_url: publicUrl,
+      session_id: session?.id || null,
+      project: projectName,
+    },
+    { headers: responseHeaders }
+  );
 }
