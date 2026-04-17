@@ -180,6 +180,7 @@ function NavLink({
 
   const baseClasses = cn(
     'group flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm transition-colors duration-150',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2',
     isActive
       ? 'border-l-2 border-primary bg-primary/[0.06] text-primary font-medium'
       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'

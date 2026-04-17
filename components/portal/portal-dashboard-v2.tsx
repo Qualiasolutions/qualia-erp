@@ -164,9 +164,14 @@ const ProjectCard = React.memo(function ProjectCard({
   const hasPhases = project.totalPhases > 0;
   const isComplete = progressPct === 100;
 
+  const ariaLabel = hasPhases
+    ? `${project.name} — ${progressPct}% complete — view project`
+    : `${project.name} — ${project.status} — view project`;
+
   return (
     <Link
       href={`/projects/${project.id}`}
+      aria-label={ariaLabel}
       className={cn(
         'group relative block cursor-pointer overflow-hidden rounded-xl border border-border bg-card transition-all duration-200',
         'hover:border-primary/20 hover:shadow-sm',
@@ -488,6 +493,7 @@ export function PortalDashboardV2({
               <Link
                 key={action.title}
                 href={action.href}
+                aria-label={`${action.title} — ${action.description}`}
                 className={cn(
                   'group flex items-center gap-4 rounded-xl border border-border bg-card p-5',
                   'cursor-pointer transition-all duration-200',

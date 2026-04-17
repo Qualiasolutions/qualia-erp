@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { getProjectStatusColor } from '@/lib/portal-styles';
@@ -91,6 +91,46 @@ export function PortalProjectTabs({
   projectId,
 }: PortalProjectTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const tabRefs = useRef<Record<TabId, HTMLButtonElement | null>>({
+    overview: null,
+    roadmap: null,
+    board: null,
+    files: null,
+    updates: null,
+  });
+
+  const focusTab = useCallback((id: TabId) => {
+    setActiveTab(id);
+    // Defer focus to after state flushes so tabIndex reflects the new active tab
+    requestAnimationFrame(() => {
+      tabRefs.current[id]?.focus();
+    });
+  }, []);
+
+  const handleTabKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const ids = tabs.map((t) => t.id);
+      const currentIndex = ids.indexOf(activeTab);
+      if (currentIndex === -1) return;
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const next = ids[(currentIndex + 1) % ids.length];
+        focusTab(next);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const prev = ids[(currentIndex - 1 + ids.length) % ids.length];
+        focusTab(prev);
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        focusTab(ids[0]);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        focusTab(ids[ids.length - 1]);
+      }
+    },
+    [activeTab, focusTab]
+  );
 
   // Files state — fetch lazily when tab is activated
   const [files, setFiles] = useState<ProjectFileWithUploader[]>([]);
@@ -164,18 +204,30 @@ export function PortalProjectTabs({
     <div>
       {/* Tab bar */}
       <nav className="border-b border-border" aria-label="Project tabs">
-        <div className="flex gap-6" role="tablist">
+        <div
+          className="flex gap-6"
+          role="tablist"
+          aria-orientation="horizontal"
+          onKeyDown={handleTabKeyDown}
+        >
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
+                ref={(el) => {
+                  tabRefs.current[tab.id] = el;
+                }}
                 type="button"
                 role="tab"
+                id={`tab-${tab.id}`}
                 aria-selected={isActive}
+                aria-controls={`tabpanel-${tab.id}`}
+                tabIndex={isActive ? 0 : -1}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
                   'relative flex cursor-pointer items-center gap-2 pb-3 text-sm transition-colors duration-150',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2',
                   isActive
                     ? 'font-medium text-primary'
                     : 'text-muted-foreground hover:text-foreground'
@@ -193,7 +245,12 @@ export function PortalProjectTabs({
       </nav>
 
       {/* Tab content */}
-      <div className="mt-6" role="tabpanel">
+      <div
+        className="mt-6"
+        role="tabpanel"
+        id={`tabpanel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+      >
         {activeTab === 'overview' && (
           <OverviewTab
             project={project}

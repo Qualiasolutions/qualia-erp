@@ -146,7 +146,8 @@ export function MessageComposer({ projectId, userRole, onMessageSent }: MessageC
             'disabled:cursor-not-allowed disabled:opacity-50',
             'max-h-[120px] min-h-[44px]'
           )}
-          aria-label="Message input"
+          aria-label="Message"
+          aria-keyshortcuts="Enter"
         />
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
