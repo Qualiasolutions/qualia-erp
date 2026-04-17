@@ -27,6 +27,7 @@ jest.mock('@/lib/supabase/server', () => ({
 jest.mock('@/app/actions/shared', () => ({
   isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
   createActivity: jest.fn().mockResolvedValue(undefined),
+  getCachedUserRole: jest.fn().mockResolvedValue('admin'),
 }));
 
 jest.mock('@/app/actions/auto-assign', () => ({

@@ -32,6 +32,7 @@ jest.mock('@/app/actions/shared', () => ({
   createActivity: jest.fn().mockResolvedValue(undefined),
   canDeleteProject: jest.fn(),
   isUserAdmin: jest.fn(),
+  getCachedUserRole: jest.fn().mockResolvedValue('admin'),
 }));
 
 jest.mock('@/lib/email', () => ({

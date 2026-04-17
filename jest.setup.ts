@@ -23,6 +23,24 @@ jest.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+// Mock Next.js headers — default to empty cookie store so server actions that call
+// cookies() (e.g. assertNotImpersonating) don't throw "called outside request scope".
+// Individual test files can override via jest.mock('next/headers', ...) at the top.
+jest.mock('next/headers', () => ({
+  cookies: jest.fn(async () => ({
+    get: jest.fn(() => undefined),
+    getAll: jest.fn(() => []),
+    has: jest.fn(() => false),
+    set: jest.fn(),
+    delete: jest.fn(),
+  })),
+  headers: jest.fn(async () => ({
+    get: jest.fn(() => null),
+    has: jest.fn(() => false),
+    entries: jest.fn(() => [][Symbol.iterator]()),
+  })),
+}));
+
 // Mock Next.js image - use function syntax to avoid JSX parsing issues
 jest.mock('next/image', () => ({
   __esModule: true,

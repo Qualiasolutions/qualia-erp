@@ -19,6 +19,7 @@ jest.mock('@/app/actions/workspace', () => ({
 
 jest.mock('@/app/actions/shared', () => ({
   isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
+  getCachedUserRole: jest.fn().mockResolvedValue('admin'),
 }));
 
 const supabase = {
