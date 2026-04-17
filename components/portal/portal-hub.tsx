@@ -873,10 +873,14 @@ export function PortalHub({
             <div className="space-y-4">
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground/70">
+                  <label
+                    htmlFor="new-client-name"
+                    className="mb-1.5 block text-xs font-medium text-muted-foreground/70"
+                  >
                     Client Name
                   </label>
                   <Input
+                    id="new-client-name"
                     type="text"
                     value={newClientName}
                     onChange={(e) => setNewClientName(e.target.value)}
@@ -885,10 +889,14 @@ export function PortalHub({
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground/70">
+                  <label
+                    htmlFor="new-client-email"
+                    className="mb-1.5 block text-xs font-medium text-muted-foreground/70"
+                  >
                     Contact Email
                   </label>
                   <Input
+                    id="new-client-email"
                     type="email"
                     value={newClientEmail}
                     onChange={(e) => setNewClientEmail(e.target.value)}
