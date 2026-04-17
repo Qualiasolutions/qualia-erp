@@ -164,21 +164,21 @@ export async function getProjects(workspaceId?: string | null) {
     },
   ] = await Promise.all([query, supabase.auth.getUser()]);
 
-  // Non-admin users only see assigned projects
+  // Clients only see their linked projects; internal users (admin/manager/employee)
+  // see everything in the workspace.
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single();
-    if (profile?.role !== 'admin') {
-      const { data: assignments } = await supabase
-        .from('project_assignments')
+    if (profile?.role === 'client') {
+      const { data: links } = await supabase
+        .from('client_projects')
         .select('project_id')
-        .eq('employee_id', user.id)
-        .is('removed_at', null);
-      const assignedIds = new Set((assignments || []).map((a) => a.project_id));
-      return (projects || []).filter((p) => assignedIds.has(p.id));
+        .eq('client_id', user.id);
+      const clientIds = new Set((links || []).map((l) => l.project_id));
+      return (projects || []).filter((p) => clientIds.has(p.id));
     }
   }
 
@@ -285,21 +285,21 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
   }
   const githubProjectIds = new Set((githubData || []).map((i) => i.project_id));
 
-  // Check if current user is an employee (filter to assigned projects only)
-  let assignedProjectIds: Set<string> | null = null;
+  // Clients only see their linked projects. Internal users (admin/manager/employee)
+  // see every project in the workspace — no assignment-based filtering.
+  let clientProjectIds: Set<string> | null = null;
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single();
-    if (profile?.role !== 'admin') {
-      const { data: assignments } = await supabase
-        .from('project_assignments')
+    if (profile?.role === 'client') {
+      const { data: links } = await supabase
+        .from('client_projects')
         .select('project_id')
-        .eq('employee_id', user.id)
-        .is('removed_at', null);
-      assignedProjectIds = new Set((assignments || []).map((a) => a.project_id));
+        .eq('client_id', user.id);
+      clientProjectIds = new Set((links || []).map((l) => l.project_id));
     }
   }
 
@@ -334,9 +334,9 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
     has_github: githubProjectIds.has(p.id as string),
   }));
 
-  // Filter for employees: show assigned projects + all demo projects
-  const visibleProjects = assignedProjectIds
-    ? allProjects.filter((p) => assignedProjectIds!.has(p.id) || p.status === 'Demos')
+  // Filter only for clients (linked projects only); internal users see all.
+  const visibleProjects = clientProjectIds
+    ? allProjects.filter((p) => clientProjectIds!.has(p.id))
     : allProjects;
 
   const sortByOrder = (a: ProjectStatsData, b: ProjectStatsData) => a.sort_order - b.sort_order;
