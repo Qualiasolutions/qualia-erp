@@ -448,150 +448,203 @@ export function ProjectDetailView({
 
       {/* Settings Dialog */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Project Settings</DialogTitle>
-            <DialogDescription>Configure project metadata and visibility</DialogDescription>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-xl tracking-tight">Project Settings</DialogTitle>
+            <DialogDescription>
+              Configure project metadata, branding, and visibility.
+            </DialogDescription>
           </DialogHeader>
 
-          {/* Logo */}
-          <div className="flex justify-center py-2">
-            <LogoUpload
-              entityType="project"
-              entityId={project.id}
-              currentLogoUrl={project.logo_url}
-              fallbackIcon={<ProjectTypeIcon className="h-8 w-8" />}
-              fallbackBgColor={selectedProjectType?.color.split(' ')[1] || 'bg-muted'}
-              fallbackIconColor={
-                selectedProjectType?.color.split(' ')[0] || 'text-muted-foreground'
-              }
-              size="lg"
-              onLogoChange={(newUrl) => {
-                setProject((prev) => ({ ...prev, logo_url: newUrl }));
-              }}
-            />
+          <div className="space-y-6">
+            {/* Branding section */}
+            <section className="rounded-xl border border-border bg-muted/30 p-5">
+              <h3 className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Branding
+              </h3>
+              <div className="flex items-center gap-5">
+                <LogoUpload
+                  entityType="project"
+                  entityId={project.id}
+                  currentLogoUrl={project.logo_url}
+                  fallbackIcon={<ProjectTypeIcon className="h-7 w-7" />}
+                  fallbackBgColor={selectedProjectType?.color.split(' ')[1] || 'bg-muted'}
+                  fallbackIconColor={
+                    selectedProjectType?.color.split(' ')[0] || 'text-muted-foreground'
+                  }
+                  size="lg"
+                  onLogoChange={(newUrl) => {
+                    setProject((prev) => ({ ...prev, logo_url: newUrl }));
+                  }}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground">Project logo</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    PNG, JPG, WebP, or GIF up to 5 MB. Square images work best.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Details section */}
+            <section className="space-y-4">
+              <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Details
+              </h3>
+
+              <div className="space-y-1.5">
+                <label htmlFor="project-name" className="text-xs font-medium text-muted-foreground">
+                  Project Name
+                </label>
+                <Input
+                  id="project-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="h-10 rounded-lg"
+                  placeholder="e.g. The Pantry — Demo"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="project-description"
+                  className="text-xs font-medium text-muted-foreground"
+                >
+                  Description / Goal
+                </label>
+                <Textarea
+                  id="project-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="min-h-[100px] resize-none rounded-lg"
+                  placeholder="What is this project about? What's the goal?"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="project-type"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Type
+                  </label>
+                  <Select
+                    value={projectType || 'none'}
+                    onValueChange={(v) => setProjectType(v === 'none' ? null : (v as ProjectType))}
+                  >
+                    <SelectTrigger id="project-type" className="h-10 rounded-lg">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="none">No type</SelectItem>
+                      {PROJECT_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          <div className="flex items-center gap-2">
+                            <t.icon className="h-4 w-4" />
+                            {t.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="project-lead"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Lead
+                  </label>
+                  <Select
+                    value={leadId || 'none'}
+                    onValueChange={(v) => setLeadId(v === 'none' ? null : v)}
+                  >
+                    <SelectTrigger id="project-lead" className="h-10 rounded-lg">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="none">Unassigned</SelectItem>
+                      {profiles.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.full_name || p.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="project-client"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Client
+                  </label>
+                  <Select
+                    value={clientId || 'none'}
+                    onValueChange={(v) => setClientId(v === 'none' ? null : v)}
+                  >
+                    <SelectTrigger id="project-client" className="h-10 rounded-lg">
+                      <SelectValue placeholder="No client" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="none">No client</SelectItem>
+                      {clients.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.display_name || c.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="project-target-date"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Target Launch Date
+                  </label>
+                  <Input
+                    id="project-target-date"
+                    type="date"
+                    value={targetDate}
+                    onChange={(e) => setTargetDate(e.target.value)}
+                    className="h-10 rounded-lg"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {error && (
+              <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-500">
+                {error}
+              </div>
+            )}
           </div>
 
-          {/* Form fields */}
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Project Name</label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="h-10 rounded-lg"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Description / Goal
-              </label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="min-h-[100px] resize-none rounded-lg"
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Type</label>
-                <Select
-                  value={projectType || 'none'}
-                  onValueChange={(v) => setProjectType(v === 'none' ? null : (v as ProjectType))}
-                >
-                  <SelectTrigger className="h-10 rounded-lg">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No type</SelectItem>
-                    {PROJECT_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        <div className="flex items-center gap-2">
-                          <t.icon className="h-4 w-4" />
-                          {t.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Lead</label>
-                <Select
-                  value={leadId || 'none'}
-                  onValueChange={(v) => setLeadId(v === 'none' ? null : v)}
-                >
-                  <SelectTrigger className="h-10 rounded-lg">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Unassigned</SelectItem>
-                    {profiles.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.full_name || p.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Client</label>
-              <Select
-                value={clientId || 'none'}
-                onValueChange={(v) => setClientId(v === 'none' ? null : v)}
-              >
-                <SelectTrigger className="h-10 rounded-lg">
-                  <SelectValue placeholder="No client" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No client</SelectItem>
-                  {clients.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.display_name || c.id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Target Launch Date
-              </label>
-              <Input
-                type="date"
-                value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-                className="h-10 rounded-lg"
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-500">
-              {error}
-            </div>
-          )}
-
-          <DialogFooter className="gap-2 sm:justify-between">
+          <DialogFooter className="mt-2 gap-2 border-t border-border pt-5 sm:justify-between">
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={handleDelete}
               disabled={isPending}
-              className="h-10 w-10 text-red-500 hover:bg-red-500/10 hover:text-red-500"
+              className="h-10 cursor-pointer gap-2 text-red-500 hover:bg-red-500/10 hover:text-red-500"
             >
               <Trash2 className="h-4 w-4" />
+              Delete project
             </Button>
             <Button
               onClick={handleSave}
               disabled={saving || !hasChanges}
-              className={cn('h-10 min-w-[140px] rounded-lg', saved && 'bg-emerald-600')}
+              className={cn(
+                'h-10 min-w-[140px] cursor-pointer rounded-lg',
+                saved && 'bg-emerald-600 hover:bg-emerald-700'
+              )}
             >
-              {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
+              {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
