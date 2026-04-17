@@ -73,7 +73,7 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
   const overdueCount = items.filter((item) => getUrgency(item.due_date) === 'overdue').length;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6">
+    <div className="rounded-xl border border-border bg-card p-6">
       {/* Section header */}
       <div className="mb-5 flex items-center gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

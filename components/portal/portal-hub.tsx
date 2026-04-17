@@ -19,6 +19,7 @@ import {
   Plus,
   UserPlus,
   Trash2,
+  Users,
 } from 'lucide-react';
 import {
   setupPortalForClient,
@@ -407,7 +408,7 @@ export function PortalHub({
         <button
           onClick={() => setFilter('with-access')}
           className={cn(
-            'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+            'flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
             filter === 'with-access'
               ? 'bg-emerald-500/10 text-emerald-600'
               : 'text-muted-foreground hover:text-foreground'
@@ -422,7 +423,7 @@ export function PortalHub({
         <button
           onClick={() => setFilter('no-access')}
           className={cn(
-            'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+            'flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
             filter === 'no-access'
               ? 'bg-amber-500/10 text-amber-600'
               : 'text-muted-foreground hover:text-foreground'
@@ -449,8 +450,10 @@ export function PortalHub({
 
       {/* Client Grid */}
       {filtered.length === 0 ? (
-        <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-border">
-          <p className="text-sm text-muted-foreground">No clients found</p>
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-dashed border-border px-4 text-center">
+          <Users className="h-12 w-12 text-muted-foreground/30" />
+          <h3 className="mt-4 text-base font-medium text-foreground">No clients found</h3>
+          <p className="mt-1 text-sm text-muted-foreground">Try adjusting your search or filter.</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

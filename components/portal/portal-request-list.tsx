@@ -334,8 +334,9 @@ export function PortalRequestList({ requests, currentUserId, userRole }: PortalR
         ))}
 
         {filtered.length === 0 && (
-          <div className="flex min-h-[200px] flex-col items-center justify-center">
-            <p className="text-sm text-muted-foreground">
+          <div className="flex min-h-[200px] flex-col items-center justify-center px-4 text-center">
+            <Lightbulb className="h-12 w-12 text-muted-foreground/30" />
+            <p className="mt-4 text-sm text-muted-foreground">
               No requests matching &ldquo;{statusTabs.find((t) => t.value === statusFilter)?.label}
               &rdquo;
             </p>

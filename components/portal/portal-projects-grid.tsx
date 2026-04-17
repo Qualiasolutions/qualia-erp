@@ -178,9 +178,7 @@ export function PortalProjectsGrid({ projects, progressMap }: PortalProjectsGrid
       {filtered.length === 0 ? (
         <div className="flex min-h-[320px] flex-col items-center justify-center px-4">
           <FolderOpen className="h-12 w-12 text-muted-foreground/30" />
-          <h3 className="mt-4 text-base font-semibold tracking-tight text-foreground">
-            No projects found
-          </h3>
+          <h3 className="mt-4 text-base font-medium text-foreground">No projects found</h3>
           <p className="mt-1 max-w-xs text-center text-sm text-muted-foreground/60">
             {search.trim()
               ? 'Try adjusting your search term.'

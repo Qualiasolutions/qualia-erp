@@ -296,7 +296,7 @@ function RecentActivitySection({
   isLoading: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-6">
+    <div className="rounded-xl border border-border bg-card p-6">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Recent Activity
@@ -313,9 +313,9 @@ function RecentActivitySection({
         <ActivityLoading />
       ) : activity.length === 0 ? (
         <div className="flex flex-col items-center justify-center px-4 py-8 text-center">
-          <Activity className="mb-2 h-10 w-10 text-muted-foreground/20" aria-hidden="true" />
-          <p className="text-sm font-medium text-foreground">No recent activity</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <Activity className="h-12 w-12 text-muted-foreground/30" aria-hidden="true" />
+          <h3 className="mt-4 text-base font-medium text-foreground">No recent activity</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
             Updates will appear here as work progresses.
           </p>
         </div>
@@ -357,7 +357,7 @@ function RecentActivitySection({
                     </p>
                   )}
                 </div>
-                <span className="shrink-0 text-[11px] text-muted-foreground/40">
+                <span className="shrink-0 text-[11px] text-muted-foreground/60">
                   {formatRelativeTime(item.created_at)}
                 </span>
               </div>
@@ -415,9 +415,15 @@ export function PortalDashboardV2({
       {isError && !isLoading && (
         <div
           role="alert"
-          className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          className="flex items-center justify-between rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
-          Something went wrong loading your dashboard. Data shown may be outdated.
+          <span>Something went wrong loading your dashboard. Data shown may be outdated.</span>
+          <button
+            onClick={() => window.location.reload()}
+            className="ml-3 cursor-pointer whitespace-nowrap underline underline-offset-4 hover:text-destructive/80"
+          >
+            Refresh page
+          </button>
         </div>
       )}
 
@@ -452,12 +458,9 @@ export function PortalDashboardV2({
               <ProjectsLoading />
             ) : projects.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card px-6 py-12 text-center">
-                <PackageOpen
-                  className="mb-3 h-10 w-10 text-muted-foreground/20"
-                  aria-hidden="true"
-                />
-                <p className="text-sm font-medium text-foreground">No active projects</p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <PackageOpen className="h-12 w-12 text-muted-foreground/30" aria-hidden="true" />
+                <h3 className="mt-4 text-base font-medium text-foreground">No active projects</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Your projects will appear here once they begin.
                 </p>
               </div>
