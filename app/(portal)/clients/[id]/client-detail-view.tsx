@@ -196,6 +196,7 @@ export function ClientDetailView({
               currentLogoUrl={client.logo_url}
               fallbackIcon={<Building2 className="h-10 w-10" />}
               fallbackBgColor="bg-gradient-to-br from-qualia-500 via-qualia-600 to-qualia-700"
+              // text-white ok: sits on guaranteed-dark teal gradient fallbackBgColor
               fallbackIconColor="text-white"
               size="xl"
               onLogoChange={(newUrl) => {

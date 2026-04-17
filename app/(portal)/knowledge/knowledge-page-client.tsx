@@ -245,6 +245,7 @@ function StepCard({
     >
       {/* Timeline line + dot */}
       <div className="flex flex-col items-center pt-1">
+        {/* text-white ok: sits on solid bg-amber-500 milestone dot */}
         <div
           className={cn(
             'relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold',

@@ -114,10 +114,12 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
                     {feature.phase_name}
                   </Badge>
                 )}
+                {/* text-white ok: dark gradient overlay (from-black/60) */}
                 <h3 className="truncate text-sm font-semibold text-white">
                   {feature.description || feature.original_name}
                 </h3>
                 {feature.created_at && (
+                  /* text-white ok: dark gradient overlay (from-black/60) */
                   <p className="text-xs text-white/80">
                     {format(new Date(feature.created_at), 'MMM d, yyyy')}
                   </p>
