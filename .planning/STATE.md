@@ -1,19 +1,46 @@
 # State — Portal v2
 
 ## Current Phase
-Phase 6: Polish & Ship — DONE.
-Portal v2 roadmap complete. Shipped to production 2026-04-17.
+Phase 7 partial — Pre-Ship Hardening. 4 of 7 tasks shipped. Remainder deferred to Phase 8.
 
 ## Status
-done
+shipped
 
 ## Active Work
-None — Portal v2 all 6 phases complete. Ready for handoff / new milestone.
+None actively running — two deploys landed today (2026-04-17):
+
+**Deploy 1 (`dpl_C2TyijNfQ29bxh6T7fbYXvj7znYS`) — Phases 5, 6, auto-assign removal, clock-out hotfix:**
+- Portal Settings admin tab (auth policies / notification defaults / custom domain)
+- Client Access tab wired to real `lastSignIn` / `isActive`
+- Responsive + dark-mode audit sweep, a11y hardening (nav landmark / tab ARIA / aria-live / labels / 7 memoized list rows)
+- Auto-population of tasks on employee assignment DISABLED (per Fawzi)
+- Clock-out modal: session report now RECOMMENDED not required (unblocks Hasan + future users)
+
+**Deploy 2 (`dpl_GnoyTbKpmoEnWDj4cZgqJTA66qpn`) — Phase 7 Tasks 1/2/3/7 (partial):**
+- Server-action role guards on `updateProject`, `upsertIntegration`, `deleteIntegration`, phases CRUD
+- `getCrossProjectActivityFeed` IDOR closed (filters projectIds against user's accessible set)
+- `updateFeatureRequest` Zod-validated
+- Route guards: `/inbox`, `/schedule`, `/agent` redirect clients (middleware + page-level)
+- 5 admin pages (tasks, reports, attendance, migrate, agent) split into server wrappers with `isPortalAdminRole` SSR guards
+- `admin/board` uses `getUser()` (no stale claims)
+- `custom_access_token_hook` defaults missing profiles to `'client'` (least-privilege)
+- Task 1 (RLS) verified already clean — no migration needed
+
+## Deferred to Phase 8
+Remaining deep-review findings (none are ship-blockers; no active production incidents):
+
+- **Task 4** — Employee/client permission leaks: AI agent `quickActions` role filter; `/files` employee branch using `project_assignments`; `/schedule` meetings scoping; `getClientInvoices` scope by project_ids; `getClientVisibleTasks` internal-only filter; settings notifications missing 2 toggles (task_assigned, task_due_soon); `NewProjectModal` already gated via canCreate.
+- **Task 5** — App Library server-side bypass guards on 7 pages (messages/billing/files/requests/tasks/activity/settings/notifications) so disabled apps block direct URL access for clients, not just hide the nav link.
+- **Task 6** — Impersonation mutation guard — prevent write actions while admin is in view-as mode.
+- **Task 7 remainder** — Admin sidebar nav links for assignments/reports/board (currently only 2 of 7 admin subpages discoverable).
+- All OPTIMIZE.md medium/low findings (N+1 in admin migrations, loading.tsx/error.tsx boundaries, form htmlFor, rate limiting, 46 hardcoded role checks, etc.)
+
+Plus: 25 Dependabot vulnerabilities on default branch (3 critical, 7 high, 13 moderate, 2 low) — npm audit needed.
 
 ---
 
-### Completed: Phase 6 built (2026-04-17)
-5 tasks / 3 waves / 4 commits. Gates: tsc 0 / lint 0 errors / build success. Migration applied via Supabase MCP. `/admin/board` restored.
+### Completed: Phase 6 (2026-04-17)
+5 tasks / 3 waves / 4 commits. Migration applied via Supabase MCP. `/admin/board` restored.
 
 ### Completed: Phase 5 verified PASS (2026-04-17)
 4 tasks / 3 waves / 4 commits / 21 contracts all PASS / tsc clean / all 8 success criteria scored ≥3.
