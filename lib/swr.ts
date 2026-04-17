@@ -104,6 +104,7 @@ export const cacheKeys = {
   portalAppConfig: (workspaceId: string, clientId?: string) =>
     `portal-app-config-${workspaceId}-${clientId || 'default'}`,
   portalBranding: (workspaceId: string) => `portal-branding-${workspaceId}`,
+  portalSettings: (workspaceId: string) => `portal-settings-${workspaceId}`,
 } as const;
 
 // ============================================================================
@@ -2082,4 +2083,64 @@ export function invalidatePortalBranding(workspaceId: string, immediate = true) 
   } else {
     mutate(cacheKeys.portalBranding(workspaceId));
   }
+}
+
+/**
+ * Invalidate portal settings cache
+ */
+export function invalidatePortalSettings(workspaceId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.portalSettings(workspaceId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.portalSettings(workspaceId));
+  }
+}
+
+/**
+ * Hook to fetch portal settings for a workspace.
+ * No auto-refresh — manually invalidate after updates.
+ */
+export function usePortalSettings(workspaceId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidateMutate,
+  } = useSWR(
+    workspaceId ? cacheKeys.portalSettings(workspaceId) : null,
+    async () => {
+      const { getPortalSettings } = await import('@/app/actions/portal-admin');
+      const result = await getPortalSettings(workspaceId!);
+      if (!result.success) throw new Error(result.error);
+      return result.data as {
+        workspace_id: string;
+        require_2fa_for_clients: boolean;
+        session_duration_hours: number;
+        notification_defaults: {
+          task_assigned: boolean;
+          task_due_soon: boolean;
+          project_update: boolean;
+          meeting_reminder: boolean;
+          client_activity: boolean;
+        };
+        custom_domain: string | null;
+        cname_target: string;
+        domain_verified: boolean;
+      };
+    },
+    {
+      ...swrConfig,
+      refreshInterval: 0,
+      onErrorRetry,
+    }
+  );
+
+  return {
+    settings: data ?? null,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidateMutate,
+  };
 }
