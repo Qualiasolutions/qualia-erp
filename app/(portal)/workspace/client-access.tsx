@@ -4,15 +4,14 @@ import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Users } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 
 interface PortalClient {
   id: string;
   full_name: string | null;
   email: string | null;
-  projectCount: number;
+  lastSignIn: string | null;
   isActive: boolean;
-  lastLogin: string | null;
+  projects: Array<{ id: string; name: string }>;
 }
 
 interface ClientAccessProps {
@@ -21,80 +20,37 @@ interface ClientAccessProps {
 
 export function ClientAccess({ workspaceId }: ClientAccessProps) {
   const [clients, setClients] = useState<PortalClient[]>([]);
+  const [totalActive, setTotalActive] = useState(0);
+  const [totalInactive, setTotalInactive] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchClients() {
-      if (!workspaceId) return;
-
-      try {
-        const supabase = createClient();
-
-        // Get client_projects with associated profiles
-        const { data: assignments, error: assignError } = await supabase
-          .from('client_projects')
-          .select('client_id, project_id');
-
-        if (assignError) {
-          throw assignError;
-        }
-
-        if (!assignments || assignments.length === 0) {
-          setClients([]);
-          setLoading(false);
-          return;
-        }
-
-        // Count projects per client
-        const projectCounts = new Map<string, number>();
-        for (const a of assignments) {
-          projectCounts.set(a.client_id, (projectCounts.get(a.client_id) ?? 0) + 1);
-        }
-
-        const uniqueClientIds = [...projectCounts.keys()];
-
-        // Fetch profiles for these clients
-        const { data: profiles, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, full_name, email, updated_at')
-          .in('id', uniqueClientIds)
-          .eq('role', 'client');
-
-        if (profileError) {
-          throw profileError;
-        }
-
-        const now = Date.now();
-        const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-
-        const portalClients: PortalClient[] = (profiles ?? []).map((p) => {
-          const lastLogin = p.updated_at || null;
-          const lastLoginMs = lastLogin ? new Date(lastLogin).getTime() : 0;
-          return {
-            id: p.id,
-            full_name: p.full_name,
-            email: p.email,
-            projectCount: projectCounts.get(p.id) ?? 0,
-            isActive: lastLoginMs > 0 && now - lastLoginMs < THIRTY_DAYS_MS,
-            lastLogin,
-          };
-        });
-
-        // Sort by name
-        portalClients.sort((a, b) =>
-          (a.full_name ?? a.email ?? '').localeCompare(b.full_name ?? b.email ?? '')
-        );
-
-        setClients(portalClients);
-      } catch (error) {
-        console.error('Failed to fetch portal clients:', error);
-        toast.error('Failed to load client data');
-      } finally {
+    async function load() {
+      const { getPortalClientManagement } = await import('@/app/actions/client-portal');
+      const result = await getPortalClientManagement();
+      if (!result.success) {
+        toast.error(result.error || 'Failed to load client data');
         setLoading(false);
+        return;
       }
+      const payload = result.data as {
+        clients: Array<{
+          id: string;
+          full_name: string | null;
+          email: string | null;
+          lastSignIn: string | null;
+          isActive: boolean;
+          projects: Array<{ id: string; name: string }>;
+        }>;
+        totalActive: number;
+        totalInactive: number;
+      };
+      setClients(payload.clients);
+      setTotalActive(payload.totalActive);
+      setTotalInactive(payload.totalInactive);
+      setLoading(false);
     }
-
-    fetchClients();
+    load();
   }, [workspaceId]);
 
   if (loading) {
@@ -123,76 +79,81 @@ export function ClientAccess({ workspaceId }: ClientAccessProps) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/30">
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Name
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Email
-              </th>
-              <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Projects
-              </th>
-              <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground sm:table-cell">
-                Last Login
-              </th>
-              <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {clients.map((client, index) => (
-              <tr
-                key={client.id}
-                className={
-                  index < clients.length - 1
-                    ? 'border-b border-border/40 transition-colors duration-150 hover:bg-muted/20'
-                    : 'transition-colors duration-150 hover:bg-muted/20'
-                }
-              >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                      {(client.full_name ?? client.email ?? '?').charAt(0).toUpperCase()}
-                    </div>
-                    <span className="font-medium text-foreground">
-                      {client.full_name ?? 'Unnamed Client'}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">{client.email ?? '-'}</td>
-                <td className="px-4 py-3 text-center tabular-nums text-foreground">
-                  {client.projectCount}
-                </td>
-                <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
-                  {client.lastLogin
-                    ? new Date(client.lastLogin).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
-                    : '—'}
-                </td>
-                <td className="px-4 py-3 text-center">
-                  <span
-                    className={
-                      client.isActive
-                        ? 'inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
-                        : 'inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground'
-                    }
-                  >
-                    {client.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">
+        {totalActive} active · {totalInactive} inactive
+      </p>
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Email
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Projects
+                </th>
+                <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground sm:table-cell">
+                  Last Login
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Status
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {clients.map((client, index) => (
+                <tr
+                  key={client.id}
+                  className={
+                    index < clients.length - 1
+                      ? 'border-b border-border/40 transition-colors duration-150 hover:bg-muted/20'
+                      : 'transition-colors duration-150 hover:bg-muted/20'
+                  }
+                >
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                        {(client.full_name ?? client.email ?? '?').charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-medium text-foreground">
+                        {client.full_name ?? 'Unnamed Client'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{client.email ?? '-'}</td>
+                  <td className="px-4 py-3 text-center tabular-nums text-foreground">
+                    {client.projects.length}
+                  </td>
+                  <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
+                    {client.lastSignIn
+                      ? new Date(client.lastSignIn).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
+                      : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span
+                      className={
+                        client.isActive
+                          ? 'inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+                          : 'inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground'
+                      }
+                    >
+                      {client.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
