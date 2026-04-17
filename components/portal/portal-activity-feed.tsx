@@ -14,7 +14,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { fadeInClasses } from '@/lib/transitions';
-import { useState, useTransition } from 'react';
+import { memo, useState, useTransition } from 'react';
 import { getProjectActivityFeed } from '@/app/actions/activity-feed';
 import { Button } from '@/components/ui/button';
 
@@ -58,6 +58,39 @@ function formatDateGroup(dateString: string): string {
 
   return formatDate(date, 'MMMM d, yyyy');
 }
+
+interface ActivityRowProps {
+  activity: ActivityLogEntry;
+}
+
+const ActivityRow = memo(function ActivityRow({ activity }: ActivityRowProps) {
+  return (
+    <div className="relative">
+      {/* Icon */}
+      <div className="absolute -left-6 flex h-5 w-5 items-center justify-center rounded-full bg-card">
+        {getActivityIcon(activity.action_type)}
+      </div>
+
+      {/* Content */}
+      <div className="rounded-lg border border-border bg-card p-4 shadow-elevation-1 transition-shadow duration-200 ease-premium hover:shadow-elevation-2">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground">{formatActivityMessage(activity)}</p>
+            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              {activity.actor?.full_name && (
+                <>
+                  <span>{activity.actor.full_name}</span>
+                  <span>•</span>
+                </>
+              )}
+              <span>{formatDate(activity.created_at!, 'h:mm a')}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 function groupActivitiesByDate(activities: ActivityLogEntry[]): Map<string, ActivityLogEntry[]> {
   const grouped = new Map<string, ActivityLogEntry[]>();
@@ -158,32 +191,7 @@ export function PortalActivityFeed({
               <div className="absolute left-2.5 top-2 h-[calc(100%-1rem)] w-px bg-muted" />
 
               {dateActivities.map((activity) => (
-                <div key={activity.id} className="relative">
-                  {/* Icon */}
-                  <div className="absolute -left-6 flex h-5 w-5 items-center justify-center rounded-full bg-card">
-                    {getActivityIcon(activity.action_type)}
-                  </div>
-
-                  {/* Content */}
-                  <div className="rounded-lg border border-border bg-card p-4 shadow-elevation-1 transition-shadow duration-200 ease-premium hover:shadow-elevation-2">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-foreground">
-                          {formatActivityMessage(activity)}
-                        </p>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                          {activity.actor?.full_name && (
-                            <>
-                              <span>{activity.actor.full_name}</span>
-                              <span>•</span>
-                            </>
-                          )}
-                          <span>{formatDate(activity.created_at!, 'h:mm a')}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ActivityRow key={activity.id} activity={activity} />
               ))}
             </div>
           </div>

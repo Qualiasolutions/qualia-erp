@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,6 +26,59 @@ interface PortalRecentActivityProps {
   isLoading: boolean;
   isValidating: boolean;
 }
+
+interface RecentProjectRowProps {
+  project: ProjectWithPhases;
+}
+
+const RecentProjectRow = memo(function RecentProjectRow({ project }: RecentProjectRowProps) {
+  return (
+    <Link
+      href={`/projects/${project.id}`}
+      className="group flex items-center gap-3 rounded-lg px-3 py-3 transition-all duration-150 hover:bg-muted/30"
+    >
+      {/* Name + phase */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-[13px] font-medium text-foreground">{project.name}</p>
+          <Badge
+            className={cn(
+              'shrink-0 border px-1.5 py-0 text-[10px] leading-4',
+              getProjectStatusColor(project.status)
+            )}
+          >
+            {project.status}
+          </Badge>
+        </div>
+        {project.currentPhase && (
+          <p className="mt-0.5 truncate text-[12px] text-muted-foreground/60">
+            {project.currentPhase.name}
+          </p>
+        )}
+      </div>
+
+      {/* Progress */}
+      {project.totalPhases > 0 && (
+        <div className="hidden w-24 shrink-0 items-center gap-2 sm:flex">
+          <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/40">
+            <div
+              className={cn(
+                'h-full rounded-full transition-all duration-500',
+                project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'
+              )}
+              style={{ width: `${project.progress}%` }}
+            />
+          </div>
+          <span className="w-7 text-right text-[11px] tabular-nums text-muted-foreground/50">
+            {project.progress}%
+          </span>
+        </div>
+      )}
+
+      <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/15 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground/40" />
+    </Link>
+  );
+});
 
 export function PortalRecentActivity({
   projects,
@@ -84,51 +138,7 @@ export function PortalRecentActivity({
 
       <div className="space-y-0.5">
         {projects.map((project) => (
-          <Link
-            key={project.id}
-            href={`/projects/${project.id}`}
-            className="group flex items-center gap-3 rounded-lg px-3 py-3 transition-all duration-150 hover:bg-muted/30"
-          >
-            {/* Name + phase */}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="truncate text-[13px] font-medium text-foreground">{project.name}</p>
-                <Badge
-                  className={cn(
-                    'shrink-0 border px-1.5 py-0 text-[10px] leading-4',
-                    getProjectStatusColor(project.status)
-                  )}
-                >
-                  {project.status}
-                </Badge>
-              </div>
-              {project.currentPhase && (
-                <p className="mt-0.5 truncate text-[12px] text-muted-foreground/60">
-                  {project.currentPhase.name}
-                </p>
-              )}
-            </div>
-
-            {/* Progress */}
-            {project.totalPhases > 0 && (
-              <div className="hidden w-24 shrink-0 items-center gap-2 sm:flex">
-                <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/40">
-                  <div
-                    className={cn(
-                      'h-full rounded-full transition-all duration-500',
-                      project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'
-                    )}
-                    style={{ width: `${project.progress}%` }}
-                  />
-                </div>
-                <span className="w-7 text-right text-[11px] tabular-nums text-muted-foreground/50">
-                  {project.progress}%
-                </span>
-              </div>
-            )}
-
-            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/15 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground/40" />
-          </Link>
+          <RecentProjectRow key={project.id} project={project} />
         ))}
       </div>
     </div>

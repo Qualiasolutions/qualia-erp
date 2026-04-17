@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { memo, useCallback, useState, useMemo, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { RichText } from '@/components/ui/rich-text';
@@ -93,20 +93,120 @@ function getPriorityColor(priority: string) {
   }
 }
 
+interface RequestRowProps {
+  request: FeatureRequest;
+  index: number;
+  expanded: boolean;
+  commentCount: number;
+  currentUserId: string;
+  userRole: string;
+  onToggle: (id: string) => void;
+}
+
+const RequestRow = memo(function RequestRow({
+  request,
+  index,
+  expanded,
+  commentCount,
+  currentUserId,
+  userRole,
+  onToggle,
+}: RequestRowProps) {
+  return (
+    <div
+      className={cn(
+        'rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/20',
+        'animate-fade-in fill-mode-both'
+      )}
+      style={index < 10 ? { animationDelay: `${index * 30}ms` } : undefined}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-medium text-foreground">{request.title}</h3>
+          {request.description && (
+            <RichText compact className="mt-1 line-clamp-2">
+              {request.description}
+            </RichText>
+          )}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Badge className={cn('text-[10px] capitalize', getStatusColor(request.status))}>
+              {request.status.replace(/_/g, ' ')}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={cn('text-[10px] capitalize', getPriorityColor(request.priority))}
+            >
+              {request.priority}
+            </Badge>
+            {request.project && (
+              <span className="text-xs text-muted-foreground">{request.project.name}</span>
+            )}
+            <span className="text-xs text-muted-foreground">
+              {new Date(request.created_at).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+
+        {/* Expand/collapse for comment thread */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 shrink-0 cursor-pointer p-0"
+          onClick={() => onToggle(request.id)}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Collapse comments' : 'Expand comments'}
+        >
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+      </div>
+
+      {/* Comment count + legacy response indicator */}
+      {!expanded && (
+        <button
+          onClick={() => onToggle(request.id)}
+          className="mt-2 flex cursor-pointer items-center gap-1.5 text-xs text-primary transition-colors duration-150 hover:text-primary/80"
+        >
+          <MessageSquare className="h-3 w-3" />
+          {commentCount > 0 ? (
+            <span>
+              {commentCount} comment
+              {commentCount !== 1 ? 's' : ''}
+            </span>
+          ) : request.admin_response ? (
+            <span>Has response</span>
+          ) : (
+            <span>Add comment</span>
+          )}
+        </button>
+      )}
+
+      {/* Comment thread (expanded) */}
+      {expanded && (
+        <RequestCommentThread
+          requestId={request.id}
+          currentUserId={currentUserId}
+          userRole={userRole}
+          legacyAdminResponse={request.admin_response}
+        />
+      )}
+    </div>
+  );
+});
+
 export function PortalRequestList({ requests, currentUserId, userRole }: PortalRequestListProps) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
 
-  const toggleExpanded = (id: string) => {
+  const toggleExpanded = useCallback((id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
   // Fetch comment counts for all requests on mount
   useEffect(() => {
@@ -221,88 +321,16 @@ export function PortalRequestList({ requests, currentUserId, userRole }: PortalR
       {/* Request list */}
       <div className="space-y-3">
         {filtered.map((request, index) => (
-          <div
+          <RequestRow
             key={request.id}
-            className={cn(
-              'rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/20',
-              'animate-fade-in fill-mode-both'
-            )}
-            style={index < 10 ? { animationDelay: `${index * 30}ms` } : undefined}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-medium text-foreground">{request.title}</h3>
-                {request.description && (
-                  <RichText compact className="mt-1 line-clamp-2">
-                    {request.description}
-                  </RichText>
-                )}
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Badge className={cn('text-[10px] capitalize', getStatusColor(request.status))}>
-                    {request.status.replace(/_/g, ' ')}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className={cn('text-[10px] capitalize', getPriorityColor(request.priority))}
-                  >
-                    {request.priority}
-                  </Badge>
-                  {request.project && (
-                    <span className="text-xs text-muted-foreground">{request.project.name}</span>
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(request.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              {/* Expand/collapse for comment thread */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 shrink-0 cursor-pointer p-0"
-                onClick={() => toggleExpanded(request.id)}
-                aria-expanded={expandedIds.has(request.id)}
-                aria-label={expandedIds.has(request.id) ? 'Collapse comments' : 'Expand comments'}
-              >
-                {expandedIds.has(request.id) ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-
-            {/* Comment count + legacy response indicator */}
-            {!expandedIds.has(request.id) && (
-              <button
-                onClick={() => toggleExpanded(request.id)}
-                className="mt-2 flex cursor-pointer items-center gap-1.5 text-xs text-primary transition-colors duration-150 hover:text-primary/80"
-              >
-                <MessageSquare className="h-3 w-3" />
-                {(commentCounts[request.id] || 0) > 0 ? (
-                  <span>
-                    {commentCounts[request.id]} comment
-                    {commentCounts[request.id] !== 1 ? 's' : ''}
-                  </span>
-                ) : request.admin_response ? (
-                  <span>Has response</span>
-                ) : (
-                  <span>Add comment</span>
-                )}
-              </button>
-            )}
-
-            {/* Comment thread (expanded) */}
-            {expandedIds.has(request.id) && (
-              <RequestCommentThread
-                requestId={request.id}
-                currentUserId={currentUserId}
-                userRole={userRole}
-                legacyAdminResponse={request.admin_response}
-              />
-            )}
-          </div>
+            request={request}
+            index={index}
+            expanded={expandedIds.has(request.id)}
+            commentCount={commentCounts[request.id] || 0}
+            currentUserId={currentUserId}
+            userRole={userRole}
+            onToggle={toggleExpanded}
+          />
         ))}
 
         {filtered.length === 0 && (

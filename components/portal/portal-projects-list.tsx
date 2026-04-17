@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,86 @@ interface PortalProjectsListProps {
   projects: ClientProject[];
   progressMap?: Record<string, number>;
 }
+
+interface ProjectRowProps {
+  clientProjectId: string;
+  project: Project;
+  progress: number;
+  index: number;
+}
+
+const ProjectRow = memo(function ProjectRow({
+  clientProjectId,
+  project,
+  progress,
+  index,
+}: ProjectRowProps) {
+  return (
+    <Link
+      key={clientProjectId}
+      href={`/projects/${project.id}`}
+      style={index < 10 ? getStaggerDelay(index) : undefined}
+      className={cn(
+        'group flex min-h-[44px] items-center gap-4 rounded-lg px-4 py-3 transition-all duration-150',
+        'hover:bg-primary/[0.03]',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+        'cursor-pointer',
+        index < 10 && 'animate-fade-in-up fill-mode-both'
+      )}
+    >
+      {/* Project info */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2.5">
+          <h3 className="min-w-0 truncate text-[13px] font-medium text-foreground">
+            {project.name}
+          </h3>
+          <Badge
+            className={cn(
+              'shrink-0 border px-1.5 py-0 text-[10px] leading-4',
+              getProjectStatusColor(project.project_status)
+            )}
+          >
+            {project.project_status}
+          </Badge>
+        </div>
+        {project.description && (
+          <p className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground/60">
+            {project.description}
+          </p>
+        )}
+      </div>
+
+      {/* Type */}
+      <span className="hidden text-[11px] capitalize text-muted-foreground/50 sm:block">
+        {project.project_type?.replace(/_/g, ' ')}
+      </span>
+
+      {/* Progress */}
+      <div className="hidden w-28 items-center gap-2 md:flex">
+        <div className="h-1 flex-1 overflow-hidden rounded-full bg-primary/10">
+          {progress > 0 && (
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          )}
+        </div>
+        <span className="w-7 text-right text-[11px] tabular-nums text-muted-foreground/50">
+          {progress > 0 ? `${progress}%` : '--'}
+        </span>
+      </div>
+
+      {/* Mobile progress */}
+      {progress > 0 && (
+        <div className="flex items-center gap-2 md:hidden">
+          <span className="text-[11px] tabular-nums text-muted-foreground/50">{progress}%</span>
+        </div>
+      )}
+
+      <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/15 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground/40" />
+    </Link>
+  );
+});
 
 export function PortalProjectsList({ projects, progressMap = {} }: PortalProjectsListProps) {
   if (!projects || projects.length === 0) {
@@ -63,71 +144,13 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
         const progress = progressMap[clientProject.project_id] ?? progressMap[project.id] ?? 0;
 
         return (
-          <Link
+          <ProjectRow
             key={clientProject.id}
-            href={`/projects/${project.id}`}
-            style={index < 10 ? getStaggerDelay(index) : undefined}
-            className={cn(
-              'group flex min-h-[44px] items-center gap-4 rounded-lg px-4 py-3 transition-all duration-150',
-              'hover:bg-primary/[0.03]',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-              'cursor-pointer',
-              index < 10 && 'animate-fade-in-up fill-mode-both'
-            )}
-          >
-            {/* Project info */}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2.5">
-                <h3 className="min-w-0 truncate text-[13px] font-medium text-foreground">
-                  {project.name}
-                </h3>
-                <Badge
-                  className={cn(
-                    'shrink-0 border px-1.5 py-0 text-[10px] leading-4',
-                    getProjectStatusColor(project.project_status)
-                  )}
-                >
-                  {project.project_status}
-                </Badge>
-              </div>
-              {project.description && (
-                <p className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground/60">
-                  {project.description}
-                </p>
-              )}
-            </div>
-
-            {/* Type */}
-            <span className="hidden text-[11px] capitalize text-muted-foreground/50 sm:block">
-              {project.project_type?.replace(/_/g, ' ')}
-            </span>
-
-            {/* Progress */}
-            <div className="hidden w-28 items-center gap-2 md:flex">
-              <div className="h-1 flex-1 overflow-hidden rounded-full bg-primary/10">
-                {progress > 0 && (
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-500"
-                    style={{ width: `${progress}%` }}
-                  />
-                )}
-              </div>
-              <span className="w-7 text-right text-[11px] tabular-nums text-muted-foreground/50">
-                {progress > 0 ? `${progress}%` : '--'}
-              </span>
-            </div>
-
-            {/* Mobile progress */}
-            {progress > 0 && (
-              <div className="flex items-center gap-2 md:hidden">
-                <span className="text-[11px] tabular-nums text-muted-foreground/50">
-                  {progress}%
-                </span>
-              </div>
-            )}
-
-            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/15 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground/40" />
-          </Link>
+            clientProjectId={clientProject.id}
+            project={project}
+            progress={progress}
+            index={index}
+          />
         );
       })}
     </div>
