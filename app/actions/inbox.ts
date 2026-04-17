@@ -64,15 +64,19 @@ async function getEffectiveUser(
  * (Previously used a module-level `let` cache which is unreliable on
  * Vercel serverless where each invocation may get a fresh module scope.)
  */
-const getFinishedProjectIds = cache(
-  async (supabase: Awaited<ReturnType<typeof createClient>>): Promise<Set<string>> => {
-    const { data } = await supabase
-      .from('projects')
-      .select('id')
-      .in('status', ['Done', 'Archived', 'Canceled']);
-    return new Set((data || []).map((p) => p.id));
-  }
-);
+// Takes zero arguments so React.cache() can dedupe within a request.
+// Previous version took `supabase` as an argument, but `createClient()` returns
+// a fresh instance per call — which meant the cache key differed every time
+// and deduplication never fired. Creating the client inside keeps the memo key
+// stable (the empty argument list).
+const getFinishedProjectIds = cache(async (): Promise<Set<string>> => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('projects')
+    .select('id')
+    .in('status', ['Done', 'Archived', 'Canceled']);
+  return new Set((data || []).map((p) => p.id));
+});
 
 /**
  * Check if a task with requires_attachment can be marked as Done.
@@ -251,7 +255,7 @@ export async function getTasks(
     query = query.eq('show_in_inbox', true);
 
     // Exclude tasks from finished projects (Done/Archived/Canceled)
-    const finishedIds = await getFinishedProjectIds(supabase);
+    const finishedIds = await getFinishedProjectIds();
     if (finishedIds.size > 0) {
       // PostgREST .not().in() excludes these project_id values;
       // tasks with null project_id (personal tasks) are kept.
@@ -363,7 +367,7 @@ export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> 
   }
 
   // Exclude tasks from finished projects
-  const finishedIds = await getFinishedProjectIds(supabase);
+  const finishedIds = await getFinishedProjectIds();
   const finishedFilter = finishedIds.size > 0 ? `(${[...finishedIds].join(',')})` : null;
 
   // Build scoped queries — apply the .or() filter when non-elevated

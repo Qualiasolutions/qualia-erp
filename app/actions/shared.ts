@@ -204,7 +204,8 @@ export async function canModifyTask(userId: string, taskId: string): Promise<boo
       .from('project_assignments')
       .select('id')
       .eq('project_id', task.project_id)
-      .eq('profile_id', userId)
+      .eq('employee_id', userId)
+      .is('removed_at', null)
       .maybeSingle();
     if (assignment) return true;
   }
