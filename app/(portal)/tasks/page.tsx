@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientVisibleTasks } from '@/app/actions/inbox';
+import { assertAppEnabledForClient } from '@/lib/portal-utils';
+import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { TasksContent } from './tasks-content';
 
 export default async function PortalTasksPage() {
@@ -17,6 +19,13 @@ export default async function PortalTasksPage() {
     .single();
 
   const role = profile?.role || 'client';
+
+  // App Library guard: block clients if the "tasks" app is disabled
+  if (role === 'client') {
+    const workspaceId = await getCurrentWorkspaceId();
+    const allowed = await assertAppEnabledForClient(user.id, workspaceId, 'tasks', role);
+    if (!allowed) redirect('/');
+  }
 
   // Get all project IDs the user has access to
   let projectIds: string[] = [];

@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientFeatureRequests } from '@/app/actions/client-requests';
 import { isUserManagerOrAbove } from '@/app/actions/shared';
+import { assertAppEnabledForClient } from '@/lib/portal-utils';
+import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { PortalRequestList } from '@/components/portal/portal-request-list';
 import { PortalRequestDialog } from '@/components/portal/portal-request-dialog';
 
@@ -24,6 +26,13 @@ export default async function PortalRequestsPage() {
 
   if (profile?.role === 'employee') {
     redirect('/');
+  }
+
+  // App Library guard: block clients if the "requests" app is disabled
+  if (profile?.role === 'client') {
+    const workspaceId = await getCurrentWorkspaceId();
+    const allowed = await assertAppEnabledForClient(user.id, workspaceId, 'requests', profile.role);
+    if (!allowed) redirect('/');
   }
 
   // Parallelize the admin check + feature requests fetch (independent)

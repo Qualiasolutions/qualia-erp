@@ -1235,6 +1235,9 @@ export async function getClientVisibleTasks(projectIds: string[]): Promise<Actio
 
   if (!projectIds.length) return { success: true, data: [] };
 
+  // TODO: tasks table lacks an `is_client_visible` column — requires schema change.
+  // Once added, append `.eq('is_client_visible', true)` to this query to let
+  // admins control which tasks surface in the client portal.
   const { data, error } = await supabase
     .from('tasks')
     .select(

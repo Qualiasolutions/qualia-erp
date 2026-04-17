@@ -865,7 +865,11 @@ export async function getClientInvoices(): Promise<ActionResult> {
       .order('date', { ascending: false });
 
     if (!isAdmin) {
-      // Resolve CRM client_id scoped to ONLY the portal user's linked projects
+      // Scope invoices to the portal user's linked projects.
+      // financial_invoices has no project_id column, so we resolve the CRM
+      // client_ids indirectly: portal user → client_projects → projects.client_id.
+      // This constrains invoices to only the CRM clients whose projects the
+      // portal user has access to.
       const { data: linkedProjects } = await supabase
         .from('client_projects')
         .select('project_id')
@@ -883,7 +887,6 @@ export async function getClientInvoices(): Promise<ActionResult> {
       const crmClientIds = [...new Set((projects || []).map((p) => p.client_id).filter(Boolean))];
       if (crmClientIds.length === 0) return { success: true, data: [] };
 
-      // Filter invoices by CRM client AND only for projects the portal user has access to
       query = query.in('client_id', crmClientIds as string[]);
     }
 

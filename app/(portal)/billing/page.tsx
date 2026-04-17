@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientInvoices } from '@/app/actions/client-portal';
+import { assertAppEnabledForClient } from '@/lib/portal-utils';
+import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { PortalInvoiceList } from '@/components/portal/portal-invoice-list';
 import { PortalBillingSummary } from '@/components/portal/portal-billing-summary';
 
@@ -23,6 +25,13 @@ export default async function PortalBillingPage() {
 
   if (profile?.role === 'employee') {
     redirect('/');
+  }
+
+  // App Library guard: block clients if the "billing" app is disabled
+  if (profile?.role === 'client') {
+    const workspaceId = await getCurrentWorkspaceId();
+    const allowed = await assertAppEnabledForClient(user.id, workspaceId, 'billing', profile.role);
+    if (!allowed) redirect('/');
   }
 
   const result = await getClientInvoices();

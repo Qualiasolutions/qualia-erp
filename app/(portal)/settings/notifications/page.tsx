@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { assertAppEnabledForClient } from '@/lib/portal-utils';
+import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { NotificationPreferencesForm } from '@/components/settings/notification-preferences-form';
 import {
   getNotificationPreferences,
@@ -25,6 +27,13 @@ export default async function NotificationSettingsPage() {
 
   if (!profile) {
     redirect('/auth/login');
+  }
+
+  // App Library guard: block clients if the "settings" app is disabled
+  if (profile.role === 'client') {
+    const wsId = await getCurrentWorkspaceId();
+    const allowed = await assertAppEnabledForClient(user.id, wsId, 'settings', profile.role);
+    if (!allowed) redirect('/');
   }
 
   // Get workspace_id from workspace_members (not on profiles table)

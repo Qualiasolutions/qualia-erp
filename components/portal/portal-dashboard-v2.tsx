@@ -52,6 +52,8 @@ interface PortalDashboardV2Props {
   clientId: string;
   displayName: string;
   companyName?: string;
+  /** When provided, quick actions whose target app isn't in this list are hidden. */
+  enabledApps?: string[];
 }
 
 const quickActions = [
@@ -60,18 +62,21 @@ const quickActions = [
     description: 'Share a feature idea or request a change',
     href: '/requests',
     icon: Lightbulb,
+    appKey: 'requests',
   },
   {
     title: 'View all projects',
     description: 'See progress across all your projects',
     href: '/projects',
     icon: FolderKanban,
+    appKey: 'projects',
   },
   {
     title: 'View billing',
     description: 'Check invoices and payment history',
     href: '/billing',
     icon: Receipt,
+    appKey: 'billing',
   },
 ];
 
@@ -392,9 +397,15 @@ export function PortalDashboardV2({
   clientId,
   displayName,
   companyName,
+  enabledApps,
 }: PortalDashboardV2Props) {
   const firstName = displayName.split(' ')[0];
   const welcomeName = companyName || firstName;
+
+  // Filter quick actions by enabled apps when the list is provided
+  const visibleQuickActions = enabledApps
+    ? quickActions.filter((a) => enabledApps.includes(a.appKey))
+    : quickActions;
 
   return (
     <div className="space-y-8">
@@ -482,40 +493,42 @@ export function PortalDashboardV2({
       </section>
 
       {/* Section 4: Quick actions row */}
-      <section
-        className="animate-fade-in-up"
-        style={{ animationDelay: '180ms', animationFillMode: 'both' }}
-      >
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <Link
-                key={action.title}
-                href={action.href}
-                aria-label={`${action.title} — ${action.description}`}
-                className={cn(
-                  'group flex items-center gap-4 rounded-xl border border-border bg-card p-5',
-                  'cursor-pointer transition-all duration-200',
-                  'hover:border-primary/20 hover:shadow-sm',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
-                )}
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors duration-150 group-hover:bg-primary/15">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">{action.title}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{action.description}</p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+      {visibleQuickActions.length > 0 && (
+        <section
+          className="animate-fade-in-up"
+          style={{ animationDelay: '180ms', animationFillMode: 'both' }}
+        >
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {visibleQuickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link
+                  key={action.title}
+                  href={action.href}
+                  aria-label={`${action.title} — ${action.description}`}
+                  className={cn(
+                    'group flex items-center gap-4 rounded-xl border border-border bg-card p-5',
+                    'cursor-pointer transition-all duration-200',
+                    'hover:border-primary/20 hover:shadow-sm',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+                  )}
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors duration-150 group-hover:bg-primary/15">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">{action.title}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{action.description}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

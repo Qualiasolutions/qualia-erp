@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { isPortalAdminRole } from '@/lib/portal-utils';
+import { isPortalAdminRole, assertAppEnabledForClient } from '@/lib/portal-utils';
+import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { PortalFilesContent } from './files-content';
 import { fadeInClasses } from '@/lib/transitions';
 
@@ -41,18 +42,36 @@ export default async function PortalFilesPage() {
     .eq('id', user.id)
     .single();
 
-  const isAdmin = isPortalAdminRole(profile?.role || null);
+  const role = profile?.role || 'client';
+  const isAdmin = isPortalAdminRole(role);
+
+  // App Library guard: block clients if the "files" app is disabled
+  if (role === 'client') {
+    const workspaceId = await getCurrentWorkspaceId();
+    const allowed = await assertAppEnabledForClient(user.id, workspaceId, 'files', role);
+    if (!allowed) redirect('/');
+  }
 
   let projectIds: string[] = [];
 
   if (isAdmin) {
-    // Admin: get all projects
+    // Admin/manager: get all projects
     const { data: allProjects } = await supabase
       .from('projects')
       .select('id')
       .not('status', 'eq', 'Canceled');
 
     projectIds = (allProjects || []).map((p) => p.id);
+  } else if (role === 'employee') {
+    // Internal employees see files for every project in their workspace
+    const workspaceId = await getCurrentWorkspaceId();
+    if (workspaceId) {
+      const { data: wsProjects } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('workspace_id', workspaceId);
+      projectIds = (wsProjects ?? []).map((p) => p.id);
+    }
   } else {
     // Client: get their project IDs from client_projects
     const { data: clientProjects } = await supabase
