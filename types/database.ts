@@ -145,6 +145,51 @@ export type Database = {
           },
         ];
       };
+      admin_boards: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          snapshot: Json | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          snapshot?: Json | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          snapshot?: Json | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'admin_boards_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'admin_boards_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       ai_conversations: {
         Row: {
           created_at: string;
@@ -2461,6 +2506,53 @@ export type Database = {
             columns: ['sender_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      portal_settings: {
+        Row: {
+          cname_target: string;
+          created_at: string | null;
+          custom_domain: string | null;
+          domain_verified: boolean;
+          id: string;
+          notification_defaults: Json;
+          require_2fa_for_clients: boolean;
+          session_duration_hours: number;
+          updated_at: string | null;
+          workspace_id: string;
+        };
+        Insert: {
+          cname_target?: string;
+          created_at?: string | null;
+          custom_domain?: string | null;
+          domain_verified?: boolean;
+          id?: string;
+          notification_defaults?: Json;
+          require_2fa_for_clients?: boolean;
+          session_duration_hours?: number;
+          updated_at?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          cname_target?: string;
+          created_at?: string | null;
+          custom_domain?: string | null;
+          domain_verified?: boolean;
+          id?: string;
+          notification_defaults?: Json;
+          require_2fa_for_clients?: boolean;
+          session_duration_hours?: number;
+          updated_at?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'portal_settings_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
