@@ -1,7 +1,9 @@
 import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentWorkspaceId, getCurrentUserProfile } from '@/app/actions';
+import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { NewProjectModal } from '@/components/new-project-modal';
 import { Folder } from 'lucide-react';
 import { ProjectsClient } from './projects-client';
@@ -226,7 +228,14 @@ function ProjectsSkeleton() {
   );
 }
 
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
+  const user = await getPortalAuthUser();
+  if (!user) redirect('/auth/login');
+  const profile = await getPortalProfile(user.id);
+  if (profile?.role === 'client') redirect('/');
+
+  const canCreate = profile?.role === 'admin' || profile?.role === 'manager';
+
   return (
     <div className="flex h-full flex-col bg-background">
       <PageHeader
@@ -234,7 +243,7 @@ export default function ProjectsPage() {
         iconBg="bg-primary/10"
         title="Projects"
       >
-        <NewProjectModal />
+        {canCreate && <NewProjectModal />}
       </PageHeader>
 
       {/* Content */}

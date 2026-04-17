@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getProjectById, getProfiles, getCurrentUserProfile, getClients } from '@/app/actions';
 import { getProjectIntegrationStatus } from '@/lib/integration-utils';
+import { getPortalAuthUser } from '@/lib/portal-cache';
 import { createClient } from '@/lib/supabase/server';
 import { ProjectDetailView } from './project-detail-view';
 
@@ -29,6 +30,9 @@ interface ProjectLoaderProps {
 async function ProjectLoader({ id }: ProjectLoaderProps) {
   await connection();
 
+  const user = await getPortalAuthUser();
+  if (!user) redirect('/auth/login');
+
   // Fetch all data in parallel on the server
   const [project, profiles, userProfile, integrationStatus, clientsRaw] = await Promise.all([
     getProjectById(id),
@@ -47,8 +51,20 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
     notFound();
   }
 
+  // Clients can only view projects they have explicit access to via client_projects
+  if (userProfile?.role === 'client') {
+    const supabase = await createClient();
+    const { data: link } = await supabase
+      .from('client_projects')
+      .select('project_id')
+      .eq('client_id', user.id)
+      .eq('project_id', id)
+      .maybeSingle();
+    if (!link) notFound();
+  }
+
   // Employees can only view projects they're assigned to
-  if (userProfile && userProfile.role !== 'admin') {
+  if (userProfile && userProfile.role !== 'admin' && userProfile.role !== 'client') {
     const supabase = await createClient();
     const { data: assignment } = await supabase
       .from('project_assignments')

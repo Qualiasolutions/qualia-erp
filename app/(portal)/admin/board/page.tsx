@@ -7,10 +7,12 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminBoardPage() {
   const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getClaims();
-  const userId = userData?.claims?.sub;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!userId) redirect('/auth/login');
+  if (!user) redirect('/auth/login');
+  const userId = user.id;
 
   const { data: profile } = await supabase
     .from('profiles')

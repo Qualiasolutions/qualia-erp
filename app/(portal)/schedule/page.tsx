@@ -1,8 +1,10 @@
-import { Suspense, use } from 'react';
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getMeetings, getProfiles } from '@/app/actions';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
+import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
 import { ScheduleContent } from '@/components/schedule-content';
 import { ScheduleViewToggle } from '@/components/schedule-view-toggle';
@@ -102,12 +104,17 @@ function ScheduleSkeleton() {
   );
 }
 
-export default function PortalSchedulePage({
+export default async function PortalSchedulePage({
   searchParams,
 }: {
   searchParams: Promise<{ view?: string }>;
 }) {
-  const params = use(searchParams);
+  const user = await getPortalAuthUser();
+  if (!user) redirect('/auth/login');
+  const profile = await getPortalProfile(user.id);
+  if (profile?.role === 'client') redirect('/');
+
+  const params = await searchParams;
   const view = params.view || 'week';
 
   return (

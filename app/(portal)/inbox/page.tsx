@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { getTasks, type Task } from '@/app/actions/inbox';
+import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { InboxView } from './inbox-view';
 
 export const metadata: Metadata = {
@@ -9,6 +11,11 @@ export const metadata: Metadata = {
 };
 
 export default async function PortalInboxPage() {
+  const user = await getPortalAuthUser();
+  if (!user) redirect('/auth/login');
+  const profile = await getPortalProfile(user.id);
+  if (profile?.role === 'client') redirect('/');
+
   const workspaceId = await getCurrentWorkspaceId();
 
   if (!workspaceId) {
