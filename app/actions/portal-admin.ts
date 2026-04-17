@@ -3,7 +3,12 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 import { type ActionResult, isUserManagerOrAbove, getUserRole } from './shared';
-import { PortalAppConfigSchema, PortalBrandingSchema } from '@/lib/validation';
+import {
+  PortalAppConfigSchema,
+  PortalBrandingSchema,
+  PortalSettingsSchema,
+  type PortalSettingsInput,
+} from '@/lib/validation';
 
 // All 7 portal app keys
 const ALL_APP_KEYS = [
@@ -454,6 +459,140 @@ export async function getEnabledAppsForClient(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get enabled apps',
+    };
+  }
+}
+
+// Default notification events — must stay in sync with notification_preferences event keys.
+const DEFAULT_NOTIFICATION_DEFAULTS = {
+  task_assigned: true,
+  task_due_soon: true,
+  project_update: true,
+  meeting_reminder: true,
+  client_activity: true,
+} as const;
+
+/**
+ * Get portal settings for a workspace.
+ * Returns the settings row or sensible defaults if none exists.
+ * Any authenticated user can read settings.
+ */
+export async function getPortalSettings(workspaceId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    const { data, error } = await supabase
+      .from('portal_settings')
+      .select(
+        'id, workspace_id, require_2fa_for_clients, session_duration_hours, notification_defaults, custom_domain, cname_target, domain_verified, created_at, updated_at'
+      )
+      .eq('workspace_id', workspaceId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[getPortalSettings] Query error:', error);
+      return { success: false, error: 'Failed to load portal settings' };
+    }
+
+    if (!data) {
+      return {
+        success: true,
+        data: {
+          workspace_id: workspaceId,
+          require_2fa_for_clients: false,
+          session_duration_hours: 24,
+          notification_defaults: { ...DEFAULT_NOTIFICATION_DEFAULTS },
+          custom_domain: null,
+          cname_target: 'cname.vercel-dns.com',
+          domain_verified: false,
+        },
+      };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('[getPortalSettings] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to load portal settings',
+    };
+  }
+}
+
+/**
+ * Update portal settings for a workspace.
+ * Upserts the settings row keyed on workspace_id. Admin/manager only.
+ * Changing custom_domain resets domain_verified to false so the new domain must be re-verified.
+ */
+export async function updatePortalSettings(
+  workspaceId: string,
+  data: PortalSettingsInput
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Only admins and managers can update portal settings' };
+    }
+
+    const parsed = PortalSettingsSchema.safeParse(data);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Invalid input' };
+    }
+
+    const updateData: Record<string, unknown> = {
+      workspace_id: workspaceId,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (parsed.data.require_2fa_for_clients !== undefined) {
+      updateData.require_2fa_for_clients = parsed.data.require_2fa_for_clients;
+    }
+    if (parsed.data.session_duration_hours !== undefined) {
+      updateData.session_duration_hours = parsed.data.session_duration_hours;
+    }
+    if (parsed.data.notification_defaults !== undefined) {
+      // Merge with defaults so partial updates don't drop other event keys.
+      updateData.notification_defaults = {
+        ...DEFAULT_NOTIFICATION_DEFAULTS,
+        ...parsed.data.notification_defaults,
+      };
+    }
+    if (parsed.data.custom_domain !== undefined) {
+      updateData.custom_domain = parsed.data.custom_domain;
+      // Changing the domain invalidates any previous verification.
+      updateData.domain_verified = false;
+    }
+
+    const { error: upsertError } = await supabase
+      .from('portal_settings')
+      .upsert(updateData, { onConflict: 'workspace_id' });
+
+    if (upsertError) {
+      console.error('[updatePortalSettings] Upsert error:', upsertError);
+      return { success: false, error: 'Failed to update portal settings' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[updatePortalSettings] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update portal settings',
     };
   }
 }

@@ -546,8 +546,33 @@ export const PortalBrandingSchema = z.object({
     .nullable(),
 });
 
+export const PortalSettingsSchema = z.object({
+  require_2fa_for_clients: z.boolean().optional(),
+  session_duration_hours: z.number().int().min(1).max(720).optional(),
+  notification_defaults: z
+    .object({
+      task_assigned: z.boolean(),
+      task_due_soon: z.boolean(),
+      project_update: z.boolean(),
+      meeting_reminder: z.boolean(),
+      client_activity: z.boolean(),
+    })
+    .partial()
+    .optional(),
+  custom_domain: z
+    .string()
+    .regex(
+      /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i,
+      'Must be a valid domain (e.g. portal.example.com)'
+    )
+    .max(253)
+    .optional()
+    .nullable(),
+});
+
 export type PortalAppConfigInput = z.infer<typeof PortalAppConfigSchema>;
 export type PortalBrandingInput = z.infer<typeof PortalBrandingSchema>;
+export type PortalSettingsInput = z.infer<typeof PortalSettingsSchema>;
 
 // =====================
 // Common Param Schemas (Wave D optimization)
