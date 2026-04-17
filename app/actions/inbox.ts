@@ -1,5 +1,6 @@
 'use server';
 
+import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 
 import { parseFormData, createTaskSchema, updateTaskSchema } from '@/lib/validation';
@@ -58,26 +59,20 @@ async function getEffectiveUser(
 /**
  * Get project IDs that are finished (Done, Archived, Canceled).
  * Tasks from these projects should be excluded from inbox views.
- * Cached for 5s to avoid duplicate queries when multiple inbox
- * functions run in the same request cycle.
+ * Uses React.cache() for per-request deduplication — multiple inbox
+ * functions in the same request share the result without re-querying.
+ * (Previously used a module-level `let` cache which is unreliable on
+ * Vercel serverless where each invocation may get a fresh module scope.)
  */
-let _finishedCache: { ids: Set<string>; ts: number } | null = null;
-const FINISHED_CACHE_TTL = 5_000;
-
-async function getFinishedProjectIds(
-  supabase: Awaited<ReturnType<typeof createClient>>
-): Promise<Set<string>> {
-  if (_finishedCache && Date.now() - _finishedCache.ts < FINISHED_CACHE_TTL) {
-    return _finishedCache.ids;
+const getFinishedProjectIds = cache(
+  async (supabase: Awaited<ReturnType<typeof createClient>>): Promise<Set<string>> => {
+    const { data } = await supabase
+      .from('projects')
+      .select('id')
+      .in('status', ['Done', 'Archived', 'Canceled']);
+    return new Set((data || []).map((p) => p.id));
   }
-  const { data } = await supabase
-    .from('projects')
-    .select('id')
-    .in('status', ['Done', 'Archived', 'Canceled']);
-  const ids = new Set((data || []).map((p) => p.id));
-  _finishedCache = { ids, ts: Date.now() };
-  return ids;
-}
+);
 
 /**
  * Check if a task with requires_attachment can be marked as Done.

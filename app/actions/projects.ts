@@ -18,6 +18,7 @@ import {
   createActivity,
   canDeleteProject,
   isUserManagerOrAbove,
+  getCachedUserRole,
   type ActionResult,
   type ActivityType,
 } from './shared';
@@ -171,12 +172,8 @@ export async function getProjects(workspaceId?: string | null) {
   // Clients only see their linked projects; internal users (admin/manager/employee)
   // see everything in the workspace.
   if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    if (profile?.role === 'client') {
+    const role = await getCachedUserRole(user.id);
+    if (role === 'client') {
       const { data: links } = await supabase
         .from('client_projects')
         .select('project_id')
@@ -293,12 +290,8 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
   // see every project in the workspace — no assignment-based filtering.
   let clientProjectIds: Set<string> | null = null;
   if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    if (profile?.role === 'client') {
+    const role = await getCachedUserRole(user.id);
+    if (role === 'client') {
       const { data: links } = await supabase
         .from('client_projects')
         .select('project_id')

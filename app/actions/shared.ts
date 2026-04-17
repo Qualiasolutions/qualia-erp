@@ -39,7 +39,7 @@ export type ProfileRef = {
  * Cached per-request role lookup — calling this multiple times in one request
  * only queries the DB once thanks to React's cache() deduplication.
  */
-const getCachedUserRole = cache(async (userId: string): Promise<string | null> => {
+export const getCachedUserRole = cache(async (userId: string): Promise<string | null> => {
   const supabase = await createClient();
   const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
   return data?.role || null;
@@ -216,16 +216,16 @@ export async function canModifyTask(userId: string, taskId: string): Promise<boo
 
 // Check if user can access a project (workspace member)
 export async function canAccessProject(userId: string, projectId: string): Promise<boolean> {
-  if (await isUserAdmin(userId)) return true;
-
   const supabase = await createClient();
 
-  // Get project's workspace
-  const { data: project } = await supabase
-    .from('projects')
-    .select('workspace_id')
-    .eq('id', projectId)
-    .single();
+  // Parallelize the admin check and project fetch — both only need userId/projectId
+  const [isAdmin, { data: project }] = await Promise.all([
+    isUserAdmin(userId),
+    supabase.from('projects').select('workspace_id').eq('id', projectId).single(),
+  ]);
+
+  // Early-return if admin
+  if (isAdmin) return true;
 
   if (!project?.workspace_id) return false;
 

@@ -16,6 +16,7 @@ import {
   LogOut,
   LogIn,
   ChevronUp,
+  ChevronDown,
   Menu,
   Shield,
   Inbox,
@@ -26,6 +27,12 @@ import {
   Activity,
   ClipboardList,
   Circle,
+  Users,
+  UserCheck,
+  BarChart3,
+  ListTodo,
+  ArrowRightLeft,
+  LayoutDashboard,
 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { cn } from '@/lib/utils';
@@ -119,6 +126,22 @@ const internalApps: NavItemDef[] = [
 const adminOnlyApps: NavItemDef[] = [
   { name: 'Clients', href: '/clients', icon: Building2, appKey: 'clients' },
   { name: 'Status', href: '/status', icon: Activity, appKey: 'status' },
+];
+
+// Admin subpages — shown in collapsible group for admin/manager
+const adminSubpages: NavItemDef[] = [
+  { name: 'Team Management', href: '/admin', icon: Users, exact: true, appKey: 'admin-team' },
+  { name: 'Assignments', href: '/admin/assignments', icon: UserCheck, appKey: 'admin-assignments' },
+  {
+    name: 'Attendance',
+    href: '/admin/attendance',
+    icon: ClipboardList,
+    appKey: 'admin-attendance',
+  },
+  { name: 'Reports', href: '/admin/reports', icon: BarChart3, appKey: 'admin-reports' },
+  { name: 'Tasks', href: '/admin/tasks', icon: ListTodo, appKey: 'admin-tasks' },
+  { name: 'Migrate', href: '/admin/migrate', icon: ArrowRightLeft, appKey: 'admin-migrate' },
+  { name: 'Board', href: '/admin/board', icon: LayoutDashboard, appKey: 'admin-board' },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -360,6 +383,72 @@ function ClockWidget({ userId }: { userId: string | null }) {
 }
 
 /* ------------------------------------------------------------------ */
+/* AdminNavGroup — collapsible admin subpages                          */
+/* ------------------------------------------------------------------ */
+
+function AdminNavGroup({
+  pathname,
+  onLinkClick,
+  isGated,
+}: {
+  pathname: string;
+  onLinkClick?: () => void;
+  isGated: boolean;
+}) {
+  const isAdminActive = pathname.startsWith('/admin');
+  const [expanded, setExpanded] = useState(isAdminActive);
+
+  return (
+    <div className="mt-2 space-y-0.5 border-t border-border/20 pt-2">
+      <button
+        type="button"
+        onClick={() => setExpanded((prev) => !prev)}
+        className={cn(
+          'group flex h-10 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-sm transition-colors duration-150',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2',
+          isAdminActive
+            ? 'font-medium text-primary'
+            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+        )}
+        aria-expanded={expanded}
+      >
+        <Shield
+          className={cn(
+            'h-4 w-4 flex-shrink-0 transition-colors duration-150',
+            isAdminActive ? 'text-primary' : 'text-muted-foreground/60 group-hover:text-foreground'
+          )}
+          strokeWidth={isAdminActive ? 2 : 1.75}
+        />
+        <span className="flex-1 truncate text-left">Admin</span>
+        {expanded ? (
+          <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+        ) : (
+          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+        )}
+      </button>
+      {expanded && (
+        <div className="ml-3 space-y-0.5 border-l border-border/20 pl-2">
+          {adminSubpages.map((item) => {
+            const active = item.exact
+              ? pathname === item.href
+              : pathname === item.href || pathname.startsWith(item.href + '/');
+            return (
+              <NavLink
+                key={item.appKey}
+                item={item}
+                isActive={active}
+                onClick={onLinkClick}
+                disabled={isGated}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* SidebarContent (shared between desktop and mobile)                  */
 /* ------------------------------------------------------------------ */
 
@@ -475,25 +564,9 @@ function SidebarContent({
           />
         ))}
 
-        {/* Admin section — only visible to admin */}
-        {isAdminViewing && (
-          <div className="mt-2 space-y-1 border-t border-border/20 pt-2">
-            <NavLink
-              item={{
-                name: 'Attendance',
-                href: '/admin/attendance',
-                icon: ClipboardList,
-                appKey: 'attendance',
-              }}
-              isActive={pathname.startsWith('/admin/attendance')}
-              onClick={onLinkClick}
-            />
-            <NavLink
-              item={{ name: 'Admin', href: '/workspace', icon: Shield, appKey: 'admin' }}
-              isActive={pathname === '/workspace' || pathname.startsWith('/workspace/')}
-              onClick={onLinkClick}
-            />
-          </div>
+        {/* Admin section — only visible to admin/manager */}
+        {(userRole === 'admin' || userRole === 'manager') && (
+          <AdminNavGroup pathname={pathname} onLinkClick={onLinkClick} isGated={isGated} />
         )}
       </nav>
 
