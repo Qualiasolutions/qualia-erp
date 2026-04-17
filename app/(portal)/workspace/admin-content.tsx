@@ -1,10 +1,11 @@
 'use client';
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { LayoutGrid, Palette, Users } from 'lucide-react';
+import { LayoutGrid, Palette, Settings, Users } from 'lucide-react';
 import { AppLibrary } from './app-library';
 import { BrandingSettings } from './branding-settings';
 import { ClientAccess } from './client-access';
+import { PortalSettings } from './portal-settings';
 
 interface AdminContentProps {
   workspaceId: string;
@@ -39,6 +40,10 @@ export function AdminContent({ workspaceId }: AdminContentProps) {
             <Users className="h-4 w-4" />
             Clients
           </TabsTrigger>
+          <TabsTrigger value="settings" className="gap-1.5">
+            <Settings className="h-4 w-4" />
+            Settings
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="apps">
@@ -51,6 +56,10 @@ export function AdminContent({ workspaceId }: AdminContentProps) {
 
         <TabsContent value="clients">
           <ClientAccess workspaceId={workspaceId} />
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <PortalSettings workspaceId={workspaceId} />
         </TabsContent>
       </Tabs>
     </div>
