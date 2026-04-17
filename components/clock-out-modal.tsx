@@ -125,10 +125,12 @@ export function ClockOutModal({
   };
 
   const startedAtFormatted = format(parseISO(session.started_at), 'h:mm a');
-  // "Other" sessions (no project) don't require a report; project sessions do
+  // Report is recommended but not hard-required — employees can clock out
+  // without one if the upload fails or they generated the report outside
+  // the normal flow. A warning is shown in the UI when the report is missing.
   const isOtherSession = !session.project;
-  const reportRequired = !isOtherSession && !reportUrl;
-  const canSubmit = summary.trim() && !isPending && !reportRequired;
+  const reportMissing = !isOtherSession && !reportUrl;
+  const canSubmit = summary.trim() && !isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -160,16 +162,15 @@ export function ClockOutModal({
         <div className="space-y-2">
           <Label className="text-[13px] font-medium">
             Session Report{' '}
-            {isOtherSession ? (
-              <span className="text-[11px] font-normal text-muted-foreground">(optional)</span>
-            ) : (
-              <span className="text-[11px] font-normal text-destructive">
-                (required){' '}
-                <span className="text-muted-foreground">
-                  — run <code className="font-mono">/qualia-report</code>
-                </span>
-              </span>
-            )}
+            <span className="text-[11px] font-normal text-muted-foreground">
+              {isOtherSession ? (
+                '(optional)'
+              ) : (
+                <>
+                  (recommended) — run <code className="font-mono">/qualia-report</code>
+                </>
+              )}
+            </span>
           </Label>
 
           {checkingReport ? (
@@ -201,7 +202,7 @@ export function ClockOutModal({
             <div
               className={cn(
                 'flex items-center gap-2 rounded-lg border px-3 py-2.5',
-                reportRequired
+                reportMissing
                   ? 'border-destructive/30 bg-destructive/5'
                   : 'border-border bg-muted/30'
               )}
@@ -209,14 +210,14 @@ export function ClockOutModal({
               <XCircle
                 className={cn(
                   'size-4 shrink-0',
-                  reportRequired ? 'text-destructive' : 'text-muted-foreground'
+                  reportMissing ? 'text-destructive' : 'text-muted-foreground'
                 )}
               />
               <div className="min-w-0 flex-1">
                 <span
                   className={cn(
                     'text-[12px] font-medium',
-                    reportRequired ? 'text-destructive' : 'text-muted-foreground'
+                    reportMissing ? 'text-destructive' : 'text-muted-foreground'
                   )}
                 >
                   No report attached
