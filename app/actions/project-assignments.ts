@@ -10,8 +10,6 @@ import {
   type ActivityType,
 } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
-import { createTasksFromPhases } from './auto-assign';
-import { createNotification } from './notifications';
 import { syncPlanningFromGitHubWithServiceRole } from '@/lib/planning-sync-core';
 
 // Debounce window for auto-sync on assign: skip if a phase was synced within this many seconds.
@@ -181,25 +179,6 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
     }
   );
 
-  // Auto-task: create one inbox task per non-completed phase
-  try {
-    const autoResult = await createTasksFromPhases(project_id, employee_id, 'assignment');
-
-    if (autoResult.created > 0) {
-      await createNotification(
-        employee_id,
-        project.workspace_id,
-        'task_assigned',
-        'Phase tasks assigned',
-        `${autoResult.created} phase tasks on ${project.name}`,
-        `/projects/${project_id}/roadmap`
-      );
-    }
-  } catch (autoTaskError) {
-    // Auto-task creation is best-effort — never fail the assignment
-    console.error('[assignEmployeeToProject] Auto-task error (non-blocking):', autoTaskError);
-  }
-
   // Auto-sync planning from GitHub (best-effort, debounced)
   // The moment an employee is assigned, pull the latest .planning/ROADMAP.md and
   // phases so they see current work without having to click "Sync" manually.
@@ -344,28 +323,6 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
     },
     { action: 'employee_assigned', project_name: newProject.name }
   );
-
-  // Auto-task: create phase-level tasks for the new project
-  try {
-    const autoResult = await createTasksFromPhases(
-      new_project_id,
-      currentAssignment.employee_id,
-      'assignment'
-    );
-
-    if (autoResult.created > 0) {
-      await createNotification(
-        currentAssignment.employee_id,
-        currentAssignment.workspace_id,
-        'task_assigned',
-        'Phase tasks assigned',
-        `${autoResult.created} phase tasks on ${newProject.name}`,
-        `/projects/${new_project_id}/roadmap`
-      );
-    }
-  } catch (autoTaskError) {
-    console.error('[reassignEmployee] Auto-task error (non-blocking):', autoTaskError);
-  }
 
   // Auto-sync planning from GitHub for the new project (best-effort, debounced)
   await autoSyncPlanningIfGitHubLinked(

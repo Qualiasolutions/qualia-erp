@@ -431,58 +431,17 @@ export async function POST(request: NextRequest) {
       const allCompleted = milestonePhases.every((p) => p.status === 'completed');
       if (!allCompleted) continue;
 
-      // Milestone is fully completed — run cascade
-      const { markMilestoneTasksDone, createTasksFromPhases } =
-        await import('@/app/actions/auto-assign');
-
-      // 1. Mark completed milestone's auto-created tasks as Done
+      // Milestone is fully completed — close out any previously auto-created
+      // tasks for this milestone. Auto-creation of NEW phase tasks is disabled;
+      // employees pick up work through assignments, not phase-derived tasks.
+      const { markMilestoneTasksDone } = await import('@/app/actions/auto-assign');
       const tasksDone = await markMilestoneTasksDone(projectId, milestoneNum, supabase);
-
-      // 2. Find active assignees for this project
-      const { data: activeAssignments } = await supabase
-        .from('project_assignments')
-        .select('employee_id')
-        .eq('project_id', projectId)
-        .is('removed_at', null);
-
-      const assigneeIds = (activeAssignments || []).map((a) => a.employee_id);
-      let totalCreated = 0;
-
-      if (assigneeIds.length > 0) {
-        // 3. Create phase-level tasks for each assignee (covers remaining phases)
-        for (const assigneeId of assigneeIds) {
-          const result = await createTasksFromPhases(
-            projectId,
-            assigneeId,
-            'milestone_cascade',
-            supabase
-          );
-          totalCreated += result.created;
-
-          // 4. Send notification to assignee
-          if (result.created > 0) {
-            await supabase.from('notifications').insert({
-              title: `New phase tasks assigned`,
-              message: `${result.created} phase tasks on ${project.name}`,
-              type: 'auto_assignment',
-              user_id: assigneeId,
-              workspace_id: project.workspace_id,
-              link: `/projects/${projectId}/roadmap`,
-              metadata: {
-                source: 'milestone_cascade',
-                task_count: result.created,
-                project_name: project.name,
-              },
-            });
-          }
-        }
-      }
 
       cascadeResults.push({
         milestone: milestoneNum,
         tasksDone,
-        tasksCreated: totalCreated,
-        assignees: assigneeIds,
+        tasksCreated: 0,
+        assignees: [],
       });
     }
 
