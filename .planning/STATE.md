@@ -1,14 +1,37 @@
 # State — Portal v2
 
 ## Current Phase
-Phase 5: Admin Controls — READY TO PLAN.
-Phase 4 shipped to production 2026-04-14.
+Phase 6: Polish & Ship — DONE.
+Portal v2 roadmap complete. Shipped to production 2026-04-17.
 
 ## Status
-setup
+done
 
 ## Active Work
-None — Phase 4 shipped. Ready for Phase 5 planning.
+None — Portal v2 all 6 phases complete. Ready for handoff / new milestone.
+
+---
+
+### Completed: Phase 6 built (2026-04-17)
+5 tasks / 3 waves / 4 commits. Gates: tsc 0 / lint 0 errors / build success. Migration applied via Supabase MCP. `/admin/board` restored.
+
+### Completed: Phase 5 verified PASS (2026-04-17)
+4 tasks / 3 waves / 4 commits / 21 contracts all PASS / tsc clean / all 8 success criteria scored ≥3.
+
+Commits:
+- `177f35d` — portal_settings table migration + server actions + Zod schema
+- `2de2fcf` — Client Access tab gap fix (wired to getPortalClientManagement)
+- `39ce639` — SWR hook + cache key + invalidation
+- `5774d76` — Portal Settings tab UI (auth / notification defaults / custom domain)
+
+**Pending infrastructure (not a code gap):**
+1. Apply migration: `npx supabase db push --linked` — writes `portal_settings` table
+2. Regenerate types: `npx supabase gen types typescript --project-id vbpzaiqovffpsroxaulv > types/database.ts`
+3. Browser QA blocked — Playwright MCP not connected. To enable: `claude mcp add playwright npx @playwright/mcp@latest` then re-run /qualia-verify 5.
+
+Ready for Phase 6: Polish & Ship.
+
+Out-of-band: framework v3.4.2-compat layer shipped to prod 2026-04-17 (commit `f907028`). Accepts per-user `qlt_*` tokens OR legacy `CLAUDE_API_KEY` (grandfathered until 2026-05-17). Polymorphic `gap_cycles`, 24h idempotency. Branch 2 (`feature/erp-v3.5-fields`) and branch 3 (`feature/erp-v3.6-cleanup`) still to go — gated on framework v3.5/v3.6 tags.
 
 ## Progress
 - [x] Phase 1: Portal Shell & Foundation — DONE
