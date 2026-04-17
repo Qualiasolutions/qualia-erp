@@ -8,5 +8,5 @@ export default async function AgentPage() {
   const profile = await getPortalProfile(user.id);
   if (profile?.role === 'client') redirect('/');
 
-  return <AgentClient />;
+  return <AgentClient userRole={profile?.role || 'employee'} />;
 }

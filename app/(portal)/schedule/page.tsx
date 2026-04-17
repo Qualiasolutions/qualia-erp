@@ -16,13 +16,19 @@ export const metadata: Metadata = {
   description: 'Team schedule and calendar',
 };
 
-async function ScheduleLoader({ view }: { view: string }) {
+async function ScheduleLoader({
+  view,
+  scopeToUserId,
+}: {
+  view: string;
+  scopeToUserId?: string | null;
+}) {
   await connection();
 
   try {
     const workspaceId = await getCurrentWorkspaceId();
     const [meetings, profiles] = await Promise.all([
-      getMeetings(),
+      getMeetings(undefined, scopeToUserId),
       getProfiles(workspaceId || undefined),
     ]);
 
@@ -117,6 +123,9 @@ export default async function PortalSchedulePage({
   const params = await searchParams;
   const view = params.view || 'week';
 
+  // Scope meetings for employees so they only see their own relevant meetings
+  const scopeToUserId = profile?.role === 'employee' ? user.id : null;
+
   return (
     <div className="flex h-full flex-col">
       <PageHeader
@@ -130,7 +139,7 @@ export default async function PortalSchedulePage({
 
       <div className="flex-1 overflow-hidden px-4 py-3 sm:px-6 sm:py-4">
         <Suspense fallback={<ScheduleSkeleton />}>
-          <ScheduleLoader view={view} />
+          <ScheduleLoader view={view} scopeToUserId={scopeToUserId} />
         </Suspense>
       </div>
     </div>

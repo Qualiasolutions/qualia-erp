@@ -9,6 +9,7 @@ import {
   PortalSettingsSchema,
   type PortalSettingsInput,
 } from '@/lib/validation';
+import { assertNotImpersonating } from '@/lib/portal-utils';
 
 // All 7 portal app keys
 const ALL_APP_KEYS = [
@@ -114,6 +115,9 @@ export async function updatePortalAppConfig(
   apps: Record<string, boolean>
 ): Promise<ActionResult> {
   try {
+    const imp = await assertNotImpersonating();
+    if (!imp.ok) return { success: false, error: imp.error };
+
     const supabase = await createClient();
 
     const {
@@ -258,6 +262,9 @@ export async function updatePortalBranding(
   data: { company_name?: string; accent_color?: string }
 ): Promise<ActionResult> {
   try {
+    const imp = await assertNotImpersonating();
+    if (!imp.ok) return { success: false, error: imp.error };
+
     const supabase = await createClient();
 
     const {
@@ -321,6 +328,9 @@ export async function updatePortalBranding(
  */
 export async function uploadPortalLogo(formData: FormData): Promise<ActionResult> {
   try {
+    const imp = await assertNotImpersonating();
+    if (!imp.ok) return { success: false, error: imp.error };
+
     const supabase = await createClient();
 
     const {
@@ -536,6 +546,9 @@ export async function updatePortalSettings(
   data: PortalSettingsInput
 ): Promise<ActionResult> {
   try {
+    const imp = await assertNotImpersonating();
+    if (!imp.ok) return { success: false, error: imp.error };
+
     const supabase = await createClient();
 
     const {

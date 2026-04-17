@@ -21,6 +21,7 @@ import {
   type ActionResult,
   type ActivityType,
 } from './shared';
+import { assertNotImpersonating } from '@/lib/portal-utils';
 
 // ============ PROJECT TYPES ============
 
@@ -57,6 +58,9 @@ export interface ProjectStatsData {
  * Create a new project
  */
 export async function createProject(formData: FormData): Promise<ActionResult> {
+  const imp = await assertNotImpersonating();
+  if (!imp.ok) return { success: false, error: imp.error };
+
   const supabase = await createClient();
 
   const {
@@ -419,6 +423,9 @@ export async function getProjectById(id: string) {
  * Update a project
  */
 export async function updateProject(formData: FormData): Promise<ActionResult> {
+  const imp = await assertNotImpersonating();
+  if (!imp.ok) return { success: false, error: imp.error };
+
   const supabase = await createClient();
 
   const {
@@ -515,6 +522,9 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
  * Delete a project
  */
 export async function deleteProject(id: string): Promise<ActionResult> {
+  const imp = await assertNotImpersonating();
+  if (!imp.ok) return { success: false, error: imp.error };
+
   const supabase = await createClient();
 
   const {

@@ -32,11 +32,14 @@ type MeetingResponse = {
   start_time: string;
   end_time: string;
   created_at: string;
+  project_id: string | null;
+  created_by: string | null;
   project: FKResponse<{ id: string; name: string }>;
   client: FKResponse<{ id: string; display_name: string; lead_status: string | null }>;
   creator: FKResponse<ProfileRef>;
   attendees: Array<{
     id: string;
+    profile_id: string;
     profile: FKResponse<ProfileRef>;
   }>;
 };
@@ -198,9 +201,15 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
 }
 
 /**
- * Get all meetings for a workspace
+ * Get all meetings for a workspace.
+ *
+ * When `scopeToUserId` is provided, results are filtered to meetings where:
+ *   - the user is a meeting attendee, OR
+ *   - the user created the meeting, OR
+ *   - the meeting's project_id is in the user's project_assignments.
+ * This is used to scope meetings for employees so they don't see unrelated meetings.
  */
-export async function getMeetings(workspaceId?: string | null) {
+export async function getMeetings(workspaceId?: string | null, scopeToUserId?: string | null) {
   const supabase = await createClient();
 
   // Get workspace ID from parameter or user's default
@@ -224,11 +233,14 @@ export async function getMeetings(workspaceId?: string | null) {
             end_time,
             meeting_link,
             created_at,
+            project_id,
+            created_by,
             project:projects (id, name),
             client:clients (id, display_name, lead_status),
             creator:profiles!meetings_created_by_fkey (id, full_name, email),
             attendees:meeting_attendees (
                 id,
+                profile_id,
                 profile:profiles (id, full_name, email, avatar_url)
             )
         `
@@ -248,7 +260,38 @@ export async function getMeetings(workspaceId?: string | null) {
     return [];
   }
 
-  return (meetings || []).map((meeting) => {
+  let filteredMeetings = meetings || [];
+
+  // If scoping to a specific user, filter client-side after fetching
+  // (Supabase doesn't support OR across joined tables in a single query)
+  if (scopeToUserId) {
+    // Fetch the user's assigned project IDs for project-based matching
+    const { data: assignments } = await supabase
+      .from('project_assignments')
+      .select('project_id')
+      .eq('employee_id', scopeToUserId)
+      .is('removed_at', null);
+
+    const assignedProjectIds = new Set((assignments || []).map((a) => a.project_id));
+
+    filteredMeetings = filteredMeetings.filter((meeting) => {
+      const m = meeting as unknown as MeetingResponse;
+
+      // User created the meeting
+      if (m.created_by === scopeToUserId) return true;
+
+      // User is an attendee
+      const isAttendee = (m.attendees || []).some((a) => a.profile_id === scopeToUserId);
+      if (isAttendee) return true;
+
+      // Meeting is for a project the user is assigned to
+      if (m.project_id && assignedProjectIds.has(m.project_id)) return true;
+
+      return false;
+    });
+  }
+
+  return filteredMeetings.map((meeting) => {
     const m = meeting as unknown as MeetingResponse;
     return {
       ...meeting,

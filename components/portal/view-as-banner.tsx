@@ -33,6 +33,9 @@ export function ViewAsBanner({ viewAsName, viewAsRole }: ViewAsBannerProps) {
       <span className="text-amber-800 dark:text-amber-300">
         Viewing as <span className="font-semibold">{viewAsName}</span>
         <span className="ml-1 text-amber-600 dark:text-amber-400">({viewAsRole})</span>
+        <span className="ml-2 font-bold text-amber-900 dark:text-amber-200">
+          — Read-only mode — exit view-as to make changes
+        </span>
       </span>
       <button
         onClick={handleStop}

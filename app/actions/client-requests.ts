@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { type ActionResult, isUserManagerOrAbove } from './shared';
 import { notifyAssignedEmployees } from '@/lib/notifications';
 import { FeatureRequestCreateSchema, UpdateFeatureRequestSchema } from '@/lib/validation';
+import { assertNotImpersonating } from '@/lib/portal-utils';
 
 /**
  * Create a feature request from a client
@@ -16,6 +17,9 @@ export async function createFeatureRequest(input: {
   priority?: string;
 }): Promise<ActionResult> {
   try {
+    const imp = await assertNotImpersonating();
+    if (!imp.ok) return { success: false, error: imp.error };
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -173,6 +177,9 @@ export async function updateFeatureRequest(
   }
 ): Promise<ActionResult> {
   try {
+    const imp = await assertNotImpersonating();
+    if (!imp.ok) return { success: false, error: imp.error };
+
     const supabase = await createClient();
     const {
       data: { user },

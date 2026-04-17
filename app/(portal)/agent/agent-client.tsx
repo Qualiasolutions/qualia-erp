@@ -13,7 +13,20 @@ import {
 import type { Message } from '@/app/actions/ai-conversations';
 
 // Quick action prompts for empty state
-const quickActions = ['Show my tasks', 'Project status', 'Create an invoice', 'Schedule a meeting'];
+const allQuickActions = [
+  { label: 'Show my tasks', roles: ['admin', 'manager', 'employee'] },
+  { label: 'Project status', roles: ['admin', 'manager', 'employee'] },
+  { label: 'Create an invoice', roles: ['admin', 'manager'] },
+  { label: 'Schedule a meeting', roles: ['admin', 'manager', 'employee'] },
+  { label: 'Client billing overview', roles: ['admin', 'manager'] },
+  { label: 'Team activity summary', roles: ['admin', 'manager'] },
+];
+
+function getQuickActions(userRole: string): string[] {
+  return allQuickActions
+    .filter((action) => action.roles.includes(userRole))
+    .map((action) => action.label);
+}
 
 // Thinking indicator with animated dots
 function ThinkingIndicator() {
@@ -45,7 +58,12 @@ function ThinkingIndicator() {
   );
 }
 
-export function AgentClient() {
+interface AgentClientProps {
+  userRole?: string;
+}
+
+export function AgentClient({ userRole = 'employee' }: AgentClientProps) {
+  const quickActions = getQuickActions(userRole);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [input, setInput] = useState('');

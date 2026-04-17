@@ -11,6 +11,7 @@ import {
 } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { syncPlanningFromGitHubWithServiceRole } from '@/lib/planning-sync-core';
+import { assertNotImpersonating } from '@/lib/portal-utils';
 
 // Debounce window for auto-sync on assign: skip if a phase was synced within this many seconds.
 // Prevents spam when an admin assigns multiple people to the same project in quick succession.
@@ -76,6 +77,9 @@ async function autoSyncPlanningIfGitHubLinked(
  * Assign an employee to a project
  */
 export async function assignEmployeeToProject(formData: FormData): Promise<ActionResult> {
+  const imp = await assertNotImpersonating();
+  if (!imp.ok) return { success: false, error: imp.error };
+
   const supabase = await createClient();
 
   const {
@@ -196,6 +200,9 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
  * Reassign an employee from one project to another
  */
 export async function reassignEmployee(formData: FormData): Promise<ActionResult> {
+  const imp = await assertNotImpersonating();
+  if (!imp.ok) return { success: false, error: imp.error };
+
   const supabase = await createClient();
 
   const {
@@ -339,6 +346,9 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
  * Remove an employee assignment from a project
  */
 export async function removeAssignment(assignmentId: string): Promise<ActionResult> {
+  const imp = await assertNotImpersonating();
+  if (!imp.ok) return { success: false, error: imp.error };
+
   const supabase = await createClient();
 
   const {

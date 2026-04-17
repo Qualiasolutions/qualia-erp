@@ -137,6 +137,32 @@ export async function resolveEffectiveUser(
 }
 
 /**
+ * Assert that a given portal app is enabled for a user.
+ * Internal users (admin, manager, employee) always pass.
+ * Clients are checked against the App Library config via getEnabledAppsForClient.
+ *
+ * @param userId - The user to check
+ * @param workspaceId - The workspace context (required for clients)
+ * @param appKey - The app key to check (e.g. 'messages', 'billing', 'files')
+ * @param role - The user's role
+ * @returns true if the user may access the app, false otherwise
+ */
+export async function assertAppEnabledForClient(
+  userId: string,
+  workspaceId: string | null,
+  appKey: string,
+  role: string | null
+): Promise<boolean> {
+  // Internal users pass unconditionally.
+  if (role === 'admin' || role === 'manager' || role === 'employee') return true;
+  if (!workspaceId) return false;
+  const { getEnabledAppsForClient } = await import('@/app/actions/portal-admin');
+  const result = await getEnabledAppsForClient(workspaceId, userId);
+  if (!result.success || !Array.isArray(result.data)) return false;
+  return (result.data as string[]).includes(appKey);
+}
+
+/**
  * Get all project IDs that a client has access to
  * @param userId - The client user ID
  * @returns Array of project IDs the client can access
@@ -157,4 +183,21 @@ export async function getClientProjectIds(userId: string): Promise<string[]> {
     console.error('Failed to get client project IDs:', error);
     return [];
   }
+}
+
+/**
+ * Guard for mutation actions: blocks writes while an admin is impersonating another user.
+ * Call at the top of any create/update/delete server action, right after auth.
+ */
+export async function assertNotImpersonating(): Promise<{ ok: boolean; error?: string }> {
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
+  const viewAsId = cookieStore.get('view-as-user-id')?.value;
+  if (viewAsId) {
+    return {
+      ok: false,
+      error: 'Cannot modify data while viewing as another user. Exit view-as first.',
+    };
+  }
+  return { ok: true };
 }

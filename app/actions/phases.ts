@@ -5,6 +5,7 @@ import { uuidParam, createPhaseSchema, updatePhaseSchema } from '@/lib/validatio
 
 import { getTemplateForType, type GSDPhaseTemplate } from '@/lib/gsd-templates';
 import { type ActionResult, canAccessProject, isUserManagerOrAbove } from './shared';
+import { assertNotImpersonating } from '@/lib/portal-utils';
 import type { Database } from '@/types/database';
 
 type ProjectType = Database['public']['Enums']['project_type'];
@@ -34,6 +35,9 @@ export async function getProjectPhases(projectId: string) {
 }
 
 export async function createProjectPhase(projectId: string, name: string) {
+  const imp = await assertNotImpersonating();
+  if (!imp.ok) return { success: false, error: imp.error };
+
   const parsed = createPhaseSchema.safeParse({ projectId, name });
   if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
 
@@ -99,6 +103,9 @@ export async function createProjectPhase(projectId: string, name: string) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function deleteProjectPhase(phaseId: string, projectId: string) {
+  const imp = await assertNotImpersonating();
+  if (!imp.ok) return { success: false, error: imp.error };
+
   const idCheck = uuidParam.safeParse(phaseId);
   if (!idCheck.success) return { success: false, error: 'Invalid phase ID' };
 

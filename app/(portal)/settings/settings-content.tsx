@@ -33,19 +33,29 @@ interface SettingsContentProps {
 
 const notificationItems = [
   {
+    id: 'task_assigned',
+    label: 'Task Assigned',
+    description: 'Notify me when a task is assigned to me',
+  },
+  {
+    id: 'task_due_soon',
+    label: 'Task Due Soon',
+    description: 'Notify me when a task deadline is approaching',
+  },
+  {
     id: 'project_update',
     label: 'Project Updates',
     description: 'Notify me about important project milestones and updates',
   },
   {
-    id: 'client_activity',
-    label: 'Activity Updates',
-    description: 'Notify me about team activity on my projects',
-  },
-  {
     id: 'meeting_reminder',
     label: 'Meeting Reminders',
     description: 'Notify me before scheduled meetings',
+  },
+  {
+    id: 'client_activity',
+    label: 'Activity Updates',
+    description: 'Notify me about team activity on my projects',
   },
 ] as const;
 
