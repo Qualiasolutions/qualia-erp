@@ -23,11 +23,20 @@ import { notifyEmployeesOfClientFileUpload } from '@/lib/email';
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 // Allowed MIME types
+// Must stay in sync with storage.buckets.allowed_mime_types for 'project-files'.
+// If code allows a type that the bucket rejects, uploads 400 from storage.
+// If the bucket allows a type that code rejects, user gets a clear error before upload.
 const ALLOWED_MIME_TYPES = [
+  // Images
   'image/jpeg',
   'image/png',
   'image/gif',
   'image/webp',
+  'image/svg+xml',
+  'image/avif',
+  'image/heic', // iPhone photos
+  'image/heif',
+  // Documents
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -35,17 +44,24 @@ const ALLOWED_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-powerpoint',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // Text
   'text/plain',
   'text/csv',
   'text/markdown',
   'text/html',
+  // Archives / data
   'application/json',
   'application/zip',
   'application/x-rar-compressed',
+  'application/x-zip-compressed',
+  'application/octet-stream', // browser fallback when type is unknown
+  // Media
   'video/mp4',
   'video/quicktime',
+  'video/webm',
   'audio/mpeg',
   'audio/wav',
+  'audio/ogg',
 ];
 
 /**
