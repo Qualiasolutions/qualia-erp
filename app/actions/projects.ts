@@ -14,7 +14,13 @@ import {
 import { notifyProjectCreated } from '@/lib/email';
 
 import { getCurrentWorkspaceId } from './workspace';
-import { createActivity, canDeleteProject, type ActionResult, type ActivityType } from './shared';
+import {
+  createActivity,
+  canDeleteProject,
+  isUserManagerOrAbove,
+  type ActionResult,
+  type ActivityType,
+} from './shared';
 
 // ============ PROJECT TYPES ============
 
@@ -421,6 +427,10 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
   if (!user) {
     return { success: false, error: 'Not authenticated' };
   }
+
+  // Role guard: only managers and admins can update projects
+  const isPriv = await isUserManagerOrAbove(user.id);
+  if (!isPriv) return { success: false, error: 'Not authorized' };
 
   // Validate input
   const validation = parseFormData(updateProjectSchema, formData);

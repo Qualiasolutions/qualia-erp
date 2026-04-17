@@ -508,6 +508,17 @@ export const FeatureRequestCreateSchema = z.object({
 export type ClientProfileUpdateInput = z.infer<typeof ClientProfileUpdateSchema>;
 export type FeatureRequestCreateInput = z.infer<typeof FeatureRequestCreateSchema>;
 
+export const UpdateFeatureRequestSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(5000).optional(),
+  status: z
+    .enum(['pending', 'in_review', 'planned', 'in_progress', 'completed', 'declined'] as const)
+    .optional(),
+  admin_response: z.string().max(2000).optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent'] as const).optional(),
+});
+export type UpdateFeatureRequestInput = z.infer<typeof UpdateFeatureRequestSchema>;
+
 // =====================
 // Portal Messaging Schemas
 // =====================

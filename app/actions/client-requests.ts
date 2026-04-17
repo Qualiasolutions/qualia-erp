@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 
 import { type ActionResult, isUserManagerOrAbove } from './shared';
 import { notifyAssignedEmployees } from '@/lib/notifications';
-import { FeatureRequestCreateSchema } from '@/lib/validation';
+import { FeatureRequestCreateSchema, UpdateFeatureRequestSchema } from '@/lib/validation';
 
 /**
  * Create a feature request from a client
@@ -179,22 +179,30 @@ export async function updateFeatureRequest(
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
+    // Validate input with Zod
+    const parsed = UpdateFeatureRequestSchema.safeParse(updates);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Invalid input' };
+    }
+    const safeUpdates = parsed.data;
+
     const isAdmin = await isUserManagerOrAbove(user.id);
 
     const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
     if (isAdmin) {
       // Admins can update all fields
-      if (updates.status) updateData.status = updates.status;
-      if (updates.admin_response !== undefined) updateData.admin_response = updates.admin_response;
-      if (updates.title) updateData.title = updates.title.trim();
-      if (updates.description !== undefined)
-        updateData.description = updates.description?.trim() || null;
+      if (safeUpdates.status) updateData.status = safeUpdates.status;
+      if (safeUpdates.admin_response !== undefined)
+        updateData.admin_response = safeUpdates.admin_response;
+      if (safeUpdates.title) updateData.title = safeUpdates.title.trim();
+      if (safeUpdates.description !== undefined)
+        updateData.description = safeUpdates.description?.trim() || null;
     } else {
       // Clients can only update title and description of pending/in_review requests
-      if (updates.title !== undefined) updateData.title = updates.title.trim();
-      if (updates.description !== undefined)
-        updateData.description = updates.description?.trim() || null;
+      if (safeUpdates.title !== undefined) updateData.title = safeUpdates.title.trim();
+      if (safeUpdates.description !== undefined)
+        updateData.description = safeUpdates.description?.trim() || null;
     }
 
     let query = supabase.from('client_feature_requests').update(updateData).eq('id', requestId);

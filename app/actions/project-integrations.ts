@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-import type { ActionResult } from './shared';
+import { type ActionResult, isUserManagerOrAbove } from './shared';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net';
 const WEBHOOK_PATH = '/api/github/webhook';
@@ -171,6 +171,15 @@ export async function upsertIntegration(
 
   const supabase = await createClient();
 
+  // Auth + role check
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const isPriv = await isUserManagerOrAbove(user.id);
+  if (!isPriv) return { success: false, error: 'Not authorized' };
+
   // Check if integration already exists for this project + service type
   const { data: existing } = await supabase
     .from('project_integrations')
@@ -232,6 +241,15 @@ export async function deleteIntegration(
   }
 
   const supabase = await createClient();
+
+  // Auth + role check
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const isPriv = await isUserManagerOrAbove(user.id);
+  if (!isPriv) return { success: false, error: 'Not authorized' };
 
   const { error } = await supabase.from('project_integrations').delete().eq('id', integrationId);
 

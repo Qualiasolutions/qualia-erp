@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-import type { ActionResult } from './shared';
+import { type ActionResult, isUserAdmin } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { canAccessProject } from '@/lib/portal-utils';
 export type { ActivityLogEntry } from '@/lib/activity-utils';
@@ -133,6 +133,32 @@ export async function getCrossProjectActivityFeed(
     return { success: true, data: { items: [], hasMore: false, nextCursor: null } };
   }
 
+  // Filter projectIds to only those the user can actually access (IDOR fix)
+  const admin = await isUserAdmin(user.id);
+  let safeIds = projectIds;
+
+  if (!admin) {
+    const [{ data: assignments }, { data: clientLinks }] = await Promise.all([
+      supabase
+        .from('project_assignments')
+        .select('project_id')
+        .eq('employee_id', user.id)
+        .is('removed_at', null),
+      supabase.from('client_projects').select('project_id').eq('client_id', user.id),
+    ]);
+
+    const accessibleIds = new Set([
+      ...(assignments ?? []).map((a) => a.project_id),
+      ...(clientLinks ?? []).map((c) => c.project_id),
+    ]);
+
+    safeIds = projectIds.filter((id) => accessibleIds.has(id));
+  }
+
+  if (safeIds.length === 0) {
+    return { success: true, data: { items: [], hasMore: false, nextCursor: null } };
+  }
+
   let query = supabase
     .from('activity_log')
     .select(
@@ -142,7 +168,7 @@ export async function getCrossProjectActivityFeed(
       project:projects!activity_log_project_id_fkey(id, name)
     `
     )
-    .in('project_id', projectIds)
+    .in('project_id', safeIds)
     .eq('is_client_visible', true)
     .order('created_at', { ascending: false })
     .limit(limit);

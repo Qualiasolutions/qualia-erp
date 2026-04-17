@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { uuidParam, createPhaseSchema, updatePhaseSchema } from '@/lib/validation';
 
 import { getTemplateForType, type GSDPhaseTemplate } from '@/lib/gsd-templates';
-import type { ActionResult } from './shared';
+import { type ActionResult, canAccessProject, isUserManagerOrAbove } from './shared';
 import type { Database } from '@/types/database';
 
 type ProjectType = Database['public']['Enums']['project_type'];
@@ -15,6 +15,10 @@ export async function getProjectPhases(projectId: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
+
+  // Verify the user has access to this project
+  const hasAccess = await canAccessProject(user.id, projectId);
+  if (!hasAccess) return [];
 
   const { data, error } = await supabase
     .from('project_phases')
@@ -38,6 +42,10 @@ export async function createProjectPhase(projectId: string, name: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
+
+  // Role guard: only managers and admins can create phases
+  const isPriv = await isUserManagerOrAbove(user.id);
+  if (!isPriv) return { success: false, error: 'Not authorized' };
 
   // Look up the project's workspace_id so the insert satisfies the
   // workspace-scoped RLS policy. Without this the phase would be inserted
@@ -100,6 +108,10 @@ export async function deleteProjectPhase(phaseId: string, projectId: string) {
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
+  // Role guard: only managers and admins can delete phases
+  const isPriv = await isUserManagerOrAbove(user.id);
+  if (!isPriv) return { success: false, error: 'Not authorized' };
+
   // Use .select() so we can detect when RLS silently filtered out the row
   // (delete + RLS returns no error but zero rows affected). Without this
   // the UI happily reports "Phase deleted" while the row is still there.
@@ -134,6 +146,10 @@ export async function updateProjectPhase(phaseId: string, name: string, projectI
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
+
+  // Role guard: only managers and admins can update phases
+  const isPriv = await isUserManagerOrAbove(user.id);
+  if (!isPriv) return { success: false, error: 'Not authorized' };
 
   const { error } = await supabase.from('project_phases').update({ name }).eq('id', phaseId);
 
