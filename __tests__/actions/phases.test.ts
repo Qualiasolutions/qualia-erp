@@ -33,6 +33,14 @@ jest.mock('@/lib/email', () => ({
   notifyClientOfPhaseMilestone: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('@/app/actions/shared', () => ({
+  canAccessProject: jest.fn().mockResolvedValue(true),
+  isUserAdmin: jest.fn().mockResolvedValue(true),
+  isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
+  getCachedUserRole: jest.fn().mockResolvedValue('admin'),
+  createActivity: jest.fn().mockResolvedValue(undefined),
+}));
+
 // ---- Mock setup ----
 
 const mockSupabase = {
@@ -110,6 +118,14 @@ function createMockPhase(overrides: Record<string, unknown> = {}) {
 describe('phase actions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSupabase.from.mockReset();
+    mockSupabase.auth.getUser.mockReset();
+    const { canAccessProject, isUserManagerOrAbove, isUserAdmin, getCachedUserRole } =
+      jest.requireMock('@/app/actions/shared');
+    (canAccessProject as jest.Mock).mockResolvedValue(true);
+    (isUserManagerOrAbove as jest.Mock).mockResolvedValue(true);
+    (isUserAdmin as jest.Mock).mockResolvedValue(true);
+    (getCachedUserRole as jest.Mock).mockResolvedValue('admin');
   });
 
   // ============ getProjectPhases ============
@@ -155,11 +171,48 @@ describe('phase actions', () => {
 
   // ============ createProjectPhase ============
   describe('createProjectPhase', () => {
+    /**
+     * createProjectPhase hits three tables:
+     *   1. projects (lookup workspace_id, terminal .single)
+     *   2. project_phases (existing phases, terminal .limit — resolves to array)
+     *   3. project_phases (insert → .select().single())
+     * We route by table name and use a flag on the 2nd+ project_phases call to
+     * distinguish the existing-phases query from the insert.
+     */
+    function setupCreatePhaseMocks(
+      existingPhases: unknown[],
+      insertResult: { data: unknown; error: unknown }
+    ) {
+      const projectChain = buildChain({ data: { workspace_id: WORKSPACE_ID }, error: null });
+      projectChain.single.mockResolvedValue({ data: { workspace_id: WORKSPACE_ID }, error: null });
+
+      let phasesCallCount = 0;
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'projects') return projectChain;
+        if (table === 'project_phases') {
+          phasesCallCount++;
+          if (phasesCallCount === 1) {
+            // First call: existing phases list (resolves to array via .limit terminal)
+            return buildChain({ data: existingPhases, error: null });
+          }
+          // Second call: insert chain — terminal is .single()
+          const insertChain = buildChain({ data: insertResult.data, error: insertResult.error });
+          insertChain.single.mockResolvedValue(insertResult);
+          return insertChain;
+        }
+        return buildChain({ data: null, error: null });
+      });
+      mockSupabase.auth.getUser.mockResolvedValue({
+        data: { user: { id: USER_ID } },
+        error: null,
+      });
+      const { createClient } = jest.requireMock('@/lib/supabase/server');
+      (createClient as jest.Mock).mockResolvedValue(mockSupabase);
+    }
+
     it('creates phase with valid input', async () => {
       const { createProjectPhase } = await import('@/app/actions/phases');
-      const newPhase = createMockPhase();
-      const chain = setupMockClient([], null); // first query: existing phases (empty)
-      chain.single.mockResolvedValue({ data: newPhase, error: null });
+      setupCreatePhaseMocks([], { data: createMockPhase(), error: null });
 
       const result = await createProjectPhase(PROJECT_ID, 'New Phase');
 
@@ -178,8 +231,7 @@ describe('phase actions', () => {
 
     it('returns error when Supabase insert fails', async () => {
       const { createProjectPhase } = await import('@/app/actions/phases');
-      const chain = setupMockClient([], null);
-      chain.single.mockResolvedValue({ data: null, error: { message: 'Insert error' } });
+      setupCreatePhaseMocks([], { data: null, error: { message: 'Insert error' } });
 
       const result = await createProjectPhase(PROJECT_ID, 'New Phase');
 
@@ -188,25 +240,15 @@ describe('phase actions', () => {
 
     it('uses sort_order 0 when no existing phases', async () => {
       const { createProjectPhase } = await import('@/app/actions/phases');
-      const chain = setupMockClient([], null); // empty existing phases
       const newPhase = createMockPhase({ sort_order: 0 });
-      chain.single.mockResolvedValue({ data: newPhase, error: null });
+      setupCreatePhaseMocks([], { data: newPhase, error: null });
 
       const result = await createProjectPhase(PROJECT_ID, 'First Phase');
 
       expect(result.success).toBe(true);
     });
 
-    it('calls revalidatePath after creation', async () => {
-      const { createProjectPhase } = await import('@/app/actions/phases');
-      const { revalidatePath } = jest.requireMock('next/cache');
-      const chain = setupMockClient([], null);
-      chain.single.mockResolvedValue({ data: createMockPhase(), error: null });
-
-      await createProjectPhase(PROJECT_ID, 'Test Phase');
-
-      expect(revalidatePath).toHaveBeenCalledWith(`/projects/${PROJECT_ID}`);
-    });
+    // Note: phases.ts does not call revalidatePath (removed project-wide for SWR).
   });
 
   // ============ deleteProjectPhase ============
@@ -249,15 +291,7 @@ describe('phase actions', () => {
       expect(result.error).toMatch(/permission/i);
     });
 
-    it('calls revalidatePath after deletion', async () => {
-      const { deleteProjectPhase } = await import('@/app/actions/phases');
-      const { revalidatePath } = jest.requireMock('next/cache');
-      setupMockClient([{ id: PHASE_ID }], null);
-
-      await deleteProjectPhase(PHASE_ID, PROJECT_ID);
-
-      expect(revalidatePath).toHaveBeenCalledWith(`/projects/${PROJECT_ID}`);
-    });
+    // revalidatePath removed project-wide for SWR cache invalidation.
   });
 
   // ============ updateProjectPhase ============

@@ -32,6 +32,7 @@ jest.mock('@/app/actions/shared', () => ({
   createActivity: jest.fn().mockResolvedValue(undefined),
   canDeleteProject: jest.fn(),
   isUserAdmin: jest.fn(),
+  isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
   getCachedUserRole: jest.fn().mockResolvedValue('admin'),
 }));
 
@@ -122,9 +123,17 @@ function createMockProject(overrides: Record<string, unknown> = {}) {
 describe('project actions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    const { canDeleteProject, isUserAdmin } = jest.requireMock('@/app/actions/shared');
+    // clearAllMocks does NOT reset mockReturnValue implementations —
+    // reset the shared mockSupabase methods so from() mocks don't leak across tests.
+    mockSupabase.from.mockReset();
+    mockSupabase.rpc.mockReset();
+    mockSupabase.auth.getUser.mockReset();
+    const { canDeleteProject, isUserAdmin, isUserManagerOrAbove, getCachedUserRole } =
+      jest.requireMock('@/app/actions/shared');
     (canDeleteProject as jest.Mock).mockResolvedValue(true);
     (isUserAdmin as jest.Mock).mockResolvedValue(true);
+    (isUserManagerOrAbove as jest.Mock).mockResolvedValue(true);
+    (getCachedUserRole as jest.Mock).mockResolvedValue('admin');
     const { createActivity } = jest.requireMock('@/app/actions/shared');
     (createActivity as jest.Mock).mockResolvedValue(undefined);
     const { notifyProjectCreated } = jest.requireMock('@/lib/email');
@@ -202,22 +211,11 @@ describe('project actions', () => {
       expect(result.success).toBe(false);
     });
 
-    it('calls revalidatePath after successful create', async () => {
-      const { createProject } = await import('@/app/actions/projects');
-      const { revalidatePath } = jest.requireMock('next/cache');
-      setupMockClient(createMockProject(), null);
-
-      const formData = new FormData();
-      formData.set('name', 'Test Project');
-      formData.set('team_id', TEAM_ID);
-      formData.set('workspace_id', WORKSPACE_ID);
-      formData.set('project_group', 'active');
-      formData.set('status', 'Active');
-
-      await createProject(formData);
-
-      expect(revalidatePath).toHaveBeenCalledWith('/projects');
-    });
+    // Note: revalidatePath was removed project-wide in favor of SWR cache
+    // invalidation (see .planning/OPTIMIZE.md — 269 revalidatePath calls removed).
+    // createProject no longer calls revalidatePath; SWR invalidation happens in the
+    // client-side mutation hook. Test coverage for cache invalidation lives in the
+    // SWR hook tests rather than the server action tests.
   });
 
   // ============ getProjects ============
@@ -235,29 +233,22 @@ describe('project actions', () => {
       expect(Array.isArray(result)).toBe(true);
     });
 
-    it('filters to assigned projects for non-admin users', async () => {
+    it('filters to linked projects for client users only', async () => {
+      // Phase 8: employees and managers see all workspace projects (commit da85bb0).
+      // Only clients are filtered by their linked projects.
       const { getProjects } = await import('@/app/actions/projects');
       const projects = [
         { id: PROJECT_ID, name: 'Project 1' },
         { id: TEAM_ID, name: 'Project 2' },
       ];
 
-      // projects query chain (first from())
       const projectsChain = buildChain({ data: projects, error: null });
-      // profiles query (second from() - non-admin profile)
-      const profileChain = buildChain({ data: { role: 'employee' }, error: null });
-      profileChain.single.mockResolvedValue({ data: { role: 'employee' }, error: null });
-      // assignments query (third from() - only assigned to PROJECT_ID)
-      const assignmentsChain = buildChain({
-        data: [{ project_id: PROJECT_ID }],
-        error: null,
+      const linksChain = buildChain({ data: [{ project_id: PROJECT_ID }], error: null });
+
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'client_projects') return linksChain;
+        return projectsChain;
       });
-
-      mockSupabase.from
-        .mockReturnValueOnce(projectsChain)
-        .mockReturnValueOnce(profileChain)
-        .mockReturnValueOnce(assignmentsChain);
-
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: { id: USER_ID } },
         error: null,
@@ -265,10 +256,38 @@ describe('project actions', () => {
       const { createClient } = jest.requireMock('@/lib/supabase/server');
       (createClient as jest.Mock).mockResolvedValue(mockSupabase);
 
+      // Override the default 'admin' role mock to 'client'
+      const { getCachedUserRole } = jest.requireMock('@/app/actions/shared');
+      (getCachedUserRole as jest.Mock).mockResolvedValue('client');
+
       const result = await getProjects(WORKSPACE_ID);
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe(PROJECT_ID);
+    });
+
+    it('returns all workspace projects for employees (no assignment filter)', async () => {
+      const { getProjects } = await import('@/app/actions/projects');
+      const projects = [
+        { id: PROJECT_ID, name: 'Project 1' },
+        { id: TEAM_ID, name: 'Project 2' },
+      ];
+
+      const projectsChain = buildChain({ data: projects, error: null });
+      mockSupabase.from.mockReturnValue(projectsChain);
+      mockSupabase.auth.getUser.mockResolvedValue({
+        data: { user: { id: USER_ID } },
+        error: null,
+      });
+      const { createClient } = jest.requireMock('@/lib/supabase/server');
+      (createClient as jest.Mock).mockResolvedValue(mockSupabase);
+
+      const { getCachedUserRole } = jest.requireMock('@/app/actions/shared');
+      (getCachedUserRole as jest.Mock).mockResolvedValue('employee');
+
+      const result = await getProjects(WORKSPACE_ID);
+
+      expect(result).toHaveLength(2);
     });
 
     it('returns empty array on error', async () => {
@@ -286,12 +305,15 @@ describe('project actions', () => {
     function setupProjectByIdMock(projectData: unknown, error: unknown = null) {
       const projectChain = buildChain({ data: projectData, error });
       projectChain.single.mockResolvedValue({ data: projectData, error });
-      // issues query returns array (stats computed from same result — no second query)
+      // issues query returns an array — .order() is the terminal call (no .single),
+      // so the chain's awaited value must be { data: array, error: null }
       const issuesChain = buildChain({ data: [], error: null });
 
-      mockSupabase.from
-        .mockReturnValueOnce(projectChain) // projects query
-        .mockReturnValueOnce(issuesChain); // issues list query
+      // Route by table name — Phase 8 parallelized projects + issues via Promise.all
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'issues') return issuesChain;
+        return projectChain;
+      });
 
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: { id: USER_ID } },
@@ -320,9 +342,18 @@ describe('project actions', () => {
 
     it('returns null on error', async () => {
       const { getProjectById } = await import('@/app/actions/projects');
-      const errorChain = buildChain({ data: null, error: { message: 'Not found' } });
-      errorChain.single.mockResolvedValue({ data: null, error: { message: 'Not found' } });
-      mockSupabase.from.mockReturnValue(errorChain);
+      const errorProjectChain = buildChain({ data: null, error: { message: 'Not found' } });
+      errorProjectChain.single.mockResolvedValue({ data: null, error: { message: 'Not found' } });
+      const issuesChain = buildChain({ data: [], error: null });
+
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'issues') return issuesChain;
+        return errorProjectChain;
+      });
+      mockSupabase.auth.getUser.mockResolvedValue({
+        data: { user: { id: USER_ID } },
+        error: null,
+      });
       const { createClient } = jest.requireMock('@/lib/supabase/server');
       (createClient as jest.Mock).mockResolvedValue(mockSupabase);
 
@@ -463,15 +494,7 @@ describe('project actions', () => {
       expect(result.success).toBe(false);
     });
 
-    it('calls revalidatePath after successful delete', async () => {
-      const { deleteProject } = await import('@/app/actions/projects');
-      const { revalidatePath } = jest.requireMock('next/cache');
-      setupMockClient(null, null);
-
-      await deleteProject(PROJECT_ID);
-
-      expect(revalidatePath).toHaveBeenCalledWith('/projects');
-    });
+    // revalidatePath removed project-wide — SWR cache invalidation replaces it.
   });
 
   // ============ updateProjectStatus ============

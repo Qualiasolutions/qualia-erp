@@ -280,9 +280,10 @@ describe('assignEmployeeToProject', () => {
     expect(result.error).toBe('Employee is already assigned to this project');
   });
 
-  // ----------- Happy path: auto-task creation -----------
+  // ----------- Auto-assign on assignment: DISABLED per Fawzi (Phase 5, 2026-04-17) -----------
+  // The auto-task creation flow was removed from assignEmployeeToProject. Guard against regression.
 
-  it('calls createTasksFromMilestone with correct args when milestone exists', async () => {
+  it('does NOT call createTasksFromMilestone on assignment (auto-assign disabled)', async () => {
     setupAssignHappyPath({
       autoResult: { created: 5, skipped: 1, total: 6 },
     });
@@ -291,58 +292,7 @@ describe('assignEmployeeToProject', () => {
     const result = await assignEmployeeToProject(fd);
 
     expect(result.success).toBe(true);
-    expect(getActiveMilestone).toHaveBeenCalledWith(PROJECT_ID);
-    expect(createTasksFromMilestone).toHaveBeenCalledWith(
-      PROJECT_ID,
-      1, // milestoneNumber
-      EMPLOYEE_ID, // assignee
-      'assignment' // trigger
-    );
-  });
-
-  it('sends notification when auto-tasks are created (created > 0)', async () => {
-    setupAssignHappyPath({
-      autoResult: { created: 3, skipped: 0, total: 3 },
-    });
-
-    const fd = makeFormData({ project_id: PROJECT_ID, employee_id: EMPLOYEE_ID });
-    const result = await assignEmployeeToProject(fd);
-
-    expect(result.success).toBe(true);
-    expect(createNotification).toHaveBeenCalledWith(
-      EMPLOYEE_ID,
-      WORKSPACE_ID,
-      'task_assigned',
-      'Tasks auto-assigned',
-      '3 tasks from Milestone 1 on Test Project',
-      `/projects/${PROJECT_ID}/roadmap`
-    );
-  });
-
-  it('does NOT send notification when created === 0', async () => {
-    setupAssignHappyPath({
-      autoResult: { created: 0, skipped: 3, total: 3 },
-    });
-
-    const fd = makeFormData({ project_id: PROJECT_ID, employee_id: EMPLOYEE_ID });
-    const result = await assignEmployeeToProject(fd);
-
-    expect(result.success).toBe(true);
-    expect(createNotification).not.toHaveBeenCalled();
-  });
-
-  // ----------- No active milestone: graceful skip -----------
-
-  it('does not call createTasksFromMilestone when getActiveMilestone returns null', async () => {
-    setupAssignHappyPath({
-      milestoneResult: null,
-    });
-
-    const fd = makeFormData({ project_id: PROJECT_ID, employee_id: EMPLOYEE_ID });
-    const result = await assignEmployeeToProject(fd);
-
-    expect(result.success).toBe(true);
-    expect(getActiveMilestone).toHaveBeenCalledWith(PROJECT_ID);
+    expect(getActiveMilestone).not.toHaveBeenCalled();
     expect(createTasksFromMilestone).not.toHaveBeenCalled();
     expect(createNotification).not.toHaveBeenCalled();
   });
@@ -366,64 +316,7 @@ describe('assignEmployeeToProject', () => {
     expect(createNotification).not.toHaveBeenCalled();
   });
 
-  // ----------- Error resilience -----------
-
-  it('assignment succeeds even if auto-task throws (non-blocking)', async () => {
-    // Set up the basic happy path
-    enqueueTable('projects', { workspace_id: WORKSPACE_ID, name: 'Test Project' });
-    enqueueTable('profiles', { id: EMPLOYEE_ID, full_name: 'John Doe' });
-    enqueueTable('workspace_members', { id: 'membership-1' });
-    enqueueTable('project_assignments', null); // no duplicate
-    enqueueTable('project_assignments', {
-      id: ASSIGNMENT_ID,
-      project_id: PROJECT_ID,
-      employee_id: EMPLOYEE_ID,
-    });
-    enqueueTable('activities', null);
-    // tasks check returns empty (so auto-assign path is taken)
-    enqueueTable('tasks', []);
-
-    // Make auto-assign throw
-    getActiveMilestone.mockRejectedValue(new Error('Auto-assign DB crash'));
-
-    const fd = makeFormData({ project_id: PROJECT_ID, employee_id: EMPLOYEE_ID });
-    const result = await assignEmployeeToProject(fd);
-
-    // Assignment still succeeds
-    expect(result.success).toBe(true);
-    expect(result.data).toEqual(expect.objectContaining({ id: ASSIGNMENT_ID }));
-    // Error was logged
-    expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining('Auto-task error'),
-      expect.any(Error)
-    );
-  });
-
-  it('assignment succeeds even if createTasksFromMilestone throws', async () => {
-    enqueueTable('projects', { workspace_id: WORKSPACE_ID, name: 'Test Project' });
-    enqueueTable('profiles', { id: EMPLOYEE_ID, full_name: 'John Doe' });
-    enqueueTable('workspace_members', { id: 'membership-1' });
-    enqueueTable('project_assignments', null);
-    enqueueTable('project_assignments', {
-      id: ASSIGNMENT_ID,
-      project_id: PROJECT_ID,
-      employee_id: EMPLOYEE_ID,
-    });
-    enqueueTable('activities', null);
-    enqueueTable('tasks', []);
-
-    getActiveMilestone.mockResolvedValue({ milestoneNumber: 2, phases: [] });
-    createTasksFromMilestone.mockRejectedValue(new Error('Task creation failed'));
-
-    const fd = makeFormData({ project_id: PROJECT_ID, employee_id: EMPLOYEE_ID });
-    const result = await assignEmployeeToProject(fd);
-
-    expect(result.success).toBe(true);
-    expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining('Auto-task error'),
-      expect.any(Error)
-    );
-  });
+  // Auto-task resilience tests removed — auto-assign path no longer exists.
 
   // ----------- DB insert error -----------
 
@@ -442,20 +335,7 @@ describe('assignEmployeeToProject', () => {
     expect(result.error).toBe('unique constraint violation');
   });
 
-  // ----------- Revalidation -----------
-
-  it('revalidates correct paths on success', async () => {
-    setupAssignHappyPath({
-      autoResult: { created: 0, skipped: 0, total: 0 },
-    });
-    const { revalidatePath } = jest.requireMock('next/cache');
-
-    const fd = makeFormData({ project_id: PROJECT_ID, employee_id: EMPLOYEE_ID });
-    await assignEmployeeToProject(fd);
-
-    expect(revalidatePath).toHaveBeenCalledWith(`/projects/${PROJECT_ID}`);
-    expect(revalidatePath).toHaveBeenCalledWith('/admin/assignments');
-  });
+  // revalidatePath removed project-wide for SWR cache invalidation.
 });
 
 // ============================================================================
@@ -610,9 +490,9 @@ describe('reassignEmployee', () => {
     expect(result.error).toBe('Employee is already assigned to the new project');
   });
 
-  // ----------- Happy path: auto-task creation on new project -----------
+  // ----------- Auto-assign on reassignment: DISABLED per Fawzi (Phase 5) -----------
 
-  it('creates tasks on new project and sends notification', async () => {
+  it('does NOT call createTasksFromMilestone on reassignment (auto-assign disabled)', async () => {
     setupReassignHappyPath({
       autoResult: { created: 4, skipped: 0, total: 4 },
     });
@@ -621,81 +501,9 @@ describe('reassignEmployee', () => {
     const result = await reassignEmployee(fd);
 
     expect(result.success).toBe(true);
-    expect(getActiveMilestone).toHaveBeenCalledWith(NEW_PROJECT_ID);
-    expect(createTasksFromMilestone).toHaveBeenCalledWith(
-      NEW_PROJECT_ID,
-      2, // milestoneNumber
-      EMPLOYEE_ID, // assignee (from old assignment)
-      'assignment' // trigger
-    );
-    expect(createNotification).toHaveBeenCalledWith(
-      EMPLOYEE_ID,
-      WORKSPACE_ID,
-      'task_assigned',
-      'Tasks auto-assigned',
-      '4 tasks from Milestone 2 on New Project',
-      `/projects/${NEW_PROJECT_ID}/roadmap`
-    );
-  });
-
-  it('does NOT send notification when created === 0 on reassignment', async () => {
-    setupReassignHappyPath({
-      autoResult: { created: 0, skipped: 4, total: 4 },
-    });
-
-    const fd = makeFormData({ assignment_id: ASSIGNMENT_ID, new_project_id: NEW_PROJECT_ID });
-    const result = await reassignEmployee(fd);
-
-    expect(result.success).toBe(true);
-    expect(createNotification).not.toHaveBeenCalled();
-  });
-
-  // ----------- No active milestone: graceful skip -----------
-
-  it('skips auto-task creation when no active milestone on new project', async () => {
-    setupReassignHappyPath({
-      milestoneResult: null,
-    });
-
-    const fd = makeFormData({ assignment_id: ASSIGNMENT_ID, new_project_id: NEW_PROJECT_ID });
-    const result = await reassignEmployee(fd);
-
-    expect(result.success).toBe(true);
-    expect(getActiveMilestone).toHaveBeenCalledWith(NEW_PROJECT_ID);
+    expect(getActiveMilestone).not.toHaveBeenCalled();
     expect(createTasksFromMilestone).not.toHaveBeenCalled();
     expect(createNotification).not.toHaveBeenCalled();
-  });
-
-  // ----------- Error resilience -----------
-
-  it('reassignment succeeds even if auto-task throws (non-blocking)', async () => {
-    setupReassignHappyPath();
-    getActiveMilestone.mockRejectedValue(new Error('Milestone lookup crashed'));
-
-    const fd = makeFormData({ assignment_id: ASSIGNMENT_ID, new_project_id: NEW_PROJECT_ID });
-    const result = await reassignEmployee(fd);
-
-    expect(result.success).toBe(true);
-    expect(result.data).toEqual(expect.objectContaining({ id: 'new-assignment-id' }));
-    expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining('Auto-task error'),
-      expect.any(Error)
-    );
-  });
-
-  it('reassignment succeeds even if createTasksFromMilestone throws', async () => {
-    setupReassignHappyPath();
-    getActiveMilestone.mockResolvedValue({ milestoneNumber: 1, phases: [] });
-    createTasksFromMilestone.mockRejectedValue(new Error('createTasks crashed'));
-
-    const fd = makeFormData({ assignment_id: ASSIGNMENT_ID, new_project_id: NEW_PROJECT_ID });
-    const result = await reassignEmployee(fd);
-
-    expect(result.success).toBe(true);
-    expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining('Auto-task error'),
-      expect.any(Error)
-    );
   });
 
   // ----------- Rollback on insert failure -----------
@@ -743,19 +551,5 @@ describe('reassignEmployee', () => {
     expect(result.error).toBe('Failed to remove old assignment');
   });
 
-  // ----------- Revalidation -----------
-
-  it('revalidates both old and new project paths plus admin assignments', async () => {
-    setupReassignHappyPath({
-      autoResult: { created: 0, skipped: 0, total: 0 },
-    });
-    const { revalidatePath } = jest.requireMock('next/cache');
-
-    const fd = makeFormData({ assignment_id: ASSIGNMENT_ID, new_project_id: NEW_PROJECT_ID });
-    await reassignEmployee(fd);
-
-    expect(revalidatePath).toHaveBeenCalledWith(`/projects/${PROJECT_ID}`);
-    expect(revalidatePath).toHaveBeenCalledWith(`/projects/${NEW_PROJECT_ID}`);
-    expect(revalidatePath).toHaveBeenCalledWith('/admin/assignments');
-  });
+  // revalidatePath removed project-wide for SWR cache invalidation.
 });

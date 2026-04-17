@@ -37,6 +37,7 @@ jest.mock('@/app/actions', () => ({
 jest.mock('@/app/actions/shared', () => ({
   canModifyTask: jest.fn(),
   isUserAdmin: jest.fn(),
+  isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
   getCachedUserRole: jest.fn().mockResolvedValue('admin'),
 }));
 
@@ -289,20 +290,7 @@ describe('inbox actions', () => {
       expect(result.success).toBe(false);
     });
 
-    it('calls revalidatePath after successful create', async () => {
-      const { createTask } = await import('@/app/actions/inbox');
-      const { revalidatePath } = jest.requireMock('next/cache');
-      const newTask = createMockTask({ workspace_id: WORKSPACE_ID });
-      setupMockClient(newTask, null);
-
-      const formData = new FormData();
-      formData.set('title', 'New Task');
-      formData.set('workspace_id', WORKSPACE_ID);
-
-      await createTask(formData);
-
-      expect(revalidatePath).toHaveBeenCalledWith('/inbox');
-    });
+    // revalidatePath removed project-wide for SWR cache invalidation.
   });
 
   // ============ updateTask ============
@@ -444,15 +432,7 @@ describe('inbox actions', () => {
       expect(result.error).toBe('Delete error');
     });
 
-    it('calls revalidatePath after successful delete', async () => {
-      const { deleteTask } = await import('@/app/actions/inbox');
-      const { revalidatePath } = jest.requireMock('next/cache');
-      setupMockClient([{ id: TASK_ID }], null);
-
-      await deleteTask(TASK_ID);
-
-      expect(revalidatePath).toHaveBeenCalledWith('/inbox');
-    });
+    // revalidatePath removed project-wide for SWR cache invalidation.
   });
 
   // ============ reorderTasks ============

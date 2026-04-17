@@ -11,6 +11,10 @@ export {};
 
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),
+  revalidateTag: jest.fn(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  unstable_cache: jest.fn(<T>(fn: (...args: any[]) => Promise<T>) => fn),
+  unstable_noStore: jest.fn(),
 }));
 
 jest.mock('@/app/actions/workspace', () => ({
@@ -508,25 +512,24 @@ describe('getClientDashboardProjects', () => {
 
   it('returns projects with phase progress for same user', async () => {
     mockAuth({ id: CLIENT_ID, email: 'client@test.com' });
-    const clientProjectLinks = [{ project_id: PROJECT_ID }];
-    const projects = [
+    // Single JOIN query — client_projects → projects → project_phases
+    const joinedRows = [
       {
-        id: PROJECT_ID,
-        name: 'Test Project',
-        status: 'Active',
-        project_type: 'web_design',
-        description: null,
+        project: {
+          id: PROJECT_ID,
+          name: 'Test Project',
+          status: 'Active',
+          project_type: 'web_design',
+          description: null,
+          phases: [
+            { id: 'ph-1', name: 'SETUP', status: 'completed', sort_order: 1 },
+            { id: 'ph-2', name: 'DESIGN', status: 'not_started', sort_order: 2 },
+          ],
+        },
       },
     ];
-    const phases = [
-      { id: 'ph-1', project_id: PROJECT_ID, name: 'SETUP', status: 'completed', sort_order: 1 },
-      { id: 'ph-2', project_id: PROJECT_ID, name: 'DESIGN', status: 'not_started', sort_order: 2 },
-    ];
 
-    supabase.from
-      .mockReturnValueOnce(buildChain({ data: clientProjectLinks, error: null }))
-      .mockReturnValueOnce(buildChain({ data: projects, error: null }))
-      .mockReturnValue(buildChain({ data: phases, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: joinedRows, error: null }));
 
     const result = await getClientDashboardProjects(CLIENT_ID);
     expect(result.success).toBe(true);

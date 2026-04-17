@@ -58,6 +58,22 @@ function setupSupabaseMock(data: unknown, error: unknown = null) {
   return chain;
 }
 
+/**
+ * Route Supabase `.from(table)` calls to the right chain by table name.
+ * Resilient to Promise.all ordering — use this instead of mockReturnValueOnce sequences
+ * in tests for parallelized helpers (canAccessProject, canModifyTask, etc.).
+ */
+function setupSupabaseMockByTable(tableMap: Record<string, { data: unknown; error?: unknown }>) {
+  const chains: Record<string, ReturnType<typeof buildChain>> = {};
+  for (const [table, resolved] of Object.entries(tableMap)) {
+    chains[table] = buildChain({ data: resolved.data, error: resolved.error ?? null });
+  }
+  mockSupabase.from.mockImplementation((table: string) => {
+    return chains[table] ?? buildChain({ data: null, error: null });
+  });
+  return chains;
+}
+
 // ---- Tests ----
 
 describe('shared action helpers', () => {
@@ -201,53 +217,40 @@ describe('shared action helpers', () => {
     });
 
     it('returns true when user is the creator', async () => {
-      const roleChain = buildChain({ data: { role: 'employee' }, error: null });
-      mockSupabase.from.mockReturnValueOnce(roleChain);
-
-      const taskChain = buildChain({
-        data: { creator_id: 'user-1', assignee_id: null, project: null },
-        error: null,
+      setupSupabaseMockByTable({
+        profiles: { data: { role: 'employee' } },
+        tasks: { data: { creator_id: 'user-1', assignee_id: null, project: null } },
       });
-      mockSupabase.from.mockReturnValue(taskChain);
 
       const result = await canModifyTask('user-1', 'task-1');
       expect(result).toBe(true);
     });
 
     it('returns true when user is the assignee', async () => {
-      const roleChain = buildChain({ data: { role: 'employee' }, error: null });
-      mockSupabase.from.mockReturnValueOnce(roleChain);
-
-      const taskChain = buildChain({
-        data: { creator_id: 'other-user', assignee_id: 'user-1', project: null },
-        error: null,
+      setupSupabaseMockByTable({
+        profiles: { data: { role: 'employee' } },
+        tasks: { data: { creator_id: 'other-user', assignee_id: 'user-1', project: null } },
       });
-      mockSupabase.from.mockReturnValue(taskChain);
 
       const result = await canModifyTask('user-1', 'task-1');
       expect(result).toBe(true);
     });
 
     it('returns false when task not found', async () => {
-      const roleChain = buildChain({ data: { role: 'employee' }, error: null });
-      mockSupabase.from.mockReturnValueOnce(roleChain);
-
-      const taskChain = buildChain({ data: null, error: null });
-      mockSupabase.from.mockReturnValue(taskChain);
+      setupSupabaseMockByTable({
+        profiles: { data: { role: 'employee' } },
+        tasks: { data: null },
+      });
 
       const result = await canModifyTask('user-1', 'task-1');
       expect(result).toBe(false);
     });
 
     it('returns false when user is unrelated', async () => {
-      const roleChain = buildChain({ data: { role: 'employee' }, error: null });
-      mockSupabase.from.mockReturnValueOnce(roleChain);
-
-      const taskChain = buildChain({
-        data: { creator_id: 'creator', assignee_id: 'assignee', project: null },
-        error: null,
+      setupSupabaseMockByTable({
+        profiles: { data: { role: 'employee' } },
+        tasks: { data: { creator_id: 'creator', assignee_id: 'assignee', project: null } },
       });
-      mockSupabase.from.mockReturnValue(taskChain);
 
       const result = await canModifyTask('unrelated-user', 'task-1');
       expect(result).toBe(false);
@@ -262,39 +265,32 @@ describe('shared action helpers', () => {
     });
 
     it('returns false when project workspace not found', async () => {
-      const roleChain = buildChain({ data: { role: 'employee' }, error: null });
-      mockSupabase.from.mockReturnValueOnce(roleChain);
-
-      const projectChain = buildChain({ data: null, error: null });
-      mockSupabase.from.mockReturnValue(projectChain);
+      setupSupabaseMockByTable({
+        profiles: { data: { role: 'employee' } },
+        projects: { data: null },
+      });
 
       const result = await canAccessProject('user-1', 'project-1');
       expect(result).toBe(false);
     });
 
     it('returns true when user is workspace member', async () => {
-      const roleChain = buildChain({ data: { role: 'employee' }, error: null });
-      mockSupabase.from.mockReturnValueOnce(roleChain);
-
-      const projectChain = buildChain({ data: { workspace_id: 'ws-1' }, error: null });
-      mockSupabase.from.mockReturnValueOnce(projectChain);
-
-      const memberChain = buildChain({ data: { id: 'membership-1' }, error: null });
-      mockSupabase.from.mockReturnValue(memberChain);
+      setupSupabaseMockByTable({
+        profiles: { data: { role: 'employee' } },
+        projects: { data: { workspace_id: 'ws-1' } },
+        workspace_members: { data: { id: 'membership-1' } },
+      });
 
       const result = await canAccessProject('user-1', 'project-1');
       expect(result).toBe(true);
     });
 
     it('returns false when user is not a workspace member', async () => {
-      const roleChain = buildChain({ data: { role: 'employee' }, error: null });
-      mockSupabase.from.mockReturnValueOnce(roleChain);
-
-      const projectChain = buildChain({ data: { workspace_id: 'ws-1' }, error: null });
-      mockSupabase.from.mockReturnValueOnce(projectChain);
-
-      const memberChain = buildChain({ data: null, error: null });
-      mockSupabase.from.mockReturnValue(memberChain);
+      setupSupabaseMockByTable({
+        profiles: { data: { role: 'employee' } },
+        projects: { data: { workspace_id: 'ws-1' } },
+        workspace_members: { data: null },
+      });
 
       const result = await canAccessProject('user-1', 'project-1');
       expect(result).toBe(false);
