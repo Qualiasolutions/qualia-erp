@@ -63,7 +63,7 @@ export async function uploadProjectLogo(formData: FormData): Promise<ActionResul
     .from('workspace_members')
     .select('id')
     .eq('workspace_id', project.workspace_id)
-    .eq('user_id', user.id)
+    .eq('profile_id', user.id)
     .single();
 
   if (!membership) {
@@ -214,7 +214,7 @@ export async function uploadClientLogo(formData: FormData): Promise<ActionResult
     .from('workspace_members')
     .select('id')
     .eq('workspace_id', client.workspace_id)
-    .eq('user_id', user.id)
+    .eq('profile_id', user.id)
     .single();
 
   if (!membership) {
