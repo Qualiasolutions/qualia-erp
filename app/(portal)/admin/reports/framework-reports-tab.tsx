@@ -225,6 +225,7 @@ export function FrameworkReportsTab() {
             <TableRow>
               <TableHead className="w-[44px]"></TableHead>
               <TableHead>Project</TableHead>
+              <TableHead className="w-[120px]">Report</TableHead>
               <TableHead>Milestone / Phase</TableHead>
               <TableHead>Tasks</TableHead>
               <TableHead>Status</TableHead>
@@ -238,14 +239,14 @@ export function FrameworkReportsTab() {
           <TableBody>
             {isPending && rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={11} className="py-10 text-center text-muted-foreground">
                   <Loader2 className="mx-auto mb-2 size-4 animate-spin" />
                   Loading reports…
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={11} className="py-10 text-center text-muted-foreground">
                   No reports match these filters.
                 </TableCell>
               </TableRow>
@@ -282,6 +283,15 @@ export function FrameworkReportsTab() {
                           <span className="text-[11px] text-muted-foreground">{r.client}</span>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {r.client_report_id ? (
+                        <span className="font-mono text-xs tabular-nums">{r.client_report_id}</span>
+                      ) : (
+                        <span className="font-mono text-xs tabular-nums text-muted-foreground/60">
+                          {r.id.substring(0, 8)}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">

@@ -701,6 +701,7 @@ export async function getTaskStats(
 
 export interface FrameworkReportRow {
   id: string;
+  client_report_id: string | null;
   project_name: string;
   client: string | null;
   submitted_at: string | null;
@@ -768,7 +769,7 @@ export async function getFrameworkReports(
   let query = admin
     .from('session_reports')
     .select(
-      'id, project_name, client, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, commits, notes, auth_method'
+      'id, client_report_id, project_name, client, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, commits, notes, auth_method'
     )
     .order('submitted_at', { ascending: false, nullsFirst: false });
 
