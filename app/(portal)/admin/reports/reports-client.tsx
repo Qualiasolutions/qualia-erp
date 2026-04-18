@@ -42,6 +42,7 @@ import {
   type TaskStats,
 } from '@/app/actions/reports';
 import type { DateRange } from 'react-day-picker';
+import { FrameworkReportsTab } from './framework-reports-tab';
 
 function formatHours(minutes: number): string {
   const h = Math.floor(minutes / 60);
@@ -271,7 +272,12 @@ export function AdminReportsClient() {
               <TabsTrigger value="assigned">Assigned vs Done</TabsTrigger>
               <TabsTrigger value="checkins">Check-ins</TabsTrigger>
               <TabsTrigger value="tasks">Tasks</TabsTrigger>
+              <TabsTrigger value="framework">Framework</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="framework">
+              <FrameworkReportsTab />
+            </TabsContent>
 
             {/* By Employee */}
             <TabsContent value="employees">

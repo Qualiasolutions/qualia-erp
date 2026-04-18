@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { isUserAdmin } from './shared';
 
 // ============ TYPES ============
@@ -691,4 +691,203 @@ export async function getTaskStats(
       completionCount > 0 ? Math.round((totalCompletionDays / completionCount) * 10) / 10 : null,
     byEmployee,
   };
+}
+
+// ============ FRAMEWORK (session_reports) ============
+//
+// Cross-project admin view of structured reports from /qualia-report.
+// session_reports has service_role-only RLS, so reads go through the admin
+// client. All functions here gate on isUserAdmin first.
+
+export interface FrameworkReportRow {
+  id: string;
+  project_name: string;
+  client: string | null;
+  submitted_at: string | null;
+  submitted_by: string | null;
+  milestone: number | null;
+  milestone_name: string | null;
+  phase: number | null;
+  phase_name: string | null;
+  total_phases: number | null;
+  status: string | null;
+  verification: string | null;
+  tasks_done: number | null;
+  tasks_total: number | null;
+  deployed_url: string | null;
+  build_count: number | null;
+  deploy_count: number | null;
+  commits: string[] | null;
+  notes: string | null;
+  auth_method: string | null;
+}
+
+export interface FrameworkReportsFilters {
+  project?: string;
+  status?: string;
+  verification?: string;
+  submittedBy?: string;
+  from?: string; // ISO date
+  to?: string; // ISO date
+  limit?: number;
+  offset?: number;
+}
+
+export interface FrameworkReportsStats {
+  totalReports: number;
+  reportsLast7d: number;
+  reportsLast30d: number;
+  distinctProjects: number;
+  totalCommits: number;
+  totalBuilds: number;
+  totalDeploys: number;
+  topProjects: Array<{ project_name: string; count: number }>;
+  statusBreakdown: Array<{ status: string; count: number }>;
+  verificationBreakdown: Array<{ verification: string; count: number }>;
+}
+
+async function requireAdmin(): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'Not authenticated' };
+  const admin = await isUserAdmin(user.id);
+  if (!admin) return { ok: false, error: 'Not authorized' };
+  return { ok: true };
+}
+
+export async function getFrameworkReports(
+  filters: FrameworkReportsFilters = {}
+): Promise<FrameworkReportRow[]> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return [];
+
+  const admin = createAdminClient();
+  let query = admin
+    .from('session_reports')
+    .select(
+      'id, project_name, client, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, commits, notes, auth_method'
+    )
+    .order('submitted_at', { ascending: false, nullsFirst: false });
+
+  if (filters.project) query = query.eq('project_name', filters.project);
+  if (filters.status) query = query.eq('status', filters.status);
+  if (filters.verification) query = query.eq('verification', filters.verification);
+  if (filters.submittedBy) query = query.ilike('submitted_by', `%${filters.submittedBy}%`);
+  if (filters.from) query = query.gte('submitted_at', filters.from);
+  if (filters.to) query = query.lte('submitted_at', filters.to);
+
+  const limit = Math.min(Math.max(filters.limit ?? 100, 1), 500);
+  const offset = Math.max(filters.offset ?? 0, 0);
+  query = query.range(offset, offset + limit - 1);
+
+  const { data, error } = await query;
+  if (error) {
+    console.error('[getFrameworkReports] Error:', error);
+    return [];
+  }
+  return (data ?? []) as FrameworkReportRow[];
+}
+
+export async function getFrameworkReportsStats(): Promise<FrameworkReportsStats> {
+  const empty: FrameworkReportsStats = {
+    totalReports: 0,
+    reportsLast7d: 0,
+    reportsLast30d: 0,
+    distinctProjects: 0,
+    totalCommits: 0,
+    totalBuilds: 0,
+    totalDeploys: 0,
+    topProjects: [],
+    statusBreakdown: [],
+    verificationBreakdown: [],
+  };
+
+  const auth = await requireAdmin();
+  if (!auth.ok) return empty;
+
+  const admin = createAdminClient();
+
+  // Pull a single wide window and aggregate in memory — session_reports is
+  // small per-org (one row per /qualia-report call) so 2000 rows is plenty.
+  const { data, error } = await admin
+    .from('session_reports')
+    .select('project_name, submitted_at, status, verification, build_count, deploy_count, commits')
+    .order('submitted_at', { ascending: false, nullsFirst: false })
+    .limit(2000);
+
+  if (error || !data) {
+    console.error('[getFrameworkReportsStats] Error:', error);
+    return empty;
+  }
+
+  const now = Date.now();
+  const d7 = now - 7 * 86_400_000;
+  const d30 = now - 30 * 86_400_000;
+
+  const projectCounts = new Map<string, number>();
+  const statusCounts = new Map<string, number>();
+  const verifCounts = new Map<string, number>();
+  let reportsLast7d = 0;
+  let reportsLast30d = 0;
+  let totalCommits = 0;
+  let totalBuilds = 0;
+  let totalDeploys = 0;
+
+  for (const r of data) {
+    const ts = r.submitted_at ? new Date(r.submitted_at).getTime() : 0;
+    if (ts >= d7) reportsLast7d++;
+    if (ts >= d30) reportsLast30d++;
+    if (r.project_name)
+      projectCounts.set(r.project_name, (projectCounts.get(r.project_name) ?? 0) + 1);
+    if (r.status) statusCounts.set(r.status, (statusCounts.get(r.status) ?? 0) + 1);
+    if (r.verification) verifCounts.set(r.verification, (verifCounts.get(r.verification) ?? 0) + 1);
+    if (Array.isArray(r.commits)) totalCommits += r.commits.length;
+    if (typeof r.build_count === 'number') totalBuilds += r.build_count;
+    if (typeof r.deploy_count === 'number') totalDeploys += r.deploy_count;
+  }
+
+  const topProjects = Array.from(projectCounts.entries())
+    .map(([project_name, count]) => ({ project_name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+  const statusBreakdown = Array.from(statusCounts.entries())
+    .map(([status, count]) => ({ status, count }))
+    .sort((a, b) => b.count - a.count);
+  const verificationBreakdown = Array.from(verifCounts.entries())
+    .map(([verification, count]) => ({ verification, count }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    totalReports: data.length,
+    reportsLast7d,
+    reportsLast30d,
+    distinctProjects: projectCounts.size,
+    totalCommits,
+    totalBuilds,
+    totalDeploys,
+    topProjects,
+    statusBreakdown,
+    verificationBreakdown,
+  };
+}
+
+export async function getFrameworkReportsProjects(): Promise<string[]> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return [];
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from('session_reports')
+    .select('project_name')
+    .order('project_name', { ascending: true });
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const r of data ?? []) {
+    if (r.project_name && !seen.has(r.project_name)) {
+      seen.add(r.project_name);
+      result.push(r.project_name);
+    }
+  }
+  return result;
 }

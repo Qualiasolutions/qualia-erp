@@ -219,8 +219,13 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Check if ROADMAP.md or STATE.md changed → full sync ─────────
+    // A PLAN.md push also triggers full sync so phase_items gets populated
+    // from the framework task breakdown (idempotent).
     const planningMetaChanged = [...allChangedFiles].some(
-      (f) => f === '.planning/ROADMAP.md' || f === '.planning/STATE.md'
+      (f) =>
+        f === '.planning/ROADMAP.md' ||
+        f === '.planning/STATE.md' ||
+        /^\.planning\/phases\/[^/]+\/.*PLAN\.md$/.test(f)
     );
 
     if (planningMetaChanged) {

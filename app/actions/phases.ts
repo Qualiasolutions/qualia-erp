@@ -34,6 +34,56 @@ export async function getProjectPhases(projectId: string) {
   return data;
 }
 
+export interface FrameworkPhaseItem {
+  id: string;
+  title: string;
+  description: string | null;
+  display_order: number;
+  is_completed: boolean | null;
+  completed_at: string | null;
+  status: string | null;
+  template_key: string | null;
+  is_custom: boolean | null;
+}
+
+/**
+ * Fetch phase_items for a phase. Includes both framework-sourced items
+ * (populated by the GitHub sync from PLAN.md) and any custom items.
+ * Framework items are ordered first via template_key presence.
+ */
+export async function getPhaseItems(phaseId: string): Promise<FrameworkPhaseItem[]> {
+  if (!phaseId) return [];
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: phase } = await supabase
+    .from('project_phases')
+    .select('project_id')
+    .eq('id', phaseId)
+    .maybeSingle();
+  if (!phase) return [];
+
+  const hasAccess = await canAccessProject(user.id, phase.project_id);
+  if (!hasAccess) return [];
+
+  const { data, error } = await supabase
+    .from('phase_items')
+    .select(
+      'id, title, description, display_order, is_completed, completed_at, status, template_key, is_custom'
+    )
+    .eq('phase_id', phaseId)
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error('[getPhaseItems] Error:', error);
+    return [];
+  }
+  return (data ?? []) as FrameworkPhaseItem[];
+}
+
 export async function createProjectPhase(projectId: string, name: string) {
   const imp = await assertNotImpersonating();
   if (!imp.ok) return { success: false, error: imp.error };

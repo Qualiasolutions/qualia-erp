@@ -3,7 +3,12 @@
  * Accepts a Supabase client (either user-auth or service-role).
  */
 
-import { parseRoadmap, parseStateRoadmap, parseStateTable } from '@/lib/planning-parser';
+import {
+  parsePhasePlanTasks,
+  parseRoadmap,
+  parseStateRoadmap,
+  parseStateTable,
+} from '@/lib/planning-parser';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 interface SyncResult {
@@ -352,12 +357,69 @@ export async function syncPlanningFromGitHubWithServiceRole(
         github_synced_at: new Date().toISOString(),
       };
 
+      let phaseRowId: string | null = null;
       if (existing) {
         await supabase.from('project_phases').update(phaseData).eq('id', existing.id);
+        phaseRowId = existing.id;
       } else {
-        await supabase.from('project_phases').insert(phaseData);
+        const { data: inserted } = await supabase
+          .from('project_phases')
+          .insert(phaseData)
+          .select('id')
+          .single();
+        phaseRowId = inserted?.id ?? null;
       }
       phasesUpserted++;
+
+      // 8c. Populate phase_items from framework PLAN.md files in this phase's dir
+      if (phaseRowId) {
+        try {
+          const padded = phase.phaseNumber
+            .split('.')
+            .map((n) => n.padStart(2, '0'))
+            .join('.');
+          const matchingDir = phaseDirs.find((d) => d.startsWith(padded));
+          if (matchingDir) {
+            const files = await listGitHubDir(
+              token,
+              repoParsed.owner,
+              repoParsed.repo,
+              `.planning/phases/${matchingDir}`
+            );
+            const planFileNames = files.filter((f) => /PLAN\.md$/.test(f));
+            const summaryFileNames = new Set(files.filter((f) => /SUMMARY\.md$/.test(f)));
+
+            const planFiles: Array<{ name: string; content: string; summaryExists: boolean }> = [];
+            for (const planName of planFileNames) {
+              const content = await fetchGitHubFile(
+                token,
+                repoParsed.owner,
+                repoParsed.repo,
+                `.planning/phases/${matchingDir}/${planName}`
+              );
+              if (!content.content) continue;
+              const summaryName = planName.replace(/PLAN\.md$/, 'SUMMARY.md');
+              planFiles.push({
+                name: planName,
+                content: content.content,
+                summaryExists: summaryFileNames.has(summaryName),
+              });
+            }
+
+            if (planFiles.length > 0) {
+              await syncPhaseItemsFromPlans(
+                supabase,
+                phaseRowId,
+                planFiles,
+                finalStatus === 'completed'
+              );
+            }
+          }
+        } catch (err) {
+          // Never let phase_items errors fail the whole sync
+          console.error('[sync] phase_items failed for', phase.phaseNumber, err);
+        }
+      }
     }
   }
 
@@ -375,4 +437,60 @@ function getMilestoneStatusFromPhases(
   const anyInProgress = phases.some((p) => p.status === 'in_progress' || p.status === 'completed');
   if (anyInProgress) return 'in_progress';
   return 'not_started';
+}
+
+/**
+ * Populate phase_items for a single phase from its framework PLAN.md file(s).
+ *
+ * A phase directory may contain one PLAN.md or several (e.g. `22-01-PLAN.md`,
+ * `22-02-PLAN.md`). Each file has `## Task N -- {title}` headings that become
+ * phase_item rows. Matching SUMMARY.md files mark their tasks as completed.
+ *
+ * Idempotency: deletes any existing framework-sourced phase_items for this
+ * phase (is_custom=false) before re-inserting. Custom user-added items survive.
+ * display_order is derived from `(planIndex * 1000) + taskNumber` so multi-plan
+ * phases don't collide. template_key = `${planFileName}#task${number}`.
+ */
+export async function syncPhaseItemsFromPlans(
+  supabase: SupabaseClient,
+  phaseRowId: string,
+  planFiles: Array<{ name: string; content: string; summaryExists: boolean }>,
+  phaseCompleted: boolean
+): Promise<number> {
+  // Remove stale framework items first.
+  await supabase
+    .from('phase_items')
+    .delete()
+    .eq('phase_id', phaseRowId)
+    .or('is_custom.is.null,is_custom.eq.false');
+
+  const rows: Record<string, unknown>[] = [];
+  let planIndex = 0;
+  for (const pf of planFiles) {
+    const tasks = parsePhasePlanTasks(pf.content);
+    for (const t of tasks) {
+      const isDone = phaseCompleted || pf.summaryExists;
+      rows.push({
+        phase_id: phaseRowId,
+        title: t.title.length > 300 ? t.title.slice(0, 300) : t.title,
+        description: t.description || null,
+        display_order: planIndex * 1000 + t.number,
+        is_completed: isDone,
+        completed_at: isDone ? new Date().toISOString() : null,
+        status: isDone ? 'Done' : 'Todo',
+        template_key: `${pf.name}#task${t.number}`,
+        is_custom: false,
+      });
+    }
+    planIndex++;
+  }
+
+  if (rows.length === 0) return 0;
+
+  const { error } = await supabase.from('phase_items').insert(rows);
+  if (error) {
+    console.error('[syncPhaseItemsFromPlans] insert error:', error.message);
+    return 0;
+  }
+  return rows.length;
 }

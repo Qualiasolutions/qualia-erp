@@ -24,6 +24,71 @@ export interface ParsedMilestone {
   phases: ParsedPhase[];
 }
 
+export interface ParsedPlanTask {
+  /** 1-indexed task number as written in the PLAN.md (## Task N -- ...). */
+  number: number;
+  /** Task title — the text after `-- `, or the rest of the heading if no `--`. */
+  title: string;
+  /** Body text between this task heading and the next `## ` heading. Trimmed. */
+  description: string;
+}
+
+// ─── PLAN.md task parser ────────────────────────────────────────────────────
+//
+// A phase's PLAN.md (emitted by the qualia-framework planner agent) lists
+// tasks as `## Task N -- {title}` headings. Each task body runs from the
+// heading to the next `## ` heading or EOF. This parser extracts them so the
+// sync pipeline can populate `phase_items` with a framework-authored task
+// breakdown per phase.
+//
+// Examples accepted:
+//   ## Task 1 -- Add Supabase migration
+//   ## Task 2 — Wire the auth guard      (em-dash variant)
+//   ## Task 3: Drop stale columns         (colon variant)
+//   ## Task 4                              (no title separator — whole line is title)
+export function parsePhasePlanTasks(content: string): ParsedPlanTask[] {
+  if (!content) return [];
+  const tasks: ParsedPlanTask[] = [];
+  const lines = content.split('\n');
+
+  const headingPattern = /^##\s+Task\s+(\d+)\s*(?:[-–—:]+\s*|:?\s+)?(.*)$/i;
+
+  let current: ParsedPlanTask | null = null;
+  let bodyLines: string[] = [];
+
+  const flush = () => {
+    if (!current) return;
+    current.description = bodyLines.join('\n').trim();
+    tasks.push(current);
+  };
+
+  for (const line of lines) {
+    const headingMatch = line.match(headingPattern);
+    if (headingMatch) {
+      flush();
+      const num = parseInt(headingMatch[1], 10);
+      const rawTitle = (headingMatch[2] ?? '').trim();
+      const title = rawTitle || `Task ${num}`;
+      current = { number: num, title, description: '' };
+      bodyLines = [];
+      continue;
+    }
+
+    // Any other `## ` heading closes the current task body.
+    if (current && /^##\s+/.test(line)) {
+      flush();
+      current = null;
+      bodyLines = [];
+      continue;
+    }
+
+    if (current) bodyLines.push(line);
+  }
+
+  flush();
+  return tasks;
+}
+
 // ─── ROADMAP.md parser ──────────────────────────────────────────────────────
 
 export function parseRoadmap(content: string): ParsedMilestone[] {

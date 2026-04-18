@@ -44,6 +44,7 @@ import { invalidateProjectPhases, invalidateProjectTasks, invalidateInboxTasks }
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PhaseComments } from '@/components/phase-comments';
+import { PhaseItemsList } from '@/components/phase-items-list';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -1041,6 +1042,14 @@ export function ProjectWorkflow({
                 <p className="text-sm text-muted-foreground">No tasks yet</p>
                 <p className="text-xs text-muted-foreground/60">Add your first task above</p>
               </div>
+            )}
+
+            {/* Framework-sourced task breakdown (from each phase PLAN.md) */}
+            {activePhase && (
+              <PhaseItemsList
+                phaseId={activePhase.id}
+                className="mt-6 border-t border-border pt-4"
+              />
             )}
           </div>
         </div>
