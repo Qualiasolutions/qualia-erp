@@ -58,19 +58,23 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       </button>
 
       <form action={formAction} className="space-y-5">
-        {/* Email */}
+        {/* Email or Username */}
         <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium text-foreground">
-            Email
+            {mode === 'client' ? 'Username or email' : 'Email'}
           </Label>
           <Input
             id="email"
             name="email"
-            type="email"
-            placeholder={mode === 'client' ? 'your@email.com' : 'you@company.com'}
+            type="text"
+            inputMode={mode === 'client' ? 'text' : 'email'}
+            placeholder={mode === 'client' ? 'yourname' : 'you@company.com'}
             required
-            autoComplete="email"
+            autoComplete="username"
             autoFocus
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             className="h-12 focus-visible:border-primary/50 focus-visible:ring-primary/30"
           />
         </div>

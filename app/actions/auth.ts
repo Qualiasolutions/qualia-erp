@@ -6,7 +6,40 @@ import { getInvitationByToken, markInvitationAccepted } from './client-invitatio
 // ============ AUTHENTICATION ACTIONS ============
 
 /**
- * Login action for form handling
+ * Resolve a username (no `@`) to the auth email behind it.
+ * Uses the admin client because profiles → auth.users lookup requires
+ * service_role (anon can't read auth.users). Returns null on no match.
+ * Safe to surface a generic "invalid credentials" to the user on null.
+ */
+async function resolveLoginIdentifier(input: string): Promise<string | null> {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  // If it looks like an email, use it as-is.
+  if (trimmed.includes('@')) return trimmed;
+
+  // Username must be URL-safe — reject anything that couldn't be a username.
+  if (!/^[a-zA-Z0-9_.-]{1,64}$/.test(trimmed)) return null;
+
+  const adminClient = createAdminClient();
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('id')
+    .ilike('username', trimmed)
+    .maybeSingle();
+
+  if (!profile?.id) return null;
+
+  const { data: authUser } = await adminClient.auth.admin.getUserById(profile.id);
+  return authUser?.user?.email ?? null;
+}
+
+/**
+ * Login action for form handling. Accepts either an email or a username —
+ * usernames are resolved to the canonical auth email server-side before
+ * calling signInWithPassword. Staff continue to log in with their email
+ * (usernames are populated for `client` role only; see migration
+ * 20260417223000_add_username_to_profiles.sql).
  */
 export async function loginAction(
   _prevState: { success: boolean; error: string | null },
@@ -14,16 +47,23 @@ export async function loginAction(
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient();
 
-  const email = formData.get('email') as string;
+  const identifier = formData.get('email') as string;
   const password = formData.get('password') as string;
 
-  if (!email || !password) {
-    return { success: false, error: 'Email and password are required' };
+  if (!identifier || !password) {
+    return { success: false, error: 'Email/username and password are required' };
   }
 
   try {
+    const email = await resolveLoginIdentifier(identifier);
+    if (!email) {
+      // Match Supabase's own phrasing for non-existent users so username
+      // failures and bad-password failures look identical to the attacker.
+      return { success: false, error: 'Invalid login credentials' };
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email,
       password,
     });
 
