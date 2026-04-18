@@ -6,11 +6,12 @@ import { createClient } from '@/lib/supabase/server';
 import { Octokit } from '@octokit/rest';
 import type { ActionResult } from './shared';
 
-const ENCRYPTION_KEY =
-  process.env.TOKEN_ENCRYPTION_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY;
 
 function encryptToken(token: string): string {
-  if (!ENCRYPTION_KEY) return token; // Fallback if no key configured
+  if (!ENCRYPTION_KEY) {
+    throw new Error('TOKEN_ENCRYPTION_KEY is not configured — cannot encrypt integration tokens');
+  }
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'qualia-token-salt', 32);
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
@@ -20,8 +21,15 @@ function encryptToken(token: string): string {
 }
 
 function decryptToken(stored: string): string {
-  if (!stored.startsWith('enc:')) return stored; // Handle legacy plaintext tokens
-  if (!ENCRYPTION_KEY) return stored;
+  if (!stored.startsWith('enc:')) {
+    console.warn(
+      `[integrations] Legacy plaintext token encountered (prefix: ${stored.slice(0, 4)}) — run migration to re-encrypt`
+    );
+    return stored;
+  }
+  if (!ENCRYPTION_KEY) {
+    throw new Error('TOKEN_ENCRYPTION_KEY is not configured — cannot decrypt integration tokens');
+  }
   const [, ivHex, authTagHex, encryptedHex] = stored.split(':');
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'qualia-token-salt', 32);
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'));
