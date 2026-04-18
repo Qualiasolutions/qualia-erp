@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientVisibleTasks } from '@/app/actions/inbox';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
-import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { TasksContent } from './tasks-content';
 
 export default async function PortalTasksPage() {
@@ -22,8 +21,7 @@ export default async function PortalTasksPage() {
 
   // App Library guard: block clients if the "tasks" app is disabled
   if (role === 'client') {
-    const workspaceId = await getCurrentWorkspaceId();
-    const allowed = await assertAppEnabledForClient(user.id, workspaceId, 'tasks', role);
+    const allowed = await assertAppEnabledForClient(user.id, 'tasks', role);
     if (!allowed) redirect('/');
   }
 
@@ -47,7 +45,7 @@ export default async function PortalTasksPage() {
     projectIds = (data || []).map((p) => p.project_id);
   }
 
-  const result = await getClientVisibleTasks(projectIds);
+  const result = await getClientVisibleTasks(projectIds, role);
   const tasks = (result.success ? result.data : []) as Array<{
     id: string;
     title: string;

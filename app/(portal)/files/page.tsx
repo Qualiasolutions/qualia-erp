@@ -47,8 +47,7 @@ export default async function PortalFilesPage() {
 
   // App Library guard: block clients if the "files" app is disabled
   if (role === 'client') {
-    const workspaceId = await getCurrentWorkspaceId();
-    const allowed = await assertAppEnabledForClient(user.id, workspaceId, 'files', role);
+    const allowed = await assertAppEnabledForClient(user.id, 'files', role);
     if (!allowed) redirect('/');
   }
 

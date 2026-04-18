@@ -2,8 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientInvoices } from '@/app/actions/client-portal';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
-import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { PortalInvoiceList } from '@/components/portal/portal-invoice-list';
+import { PortalInvoiceFormDialog } from '@/components/portal/portal-invoice-form-dialog';
 import { PortalBillingSummary } from '@/components/portal/portal-billing-summary';
 
 export default async function PortalBillingPage() {
@@ -27,16 +27,29 @@ export default async function PortalBillingPage() {
     redirect('/');
   }
 
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'manager';
+
   // App Library guard: block clients if the "billing" app is disabled
   if (profile?.role === 'client') {
-    const workspaceId = await getCurrentWorkspaceId();
-    const allowed = await assertAppEnabledForClient(user.id, workspaceId, 'billing', profile.role);
+    const allowed = await assertAppEnabledForClient(user.id, 'billing', profile.role);
     if (!allowed) redirect('/');
   }
 
-  const result = await getClientInvoices();
-  const invoiceLoadError = !result.success ? result.error || 'Failed to load invoices' : null;
-  const invoices = (result.success ? result.data : []) as Array<{
+  const [invoiceResult, clientList] = await Promise.all([
+    getClientInvoices(),
+    isAdmin
+      ? supabase
+          .from('clients')
+          .select('id, name')
+          .order('name', { ascending: true })
+          .then(({ data }) => (data || []) as { id: string; name: string }[])
+      : Promise.resolve([] as { id: string; name: string }[]),
+  ]);
+
+  const invoiceLoadError = !invoiceResult.success
+    ? invoiceResult.error || 'Failed to load invoices'
+    : null;
+  const invoices = (invoiceResult.success ? invoiceResult.data : []) as Array<{
     id: string;
     invoice_number: string;
     amount: number;
@@ -48,15 +61,20 @@ export default async function PortalBillingPage() {
     description: string | null;
     file_url: string | null;
     project: { id: string; name: string } | null;
+    source?: string;
+    has_pdf?: boolean;
   }>;
 
   return (
     <div className="animate-fade-in-up space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Billing</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          View and track your invoices and payment history
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Billing</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            View and track your invoices and payment history
+          </p>
+        </div>
+        {isAdmin && <PortalInvoiceFormDialog clients={clientList} />}
       </div>
 
       {invoiceLoadError && (

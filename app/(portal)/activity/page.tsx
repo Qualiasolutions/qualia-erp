@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
-import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { ActivityContent } from './activity-content';
 
 export default async function PortalActivityPage() {
@@ -22,8 +21,7 @@ export default async function PortalActivityPage() {
 
   // App Library guard: block clients if the "activity" app is disabled
   if (role === 'client') {
-    const workspaceId = await getCurrentWorkspaceId();
-    const allowed = await assertAppEnabledForClient(user.id, workspaceId, 'activity', role);
+    const allowed = await assertAppEnabledForClient(user.id, 'activity', role);
     if (!allowed) redirect('/');
   }
 
