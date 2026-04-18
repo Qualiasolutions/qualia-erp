@@ -276,6 +276,7 @@ export async function syncPlanningFromGitHubWithServiceRole(
   // 8. Upsert milestones and phases
   let phasesUpserted = 0;
   let sortOrder = 0;
+  const phaseItemQueue: PhaseItemWork[] = [];
 
   for (const ms of milestones) {
     sortOrder++;
@@ -371,67 +372,107 @@ export async function syncPlanningFromGitHubWithServiceRole(
       }
       phasesUpserted++;
 
-      // 8c. Populate phase_items from framework PLAN.md files in this phase's dir
+      // Queue phase_items work for the parallel second pass below.
       if (phaseRowId) {
-        try {
-          // Match the phase's directory by numerically comparing the leading
-          // number in the dir name. This handles all observed conventions:
-          //   "22-observability-docs"        (flat)
-          //   "00.1-monorepo-scaffolding"    (Sakani sub-phase, 1-digit sub)
-          //   "00.01-something"              (hypothetical 2-digit sub)
-          // Padding-based startsWith breaks for Sakani-style dirs, so compare
-          // by parsed float instead.
-          const phaseNumFloat = parseFloat(phase.phaseNumber);
-          const matchingDir = phaseDirs.find((d) => {
-            const m = d.match(/^(\d+(?:\.\d+)?)[-_]/);
-            if (!m) return false;
-            return parseFloat(m[1]) === phaseNumFloat;
-          });
-          if (matchingDir) {
-            const files = await listGitHubDir(
-              token,
-              repoParsed.owner,
-              repoParsed.repo,
-              `.planning/phases/${matchingDir}`
-            );
-            const planFileNames = files.filter((f) => /PLAN\.md$/.test(f));
-            const summaryFileNames = new Set(files.filter((f) => /SUMMARY\.md$/.test(f)));
-
-            const planFiles: Array<{ name: string; content: string; summaryExists: boolean }> = [];
-            for (const planName of planFileNames) {
-              const content = await fetchGitHubFile(
-                token,
-                repoParsed.owner,
-                repoParsed.repo,
-                `.planning/phases/${matchingDir}/${planName}`
-              );
-              if (!content.content) continue;
-              const summaryName = planName.replace(/PLAN\.md$/, 'SUMMARY.md');
-              planFiles.push({
-                name: planName,
-                content: content.content,
-                summaryExists: summaryFileNames.has(summaryName),
-              });
-            }
-
-            if (planFiles.length > 0) {
-              await syncPhaseItemsFromPlans(
-                supabase,
-                phaseRowId,
-                planFiles,
-                finalStatus === 'completed'
-              );
-            }
-          }
-        } catch (err) {
-          // Never let phase_items errors fail the whole sync
-          console.error('[sync] phase_items failed for', phase.phaseNumber, err);
-        }
+        phaseItemQueue.push({
+          phaseRowId,
+          phaseNumber: phase.phaseNumber,
+          phaseCompleted: finalStatus === 'completed',
+        });
       }
     }
   }
 
+  // 9. Second pass: populate phase_items in parallel.
+  //
+  // Doing this inline per-phase was too slow for large projects like Sakani
+  // (53 phases × ~3 PLAN.md fetches each, strictly sequential) — the server
+  // function timed out before all phases processed. Running the GitHub
+  // fetches in parallel with a concurrency cap turns ~50s into ~5s.
+  await runPhaseItemsSync(
+    supabase,
+    token,
+    repoParsed.owner,
+    repoParsed.repo,
+    phaseDirs,
+    phaseItemQueue
+  );
+
   return { success: true, phasesUpserted };
+}
+
+interface PhaseItemWork {
+  phaseRowId: string;
+  phaseNumber: string;
+  phaseCompleted: boolean;
+}
+
+/**
+ * Parallelized phase_items population for all phases in one project.
+ *
+ * Matches each phase to its source directory by parsed-float numeric
+ * comparison (tolerates "00.1" vs "00.01" padding variance). For each matched
+ * phase it lists the dir, filters to PLAN.md files, fetches their content,
+ * and calls syncPhaseItemsFromPlans. Runs up to PARALLELISM phases at once to
+ * stay under the Vercel function timeout on large repos.
+ */
+async function runPhaseItemsSync(
+  supabase: SupabaseClient,
+  token: string,
+  owner: string,
+  repo: string,
+  phaseDirs: string[],
+  queue: PhaseItemWork[]
+): Promise<void> {
+  const PARALLELISM = 6;
+
+  const processOne = async (work: PhaseItemWork): Promise<void> => {
+    try {
+      const phaseNumFloat = parseFloat(work.phaseNumber);
+      const matchingDir = phaseDirs.find((d) => {
+        const m = d.match(/^(\d+(?:\.\d+)?)[-_]/);
+        return m ? parseFloat(m[1]) === phaseNumFloat : false;
+      });
+      if (!matchingDir) return;
+
+      const files = await listGitHubDir(token, owner, repo, `.planning/phases/${matchingDir}`);
+      const planFileNames = files.filter((f) => /PLAN\.md$/.test(f));
+      if (planFileNames.length === 0) return;
+      const summaryFileNames = new Set(files.filter((f) => /SUMMARY\.md$/.test(f)));
+
+      const contents = await Promise.all(
+        planFileNames.map((planName) =>
+          fetchGitHubFile(token, owner, repo, `.planning/phases/${matchingDir}/${planName}`).then(
+            (r) => ({ planName, content: r.content })
+          )
+        )
+      );
+
+      const planFiles = contents
+        .filter((c): c is { planName: string; content: string } => !!c.content)
+        .map(({ planName, content }) => ({
+          name: planName,
+          content,
+          summaryExists: summaryFileNames.has(planName.replace(/PLAN\.md$/, 'SUMMARY.md')),
+        }));
+
+      if (planFiles.length > 0) {
+        await syncPhaseItemsFromPlans(supabase, work.phaseRowId, planFiles, work.phaseCompleted);
+      }
+    } catch (err) {
+      console.error('[sync] phase_items failed for', work.phaseNumber, err);
+    }
+  };
+
+  // Simple worker-pool: PARALLELISM workers drain the queue.
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(PARALLELISM, queue.length) }, async () => {
+    while (cursor < queue.length) {
+      const idx = cursor++;
+      await processOne(queue[idx]);
+    }
+  });
+  await Promise.all(workers);
 }
 
 /** Derive milestone status from its child phases */
