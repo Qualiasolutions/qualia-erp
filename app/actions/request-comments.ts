@@ -95,8 +95,7 @@ export async function createRequestComment(
     .eq('id', user.id)
     .single();
 
-  const isStaff =
-    profile?.role === 'admin' || profile?.role === 'manager' || profile?.role === 'employee';
+  const isStaff = profile?.role === 'admin' || profile?.role === 'employee';
 
   // Verify user can access this request
   if (!isStaff) {

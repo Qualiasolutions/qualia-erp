@@ -31,10 +31,11 @@ export async function isAdminRole(userId: string): Promise<boolean> {
 }
 
 /**
- * Check if a user has portal admin privileges (admin or manager)
+ * Check if a user has portal admin privileges. After 2026-04-18 this is
+ * just admin — `manager` was removed from the role model.
  */
 export function isPortalAdminRole(role: string | null): boolean {
-  return role === 'admin' || role === 'manager';
+  return role === 'admin';
 }
 
 /**
@@ -67,8 +68,8 @@ export async function canAccessProject(userId: string, projectId: string): Promi
       .eq('id', userId)
       .single();
 
-    // Admins and managers can access any project
-    if (profile?.role === 'admin' || profile?.role === 'manager') {
+    // Admins can access any project
+    if (profile?.role === 'admin') {
       return true;
     }
 
@@ -163,7 +164,7 @@ export async function getClientWorkspaceId(userId: string): Promise<string | nul
 
 /**
  * Assert that a given portal app is enabled for a user.
- * Internal users (admin, manager, employee) always pass.
+ * Internal users (admin, employee) always pass.
  * Clients are checked against the App Library config via getEnabledAppsForClient.
  * Workspace is resolved internally — callers don't need to pass it.
  *
@@ -178,7 +179,7 @@ export async function assertAppEnabledForClient(
   role: string | null
 ): Promise<boolean> {
   // Internal users pass unconditionally.
-  if (role === 'admin' || role === 'manager' || role === 'employee') return true;
+  if (role === 'admin' || role === 'employee') return true;
   if (role !== 'client') return false;
 
   const workspaceId = await getClientWorkspaceId(userId);

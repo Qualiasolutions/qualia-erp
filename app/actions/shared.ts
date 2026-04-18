@@ -45,17 +45,16 @@ export const getCachedUserRole = cache(async (userId: string): Promise<string | 
   return data?.role || null;
 });
 
-// Check if user is an admin (owner)
+// Check if user is an admin (owner). Roles are: admin, employee, client.
+// `manager` was removed 2026-04-18 — any legacy callers still see admin-only.
 export async function isUserAdmin(userId: string): Promise<boolean> {
   const role = await getCachedUserRole(userId);
   return role === 'admin';
 }
 
-// Check if user is admin or manager (both are "elevated" roles for permission checks)
-export async function isUserManagerOrAbove(userId: string): Promise<boolean> {
-  const role = await getCachedUserRole(userId);
-  return role === 'admin' || role === 'manager';
-}
+// Backwards-compatible alias for call sites that used the old 2-role helper.
+// Kept so we don't churn 40+ imports; behavior is identical to isUserAdmin.
+export const isUserManagerOrAbove = isUserAdmin;
 
 // Get user's role
 export async function getUserRole(userId: string): Promise<string | null> {
@@ -82,9 +81,9 @@ export async function canDeleteProject(userId: string, projectId: string): Promi
   return data?.lead_id === userId;
 }
 
-// Check if user can delete a meeting (creator, manager, or admin)
+// Check if user can delete a meeting (creator or admin)
 export async function canDeleteMeeting(userId: string, meetingId: string): Promise<boolean> {
-  if (await isUserManagerOrAbove(userId)) return true;
+  if (await isUserAdmin(userId)) return true;
 
   const supabase = await createClient();
   const { data } = await supabase
@@ -190,17 +189,6 @@ export async function canModifyTask(userId: string, taskId: string): Promise<boo
   if (task.assignee_id === userId) return true;
   const project = Array.isArray(task.project) ? task.project[0] : task.project;
   if (project?.lead_id === userId) return true;
-
-  // Managers can modify any task in their workspace (team lead override)
-  if (task.workspace_id && (await isUserManagerOrAbove(userId))) {
-    const { data: membership } = await supabase
-      .from('workspace_members')
-      .select('id')
-      .eq('workspace_id', task.workspace_id)
-      .eq('profile_id', userId)
-      .maybeSingle();
-    if (membership) return true;
-  }
 
   // Employees must be explicitly assigned to the project to modify its tasks.
   if (task.project_id) {

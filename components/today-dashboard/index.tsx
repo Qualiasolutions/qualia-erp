@@ -261,10 +261,9 @@ export function TodayDashboard({
   const effectiveRole = isViewingAs ? 'employee' : userRole;
   const viewingAsOther = isRealAdmin && (viewAsUserId !== null || isViewingAs);
 
-  // All internal roles (admin, employee, manager) can clock in.
+  // All internal roles (admin, employee) can clock in.
   // When admin is viewing-as an employee, effectiveRole becomes 'employee', so the modal still appears in that mode.
-  const canTrackTime =
-    effectiveRole === 'admin' || effectiveRole === 'employee' || effectiveRole === 'manager';
+  const canTrackTime = effectiveRole === 'admin' || effectiveRole === 'employee';
 
   const { session: activeSession, isLoading: sessionLoading } = useActiveSession(
     canTrackTime ? (workspaceId ?? null) : null

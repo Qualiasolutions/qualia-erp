@@ -155,10 +155,11 @@ describe('updateUserRole', () => {
     expect(result.error).toContain('Invalid role');
   });
 
-  it('updates to manager role successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+  it('rejects the removed manager role', async () => {
+    // @ts-expect-error testing removed role
     const result = await updateUserRole(TARGET_USER_ID, 'manager');
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Invalid role');
   });
 
   it('updates user role successfully', async () => {

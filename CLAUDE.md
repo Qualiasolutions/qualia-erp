@@ -343,7 +343,7 @@ const assigned = Array.isArray(data.assigned_to) ? data.assigned_to[0] || null :
 | `clients`           | CRM with `lead_status`, `last_contacted_at`                                               |
 | `meetings`          | Calendar with `meeting_link`, `client_id`                                                 |
 | `meeting_attendees` | Meeting participant join table                                                            |
-| `profiles`          | Users with `role` (admin/manager/employee/client)                                         |
+| `profiles`          | Users with `role` (admin/employee/client)                                                 |
 | `teams`             | Team definitions                                                                          |
 | `team_members`      | Team membership join table                                                                |
 | `workspaces`        | Multi-tenant isolation                                                                    |
@@ -443,24 +443,24 @@ const status: Enums<'project_status'> = 'Active';
 
 ### Enums
 
-| Enum                           | Values                                                                                                                                                                          |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `project_type`                 | `web_design`, `ai_agent`, `voice_agent`, `seo`, `ads`, `ai_platform`, `app`                                                                                                     |
-| `project_status`               | `Demos`, `Active`, `Launched`, `Delayed`, `Archived`, `Canceled`, `Done`                                                                                                        |
-| `project_group`                | `salman_kuwait`, `tasos_kyriakides`, `finished`, `inactive`, `active`, `demos`, `other`                                                                                         |
-| `task_status`                  | `Todo`, `In Progress`, `Done`, `Canceled`                                                                                                                                       |
-| `task_priority`                | `No Priority`, `Urgent`, `High`, `Medium`, `Low`                                                                                                                                |
-| `task_item_type`               | `task`, `issue`, `note`, `resource`                                                                                                                                             |
-| `issue_status`                 | `Yet to Start`, `Todo`, `In Progress`, `Done`, `Canceled`                                                                                                                       |
-| `issue_priority`               | `No Priority`, `Urgent`, `High`, `Medium`, `Low`                                                                                                                                |
-| `lead_status`                  | `dropped`, `cold`, `hot`, `active_client`, `inactive_client`, `dead_lead`                                                                                                       |
-| `user_role`                    | `admin`, `manager`, `employee`, `client`                                                                                                                                        |
-| `deployment_platform`          | `vercel`, `squarespace`, `railway`, `meta`, `instagram`, `google_ads`, `tiktok`, `linkedin`, `none`                                                                             |
-| `integration_provider`         | `github`, `vercel`, `vapi`                                                                                                                                                      |
-| `invitation_status`            | `sent`, `resent`, `opened`, `accepted`, `expired`                                                                                                                               |
-| `notification_delivery_method` | `email`, `in_app`, `both`                                                                                                                                                       |
-| `provisioning_status`          | `not_started`, `pending`, `in_progress`, `completed`, `partial_failure`, `failed`                                                                                               |
-| `activity_type`                | `project_created`, `project_updated`, `issue_created`, `issue_updated`, `issue_completed`, `issue_assigned`, `comment_added`, `team_created`, `member_added`, `meeting_created` |
+| Enum                           | Values                                                                                                                                                                               |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `project_type`                 | `web_design`, `ai_agent`, `voice_agent`, `seo`, `ads`, `ai_platform`, `app`                                                                                                          |
+| `project_status`               | `Demos`, `Active`, `Launched`, `Delayed`, `Archived`, `Canceled`, `Done`                                                                                                             |
+| `project_group`                | `salman_kuwait`, `tasos_kyriakides`, `finished`, `inactive`, `active`, `demos`, `other`                                                                                              |
+| `task_status`                  | `Todo`, `In Progress`, `Done`, `Canceled`                                                                                                                                            |
+| `task_priority`                | `No Priority`, `Urgent`, `High`, `Medium`, `Low`                                                                                                                                     |
+| `task_item_type`               | `task`, `issue`, `note`, `resource`                                                                                                                                                  |
+| `issue_status`                 | `Yet to Start`, `Todo`, `In Progress`, `Done`, `Canceled`                                                                                                                            |
+| `issue_priority`               | `No Priority`, `Urgent`, `High`, `Medium`, `Low`                                                                                                                                     |
+| `lead_status`                  | `dropped`, `cold`, `hot`, `active_client`, `inactive_client`, `dead_lead`                                                                                                            |
+| `user_role`                    | `admin`, `employee`, `client` (the `manager` enum value is kept for backwards safety but no longer assigned — migration `20260418150000` promotes any remaining managers to `admin`) |
+| `deployment_platform`          | `vercel`, `squarespace`, `railway`, `meta`, `instagram`, `google_ads`, `tiktok`, `linkedin`, `none`                                                                                  |
+| `integration_provider`         | `github`, `vercel`, `vapi`                                                                                                                                                           |
+| `invitation_status`            | `sent`, `resent`, `opened`, `accepted`, `expired`                                                                                                                                    |
+| `notification_delivery_method` | `email`, `in_app`, `both`                                                                                                                                                            |
+| `provisioning_status`          | `not_started`, `pending`, `in_progress`, `completed`, `partial_failure`, `failed`                                                                                                    |
+| `activity_type`                | `project_created`, `project_updated`, `issue_created`, `issue_updated`, `issue_completed`, `issue_assigned`, `comment_added`, `team_created`, `member_added`, `meeting_created`      |
 
 ## Routes
 
@@ -527,11 +527,10 @@ const status: Enums<'project_status'> = 'Active';
 - `middleware.ts` — Protects all routes except `/auth/*` and `/api/*`
 - Auth uses `supabase.auth.getClaims()` for session validation (JWT custom claims via `custom_access_token_hook`)
 - Redirects unauthenticated users to `/auth/login`
-- **Role-based routing**:
-  - `client` users → redirected to `/portal` if accessing internal routes
-  - `manager` users → restricted route access (projects, clients, schedule, status, knowledge, research, portal)
-  - `admin` + `manager` → can access `/admin/*`
-  - `employee` → all internal routes except `/admin/*`
+- **Role-based routing** (three roles — `manager` removed 2026-04-18):
+  - `client` users → blocked from `/inbox`, `/schedule`, `/agent`; see `/portal` routes
+  - `admin` → all routes including `/admin/*`, `/clients`, `/workspace`, `/seo`
+  - `employee` → all internal routes except `/admin/*`, `/clients`, `/workspace`, `/seo`
 - **API routes are NOT protected by middleware** — each API route must implement its own auth checks
 
 ## API Routes
@@ -681,7 +680,7 @@ This project uses the Qualia `.planning/` workflow:
 
 ### Users
 
-Internal team (Fawzi, trainees, employees) + external clients (portal). Auth-gated with role-based access. Four roles: admin, manager, employee, client.
+Internal team (Fawzi, trainees, employees) + external clients (portal). Auth-gated with role-based access. Three roles: admin, employee, client.
 
 ### Brand Personality
 

@@ -573,7 +573,7 @@ export function InternalAppWalkthrough() {
   const shouldReduceMotion = useReducedMotion();
 
   const firstName = displayName.trim().split(/\s+/)[0] || 'there';
-  const isInternalUser = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
+  const isInternalUser = userRole === 'admin' || userRole === 'employee';
   const isAdmin = userRole === 'admin';
 
   const steps = useMemo(

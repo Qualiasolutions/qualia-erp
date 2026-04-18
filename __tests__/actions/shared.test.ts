@@ -143,21 +143,21 @@ describe('shared action helpers', () => {
     });
   });
 
-  describe('isUserManagerOrAbove', () => {
+  describe('isUserManagerOrAbove (alias for isUserAdmin after manager removal)', () => {
     it('returns true for admin role', async () => {
       setupSupabaseMock({ role: 'admin' });
       const result = await isUserManagerOrAbove('user-1');
       expect(result).toBe(true);
     });
 
-    it('returns true for manager role', async () => {
-      setupSupabaseMock({ role: 'manager' });
-      const result = await isUserManagerOrAbove('user-1');
-      expect(result).toBe(true);
-    });
-
     it('returns false for employee role', async () => {
       setupSupabaseMock({ role: 'employee' });
+      const result = await isUserManagerOrAbove('user-1');
+      expect(result).toBe(false);
+    });
+
+    it('returns false for client role', async () => {
+      setupSupabaseMock({ role: 'client' });
       const result = await isUserManagerOrAbove('user-1');
       expect(result).toBe(false);
     });

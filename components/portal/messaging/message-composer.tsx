@@ -19,7 +19,7 @@ export function MessageComposer({ projectId, userRole, onMessageSent }: MessageC
   const [isSending, setIsSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const canSendInternal = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
+  const canSendInternal = userRole === 'admin' || userRole === 'employee';
 
   // Wrap selected text with markdown markers
   const wrapSelection = useCallback(
