@@ -859,7 +859,7 @@ export async function getClientInvoices(): Promise<ActionResult> {
     let query = supabase
       .from('financial_invoices')
       .select(
-        'zoho_id, invoice_number, total, currency_code, status, date, due_date, last_payment_date, client_id, is_hidden'
+        'zoho_id, invoice_number, total, currency_code, status, date, due_date, last_payment_date, client_id, is_hidden, source, pdf_url'
       )
       .eq('is_hidden', false)
       .order('date', { ascending: false });
@@ -893,7 +893,10 @@ export async function getClientInvoices(): Promise<ActionResult> {
     const { data, error } = await query;
     if (error) throw error;
 
-    // Map financial_invoices fields to the portal invoice shape
+    // Map financial_invoices fields to the portal invoice shape.
+    // `has_pdf` lets the UI render a Download button without leaking the
+    // storage path; the signed URL is fetched on click via
+    // getInvoicePdfSignedUrl.
     const mapped = (data || []).map((inv) => ({
       id: inv.zoho_id,
       invoice_number: inv.invoice_number,
@@ -906,6 +909,8 @@ export async function getClientInvoices(): Promise<ActionResult> {
       description: null,
       file_url: null,
       project: null,
+      source: (inv as { source?: string }).source ?? 'zoho',
+      has_pdf: Boolean((inv as { pdf_url?: string | null }).pdf_url),
     }));
 
     return { success: true, data: mapped };
