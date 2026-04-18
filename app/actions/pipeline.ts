@@ -399,16 +399,19 @@ export async function initializeProjectPipeline(
     return { success: false, error: phasesError?.message || 'Failed to create phases' };
   }
 
-  // Set up prerequisite links (each phase depends on the previous one)
+  // Set up prerequisite links (each phase depends on the previous one) —
+  // each UPDATE touches a different row, so Promise.all is safe.
   const sortedPhases = [...createdPhases].sort((a, b) => a.display_order - b.display_order);
-  for (let i = 1; i < sortedPhases.length; i++) {
-    const currentPhase = sortedPhases[i];
-    const previousPhase = sortedPhases[i - 1];
-    await supabase
-      .from('project_phases')
-      .update({ prerequisite_phase_id: previousPhase.id })
-      .eq('id', currentPhase.id);
-  }
+  await Promise.all(
+    sortedPhases
+      .slice(1)
+      .map((currentPhase, i) =>
+        supabase
+          .from('project_phases')
+          .update({ prerequisite_phase_id: sortedPhases[i].id })
+          .eq('id', currentPhase.id)
+      )
+  );
 
   // Create tasks from type-specific template
   const tasks: Array<{
@@ -811,21 +814,31 @@ export async function linkTasksToPhases(): Promise<ActionResult> {
     phaseMap[phase.project_id][phase.name] = phase.id;
   }
 
-  // Update tasks with their phase_id
-  let linkedCount = 0;
+  // Group task IDs by the phase_id they should point to, then issue one
+  // UPDATE per target phase instead of N per task.
+  const tasksByPhaseId = new Map<string, string[]>();
   for (const task of unlinkedTasks) {
     const phaseId = phaseMap[task.project_id]?.[task.phase_name || ''];
-    if (phaseId) {
-      const { error: updateError } = await supabase
+    if (!phaseId) continue;
+    const bucket = tasksByPhaseId.get(phaseId);
+    if (bucket) bucket.push(task.id);
+    else tasksByPhaseId.set(phaseId, [task.id]);
+  }
+
+  const updateResults = await Promise.all(
+    Array.from(tasksByPhaseId.entries()).map(([phaseId, ids]) =>
+      supabase
         .from('tasks')
         .update({ phase_id: phaseId })
-        .eq('id', task.id);
+        .in('id', ids)
+        .then(({ error }) => ({ error, ids }))
+    )
+  );
 
-      if (!updateError) {
-        linkedCount++;
-      }
-    }
-  }
+  const linkedCount = updateResults.reduce(
+    (sum, { error, ids }) => (error ? sum : sum + ids.length),
+    0
+  );
 
   return {
     success: true,

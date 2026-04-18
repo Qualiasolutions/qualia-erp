@@ -48,7 +48,7 @@ npm test -- path/to/test # Run single test file
 
 ### Server Actions Pattern
 
-All mutations in `app/actions/*.ts` (49 domain modules). `app/actions.ts` is a re-export router for backward compatibility. Return `ActionResult`:
+All mutations in `app/actions/*.ts` (53 domain modules). `app/actions.ts` is a re-export router for backward compatibility. Return `ActionResult`:
 
 ```typescript
 type ActionResult = { success: boolean; error?: string; data?: unknown };
@@ -60,19 +60,34 @@ Key action files:
 | ----------------------------- | ---------------------------------------------------------------- |
 | `shared.ts`                   | `ActionResult` type, permission helpers                          |
 | `index.ts`                    | Re-exports + authorization helpers (`isUserAdmin`, `canDelete*`) |
+| `auth.ts`                     | Login, username→email resolve, onboarding state, admin status    |
+| `admin.ts`                    | Admin-only helpers                                               |
+| `view-as.ts`                  | Impersonation (admin "view-as" user) state                       |
+| `workspace.ts`                | Workspace memberships, default workspace                         |
+| `portal-workspaces.ts`        | Portal-side workspace helpers                                    |
+| `portal-admin.ts`             | Portal admin panel (client roster, branding, settings)           |
+| `portal-messages.ts`          | Realtime messaging between team and clients                      |
+| `teams.ts`                    | Team definitions + membership                                    |
 | `inbox.ts`                    | Task CRUD with inbox filtering                                   |
+| `issues.ts`                   | Legacy issue CRUD (being migrated to tasks)                      |
 | `phases.ts`                   | Project roadmap phases                                           |
+| `phase-comments.ts`           | Comments on project phases                                       |
+| `phase-reviews.ts`            | Phase review/approval flow                                       |
 | `daily-flow.ts`               | Dashboard data aggregation                                       |
 | `projects.ts`                 | Project CRUD                                                     |
-| `clients.ts`                  | Client/CRM CRUD                                                  |
-| `meetings.ts`                 | Meeting management                                               |
-| `auto-assign.ts`              | Task auto-creation engine (phase items → tasks)                  |
 | `project-assignments.ts`      | Employee ↔ project assignment                                    |
 | `project-integrations.ts`     | GitHub/Vercel integration links                                  |
+| `project-files.ts`            | Project file upload/download                                     |
+| `project-links.ts`            | Project external links                                           |
+| `integrations.ts`             | Workspace-level integrations                                     |
 | `github-planning-sync.ts`     | Sync .planning/ from GitHub repos                                |
+| `auto-assign.ts`              | Task auto-creation engine (phase items → tasks)                  |
+| `clients.ts`                  | Client/CRM CRUD                                                  |
 | `client-portal.ts`            | Client-facing portal data                                        |
 | `client-invitations.ts`       | Portal invitation flow                                           |
 | `client-requests.ts`          | Client feature requests                                          |
+| `request-comments.ts`         | Comment threads on feature requests                              |
+| `meetings.ts`                 | Meeting management                                               |
 | `knowledge.ts`                | Knowledge base / guides                                          |
 | `research.ts`                 | Research entries + findings                                      |
 | `work-sessions.ts`            | Clock-in/out time tracking                                       |
@@ -82,19 +97,19 @@ Key action files:
 | `deployments.ts`              | Project deployment management                                    |
 | `notifications.ts`            | In-app notification CRUD                                         |
 | `notification-preferences.ts` | Per-user notification settings                                   |
-| `phase-comments.ts`           | Comments on project phases                                       |
-| `phase-reviews.ts`            | Phase review/approval flow                                       |
 | `task-attachments.ts`         | File attachments on tasks                                        |
+| `activities.ts`               | Internal activity feed                                           |
+| `activity-feed.ts`            | Client-visible activity log                                      |
 | `ai-conversations.ts`         | AI chat persistence                                              |
 | `ai-context.ts`               | AI user context/memory                                           |
 | `team-dashboard.ts`           | Team task overview                                               |
+| `dashboard-notes.ts`          | Dashboard sticky notes                                           |
 | `health.ts`                   | Health monitoring + insights                                     |
 | `seo.ts`                      | SEO management                                                   |
-| `pipeline.ts`                 | Sales/project pipeline                                           |
+| `pipeline.ts`                 | Sales/project pipeline + GSD migration helpers                   |
 | `logos.ts`                    | Logo upload (Supabase Storage)                                   |
-| `project-files.ts`            | Project file upload/download                                     |
-| `learning.ts`                 | Mentorship/training features                                     |
-| `payments.ts`                 | Payment tracking                                                 |
+| `api-tokens.ts`               | Per-user API tokens (qlt\_\*) for framework integration          |
+| `reports.ts`                  | Framework report ingestion (v3.4.2 compat)                       |
 | `zoho.ts`                     | Zoho integration                                                 |
 
 ### Key Directories
@@ -102,7 +117,7 @@ Key action files:
 ```
 app/
 ├── actions.ts              # Re-export router
-├── actions/                # 49 domain-specific action modules
+├── actions/                # 53 domain-specific action modules
 ├── api/chat/               # AI chat endpoint (Gemini)
 ├── api/github/webhook/     # GitHub push webhook → phase sync + auto-assign cascade
 ├── api/cron/               # 8 cron jobs (reminders, attendance, morning email, etc.)

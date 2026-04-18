@@ -140,10 +140,10 @@ Out-of-band: framework v3.4.2-compat layer shipped to prod 2026-04-17 (commit `f
 6. Polish & Ship — pending
 
 ## Branch
-master
+master (+ feature branch `fix/review-high-items-2026-04-18` for post-sprint review sweep)
 
 ## Last Deploy
-commit `e02c3b8` · 2026-04-14 · production healthy (Phase 4 shipped)
+commit `0717b9b` · 2026-04-18 · production healthy (post-Phase-8 hotfix sprint — six deploys: board removal, client-view gating, welcome tour, username login, MIME alignment, auth fixes)
 
 ## Decisions
 - Transform, don't delete — extend existing tables and actions
