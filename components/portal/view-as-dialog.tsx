@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Eye, Users, UserCircle, Shield, Loader2 } from 'lucide-react';
+import { Search, Eye, Users, UserCircle, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,6 @@ import type { ViewAsUser } from '@/app/actions/view-as';
 interface GroupedUsers {
   clients: ViewAsUser[];
   employees: ViewAsUser[];
-  managers: ViewAsUser[];
 }
 
 interface ViewAsDialogProps {
@@ -28,12 +27,6 @@ interface ViewAsDialogProps {
 }
 
 const ROLE_CONFIG = {
-  managers: {
-    label: 'Managers',
-    icon: Shield,
-    badgeClass:
-      'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20',
-  },
   employees: {
     label: 'Employees',
     icon: UserCircle,
@@ -101,7 +94,6 @@ export function ViewAsDialog({ open, onOpenChange }: ViewAsDialogProps) {
     return {
       clients: filterGroup(grouped.clients),
       employees: filterGroup(grouped.employees),
-      managers: filterGroup(grouped.managers),
     };
   }, [grouped, search]);
 
@@ -119,9 +111,7 @@ export function ViewAsDialog({ open, onOpenChange }: ViewAsDialogProps) {
     });
   };
 
-  const totalResults = filtered
-    ? filtered.clients.length + filtered.employees.length + filtered.managers.length
-    : 0;
+  const totalResults = filtered ? filtered.clients.length + filtered.employees.length : 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
