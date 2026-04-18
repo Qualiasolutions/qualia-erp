@@ -76,16 +76,18 @@ export async function clockIn(
     .lt('started_at', `${today}T00:00:00.000Z`);
 
   if (staleSessions && staleSessions.length > 0) {
-    for (const stale of staleSessions) {
-      const cappedEnd = new Date(
-        new Date(stale.started_at).getTime() + 8 * 60 * 60 * 1000
-      ).toISOString();
-      await supabase
-        .from('work_sessions')
-        .update({ ended_at: cappedEnd, summary: '[Auto-closed: forgot to clock out]' })
-        .eq('id', stale.id)
-        .eq('profile_id', user.id);
-    }
+    await Promise.all(
+      staleSessions.map((stale) => {
+        const cappedEnd = new Date(
+          new Date(stale.started_at).getTime() + 8 * 60 * 60 * 1000
+        ).toISOString();
+        return supabase
+          .from('work_sessions')
+          .update({ ended_at: cappedEnd, summary: '[Auto-closed: forgot to clock out]' })
+          .eq('id', stale.id)
+          .eq('profile_id', user.id);
+      })
+    );
   }
 
   // Check for existing open session TODAY

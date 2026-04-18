@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { setDefaultWorkspace } from '@/app/actions/workspace';
 import { createClient } from '@/lib/supabase/client';
 
 export interface Workspace {
@@ -109,35 +110,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
 
-      // Persist selection to database FIRST before updating local state
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        // Set all other workspaces as non-default
-        const { error: clearError } = await supabase
-          .from('workspace_members')
-          .update({ is_default: false })
-          .eq('profile_id', user.id);
-
-        if (clearError) {
-          console.error('Error clearing default workspace:', clearError);
-          return false;
-        }
-
-        // Set selected workspace as default
-        const { error: setError } = await supabase
-          .from('workspace_members')
-          .update({ is_default: true })
-          .eq('workspace_id', workspace.id)
-          .eq('profile_id', user.id);
-
-        if (setError) {
-          console.error('Error setting default workspace:', setError);
-          return false;
-        }
+      // Persist selection via server action so the mutation + access check
+      // runs with the session on the server, not with the anon client.
+      const result = await setDefaultWorkspace(workspace.id);
+      if (!result.success) {
+        console.error('Error setting default workspace:', result.error);
+        return false;
       }
 
       // Update local state after DB is confirmed updated

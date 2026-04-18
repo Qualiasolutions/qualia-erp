@@ -82,6 +82,43 @@ export async function loginAction(
 }
 
 /**
+ * Persist the internal-app walkthrough completion state for the current user.
+ * Called by the onboarding overlay when the user dismisses or finishes the tour.
+ * Auth is derived from the session; the client never picks the profile row.
+ */
+export async function persistInternalOnboardingState(
+  version: number
+): Promise<{ success: boolean; error?: string }> {
+  if (!Number.isInteger(version) || version < 0) {
+    return { success: false, error: 'Invalid version' };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      internal_onboarding_version: version,
+      internal_onboarding_completed_at: new Date().toISOString(),
+    })
+    .eq('id', user.id);
+
+  if (error) {
+    console.error('[persistInternalOnboardingState]', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
  * Get current user's admin status
  */
 export async function getAdminStatus(): Promise<{

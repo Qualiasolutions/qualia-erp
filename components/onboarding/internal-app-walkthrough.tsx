@@ -1,5 +1,6 @@
 'use client';
 
+import { persistInternalOnboardingState } from '@/app/actions/auth';
 import { useAdminContext } from '@/components/admin-provider';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
@@ -652,17 +653,9 @@ export function InternalAppWalkthrough() {
     writeStoredVersion(userId);
 
     startSaving(async () => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          internal_onboarding_version: WALKTHROUGH_VERSION,
-          internal_onboarding_completed_at: new Date().toISOString(),
-        })
-        .eq('id', userId);
-
-      if (error) {
-        console.error('[InternalAppWalkthrough] Failed to persist onboarding state:', error);
+      const result = await persistInternalOnboardingState(WALKTHROUGH_VERSION);
+      if (!result.success) {
+        console.error('[InternalAppWalkthrough] Failed to persist onboarding state:', result.error);
       }
     });
   }, [startSaving, userId]);
