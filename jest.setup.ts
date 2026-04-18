@@ -1,5 +1,9 @@
 import '@testing-library/jest-dom';
 
+// Deterministic crypto key for tests that exercise integration-token encryption.
+// Production code fails closed when this env var is missing; tests need a fixed value.
+process.env.TOKEN_ENCRYPTION_KEY ??= 'test-token-encryption-key-for-jest-only';
+
 // Polyfill Web APIs for Next.js stream utils in jsdom environment
 import { TextEncoder, TextDecoder } from 'util';
 if (typeof global.TextEncoder === 'undefined') {
