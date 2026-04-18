@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Receipt, ExternalLink } from 'lucide-react';
+import { Receipt, ExternalLink, Download, Loader2 } from 'lucide-react';
+import { getInvoicePdfSignedUrl } from '@/app/actions/financials';
 
 interface Invoice {
   id: string;
@@ -17,10 +18,48 @@ interface Invoice {
   description?: string | null;
   file_url?: string | null;
   project: { id: string; name: string } | null;
+  source?: string;
+  has_pdf?: boolean;
 }
 
 interface PortalInvoiceListProps {
   invoices: Invoice[];
+}
+
+function PdfDownloadButton({ invoiceId, label }: { invoiceId: string; label: string }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const handleClick = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await getInvoicePdfSignedUrl(invoiceId);
+      if (!result.success || !result.url) {
+        setError(result.error || 'Could not load PDF');
+        return;
+      }
+      window.open(result.url, '_blank', 'noopener,noreferrer');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={busy}
+      aria-label={`Download PDF for ${label}`}
+      className="inline-flex items-center gap-1 rounded text-xs text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 disabled:opacity-60"
+      title={error ?? 'Download PDF'}
+    >
+      {busy ? (
+        <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+      ) : (
+        <Download className="h-3 w-3" aria-hidden="true" />
+      )}
+      <span className="sr-only sm:not-sr-only">PDF</span>
+    </button>
+  );
 }
 
 const InvoiceRow = React.memo(function InvoiceRow({
@@ -45,7 +84,10 @@ const InvoiceRow = React.memo(function InvoiceRow({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-foreground">{invoice.invoice_number}</span>
-            {invoice.file_url && (
+            {invoice.has_pdf && (
+              <PdfDownloadButton invoiceId={invoice.id} label={invoice.invoice_number} />
+            )}
+            {!invoice.has_pdf && invoice.file_url && (
               <a
                 href={invoice.file_url}
                 target="_blank"
@@ -111,7 +153,10 @@ const InvoiceRow = React.memo(function InvoiceRow({
             </span>
           )}
         </div>
-        {invoice.file_url && (
+        {invoice.has_pdf && (
+          <PdfDownloadButton invoiceId={invoice.id} label={invoice.invoice_number} />
+        )}
+        {!invoice.has_pdf && invoice.file_url && (
           <a
             href={invoice.file_url}
             target="_blank"

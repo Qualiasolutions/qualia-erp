@@ -500,6 +500,18 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     return { success: false, error: 'Not authenticated' };
   }
 
+  // Clients cannot create tasks via the portal — they request work through
+  // /requests instead. Defends the action even if a UI button is added by
+  // accident or a crafted call comes from a client session.
+  const { data: roleRow } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  if (roleRow?.role === 'client') {
+    return { success: false, error: 'Clients cannot create tasks' };
+  }
+
   // Validate input
   const validation = parseFormData(createTaskSchema, formData);
   if (!validation.success) {
@@ -1222,10 +1234,17 @@ export async function unscheduleTask(taskId: string): Promise<ActionResult> {
 }
 
 /**
- * Get tasks visible to a client (or any user) across multiple projects.
- * Filters out canceled tasks and returns a lean projection for the portal tasks view.
+ * Get tasks visible across the projects the caller can see.
+ *
+ * For role='client' we apply two extra filters so internal scratch / backlog
+ * never leaks: (1) `is_client_visible = true` (admin-controlled toggle, see
+ * migration 20260418130000) and (2) `phase_id IS NOT NULL` (no unphased work).
+ * Internal roles see everything in the projects they were given.
  */
-export async function getClientVisibleTasks(projectIds: string[]): Promise<ActionResult> {
+export async function getClientVisibleTasks(
+  projectIds: string[],
+  role: string = 'client'
+): Promise<ActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -1234,17 +1253,20 @@ export async function getClientVisibleTasks(projectIds: string[]): Promise<Actio
 
   if (!projectIds.length) return { success: true, data: [] };
 
-  // TODO: tasks table lacks an `is_client_visible` column — requires schema change.
-  // Once added, append `.eq('is_client_visible', true)` to this query to let
-  // admins control which tasks surface in the client portal.
-  const { data, error } = await supabase
+  let query = supabase
     .from('tasks')
     .select(
       'id, title, status, priority, due_date, project_id, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!tasks_project_id_fkey(id, name)'
     )
     .in('project_id', projectIds)
     .in('item_type', ['task', 'issue'])
-    .not('status', 'eq', 'Canceled')
+    .not('status', 'eq', 'Canceled');
+
+  if (role === 'client') {
+    query = query.eq('is_client_visible', true).not('phase_id', 'is', null);
+  }
+
+  const { data, error } = await query
     .order('status', { ascending: true })
     .order('priority', { ascending: true })
     .limit(200);

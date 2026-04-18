@@ -137,25 +137,56 @@ export async function resolveEffectiveUser(
 }
 
 /**
+ * Resolve a client's workspace from their first linked client_projects row.
+ * Mirrors the workspace resolution in app/(portal)/layout.tsx — clients are
+ * never inserted into workspace_members, so getCurrentWorkspaceId() returns
+ * null for them. Use this helper instead.
+ */
+export async function getClientWorkspaceId(userId: string): Promise<string | null> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('client_projects')
+      .select('projects!inner(workspace_id)')
+      .eq('client_id', userId)
+      .limit(1)
+      .maybeSingle();
+
+    if (!data?.projects) return null;
+    const proj = Array.isArray(data.projects) ? data.projects[0] : data.projects;
+    return proj?.workspace_id ?? null;
+  } catch (error) {
+    console.error('Failed to resolve client workspace:', error);
+    return null;
+  }
+}
+
+/**
  * Assert that a given portal app is enabled for a user.
  * Internal users (admin, manager, employee) always pass.
  * Clients are checked against the App Library config via getEnabledAppsForClient.
+ * Workspace is resolved internally — callers don't need to pass it.
  *
  * @param userId - The user to check
- * @param workspaceId - The workspace context (required for clients)
  * @param appKey - The app key to check (e.g. 'messages', 'billing', 'files')
  * @param role - The user's role
  * @returns true if the user may access the app, false otherwise
  */
 export async function assertAppEnabledForClient(
   userId: string,
-  workspaceId: string | null,
   appKey: string,
   role: string | null
 ): Promise<boolean> {
   // Internal users pass unconditionally.
   if (role === 'admin' || role === 'manager' || role === 'employee') return true;
-  if (!workspaceId) return false;
+  if (role !== 'client') return false;
+
+  const workspaceId = await getClientWorkspaceId(userId);
+  // Fail-open when no workspace resolves: a client with zero linked projects
+  // still sees their pages (they'll hit empty states). This matches the
+  // sidebar fallback in app/(portal)/layout.tsx.
+  if (!workspaceId) return true;
+
   const { getEnabledAppsForClient } = await import('@/app/actions/portal-admin');
   const result = await getEnabledAppsForClient(workspaceId, userId);
   if (!result.success || !Array.isArray(result.data)) return false;

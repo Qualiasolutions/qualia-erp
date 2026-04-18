@@ -20,6 +20,16 @@ jest.mock('@/app/actions/portal-admin', () => ({
   getEnabledAppsForClient: (...args: unknown[]) => mockGetEnabledAppsForClient(...args),
 }));
 
+const mockMaybeSingle = jest.fn();
+const mockLimit = jest.fn(() => ({ maybeSingle: mockMaybeSingle }));
+const mockEq = jest.fn(() => ({ limit: mockLimit }));
+const mockSelect = jest.fn(() => ({ eq: mockEq }));
+const mockFrom = jest.fn(() => ({ select: mockSelect }));
+
+jest.mock('@/lib/supabase/server', () => ({
+  createClient: jest.fn(async () => ({ from: mockFrom })),
+}));
+
 import {
   assertAppEnabledForClient,
   assertNotImpersonating,
@@ -29,6 +39,7 @@ import {
 beforeEach(() => {
   mockCookieGet.mockReset();
   mockGetEnabledAppsForClient.mockReset();
+  mockMaybeSingle.mockReset();
 });
 
 describe('isPortalAdminRole', () => {
@@ -59,75 +70,102 @@ describe('isPortalAdminRole', () => {
 });
 
 describe('assertAppEnabledForClient', () => {
+  // Helper: stub the client_projects → projects.workspace_id resolution.
+  const mockClientWorkspace = (workspaceId: string | null) => {
+    mockMaybeSingle.mockResolvedValue({
+      data: workspaceId ? { projects: { workspace_id: workspaceId } } : null,
+    });
+  };
+
   it('passes unconditionally for admin role', async () => {
-    const result = await assertAppEnabledForClient('u1', null, 'messages', 'admin');
+    const result = await assertAppEnabledForClient('u1', 'messages', 'admin');
     expect(result).toBe(true);
     expect(mockGetEnabledAppsForClient).not.toHaveBeenCalled();
   });
 
   it('passes unconditionally for manager role', async () => {
-    const result = await assertAppEnabledForClient('u1', null, 'billing', 'manager');
+    const result = await assertAppEnabledForClient('u1', 'billing', 'manager');
     expect(result).toBe(true);
     expect(mockGetEnabledAppsForClient).not.toHaveBeenCalled();
   });
 
   it('passes unconditionally for employee role', async () => {
-    const result = await assertAppEnabledForClient('u1', 'ws-123', 'files', 'employee');
+    const result = await assertAppEnabledForClient('u1', 'files', 'employee');
     expect(result).toBe(true);
     expect(mockGetEnabledAppsForClient).not.toHaveBeenCalled();
   });
 
-  it('returns false for a client when workspaceId is null', async () => {
-    const result = await assertAppEnabledForClient('u1', null, 'messages', 'client');
+  it('rejects roles other than admin/manager/employee/client', async () => {
+    const result = await assertAppEnabledForClient('u1', 'messages', 'unknown');
+    expect(result).toBe(false);
+  });
+
+  it('rejects null role (treats as unknown, not internal)', async () => {
+    const result = await assertAppEnabledForClient('u1', 'messages', null);
     expect(result).toBe(false);
     expect(mockGetEnabledAppsForClient).not.toHaveBeenCalled();
   });
 
+  it('fails open for a client with no linked client_projects (no workspace)', async () => {
+    mockClientWorkspace(null);
+    const result = await assertAppEnabledForClient('u1', 'messages', 'client');
+    expect(result).toBe(true);
+    expect(mockGetEnabledAppsForClient).not.toHaveBeenCalled();
+  });
+
   it('returns true when the requested app is in the enabled list', async () => {
+    mockClientWorkspace('ws-123');
     mockGetEnabledAppsForClient.mockResolvedValue({
       success: true,
       data: ['messages', 'billing', 'files'],
     });
-    const result = await assertAppEnabledForClient('u1', 'ws-123', 'billing', 'client');
+    const result = await assertAppEnabledForClient('u1', 'billing', 'client');
     expect(result).toBe(true);
     expect(mockGetEnabledAppsForClient).toHaveBeenCalledWith('ws-123', 'u1');
   });
 
   it('returns false when the requested app is NOT in the enabled list', async () => {
+    mockClientWorkspace('ws-123');
     mockGetEnabledAppsForClient.mockResolvedValue({
       success: true,
       data: ['messages', 'files'],
     });
-    const result = await assertAppEnabledForClient('u1', 'ws-123', 'billing', 'client');
+    const result = await assertAppEnabledForClient('u1', 'billing', 'client');
     expect(result).toBe(false);
   });
 
   it('returns false when getEnabledAppsForClient returns unsuccessful', async () => {
+    mockClientWorkspace('ws-123');
     mockGetEnabledAppsForClient.mockResolvedValue({ success: false, error: 'DB error' });
-    const result = await assertAppEnabledForClient('u1', 'ws-123', 'messages', 'client');
+    const result = await assertAppEnabledForClient('u1', 'messages', 'client');
     expect(result).toBe(false);
   });
 
   it('returns false when data is not an array', async () => {
+    mockClientWorkspace('ws-123');
     mockGetEnabledAppsForClient.mockResolvedValue({ success: true, data: null });
-    const result = await assertAppEnabledForClient('u1', 'ws-123', 'messages', 'client');
+    const result = await assertAppEnabledForClient('u1', 'messages', 'client');
     expect(result).toBe(false);
   });
 
-  it('returns false when role is null (treats as unknown, not internal)', async () => {
+  it('does not leak access when enabled list is empty', async () => {
+    mockClientWorkspace('ws-123');
+    mockGetEnabledAppsForClient.mockResolvedValue({ success: true, data: [] });
+    const result = await assertAppEnabledForClient('u1', 'messages', 'client');
+    expect(result).toBe(false);
+  });
+
+  it('handles Supabase returning the projects FK as an array', async () => {
+    mockMaybeSingle.mockResolvedValue({
+      data: { projects: [{ workspace_id: 'ws-from-array' }] },
+    });
     mockGetEnabledAppsForClient.mockResolvedValue({
       success: true,
       data: ['messages'],
     });
-    const result = await assertAppEnabledForClient('u1', 'ws-123', 'messages', null);
+    const result = await assertAppEnabledForClient('u1', 'messages', 'client');
     expect(result).toBe(true);
-    expect(mockGetEnabledAppsForClient).toHaveBeenCalled();
-  });
-
-  it('does not leak access when enabled list is empty', async () => {
-    mockGetEnabledAppsForClient.mockResolvedValue({ success: true, data: [] });
-    const result = await assertAppEnabledForClient('u1', 'ws-123', 'messages', 'client');
-    expect(result).toBe(false);
+    expect(mockGetEnabledAppsForClient).toHaveBeenCalledWith('ws-from-array', 'u1');
   });
 });
 

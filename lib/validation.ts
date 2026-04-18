@@ -481,6 +481,37 @@ export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
 
 // =====================
+// Manual Invoice Schema
+// =====================
+// Admin/manager-authored invoices. Distinct from Zoho-synced rows via the
+// `source` column. PDF is uploaded separately and tracked by storage path
+// in financial_invoices.pdf_url.
+export const manualInvoiceSchema = z.object({
+  invoice_number: z.string().min(1, 'Invoice number is required').max(64),
+  total: z.coerce.number().positive('Amount must be positive'),
+  currency_code: z
+    .string()
+    .regex(/^[A-Z]{3}$/, 'Use 3-letter ISO currency code')
+    .default('EUR'),
+  status: z.enum(['draft', 'sent', 'overdue', 'paid', 'void']).default('sent'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+  due_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
+    .optional()
+    .nullable(),
+  client_id: z.string().uuid('Invalid client ID'),
+  customer_name: z.string().min(1, 'Customer name is required').max(255),
+});
+
+export const updateManualInvoiceSchema = manualInvoiceSchema.partial().extend({
+  zoho_id: z.string().min(1, 'Invoice ID is required'),
+});
+
+export type ManualInvoiceInput = z.infer<typeof manualInvoiceSchema>;
+export type UpdateManualInvoiceInput = z.infer<typeof updateManualInvoiceSchema>;
+
+// =====================
 // Client Invitation Schemas
 // =====================
 export const invitationSchema = z.object({

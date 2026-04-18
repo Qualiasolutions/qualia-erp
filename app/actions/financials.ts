@@ -1,10 +1,21 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { createExpenseSchema, updateExpenseSchema } from '@/lib/validation';
+import {
+  createExpenseSchema,
+  updateExpenseSchema,
+  manualInvoiceSchema,
+  updateManualInvoiceSchema,
+  type ManualInvoiceInput,
+  type UpdateManualInvoiceInput,
+} from '@/lib/validation';
 import { isUserAdmin } from '@/app/actions';
+import { isUserManagerOrAbove } from './shared';
 import { getZohoAllInvoices, getZohoPayments } from '@/lib/integrations/zoho';
+
+const STORAGE_BUCKET = 'project-files';
+const MAX_INVOICE_PDF_SIZE = 10 * 1024 * 1024; // 10 MB
 
 const TRACKING_START_DATE = '2026-01-15';
 
@@ -362,7 +373,9 @@ export async function syncZohoFinancials(): Promise<{
     }
   }
 
-  // Upsert invoices
+  // Upsert invoices — tag source so manual invoices (synthetic zoho_id like
+  // "manual_<uuid>") can never collide with real Zoho IDs and are never
+  // overwritten by this sync.
   if (zohoInvoices.length > 0) {
     const invoiceRows = zohoInvoices.map((inv) => ({
       zoho_id: inv.invoice_id,
@@ -378,6 +391,7 @@ export async function syncZohoFinancials(): Promise<{
       last_payment_date: inv.last_payment_date || null,
       synced_at: syncedAt,
       client_id: customerToClientId.get(inv.customer_name) ?? null,
+      source: 'zoho',
     }));
 
     const { error } = await supabase
@@ -531,4 +545,222 @@ export async function deleteExpense(id: string): Promise<{ success: boolean; err
   if (error) return { success: false, error: error.message };
 
   return { success: true };
+}
+
+// ─── Manual Invoices (admin-authored, optional PDF) ──────────────────────────
+
+/**
+ * Admin-authored invoice with optional PDF. Distinct from Zoho-synced rows
+ * via `source = 'manual'`. The synthetic `zoho_id` is `manual_<uuid>` so it
+ * can never collide with a real Zoho invoice ID.
+ */
+export async function createManualInvoice(
+  input: ManualInvoiceInput,
+  pdfFile?: File | null
+): Promise<{ success: boolean; error?: string; data?: { id: string } }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  if (!(await isUserManagerOrAbove(user.id))) {
+    return { success: false, error: 'Only admins and managers can create invoices' };
+  }
+
+  const parsed = manualInvoiceSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Invalid invoice data' };
+  }
+
+  const id = `manual_${crypto.randomUUID()}`;
+  let pdfPath: string | null = null;
+
+  // Upload PDF (if provided) before the DB insert so we can roll back if the
+  // upload fails. RLS on the bucket allows admins; we use the admin client to
+  // sidestep any per-folder policy mismatch and centralize permission checks.
+  if (pdfFile && pdfFile.size > 0) {
+    if (pdfFile.size > MAX_INVOICE_PDF_SIZE) {
+      return { success: false, error: 'PDF must be 10 MB or less' };
+    }
+    if (pdfFile.type !== 'application/pdf') {
+      return { success: false, error: 'Only PDF files are allowed' };
+    }
+    pdfPath = `invoices/${id}/invoice.pdf`;
+    const adminClient = createAdminClient();
+    const { error: uploadError } = await adminClient.storage
+      .from(STORAGE_BUCKET)
+      .upload(pdfPath, pdfFile, { upsert: true, contentType: 'application/pdf' });
+    if (uploadError) {
+      console.error('[createManualInvoice] PDF upload error:', uploadError);
+      return { success: false, error: `PDF upload failed: ${uploadError.message}` };
+    }
+  }
+
+  const { error } = await supabase.from('financial_invoices').insert({
+    zoho_id: id,
+    invoice_number: parsed.data.invoice_number,
+    customer_name: parsed.data.customer_name,
+    customer_id: null,
+    status: parsed.data.status,
+    date: parsed.data.date,
+    due_date: parsed.data.due_date ?? null,
+    total: parsed.data.total,
+    balance: parsed.data.status === 'paid' ? 0 : parsed.data.total,
+    currency_code: parsed.data.currency_code,
+    last_payment_date: null,
+    synced_at: new Date().toISOString(),
+    client_id: parsed.data.client_id,
+    source: 'manual',
+    pdf_url: pdfPath,
+    is_hidden: false,
+  });
+
+  if (error) {
+    console.error('[createManualInvoice] Insert error:', error);
+    // Clean up the orphaned PDF if the row insert failed.
+    if (pdfPath) {
+      const adminClient = createAdminClient();
+      await adminClient.storage.from(STORAGE_BUCKET).remove([pdfPath]);
+    }
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: { id } };
+}
+
+/**
+ * Update a manual invoice. Refuses to touch Zoho-synced rows so admins can't
+ * accidentally drift the sync state.
+ */
+export async function updateManualInvoice(
+  input: UpdateManualInvoiceInput,
+  pdfFile?: File | null
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  if (!(await isUserManagerOrAbove(user.id))) {
+    return { success: false, error: 'Only admins and managers can update invoices' };
+  }
+
+  const parsed = updateManualInvoiceSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Invalid invoice data' };
+  }
+
+  const { zoho_id, ...fields } = parsed.data;
+
+  // Verify the row is manual before mutating.
+  const { data: existing } = await supabase
+    .from('financial_invoices')
+    .select('source, pdf_url')
+    .eq('zoho_id', zoho_id)
+    .maybeSingle();
+  if (!existing) return { success: false, error: 'Invoice not found' };
+  if (existing.source !== 'manual') {
+    return {
+      success: false,
+      error: 'Only manual invoices can be edited (Zoho-synced are read-only)',
+    };
+  }
+
+  // Replace PDF if a new one is uploaded.
+  let pdfPath: string | null | undefined = undefined; // undefined = leave unchanged
+  if (pdfFile && pdfFile.size > 0) {
+    if (pdfFile.size > MAX_INVOICE_PDF_SIZE) {
+      return { success: false, error: 'PDF must be 10 MB or less' };
+    }
+    if (pdfFile.type !== 'application/pdf') {
+      return { success: false, error: 'Only PDF files are allowed' };
+    }
+    pdfPath = `invoices/${zoho_id}/invoice.pdf`;
+    const adminClient = createAdminClient();
+    const { error: uploadError } = await adminClient.storage
+      .from(STORAGE_BUCKET)
+      .upload(pdfPath, pdfFile, { upsert: true, contentType: 'application/pdf' });
+    if (uploadError) {
+      console.error('[updateManualInvoice] PDF upload error:', uploadError);
+      return { success: false, error: `PDF upload failed: ${uploadError.message}` };
+    }
+  }
+
+  const updatePayload: Record<string, unknown> = {
+    ...fields,
+    synced_at: new Date().toISOString(),
+  };
+  if (pdfPath !== undefined) updatePayload.pdf_url = pdfPath;
+  // Recompute balance if status flipped to paid.
+  if (fields.status === 'paid') updatePayload.balance = 0;
+
+  const { error } = await supabase
+    .from('financial_invoices')
+    .update(updatePayload)
+    .eq('zoho_id', zoho_id)
+    .eq('source', 'manual');
+
+  if (error) {
+    console.error('[updateManualInvoice] Update error:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Generate a short-lived signed URL for an invoice PDF. The signed URL
+ * carries the auth, so the storage bucket policy stays simple. Admin/manager
+ * always allowed. Clients allowed if the invoice's client_id matches them.
+ */
+export async function getInvoicePdfSignedUrl(
+  zohoId: string
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const { data: invoice } = await supabase
+    .from('financial_invoices')
+    .select('pdf_url, client_id')
+    .eq('zoho_id', zohoId)
+    .maybeSingle();
+  if (!invoice?.pdf_url) return { success: false, error: 'No PDF on file' };
+
+  const isAdmin = await isUserManagerOrAbove(user.id);
+  if (!isAdmin) {
+    // For clients: check that this invoice belongs to one of their CRM clients
+    // by walking client_projects → projects.client_id → financial_invoices.client_id.
+    const { data: linkedProjects } = await supabase
+      .from('client_projects')
+      .select('project_id')
+      .eq('client_id', user.id);
+    const projectIds = (linkedProjects || []).map((lp) => lp.project_id);
+    if (projectIds.length === 0) return { success: false, error: 'Forbidden' };
+
+    const { data: projects } = await supabase
+      .from('projects')
+      .select('client_id')
+      .in('id', projectIds)
+      .not('client_id', 'is', null);
+    const crmClientIds = new Set((projects || []).map((p) => p.client_id).filter(Boolean));
+    if (!invoice.client_id || !crmClientIds.has(invoice.client_id)) {
+      return { success: false, error: 'Forbidden' };
+    }
+  }
+
+  const adminClient = createAdminClient();
+  const { data: signed, error } = await adminClient.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrl(invoice.pdf_url, 300); // 5 minutes
+  if (error || !signed?.signedUrl) {
+    console.error('[getInvoicePdfSignedUrl] Sign error:', error);
+    return { success: false, error: 'Could not generate download URL' };
+  }
+
+  return { success: true, url: signed.signedUrl };
 }
