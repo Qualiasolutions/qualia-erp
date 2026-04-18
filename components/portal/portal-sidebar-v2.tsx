@@ -22,7 +22,6 @@ import {
   Calendar,
   BookOpen,
   FlaskConical,
-  Building2,
   Activity,
   ClipboardList,
   Circle,
@@ -111,9 +110,9 @@ const internalApps: NavItemDef[] = [
   { name: 'Research', href: '/research', icon: FlaskConical, appKey: 'research' },
 ];
 
-// Admin-only apps (admin, manager — never shown to employee or client)
+// Admin-only apps (never shown to employee or client).
+// Clients hidden from sidebar — managed via the admin dashboard / project detail.
 const adminOnlyApps: NavItemDef[] = [
-  { name: 'Clients', href: '/clients', icon: Building2, appKey: 'clients' },
   { name: 'Status', href: '/status', icon: Activity, appKey: 'status' },
 ];
 

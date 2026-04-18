@@ -8,7 +8,6 @@ import {
   Sun,
   Folder,
   Calendar,
-  Building2,
   ChevronUp,
   ChevronLeft,
   ChevronRight,
@@ -52,7 +51,7 @@ const workspaceNav = [
 ];
 
 const adminWorkspaceNav = [
-  { name: 'Clients', href: '/clients', icon: Building2 },
+  // Clients entry hidden — managed elsewhere (admin dashboard / project detail).
   { name: 'Status', href: '/status', icon: Activity },
 ];
 
