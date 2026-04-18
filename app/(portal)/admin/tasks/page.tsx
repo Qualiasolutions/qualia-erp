@@ -1,13 +1,14 @@
 import { redirect } from 'next/navigation';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { isPortalAdminRole } from '@/lib/portal-utils';
-import { AdminTasksClient } from './tasks-client';
 
-export default async function AdminTasksPage() {
+export default async function AdminTasksRedirect() {
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
   const profile = await getPortalProfile(user.id);
-  if (!isPortalAdminRole(profile?.role ?? null)) redirect('/');
-
-  return <AdminTasksClient />;
+  // Admins land on the workspace-wide view; everyone else just gets their own tasks.
+  if (isPortalAdminRole(profile?.role ?? null)) {
+    redirect('/tasks?scope=all');
+  }
+  redirect('/tasks');
 }

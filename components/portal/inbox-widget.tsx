@@ -170,7 +170,7 @@ export function InboxWidget({ limit = 5 }: InboxWidgetProps) {
           )}
         </div>
         <Link
-          href="/inbox"
+          href="/tasks"
           className={cn(
             'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground',
             'transition-colors duration-150 hover:bg-muted/50 hover:text-primary',

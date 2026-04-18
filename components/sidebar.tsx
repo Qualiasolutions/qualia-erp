@@ -8,7 +8,6 @@ import {
   Sun,
   Folder,
   Calendar,
-  Building2,
   ChevronUp,
   ChevronLeft,
   ChevronRight,
@@ -52,7 +51,7 @@ const workspaceNav = [
 ];
 
 const adminWorkspaceNav = [
-  { name: 'Clients', href: '/clients', icon: Building2 },
+  // Clients entry hidden — managed elsewhere (admin dashboard / project detail).
   { name: 'Status', href: '/status', icon: Activity },
 ];
 
@@ -64,7 +63,7 @@ const resourcesNav = [
 const portalNav = [{ name: 'Portal', href: '/', icon: ExternalLink }];
 const adminNav = [
   { name: 'Admin', href: '/admin', icon: Shield },
-  { name: 'Tasks', href: '/admin/tasks', icon: ListTodo },
+  { name: 'Tasks', href: '/tasks?scope=all', icon: ListTodo },
   { name: 'Assignments', href: '/admin/assignments', icon: UserPlus },
   { name: 'Attendance', href: '/admin/attendance', icon: ClipboardList },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3 },

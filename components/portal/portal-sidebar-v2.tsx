@@ -19,18 +19,15 @@ import {
   ChevronDown,
   Menu,
   Shield,
-  Inbox,
   Calendar,
   BookOpen,
   FlaskConical,
-  Building2,
   Activity,
   ClipboardList,
   Circle,
   Users,
   UserCheck,
   BarChart3,
-  ListTodo,
   ArrowRightLeft,
 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
@@ -77,15 +74,8 @@ const homeItem: NavItemDef = {
   appKey: 'home',
 };
 
-// Inbox — promoted to 2nd slot for internal users (admin/manager/employee)
-const inboxItem: NavItemDef = {
-  name: 'Inbox',
-  href: '/inbox',
-  icon: Inbox,
-  appKey: 'inbox',
-};
-
-// Core apps shown after Home/Inbox (everyone sees these)
+// Core apps shown after Home (everyone sees these). Tasks is the unified
+// surface — Inbox folded into /tasks (default mode for internal users).
 const coreApps: NavItemDef[] = [
   { name: 'Projects', href: '/projects', icon: FolderKanban, appKey: 'projects' },
   { name: 'Tasks', href: '/tasks', icon: ClipboardList, appKey: 'tasks' },
@@ -113,17 +103,16 @@ const clientApps: NavItemDef[] = [
   { name: 'Requests', href: '/requests', icon: Lightbulb, appKey: 'requests' },
 ];
 
-// Internal team apps (admin, manager, employee — never shown to clients)
-// Inbox is promoted above; this list holds the rest.
+// Internal team apps (admin, employee — never shown to clients).
 const internalApps: NavItemDef[] = [
   { name: 'Schedule', href: '/schedule', icon: Calendar, appKey: 'schedule' },
   { name: 'Knowledge', href: '/knowledge', icon: BookOpen, appKey: 'knowledge' },
   { name: 'Research', href: '/research', icon: FlaskConical, appKey: 'research' },
 ];
 
-// Admin-only apps (admin, manager — never shown to employee or client)
+// Admin-only apps (never shown to employee or client).
+// Clients hidden from sidebar — managed via the admin dashboard / project detail.
 const adminOnlyApps: NavItemDef[] = [
-  { name: 'Clients', href: '/clients', icon: Building2, appKey: 'clients' },
   { name: 'Status', href: '/status', icon: Activity, appKey: 'status' },
 ];
 
@@ -138,7 +127,6 @@ const adminSubpages: NavItemDef[] = [
     appKey: 'admin-attendance',
   },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3, appKey: 'admin-reports' },
-  { name: 'Tasks', href: '/admin/tasks', icon: ListTodo, appKey: 'admin-tasks' },
   { name: 'Migrate', href: '/admin/migrate', icon: ArrowRightLeft, appKey: 'admin-migrate' },
 ];
 
@@ -490,14 +478,9 @@ function SidebarContent({
   const isInternal = userRole === 'admin' || userRole === 'employee';
 
   // Build role-aware nav items.
-  // Order: Home → Inbox (internal only) → Projects → role extras → Settings
+  // Order: Home → Projects → Tasks → Activity → role extras → Settings
   const allNavItems = useMemo(() => {
     const items: NavItemDef[] = [homeItem];
-
-    // Inbox in 2nd slot for internal users
-    if (isInternal) {
-      items.push(inboxItem);
-    }
 
     items.push(...coreApps);
 
@@ -513,7 +496,7 @@ function SidebarContent({
     items.push(settingsItem);
 
     return items;
-  }, [userRole, isInternal]);
+  }, [userRole]);
 
   // Filter nav items by enabled apps. When admin is actively impersonating,
   // the parent layout passes the viewed user's effective role + enabled apps,

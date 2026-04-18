@@ -1,10 +1,22 @@
-import { createClient } from '@/lib/supabase/server';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { getClientVisibleTasks } from '@/app/actions/inbox';
+import { createClient } from '@/lib/supabase/server';
+import { getCurrentWorkspaceId } from '@/app/actions';
+import { getTasks, getClientVisibleTasks, type Task } from '@/app/actions/inbox';
+import { isUserAdmin } from '@/app/actions/shared';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
-import { TasksContent } from './tasks-content';
+import { TasksView, type TasksMode } from './tasks-view';
 
-export default async function PortalTasksPage() {
+export const metadata: Metadata = {
+  title: 'Tasks | Qualia',
+  description: 'Your tasks across every project',
+};
+
+interface PageProps {
+  searchParams: Promise<{ scope?: string }>;
+}
+
+export default async function PortalTasksPage({ searchParams }: PageProps) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -18,62 +30,67 @@ export default async function PortalTasksPage() {
     .single();
 
   const role = profile?.role || 'client';
+  const params = await searchParams;
+  const requestedScope = params.scope;
 
-  // App Library guard: block clients if the "tasks" app is disabled
   if (role === 'client') {
     const allowed = await assertAppEnabledForClient(user.id, 'tasks', role);
     if (!allowed) redirect('/');
   }
 
-  // Get all project IDs the user has access to
-  let projectIds: string[] = [];
-  if (role === 'admin') {
-    const { data } = await supabase.from('projects').select('id').not('status', 'eq', 'Canceled');
-    projectIds = (data || []).map((p) => p.id);
-  } else if (role === 'client') {
-    const { data } = await supabase
+  const isAdmin = role !== 'client' && (await isUserAdmin(user.id));
+
+  // Resolve mode from role + ?scope=
+  let mode: TasksMode;
+  if (role === 'client') {
+    mode = 'client';
+  } else if (requestedScope === 'all') {
+    if (!isAdmin) redirect('/tasks'); // employees can't request the workspace-wide view
+    mode = 'all-tasks';
+  } else {
+    mode = 'inbox';
+  }
+
+  const workspaceId = await getCurrentWorkspaceId();
+
+  let initialTasks: Task[] = [];
+  let assignableMembers: Array<{
+    id: string;
+    full_name: string | null;
+    email: string | null;
+  }> = [];
+
+  if (mode === 'client') {
+    const { data: clientProjects } = await supabase
       .from('client_projects')
       .select('project_id')
       .eq('client_id', user.id);
-    projectIds = (data || []).map((p) => p.project_id);
+    const projectIds = (clientProjects || []).map((p) => p.project_id);
+    const result = await getClientVisibleTasks(projectIds, role);
+    initialTasks = (result.success ? (result.data as Task[]) : []) ?? [];
+  } else if (mode === 'all-tasks') {
+    initialTasks = await getTasks(workspaceId, { scope: 'all', limit: 500 });
+    const { data: members } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, role')
+      .in('role', ['admin', 'employee'])
+      .order('full_name', { ascending: true });
+    assignableMembers = (members || []).map((m) => ({
+      id: m.id,
+      full_name: m.full_name,
+      email: m.email,
+    }));
   } else {
-    // Employee: use project_assignments
-    const { data } = await supabase
-      .from('project_assignments')
-      .select('project_id')
-      .eq('profile_id', user.id);
-    projectIds = (data || []).map((p) => p.project_id);
+    // inbox: my tasks, active by default
+    initialTasks = await getTasks(workspaceId, {
+      scope: 'mine',
+      status: ['Todo', 'In Progress'],
+      limit: 200,
+      inboxOnly: true,
+    });
   }
 
-  const result = await getClientVisibleTasks(projectIds, role);
-  const tasks = (result.success ? result.data : []) as Array<{
-    id: string;
-    title: string;
-    status: string;
-    priority: string;
-    due_date: string | null;
-    project_id: string | null;
-    assignee: { id: string; full_name: string | null; avatar_url: string | null } | null;
-    project: { id: string; name: string } | null;
-  }>;
-
-  // Build project list for filter from the tasks data
-  const projectNames = new Map<string, string>();
-  tasks.forEach((t) => {
-    if (t.project) projectNames.set(t.project.id, t.project.name);
-  });
-
   return (
-    <div className="animate-fade-in-up space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Tasks</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Track progress across your projects</p>
-      </div>
-      <TasksContent
-        tasks={tasks}
-        projects={Array.from(projectNames, ([id, name]) => ({ id, name }))}
-        userRole={role}
-      />
-    </div>
+    <TasksView mode={mode} initialTasks={initialTasks} assignableMembers={assignableMembers} />
   );
 }

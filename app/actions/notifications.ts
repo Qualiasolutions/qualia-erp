@@ -214,7 +214,7 @@ export async function notifyTaskAssigned(
     type: 'task_assigned' as NotificationType,
     title: 'Task assigned to you',
     message: `${assignedByName} assigned you to "${issueTitle}"`,
-    link: `/inbox`,
+    link: `/tasks`,
     metadata: { issue_id: issueId },
   }));
 

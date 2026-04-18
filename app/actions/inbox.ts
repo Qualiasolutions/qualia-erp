@@ -167,6 +167,13 @@ const DEFAULT_TASK_FETCH_LIMIT = 200;
 
 /**
  * Get tasks for a workspace
+ *
+ * `scope`:
+ *  - `'mine'` — force per-user scoping (assignee/creator/own projects) regardless
+ *    of admin role. Used by the unified `/tasks` page default ("my tasks").
+ *  - `'all'` — admin-only. Returns every task in the workspace. Returns [] for
+ *    non-admins.
+ *  - omitted — legacy behavior: admins see all, others see scoped.
  */
 export async function getTasks(
   workspaceId?: string | null,
@@ -174,6 +181,7 @@ export async function getTasks(
     status?: string[];
     limit?: number;
     inboxOnly?: boolean;
+    scope?: 'mine' | 'all';
   } = {}
 ): Promise<Task[]> {
   const supabase = await createClient();
@@ -201,7 +209,20 @@ export async function getTasks(
 
   // Scope tasks: admins/managers see all, others see only their tasks.
   // When admin uses "View as", scope to the impersonated user's assignments.
-  const { effectiveUserId, shouldScope } = await getEffectiveUser(supabase, user.id);
+  const base = await getEffectiveUser(supabase, user.id);
+  const { effectiveUserId } = base;
+  let { shouldScope } = base;
+
+  // Explicit `scope` overrides default role-based behavior.
+  if (options.scope === 'mine') {
+    shouldScope = true;
+  } else if (options.scope === 'all') {
+    if (!(await isUserAdmin(user.id))) {
+      // Non-admins cannot request the workspace-wide view.
+      return [];
+    }
+    shouldScope = false;
+  }
 
   let query = supabase
     .from('tasks')
@@ -790,6 +811,124 @@ export async function deleteTask(taskId: string): Promise<ActionResult> {
 }
 
 /**
+ * Bulk-assign many tasks to one assignee. Admin-only.
+ * Notifies the new assignee once with the count of newly-assigned tasks.
+ */
+export async function bulkAssignTasks(
+  taskIds: string[],
+  assigneeId: string | null
+): Promise<ActionResult> {
+  if (!Array.isArray(taskIds) || taskIds.length === 0) {
+    return { success: false, error: 'No tasks selected' };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  if (!(await isUserAdmin(user.id))) {
+    return { success: false, error: 'Admin access required' };
+  }
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .update({ assignee_id: assigneeId })
+    .in('id', taskIds)
+    .select('id, title, workspace_id');
+
+  if (error) {
+    console.error('[bulkAssignTasks] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  const updated = data || [];
+
+  // Notify the new assignee once per task. Skip when unassigning (assigneeId === null)
+  // or when the admin assigned tasks to themselves.
+  if (assigneeId && assigneeId !== user.id && updated.length > 0) {
+    const { notifyTaskAssigned } = await import('./notifications');
+    const { data: actor } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', user.id)
+      .single();
+    const actorName = actor?.full_name || actor?.email || 'An admin';
+
+    // One notification row per task — keeps `link` and `metadata.issue_id` correct
+    // and matches how single-assignment notifications already work.
+    await Promise.all(
+      updated.map((row) =>
+        notifyTaskAssigned(row.id, row.title, [assigneeId], row.workspace_id, actorName)
+      )
+    );
+  }
+
+  return { success: true, data: { count: updated.length } };
+}
+
+/**
+ * Bulk-mark many tasks as Done. Admin-only.
+ */
+export async function bulkMarkDone(taskIds: string[]): Promise<ActionResult> {
+  if (!Array.isArray(taskIds) || taskIds.length === 0) {
+    return { success: false, error: 'No tasks selected' };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  if (!(await isUserAdmin(user.id))) {
+    return { success: false, error: 'Admin access required' };
+  }
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .update({ status: 'Done', completed_at: new Date().toISOString() })
+    .in('id', taskIds)
+    .select('id');
+
+  if (error) {
+    console.error('[bulkMarkDone] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: { count: (data || []).length } };
+}
+
+/**
+ * Bulk-delete many tasks. Admin-only.
+ */
+export async function bulkDelete(taskIds: string[]): Promise<ActionResult> {
+  if (!Array.isArray(taskIds) || taskIds.length === 0) {
+    return { success: false, error: 'No tasks selected' };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  if (!(await isUserAdmin(user.id))) {
+    return { success: false, error: 'Admin access required' };
+  }
+
+  const { data, error } = await supabase.from('tasks').delete().in('id', taskIds).select('id');
+
+  if (error) {
+    console.error('[bulkDelete] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: { count: (data || []).length } };
+}
+
+/**
  * Reorder tasks (batch update sort_order)
  * Used for drag-and-drop reordering.
  *
@@ -1050,7 +1189,7 @@ export async function quickUpdateTask(
           type: 'task_completed',
           title: 'Task Completed',
           message: `${taskTitle} was marked as done`,
-          link: '/inbox',
+          link: '/tasks',
           metadata: {},
         }));
 
