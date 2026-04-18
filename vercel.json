@@ -32,6 +32,10 @@
     {
       "path": "/api/cron/zoho-sync",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-dry-run-reports",
+      "schedule": "0 3 * * *"
     }
   ]
 }
