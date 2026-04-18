@@ -857,7 +857,7 @@ export const guides: Guide[] = [
         tips: [
           'You can run the checks yourself anytime: npx tsc --noEmit (TypeScript), npm run lint (linter), npm run build (build).',
           'The most common blocker is TypeScript errors. Fix them before trying to ship.',
-          'Secret key detection is automatic. If a service_role key appears in client code, the deploy stops immediately.',
+          'Secret key detection is automatic. If a Supabase service-role key appears in client code, the deploy stops immediately.',
         ],
       },
       {
@@ -1052,7 +1052,7 @@ export const guides: Guide[] = [
           'No secret keys in client-facing code. Row Level Security (RLS) on every Supabase table. Auth checks on every server-side mutation. Input validation on all forms and API routes. The framework checks for leaked keys automatically during /qualia-ship, but RLS and auth checks are your responsibility.',
         tips: [
           'RLS on every table with policies that check the user identity.',
-          'No service_role key anywhere in client code. Keep it in server-only files.',
+          'No Supabase service-role key anywhere in client code. Keep it in server-only files.',
           'All mutations happen server-side with auth checks.',
           'Validate input with Zod on every form, API route, and webhook.',
           'Never hardcode API keys, passwords, or secrets in your code.',
