@@ -14,12 +14,12 @@ import type { Message } from '@/app/actions/ai-conversations';
 
 // Quick action prompts for empty state
 const allQuickActions = [
-  { label: 'Show my tasks', roles: ['admin', 'manager', 'employee'] },
-  { label: 'Project status', roles: ['admin', 'manager', 'employee'] },
-  { label: 'Create an invoice', roles: ['admin', 'manager'] },
-  { label: 'Schedule a meeting', roles: ['admin', 'manager', 'employee'] },
-  { label: 'Client billing overview', roles: ['admin', 'manager'] },
-  { label: 'Team activity summary', roles: ['admin', 'manager'] },
+  { label: 'Show my tasks', roles: ['admin', 'employee'] },
+  { label: 'Project status', roles: ['admin', 'employee'] },
+  { label: 'Create an invoice', roles: ['admin'] },
+  { label: 'Schedule a meeting', roles: ['admin', 'employee'] },
+  { label: 'Client billing overview', roles: ['admin'] },
+  { label: 'Team activity summary', roles: ['admin'] },
 ];
 
 function getQuickActions(userRole: string): string[] {

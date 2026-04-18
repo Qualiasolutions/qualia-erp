@@ -86,8 +86,8 @@ export default async function PortalClientsPage() {
   if (!user) redirect('/auth/login');
 
   const role = await getUserRole(user.id);
-  // Only admin and manager can access clients
-  if (role !== 'admin' && role !== 'manager') redirect('/');
+  // Only admin can access clients
+  if (role !== 'admin') redirect('/');
 
   return (
     <div className="flex h-full flex-col">

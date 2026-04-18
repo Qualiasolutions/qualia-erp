@@ -209,9 +209,9 @@ function SidebarContent({
 }) {
   const pathname = usePathname();
   const { isAdmin, userRole, userId } = useAdminContext();
-  // All internal roles (admin, employee, manager) can clock in/out.
+  // All internal roles (admin, employee) can clock in/out.
   // When an admin is viewing-as an employee, userRole becomes 'employee', so this still works.
-  const canTrackTime = userRole === 'admin' || userRole === 'employee' || userRole === 'manager';
+  const canTrackTime = userRole === 'admin' || userRole === 'employee';
   const [showClockOut, setShowClockOut] = useState(false);
   const [showClockIn, setShowClockIn] = useState(false);
   const { toggleSidebar } = useSidebar();

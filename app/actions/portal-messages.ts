@@ -152,7 +152,7 @@ async function hasMessageAccess(
   role: string | null,
   projectId: string
 ): Promise<boolean> {
-  if (role === 'admin' || role === 'manager' || role === 'employee') {
+  if (role === 'admin' || role === 'employee') {
     return true;
   }
 

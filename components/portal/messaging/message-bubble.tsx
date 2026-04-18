@@ -154,8 +154,6 @@ function formatRoleLabel(role: string): string {
   switch (role) {
     case 'admin':
       return 'Admin';
-    case 'manager':
-      return 'Manager';
     case 'employee':
       return 'Team';
     case 'client':

@@ -94,7 +94,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Internal-only routes — clients cannot access these (employee/admin/manager only)
+    // Internal-only routes — clients cannot access these (admin/employee only)
     const internalOnlyRoutes = ['/inbox', '/schedule', '/agent'];
     if (userRole === 'client' && internalOnlyRoutes.some((route) => pathname.startsWith(route))) {
       const url = request.nextUrl.clone();
@@ -102,21 +102,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Admin-only routes — only admin role can access /admin, managers fall back to /
-    const adminOnlyRoutes = ['/admin', '/clients'];
+    // Admin-only routes — /admin, /clients, /workspace, /seo all require admin
+    const adminOnlyRoutes = ['/admin', '/clients', '/workspace', '/seo'];
     if (userRole !== 'admin' && adminOnlyRoutes.some((route) => pathname.startsWith(route))) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      return NextResponse.redirect(url);
-    }
-
-    // Manager-or-admin-only routes — /workspace manages branding/apps/client access
-    const managerOrAboveRoutes = ['/workspace', '/seo'];
-    if (
-      userRole !== 'admin' &&
-      userRole !== 'manager' &&
-      managerOrAboveRoutes.some((route) => pathname.startsWith(route))
-    ) {
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);

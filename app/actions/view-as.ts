@@ -17,7 +17,6 @@ export interface ViewAsUser {
 interface GroupedUsers {
   clients: ViewAsUser[];
   employees: ViewAsUser[];
-  managers: ViewAsUser[];
 }
 
 /**
@@ -62,7 +61,6 @@ export async function getViewableUsers(): Promise<ActionResult> {
     const grouped: GroupedUsers = {
       clients: [],
       employees: [],
-      managers: [],
     };
 
     for (const profile of profiles || []) {
@@ -80,11 +78,8 @@ export async function getViewableUsers(): Promise<ActionResult> {
         case 'employee':
           grouped.employees.push(u);
           break;
-        case 'manager':
-          grouped.managers.push(u);
-          break;
         default:
-          // Other admin users — skip
+          // admin users — skip (admin cannot view-as another admin)
           break;
       }
     }

@@ -70,8 +70,7 @@ export default async function PortalLayout({ children }: { children: React.React
   const isImpersonating = !!(isAdminViewing && viewAsUserId && viewAsRole);
   const effectiveRole = isImpersonating ? (viewAsRole as string) : actualRole;
   const effectiveUserId = isImpersonating ? (viewAsUserId as string) : user.id;
-  const effectiveIsInternal =
-    effectiveRole === 'admin' || effectiveRole === 'manager' || effectiveRole === 'employee';
+  const effectiveIsInternal = effectiveRole === 'admin' || effectiveRole === 'employee';
 
   // Workspace lookup only. companyName now comes from profiles.full_name
   // (already resolved as `displayName` above) — the CRM's erp_company_name

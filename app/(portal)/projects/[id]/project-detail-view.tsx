@@ -139,7 +139,7 @@ interface ProjectDetailViewProps {
   project: Project;
   profiles: Profile[];
   clients: ClientOption[];
-  userRole?: 'admin' | 'manager' | 'employee' | 'client';
+  userRole?: 'admin' | 'employee' | 'client';
   integrationStatus?: IntegrationStatus;
 }
 
@@ -157,10 +157,9 @@ export function ProjectDetailView({
   // no internal team panels (assigned employees, private notes).
   const isClient = userRole === 'client';
 
-  // Narrowed role for downstream components that don't model 'manager'/'client'.
-  // `manager` acts like `admin` in project context; `client` is already gated out.
-  const staffRole: 'admin' | 'employee' =
-    userRole === 'admin' || userRole === 'manager' ? 'admin' : 'employee';
+  // Narrowed role for downstream components that don't model 'client'.
+  // Clients are already gated out of this view.
+  const staffRole: 'admin' | 'employee' = userRole === 'admin' ? 'admin' : 'employee';
 
   const [project, setProject] = useState<Project>(initialProject);
   const [settingsOpen, setSettingsOpen] = useState(false);

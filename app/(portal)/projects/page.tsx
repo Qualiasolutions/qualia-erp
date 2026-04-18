@@ -234,7 +234,7 @@ export default async function ProjectsPage() {
   const profile = await getPortalProfile(user.id);
   if (profile?.role === 'client') redirect('/');
 
-  const canCreate = profile?.role === 'admin' || profile?.role === 'manager';
+  const canCreate = profile?.role === 'admin';
 
   return (
     <div className="flex h-full flex-col bg-background">

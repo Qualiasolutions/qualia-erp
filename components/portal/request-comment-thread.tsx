@@ -57,7 +57,7 @@ export function RequestCommentThread({
     RequestComment
   >(comments, (state, newComment) => [...state, newComment]);
 
-  const isStaff = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
+  const isStaff = userRole === 'admin' || userRole === 'employee';
 
   // Load comments on mount
   const loadComments = useCallback(async () => {
@@ -141,7 +141,7 @@ export function RequestCommentThread({
   };
 
   const canDelete = (comment: RequestComment) => {
-    if (userRole === 'admin' || userRole === 'manager') return true;
+    if (userRole === 'admin') return true;
     return comment.author_id === currentUserId;
   };
 
@@ -156,7 +156,7 @@ export function RequestCommentThread({
   };
 
   const isStaffRole = (role: string | null) => {
-    return role === 'admin' || role === 'manager' || role === 'employee';
+    return role === 'admin' || role === 'employee';
   };
 
   if (loading) {

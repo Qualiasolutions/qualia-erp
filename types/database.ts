@@ -4635,7 +4635,7 @@ export type Database = {
       task_item_type: 'task' | 'issue' | 'note' | 'resource';
       task_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
       task_status: 'Todo' | 'In Progress' | 'Done' | 'Canceled';
-      user_role: 'admin' | 'manager' | 'employee' | 'client';
+      user_role: 'admin' | 'employee' | 'client';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -4812,7 +4812,7 @@ export const Constants = {
       task_item_type: ['task', 'issue', 'note', 'resource'],
       task_priority: ['No Priority', 'Urgent', 'High', 'Medium', 'Low'],
       task_status: ['Todo', 'In Progress', 'Done', 'Canceled'],
-      user_role: ['admin', 'manager', 'employee', 'client'],
+      user_role: ['admin', 'employee', 'client'],
     },
   },
 } as const;

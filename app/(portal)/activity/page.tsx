@@ -27,7 +27,7 @@ export default async function PortalActivityPage() {
 
   // Get all project IDs the user has access to
   let projectIds: string[] = [];
-  if (role === 'admin' || role === 'manager') {
+  if (role === 'admin') {
     const { data } = await supabase.from('projects').select('id').not('status', 'eq', 'Canceled');
     projectIds = (data || []).map((p) => p.id);
   } else if (role === 'client') {

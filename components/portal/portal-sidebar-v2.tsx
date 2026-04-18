@@ -487,7 +487,7 @@ function SidebarContent({
     return pathname === item.href || pathname.startsWith(item.href + '/');
   };
 
-  const isInternal = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
+  const isInternal = userRole === 'admin' || userRole === 'employee';
 
   // Build role-aware nav items.
   // Order: Home → Inbox (internal only) → Projects → role extras → Settings
@@ -505,8 +505,6 @@ function SidebarContent({
       // Clients get Messages, Files, Billing, Requests as standalone pages
       items.push(...clientPortalApps, ...clientApps);
     } else if (userRole === 'employee') {
-      items.push(...internalApps);
-    } else if (userRole === 'manager') {
       items.push(...internalApps);
     } else if (userRole === 'admin') {
       items.push(...internalApps, ...adminOnlyApps);
@@ -578,8 +576,8 @@ function SidebarContent({
           />
         ))}
 
-        {/* Admin section — only visible to admin/manager */}
-        {(userRole === 'admin' || userRole === 'manager') && (
+        {/* Admin section — only visible to admin */}
+        {userRole === 'admin' && (
           <AdminNavGroup pathname={pathname} onLinkClick={onLinkClick} isGated={isGated} />
         )}
       </nav>

@@ -472,7 +472,7 @@ export async function getEmployeeAssignments(employeeId: string): Promise<Action
       .select('role')
       .eq('id', user.id)
       .single();
-    if (callerProfile?.role !== 'admin' && callerProfile?.role !== 'manager') {
+    if (callerProfile?.role !== 'admin') {
       return { success: false, error: 'Not authorized' };
     }
   }

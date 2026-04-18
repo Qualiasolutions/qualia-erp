@@ -88,12 +88,7 @@ describe('isUserAdmin', () => {
   });
 });
 
-describe('isUserManagerOrAbove', () => {
-  it('returns true for manager', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: { role: 'manager' }, error: null }));
-    expect(await isUserManagerOrAbove('user-1')).toBe(true);
-  });
-
+describe('isUserManagerOrAbove (aliased to isUserAdmin after manager role removal)', () => {
   it('returns true for admin', async () => {
     supabase.from.mockReturnValue(buildChain({ data: { role: 'admin' }, error: null }));
     expect(await isUserManagerOrAbove('user-1')).toBe(true);
@@ -101,6 +96,11 @@ describe('isUserManagerOrAbove', () => {
 
   it('returns false for employee', async () => {
     supabase.from.mockReturnValue(buildChain({ data: { role: 'employee' }, error: null }));
+    expect(await isUserManagerOrAbove('user-1')).toBe(false);
+  });
+
+  it('returns false for client', async () => {
+    supabase.from.mockReturnValue(buildChain({ data: { role: 'client' }, error: null }));
     expect(await isUserManagerOrAbove('user-1')).toBe(false);
   });
 });
@@ -193,14 +193,9 @@ describe('canDeleteClient', () => {
 });
 
 describe('canDeleteMeeting', () => {
-  it('returns true when user is admin (via isUserManagerOrAbove)', async () => {
+  it('returns true when user is admin', async () => {
     supabase.from.mockReturnValue(buildChain({ data: { role: 'admin' }, error: null }));
     expect(await canDeleteMeeting('admin-user', 'meeting-1')).toBe(true);
-  });
-
-  it('returns true when user is manager (via isUserManagerOrAbove)', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: { role: 'manager' }, error: null }));
-    expect(await canDeleteMeeting('manager-user', 'meeting-1')).toBe(true);
   });
 
   it('returns true when user created the meeting', async () => {

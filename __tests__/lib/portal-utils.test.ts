@@ -47,8 +47,8 @@ describe('isPortalAdminRole', () => {
     expect(isPortalAdminRole('admin')).toBe(true);
   });
 
-  it('returns true for manager', () => {
-    expect(isPortalAdminRole('manager')).toBe(true);
+  it('returns false for manager (role removed 2026-04-18)', () => {
+    expect(isPortalAdminRole('manager')).toBe(false);
   });
 
   it('returns false for employee', () => {
@@ -83,9 +83,10 @@ describe('assertAppEnabledForClient', () => {
     expect(mockGetEnabledAppsForClient).not.toHaveBeenCalled();
   });
 
-  it('passes unconditionally for manager role', async () => {
+  it('rejects manager role (removed 2026-04-18) — falls through client path', async () => {
+    // Manager is no longer an internal role; guard treats it as non-client/non-internal.
     const result = await assertAppEnabledForClient('u1', 'billing', 'manager');
-    expect(result).toBe(true);
+    expect(result).toBe(false);
     expect(mockGetEnabledAppsForClient).not.toHaveBeenCalled();
   });
 
@@ -95,7 +96,7 @@ describe('assertAppEnabledForClient', () => {
     expect(mockGetEnabledAppsForClient).not.toHaveBeenCalled();
   });
 
-  it('rejects roles other than admin/manager/employee/client', async () => {
+  it('rejects roles other than admin/employee/client', async () => {
     const result = await assertAppEnabledForClient('u1', 'messages', 'unknown');
     expect(result).toBe(false);
   });
