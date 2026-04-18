@@ -1485,6 +1485,7 @@ export async function notifyClientOfPhaseMilestone(
       .from('project_phases')
       .select('id, name, status, sort_order')
       .eq('project_id', projectId)
+      .neq('phase_type', 'milestone')
       .order('sort_order', { ascending: true });
 
     const totalPhases = allPhases?.length || 0;
@@ -1918,6 +1919,7 @@ export async function getWeeklyDigestData(): Promise<ClientDigest[]> {
       .from('project_phases')
       .select('id, name, status, project_id, sort_order')
       .in('project_id', projectIds)
+      .neq('phase_type', 'milestone')
       .order('sort_order', { ascending: true });
 
     // Get pending action items per client

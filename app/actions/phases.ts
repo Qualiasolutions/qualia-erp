@@ -371,6 +371,10 @@ export async function getPhaseProgressStats(projectId: string) {
 /**
  * Calculate project progress from phase completion.
  * Returns a percentage (0-100) based on completed phases / total phases.
+ *
+ * Excludes phase_type='milestone' rows — those are rollup headers whose
+ * status is derived from the phases beneath them, so counting them
+ * double-counts and skews progress (M.# rollup + each child phase).
  */
 export async function calculateProjectProgress(projectId: string): Promise<number> {
   const supabase = await createClient();
@@ -378,7 +382,8 @@ export async function calculateProjectProgress(projectId: string): Promise<numbe
   const { data: phases, error } = await supabase
     .from('project_phases')
     .select('status')
-    .eq('project_id', projectId);
+    .eq('project_id', projectId)
+    .neq('phase_type', 'milestone');
 
   if (error || !phases || phases.length === 0) {
     return 0;
@@ -403,7 +408,8 @@ export async function calculateProjectsProgress(
   const { data: phases, error } = await supabase
     .from('project_phases')
     .select('project_id, status')
-    .in('project_id', projectIds);
+    .in('project_id', projectIds)
+    .neq('phase_type', 'milestone');
 
   if (error || !phases) return {};
 

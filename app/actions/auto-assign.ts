@@ -64,12 +64,14 @@ export async function createTasksFromPhases(
     return { created: 0, skipped: 0, total: 0 };
   }
 
-  // 2. Fetch all non-completed phases for this project, ordered by sort_order
+  // 2. Fetch all non-completed phases for this project, ordered by sort_order.
+  // Skip milestone rollup rows — they don't represent assignable work.
   const { data: phases, error: phasesError } = await supabase
     .from('project_phases')
     .select('id, name, description, sort_order, milestone_number, status')
     .eq('project_id', projectId)
     .neq('status', 'completed')
+    .neq('phase_type', 'milestone')
     .order('sort_order', { ascending: true });
 
   if (phasesError) {
@@ -154,6 +156,7 @@ export async function getActiveMilestone(projectId: string, supabaseClient?: Any
     .select('id, name, status, milestone_number, sort_order')
     .eq('project_id', projectId)
     .not('milestone_number', 'is', null)
+    .neq('phase_type', 'milestone')
     .order('milestone_number', { ascending: true })
     .order('sort_order', { ascending: true });
 
@@ -238,6 +241,7 @@ export async function createTasksFromMilestone(
     .select('id, name, sort_order')
     .eq('project_id', projectId)
     .eq('milestone_number', milestoneNumber)
+    .neq('phase_type', 'milestone')
     .order('sort_order', { ascending: true });
 
   if (phasesError || !phases || phases.length === 0) {
@@ -416,7 +420,8 @@ export async function markMilestoneTasksDone(
     .from('project_phases')
     .select('id')
     .eq('project_id', projectId)
-    .eq('milestone_number', milestoneNumber);
+    .eq('milestone_number', milestoneNumber)
+    .neq('phase_type', 'milestone');
 
   if (phasesError || !phases || phases.length === 0) {
     console.error('[markMilestoneTasksDone] No phases found:', phasesError);
