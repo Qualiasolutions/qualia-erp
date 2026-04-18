@@ -1,26 +1,42 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { isUserAdmin } from '@/app/actions/shared';
 import { syncPlanningFromGitHubWithServiceRole } from '@/lib/planning-sync-core';
+import { safeCompare } from '@/lib/auth-utils';
+
+// Cap at 5 min since this can take a while for many repos.
+export const maxDuration = 300;
 
 /**
  * POST /api/admin/resync-planning
  *
  * Bulk re-trigger of planning sync for every project with a GitHub integration.
- * Admin only. Runs sequentially to respect GitHub API rate limits.
+ * Auth: admin session cookie OR `Authorization: Bearer ${CRON_SECRET}`.
+ * Runs sequentially to respect GitHub API rate limits.
  */
-export async function POST() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export async function POST(request: NextRequest) {
+  // Cron-secret bypass (ops invocation — no user in context).
+  const authHeader = request.headers.get('authorization');
+  const cronSecret = process.env.CRON_SECRET;
+  const isCronAuthorized = !!cronSecret && safeCompare(authHeader, `Bearer ${cronSecret}`) === true;
 
-  if (!user) {
-    return NextResponse.json({ ok: false, error: 'NOT_AUTHENTICATED' }, { status: 401 });
-  }
+  let actorId: string | null = null;
 
-  if (!(await isUserAdmin(user.id))) {
-    return NextResponse.json({ ok: false, error: 'FORBIDDEN' }, { status: 403 });
+  if (!isCronAuthorized) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ ok: false, error: 'NOT_AUTHENTICATED' }, { status: 401 });
+    }
+
+    if (!(await isUserAdmin(user.id))) {
+      return NextResponse.json({ ok: false, error: 'FORBIDDEN' }, { status: 403 });
+    }
+
+    actorId = user.id;
   }
 
   const admin = createAdminClient();
@@ -86,7 +102,7 @@ export async function POST() {
   }
 
   console.log('[resync-planning] summary:', {
-    actor: user.id,
+    actor: actorId ?? 'cron',
     total: targets.length,
     succeeded: results.filter((r) => r.success).length,
   });
