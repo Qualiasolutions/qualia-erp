@@ -3505,10 +3505,12 @@ export type Database = {
           auth_method: string | null;
           build_count: number | null;
           client: string | null;
+          client_report_id: string | null;
           commits: string[] | null;
           created_at: string | null;
           deploy_count: number | null;
           deployed_url: string | null;
+          dry_run: boolean;
           framework_project_id: string | null;
           gap_cycles: number | null;
           gap_cycles_raw: Json | null;
@@ -3539,10 +3541,12 @@ export type Database = {
           auth_method?: string | null;
           build_count?: number | null;
           client?: string | null;
+          client_report_id?: string | null;
           commits?: string[] | null;
           created_at?: string | null;
           deploy_count?: number | null;
           deployed_url?: string | null;
+          dry_run?: boolean;
           framework_project_id?: string | null;
           gap_cycles?: number | null;
           gap_cycles_raw?: Json | null;
@@ -3573,10 +3577,12 @@ export type Database = {
           auth_method?: string | null;
           build_count?: number | null;
           client?: string | null;
+          client_report_id?: string | null;
           commits?: string[] | null;
           created_at?: string | null;
           deploy_count?: number | null;
           deployed_url?: string | null;
+          dry_run?: boolean;
           framework_project_id?: string | null;
           gap_cycles?: number | null;
           gap_cycles_raw?: Json | null;
