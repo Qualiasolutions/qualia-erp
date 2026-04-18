@@ -21,6 +21,20 @@ import { authenticateRequest, LEGACY_DEPRECATION_HEADERS } from '@/lib/api-auth'
  *  (v3.5+, e.g. {"1": 0, "2": 1}). Object is flattened to current phase for
  *  the integer column and stored in full in gap_cycles_raw.
  *
+ * client_report_id (v4.0.4+):
+ *  Per-project sequential identifier (format: QS-REPORT-NN) sent by the
+ *  framework. When BOTH `project_id` and `client_report_id` are present, they
+ *  form a composite dedupe key — the insert becomes an UPSERT on the partial
+ *  unique index `(framework_project_id, client_report_id)`. This is the
+ *  preferred idempotency mechanism for v4.0.4+ clients (cheaper than UUID
+ *  Idempotency-Key headers). When present, the response echoes
+ *  `client_report_id` as `report_id` instead of the internal UUID.
+ *
+ * dry_run (v4.0.4+):
+ *  Boolean flag (default false). When true, the report is persisted but marked
+ *  as a dry-run. Downstream read queries filter dry-run reports from aggregate
+ *  views and dashboards — the write path stores them identically.
+ *
  * Contract: see qualia-framework docs/erp-contract.md.
  */
 
@@ -67,6 +81,12 @@ const payloadSchema = z.object({
   last_pushed_at: z.string().datetime().optional(),
   build_count: z.number().int().nonnegative().optional(),
   deploy_count: z.number().int().nonnegative().optional(),
+  // v4.0.4 — per-project sequential report ID + dry-run flag
+  client_report_id: z
+    .string()
+    .regex(/^QS-REPORT-\d+$/)
+    .optional(),
+  dry_run: z.boolean().optional().default(false),
 });
 
 type Payload = z.infer<typeof payloadSchema>;
@@ -149,8 +169,16 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (existing) {
+      // If the stored report has a client_report_id, return that instead of the UUID
+      // so replay responses are consistent with the original response shape.
+      const { data: replayRow } = await supabase
+        .from('session_reports')
+        .select('client_report_id')
+        .eq('id', existing.report_id)
+        .single();
+      const replayId = replayRow?.client_report_id ?? existing.report_id;
       return NextResponse.json(
-        { ok: true, report_id: existing.report_id, replayed: true, message: 'Idempotent replay' },
+        { ok: true, report_id: replayId, replayed: true, message: 'Idempotent replay' },
         { headers: { ...(deprecationHeaders ?? {}), 'Idempotent-Replay': 'true' } }
       );
     }
@@ -158,42 +186,64 @@ export async function POST(request: NextRequest) {
 
   const gapFlat = flattenGapCycles(body.gap_cycles, body.phase);
 
-  const { data: insertedReport, error: insertError } = await supabase
-    .from('session_reports')
-    .insert({
-      project_name: body.project,
-      client: body.client || null,
-      milestone: body.milestone ?? null,
-      milestone_name: body.milestone_name || null,
-      milestones: body.milestones ?? null,
-      phase: body.phase ?? null,
-      phase_name: body.phase_name || null,
-      total_phases: body.total_phases ?? null,
-      status: body.status || null,
-      tasks_done: body.tasks_done,
-      tasks_total: body.tasks_total,
-      verification: body.verification,
-      gap_cycles: gapFlat.current,
-      gap_cycles_raw: gapFlat.raw,
-      deployed_url: body.deployed_url || null,
-      lifetime: body.lifetime,
-      commits: body.commits,
-      notes: body.notes,
-      submitted_by: body.submitted_by || null,
-      submitted_at: body.submitted_at ?? new Date().toISOString(),
-      framework_project_id: body.project_id || null,
-      team_id: body.team_id || null,
-      git_remote: body.git_remote || null,
-      session_started_at: body.session_started_at || null,
-      last_pushed_at: body.last_pushed_at || null,
-      build_count: body.build_count ?? null,
-      deploy_count: body.deploy_count ?? null,
-      idempotency_key: idempotencyKey,
-      token_id: auth.method === 'per_user_token' ? auth.tokenId : null,
-      auth_method: auth.method,
-    })
-    .select('id')
-    .single();
+  // Build the row object once — used by both insert and upsert paths.
+  const row = {
+    project_name: body.project,
+    client: body.client || null,
+    milestone: body.milestone ?? null,
+    milestone_name: body.milestone_name || null,
+    milestones: body.milestones ?? null,
+    phase: body.phase ?? null,
+    phase_name: body.phase_name || null,
+    total_phases: body.total_phases ?? null,
+    status: body.status || null,
+    tasks_done: body.tasks_done,
+    tasks_total: body.tasks_total,
+    verification: body.verification,
+    gap_cycles: gapFlat.current,
+    gap_cycles_raw: gapFlat.raw,
+    deployed_url: body.deployed_url || null,
+    lifetime: body.lifetime,
+    commits: body.commits,
+    notes: body.notes,
+    submitted_by: body.submitted_by || null,
+    submitted_at: body.submitted_at ?? new Date().toISOString(),
+    framework_project_id: body.project_id || null,
+    team_id: body.team_id || null,
+    git_remote: body.git_remote || null,
+    session_started_at: body.session_started_at || null,
+    last_pushed_at: body.last_pushed_at || null,
+    build_count: body.build_count ?? null,
+    deploy_count: body.deploy_count ?? null,
+    client_report_id: body.client_report_id || null,
+    dry_run: body.dry_run,
+    idempotency_key: idempotencyKey,
+    token_id: auth.method === 'per_user_token' ? auth.tokenId : null,
+    auth_method: auth.method,
+  };
+
+  // Case A (v4.0.4): both project_id AND client_report_id present — UPSERT on
+  // the partial unique index (framework_project_id, client_report_id).
+  // Case B (legacy): plain insert, no conflict handling.
+  // Case C (partial): only one of project_id/client_report_id — plain insert + warn.
+  const hasProjectId = Boolean(body.project_id);
+  const hasClientReportId = Boolean(body.client_report_id);
+
+  if (hasProjectId !== hasClientReportId) {
+    console.warn(
+      `[api/v1/reports] Partial v4.0.4 payload: project_id=${hasProjectId}, client_report_id=${hasClientReportId}, project=${body.project}`
+    );
+  }
+
+  const useUpsert = hasProjectId && hasClientReportId;
+
+  const query = useUpsert
+    ? supabase
+        .from('session_reports')
+        .upsert(row, { onConflict: 'framework_project_id,client_report_id' })
+    : supabase.from('session_reports').insert(row);
+
+  const { data: insertedReport, error: insertError } = await query.select('id').single();
 
   if (insertError || !insertedReport) {
     console.error('[api/v1/reports] Insert error:', insertError);
@@ -215,8 +265,12 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  // v4.0.4: echo client_report_id as the response report_id when present;
+  // otherwise fall back to the internal UUID (legacy behavior).
+  const responseReportId = body.client_report_id ?? insertedReport.id;
+
   return NextResponse.json(
-    { ok: true, report_id: insertedReport.id, message: 'Report received' },
+    { ok: true, report_id: responseReportId, message: 'Report received' },
     { headers: deprecationHeaders }
   );
 }
