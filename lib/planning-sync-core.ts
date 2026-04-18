@@ -374,11 +374,19 @@ export async function syncPlanningFromGitHubWithServiceRole(
       // 8c. Populate phase_items from framework PLAN.md files in this phase's dir
       if (phaseRowId) {
         try {
-          const padded = phase.phaseNumber
-            .split('.')
-            .map((n) => n.padStart(2, '0'))
-            .join('.');
-          const matchingDir = phaseDirs.find((d) => d.startsWith(padded));
+          // Match the phase's directory by numerically comparing the leading
+          // number in the dir name. This handles all observed conventions:
+          //   "22-observability-docs"        (flat)
+          //   "00.1-monorepo-scaffolding"    (Sakani sub-phase, 1-digit sub)
+          //   "00.01-something"              (hypothetical 2-digit sub)
+          // Padding-based startsWith breaks for Sakani-style dirs, so compare
+          // by parsed float instead.
+          const phaseNumFloat = parseFloat(phase.phaseNumber);
+          const matchingDir = phaseDirs.find((d) => {
+            const m = d.match(/^(\d+(?:\.\d+)?)[-_]/);
+            if (!m) return false;
+            return parseFloat(m[1]) === phaseNumFloat;
+          });
           if (matchingDir) {
             const files = await listGitHubDir(
               token,
