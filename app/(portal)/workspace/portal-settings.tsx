@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -56,24 +56,31 @@ export function PortalSettings({ workspaceId }: PortalSettingsProps) {
   const cnameTarget = settings?.cname_target ?? 'cname.vercel-dns.com';
   const domainVerified = settings?.domain_verified ?? false;
 
-  const notificationValues: NotificationDefaults = {
-    task_assigned:
-      notificationOverrides.task_assigned ?? settings?.notification_defaults?.task_assigned ?? true,
-    task_due_soon:
-      notificationOverrides.task_due_soon ?? settings?.notification_defaults?.task_due_soon ?? true,
-    project_update:
-      notificationOverrides.project_update ??
-      settings?.notification_defaults?.project_update ??
-      true,
-    meeting_reminder:
-      notificationOverrides.meeting_reminder ??
-      settings?.notification_defaults?.meeting_reminder ??
-      true,
-    client_activity:
-      notificationOverrides.client_activity ??
-      settings?.notification_defaults?.client_activity ??
-      true,
-  };
+  const notificationValues: NotificationDefaults = useMemo(
+    () => ({
+      task_assigned:
+        notificationOverrides.task_assigned ??
+        settings?.notification_defaults?.task_assigned ??
+        true,
+      task_due_soon:
+        notificationOverrides.task_due_soon ??
+        settings?.notification_defaults?.task_due_soon ??
+        true,
+      project_update:
+        notificationOverrides.project_update ??
+        settings?.notification_defaults?.project_update ??
+        true,
+      meeting_reminder:
+        notificationOverrides.meeting_reminder ??
+        settings?.notification_defaults?.meeting_reminder ??
+        true,
+      client_activity:
+        notificationOverrides.client_activity ??
+        settings?.notification_defaults?.client_activity ??
+        true,
+    }),
+    [notificationOverrides, settings?.notification_defaults]
+  );
 
   const handleCopyCname = useCallback(async () => {
     try {
