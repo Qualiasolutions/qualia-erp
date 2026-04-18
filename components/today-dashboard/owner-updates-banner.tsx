@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { escapeHtml } from '@/lib/html-escape';
 import type { OwnerUpdate } from '@/app/actions/owner-updates';
 
 interface OwnerUpdatesBannerProps {
@@ -62,13 +63,7 @@ export function OwnerUpdatesBanner({ workspaceId }: OwnerUpdatesBannerProps) {
   // Without this escape, a stored-XSS sink existed — any user who could post
   // an owner update could embed `<script>` or `<img onerror=…>` payloads that
   // would execute in every team member's browser.
-  const escapeHtml = (text: string): string =>
-    text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+  // Implementation: @/lib/html-escape (OWASP 5-char entity escape, tested).
 
   const formatBody = (text: string) => {
     return text.split('\n').map((line, i) => {
