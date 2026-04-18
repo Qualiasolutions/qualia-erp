@@ -114,7 +114,9 @@ export async function inviteTeamMember(
   return { success: true, data: { id: newUser.user.id, email } };
 }
 
-// Remove team member (admin only — deactivates, doesn't delete)
+// Remove team member (admin only).
+// Bans auth, removes workspace memberships, and removes any team memberships —
+// so the person actually disappears from Team Management + Team Status lists.
 export async function removeTeamMember(targetUserId: string): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -130,12 +132,23 @@ export async function removeTeamMember(targetUserId: string): Promise<ActionResu
     return { success: false, error: 'Cannot remove yourself' };
   }
 
-  // Ban user from auth (soft disable — needs service role key)
   const adminClient = createAdminClient();
-  const { error } = await adminClient.auth.admin.updateUserById(targetUserId, {
+
+  // 1. Ban the auth user (prevents login).
+  const { error: banError } = await adminClient.auth.admin.updateUserById(targetUserId, {
     ban_duration: '876000h', // ~100 years
   });
+  if (banError) return { success: false, error: banError.message };
 
-  if (error) return { success: false, error: error.message };
+  // 2. Remove workspace memberships so they disappear from team lists.
+  const { error: wmError } = await adminClient
+    .from('workspace_members')
+    .delete()
+    .eq('profile_id', targetUserId);
+  if (wmError) return { success: false, error: wmError.message };
+
+  // 3. Remove team memberships (soft references — don't fail if none exist).
+  await adminClient.from('team_members').delete().eq('profile_id', targetUserId);
+
   return { success: true };
 }

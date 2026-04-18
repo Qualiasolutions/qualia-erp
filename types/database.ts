@@ -145,51 +145,6 @@ export type Database = {
           },
         ];
       };
-      admin_boards: {
-        Row: {
-          created_at: string;
-          created_by: string | null;
-          id: string;
-          name: string;
-          snapshot: Json | null;
-          updated_at: string;
-          updated_by: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          created_by?: string | null;
-          id?: string;
-          name?: string;
-          snapshot?: Json | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          created_by?: string | null;
-          id?: string;
-          name?: string;
-          snapshot?: Json | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'admin_boards_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'admin_boards_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       ai_conversations: {
         Row: {
           created_at: string;
@@ -1188,6 +1143,8 @@ export type Database = {
           invoice_number: string;
           is_hidden: boolean;
           last_payment_date: string | null;
+          pdf_url: string | null;
+          source: string;
           status: string;
           synced_at: string;
           total: number;
@@ -1204,6 +1161,8 @@ export type Database = {
           invoice_number: string;
           is_hidden?: boolean;
           last_payment_date?: string | null;
+          pdf_url?: string | null;
+          source?: string;
           status: string;
           synced_at?: string;
           total?: number;
@@ -1220,6 +1179,8 @@ export type Database = {
           invoice_number?: string;
           is_hidden?: boolean;
           last_payment_date?: string | null;
+          pdf_url?: string | null;
+          source?: string;
           status?: string;
           synced_at?: string;
           total?: number;
@@ -2578,6 +2539,7 @@ export type Database = {
           skill_level: string | null;
           theme: string;
           updated_at: string | null;
+          username: string | null;
         };
         Insert: {
           avatar_url?: string | null;
@@ -2599,6 +2561,7 @@ export type Database = {
           skill_level?: string | null;
           theme?: string;
           updated_at?: string | null;
+          username?: string | null;
         };
         Update: {
           avatar_url?: string | null;
@@ -2620,6 +2583,7 @@ export type Database = {
           skill_level?: string | null;
           theme?: string;
           updated_at?: string | null;
+          username?: string | null;
         };
         Relationships: [
           {
@@ -3760,6 +3724,7 @@ export type Database = {
           due_date: string | null;
           estimated_minutes_trainee: number | null;
           id: string;
+          is_client_visible: boolean;
           item_type: Database['public']['Enums']['task_item_type'];
           learning_objective: string | null;
           milestone: string | null;
@@ -3792,6 +3757,7 @@ export type Database = {
           due_date?: string | null;
           estimated_minutes_trainee?: number | null;
           id?: string;
+          is_client_visible?: boolean;
           item_type?: Database['public']['Enums']['task_item_type'];
           learning_objective?: string | null;
           milestone?: string | null;
@@ -3824,6 +3790,7 @@ export type Database = {
           due_date?: string | null;
           estimated_minutes_trainee?: number | null;
           id?: string;
+          is_client_visible?: boolean;
           item_type?: Database['public']['Enums']['task_item_type'];
           learning_objective?: string | null;
           milestone?: string | null;
@@ -4179,6 +4146,7 @@ export type Database = {
           created_at: string;
           duration_minutes: number | null;
           ended_at: string | null;
+          hidden_from_reports: boolean;
           id: string;
           planned_duration_minutes: number | null;
           profile_id: string;
@@ -4194,6 +4162,7 @@ export type Database = {
           created_at?: string;
           duration_minutes?: number | null;
           ended_at?: string | null;
+          hidden_from_reports?: boolean;
           id?: string;
           planned_duration_minutes?: number | null;
           profile_id: string;
@@ -4209,6 +4178,7 @@ export type Database = {
           created_at?: string;
           duration_minutes?: number | null;
           ended_at?: string | null;
+          hidden_from_reports?: boolean;
           id?: string;
           planned_duration_minutes?: number | null;
           profile_id?: string;
@@ -4635,7 +4605,7 @@ export type Database = {
       task_item_type: 'task' | 'issue' | 'note' | 'resource';
       task_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
       task_status: 'Todo' | 'In Progress' | 'Done' | 'Canceled';
-      user_role: 'admin' | 'employee' | 'client';
+      user_role: 'admin' | 'manager' | 'employee' | 'client';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -4812,11 +4782,12 @@ export const Constants = {
       task_item_type: ['task', 'issue', 'note', 'resource'],
       task_priority: ['No Priority', 'Urgent', 'High', 'Medium', 'Low'],
       task_status: ['Todo', 'In Progress', 'Done', 'Canceled'],
-      user_role: ['admin', 'employee', 'client'],
+      user_role: ['admin', 'manager', 'employee', 'client'],
     },
   },
 } as const;
 
+// --- Convenience aliases (local) ---
 export type Client = Tables<'clients'>;
 export type ProjectFile = Tables<'project_files'>;
 export type ProjectIntegration = Tables<'project_integrations'>;

@@ -75,9 +75,11 @@ export async function getReportData(
     `
     )
     .eq('workspace_id', workspaceId)
+    .eq('hidden_from_reports', false)
     .gte('started_at', `${startDate}T00:00:00Z`)
     .lt('started_at', `${endDate}T23:59:59Z`)
     .not('ended_at', 'is', null)
+    .not('project_id', 'is', null)
     .order('started_at', { ascending: false });
 
   if (error) {
@@ -247,9 +249,11 @@ export async function getAssignedVsDone(
     `
     )
     .eq('workspace_id', workspaceId)
+    .eq('hidden_from_reports', false)
     .gte('started_at', `${startDate}T00:00:00Z`)
     .lt('started_at', `${endDate}T23:59:59Z`)
-    .not('ended_at', 'is', null);
+    .not('ended_at', 'is', null)
+    .not('project_id', 'is', null);
 
   if (sessErr) {
     console.error('[getAssignedVsDone] Sessions error:', sessErr);

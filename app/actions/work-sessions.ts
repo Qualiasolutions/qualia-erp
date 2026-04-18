@@ -468,7 +468,9 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
     await Promise.all([
       supabase
         .from('workspace_members')
-        .select('profile:profiles!workspace_members_profile_id_fkey(id, full_name, avatar_url)')
+        .select(
+          'profile:profiles!workspace_members_profile_id_fkey(id, full_name, avatar_url, role)'
+        )
         .eq('workspace_id', workspaceId),
       supabase
         .from('work_sessions')
@@ -484,9 +486,19 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
     return [];
   }
 
+  // Team status shows only admins + employees — never clients.
   const profiles = (members || [])
     .map((m) => (Array.isArray(m.profile) ? m.profile[0] : m.profile))
-    .filter((p): p is { id: string; full_name: string | null; avatar_url: string | null } => !!p);
+    .filter(
+      (
+        p
+      ): p is {
+        id: string;
+        full_name: string | null;
+        avatar_url: string | null;
+        role: string | null;
+      } => !!p && (p.role === 'admin' || p.role === 'employee')
+    );
 
   if (profiles.length === 0) return [];
 
