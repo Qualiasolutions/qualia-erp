@@ -758,7 +758,8 @@ async function requireAdmin(): Promise<{ ok: boolean; error?: string }> {
 }
 
 export async function getFrameworkReports(
-  filters: FrameworkReportsFilters = {}
+  filters: FrameworkReportsFilters = {},
+  options?: { includeDryRun?: boolean }
 ): Promise<FrameworkReportRow[]> {
   const auth = await requireAdmin();
   if (!auth.ok) return [];
@@ -770,6 +771,11 @@ export async function getFrameworkReports(
       'id, project_name, client, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, commits, notes, auth_method'
     )
     .order('submitted_at', { ascending: false, nullsFirst: false });
+
+  if (!options?.includeDryRun) {
+    // Filter dry_run=true synthetic pings (qualia-framework erp-ping) out of production views
+    query = query.neq('dry_run', true);
+  }
 
   if (filters.project) query = query.eq('project_name', filters.project);
   if (filters.status) query = query.eq('status', filters.status);
@@ -790,7 +796,9 @@ export async function getFrameworkReports(
   return (data ?? []) as FrameworkReportRow[];
 }
 
-export async function getFrameworkReportsStats(): Promise<FrameworkReportsStats> {
+export async function getFrameworkReportsStats(options?: {
+  includeDryRun?: boolean;
+}): Promise<FrameworkReportsStats> {
   const empty: FrameworkReportsStats = {
     totalReports: 0,
     reportsLast7d: 0,
@@ -811,11 +819,18 @@ export async function getFrameworkReportsStats(): Promise<FrameworkReportsStats>
 
   // Pull a single wide window and aggregate in memory — session_reports is
   // small per-org (one row per /qualia-report call) so 2000 rows is plenty.
-  const { data, error } = await admin
+  let statsQuery = admin
     .from('session_reports')
     .select('project_name, submitted_at, status, verification, build_count, deploy_count, commits')
     .order('submitted_at', { ascending: false, nullsFirst: false })
     .limit(2000);
+
+  if (!options?.includeDryRun) {
+    // Filter dry_run=true synthetic pings (qualia-framework erp-ping) out of production views
+    statsQuery = statsQuery.neq('dry_run', true);
+  }
+
+  const { data, error } = await statsQuery;
 
   if (error || !data) {
     console.error('[getFrameworkReportsStats] Error:', error);
@@ -873,14 +888,23 @@ export async function getFrameworkReportsStats(): Promise<FrameworkReportsStats>
   };
 }
 
-export async function getFrameworkReportsProjects(): Promise<string[]> {
+export async function getFrameworkReportsProjects(options?: {
+  includeDryRun?: boolean;
+}): Promise<string[]> {
   const auth = await requireAdmin();
   if (!auth.ok) return [];
   const admin = createAdminClient();
-  const { data } = await admin
+  let projectsQuery = admin
     .from('session_reports')
     .select('project_name')
     .order('project_name', { ascending: true });
+
+  if (!options?.includeDryRun) {
+    // Filter dry_run=true synthetic pings (qualia-framework erp-ping) out of production views
+    projectsQuery = projectsQuery.neq('dry_run', true);
+  }
+
+  const { data } = await projectsQuery;
   const seen = new Set<string>();
   const result: string[] = [];
   for (const r of data ?? []) {

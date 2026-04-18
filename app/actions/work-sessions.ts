@@ -700,7 +700,8 @@ export async function updatePlannedLogoutTime(
  * Uses admin client because session_reports RLS is service_role-only.
  */
 export async function hasStructuredReportForSession(
-  sessionId: string
+  sessionId: string,
+  options?: { includeDryRun?: boolean }
 ): Promise<{ attached: boolean; report_id?: string; submitted_at?: string }> {
   const supabase = await createClient();
   const {
@@ -730,15 +731,21 @@ export async function hasStructuredReportForSession(
   const windowEnd = session.ended_at ?? new Date().toISOString();
 
   const admin = createAdminClient();
-  const { data: report } = await admin
+  let reportQuery = admin
     .from('session_reports')
     .select('id, submitted_at')
     .eq('project_name', projectName)
     .gte('submitted_at', session.started_at)
     .lte('submitted_at', windowEnd)
     .order('submitted_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
+
+  if (!options?.includeDryRun) {
+    // Filter dry_run=true synthetic pings (qualia-framework erp-ping) out of production views
+    reportQuery = reportQuery.neq('dry_run', true);
+  }
+
+  const { data: report } = await reportQuery.maybeSingle();
 
   if (!report) return { attached: false };
   return {
@@ -780,7 +787,8 @@ export interface ProjectSessionReport {
  */
 export async function getSessionReportsForProject(
   projectName: string,
-  limit = 20
+  limit = 20,
+  options?: { includeDryRun?: boolean }
 ): Promise<ProjectSessionReport[]> {
   const supabase = await createClient();
   const {
@@ -810,7 +818,7 @@ export async function getSessionReportsForProject(
     if (!assignment) return [];
   }
 
-  const { data, error } = await admin
+  let reportsQuery = admin
     .from('session_reports')
     .select(
       'id, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, notes, commits'
@@ -818,6 +826,13 @@ export async function getSessionReportsForProject(
     .eq('project_name', projectName)
     .order('submitted_at', { ascending: false, nullsFirst: false })
     .limit(limit);
+
+  if (!options?.includeDryRun) {
+    // Filter dry_run=true synthetic pings (qualia-framework erp-ping) out of production views
+    reportsQuery = reportsQuery.neq('dry_run', true);
+  }
+
+  const { data, error } = await reportsQuery;
 
   if (error) {
     console.error('[getSessionReportsForProject] Error:', error);
