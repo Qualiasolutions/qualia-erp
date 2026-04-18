@@ -168,9 +168,10 @@ export async function canDeletePhaseItem(userId: string, itemId: string): Promis
 export async function canModifyTask(userId: string, taskId: string): Promise<boolean> {
   const supabase = await createClient();
 
-  // Parallelize the admin check and task fetch — they're independent
-  const [isAdmin, { data: task }] = await Promise.all([
+  // Parallelize the admin check, role lookup, and task fetch — independent
+  const [isAdmin, { data: roleRow }, { data: task }] = await Promise.all([
     isUserAdmin(userId),
+    supabase.from('profiles').select('role').eq('id', userId).single(),
     supabase
       .from('tasks')
       .select('creator_id, assignee_id, workspace_id, project_id, project:projects(lead_id)')
@@ -179,6 +180,9 @@ export async function canModifyTask(userId: string, taskId: string): Promise<boo
   ]);
 
   if (isAdmin) return true;
+  // Clients never write tasks. Defends against an assignee_id or creator_id
+  // happening to point to a client row (no UI surface, but cheap to enforce).
+  if (roleRow?.role === 'client') return false;
   if (!task) return false;
 
   // Creator / assignee / project lead always pass
