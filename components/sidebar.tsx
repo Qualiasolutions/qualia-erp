@@ -64,7 +64,7 @@ const resourcesNav = [
 const portalNav = [{ name: 'Portal', href: '/', icon: ExternalLink }];
 const adminNav = [
   { name: 'Admin', href: '/admin', icon: Shield },
-  { name: 'Tasks', href: '/admin/tasks', icon: ListTodo },
+  { name: 'Tasks', href: '/tasks?scope=all', icon: ListTodo },
   { name: 'Assignments', href: '/admin/assignments', icon: UserPlus },
   { name: 'Attendance', href: '/admin/attendance', icon: ClipboardList },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3 },
