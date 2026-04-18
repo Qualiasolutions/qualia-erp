@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import { isUserAdmin, isUserManagerOrAbove } from './shared';
 import type { ActionResult } from './shared';
@@ -681,4 +681,147 @@ export async function updatePlannedLogoutTime(
   }
 
   return { success: true };
+}
+
+/**
+ * Check whether a structured /qualia-report was posted for the given work session.
+ *
+ * /qualia-report does two POSTs: a file upload (sets work_sessions.report_url)
+ * and a structured JSON payload (inserts into session_reports). Either can
+ * succeed while the other fails. The clock-out modal was only watching the
+ * file path, so a successful structured POST with a failed upload showed up
+ * as "no report attached." This action complements the file check by detecting
+ * a matching session_reports row within the session's active window.
+ *
+ * Match criterion: project_name + submitted_at within [session.started_at,
+ * session.ended_at ?? now]. session_reports has no FK to work_sessions, so
+ * time+project is the closest available correlation.
+ *
+ * Uses admin client because session_reports RLS is service_role-only.
+ */
+export async function hasStructuredReportForSession(
+  sessionId: string
+): Promise<{ attached: boolean; report_id?: string; submitted_at?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { attached: false };
+  }
+
+  const { data: session } = await supabase
+    .from('work_sessions')
+    .select('started_at, ended_at, profile_id, project:projects(name)')
+    .eq('id', sessionId)
+    .maybeSingle();
+
+  if (!session || session.profile_id !== user.id) {
+    return { attached: false };
+  }
+
+  const projectRow = Array.isArray(session.project) ? session.project[0] : session.project;
+  const projectName = (projectRow as { name?: string } | null | undefined)?.name;
+  if (!projectName) {
+    return { attached: false };
+  }
+
+  const windowEnd = session.ended_at ?? new Date().toISOString();
+
+  const admin = createAdminClient();
+  const { data: report } = await admin
+    .from('session_reports')
+    .select('id, submitted_at')
+    .eq('project_name', projectName)
+    .gte('submitted_at', session.started_at)
+    .lte('submitted_at', windowEnd)
+    .order('submitted_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!report) return { attached: false };
+  return {
+    attached: true,
+    report_id: report.id,
+    submitted_at: report.submitted_at ?? undefined,
+  };
+}
+
+// ============ SESSION REPORTS (read side) ============
+
+export interface ProjectSessionReport {
+  id: string;
+  submitted_at: string | null;
+  submitted_by: string | null;
+  milestone: number | null;
+  milestone_name: string | null;
+  phase: number | null;
+  phase_name: string | null;
+  total_phases: number | null;
+  status: string | null;
+  verification: string | null;
+  tasks_done: number | null;
+  tasks_total: number | null;
+  deployed_url: string | null;
+  build_count: number | null;
+  deploy_count: number | null;
+  notes: string | null;
+  commits: string[] | null;
+}
+
+/**
+ * Fetch recent session_reports rows for a project by its human-readable name
+ * (matches session_reports.project_name emitted by /qualia-report).
+ *
+ * Uses admin client because session_reports RLS is service_role-only. Authz is
+ * enforced before the read: caller must be authenticated and be admin or have
+ * an active assignment on a project whose name matches.
+ */
+export async function getSessionReportsForProject(
+  projectName: string,
+  limit = 20
+): Promise<ProjectSessionReport[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user || !projectName) return [];
+
+  const admin = createAdminClient();
+
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+  const role = profile?.role;
+
+  if (role !== 'admin') {
+    const { data: assignment } = await admin
+      .from('project_assignments')
+      .select('id, projects!inner(name)')
+      .eq('employee_id', user.id)
+      .is('removed_at', null)
+      .eq('projects.name', projectName)
+      .limit(1)
+      .maybeSingle();
+    if (!assignment) return [];
+  }
+
+  const { data, error } = await admin
+    .from('session_reports')
+    .select(
+      'id, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, notes, commits'
+    )
+    .eq('project_name', projectName)
+    .order('submitted_at', { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('[getSessionReportsForProject] Error:', error);
+    return [];
+  }
+  return (data ?? []) as ProjectSessionReport[];
 }

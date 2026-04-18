@@ -24,6 +24,7 @@ import {
   UserPlus,
   X,
   Smartphone,
+  LineChart,
 } from 'lucide-react';
 import { useProjectAssignments, invalidateProjectAssignments } from '@/lib/swr';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -55,6 +56,7 @@ import { assignEmployeeToProject, removeAssignment } from '@/app/actions/project
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ProjectNotes } from '@/components/project-notes';
+import { ProjectReportsPanel } from '@/components/project-reports-panel';
 import { ProjectResources } from '@/components/project-resources';
 import { LogoUpload } from '@/components/logo-upload';
 import { EntityAvatar } from '@/components/entity-avatar';
@@ -674,10 +676,14 @@ export function ProjectDetailView({
           </SheetHeader>
 
           <Tabs defaultValue="resources" className="flex min-h-0 flex-1 flex-col">
-            <TabsList className="mx-4 mt-3 grid w-auto grid-cols-2">
+            <TabsList className="mx-4 mt-3 grid w-auto grid-cols-3">
               <TabsTrigger value="resources" className="gap-1.5 text-xs">
                 <LinkIcon className="h-3.5 w-3.5" />
                 Resources
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="gap-1.5 text-xs">
+                <LineChart className="h-3.5 w-3.5" />
+                Reports
               </TabsTrigger>
               <TabsTrigger value="notes" className="gap-1.5 text-xs">
                 <MessageSquare className="h-3.5 w-3.5" />
@@ -690,6 +696,9 @@ export function ProjectDetailView({
                 initialResources={project.metadata?.resources || []}
                 className="h-full rounded-none border-0"
               />
+            </TabsContent>
+            <TabsContent value="reports" className="mt-0 min-h-0 flex-1">
+              <ProjectReportsPanel projectName={project.name} className="h-full" />
             </TabsContent>
             <TabsContent value="notes" className="mt-0 min-h-0 flex-1">
               <ProjectNotes

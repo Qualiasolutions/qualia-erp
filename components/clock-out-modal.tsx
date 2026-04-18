@@ -15,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { clockOut } from '@/app/actions/work-sessions';
+import { clockOut, hasStructuredReportForSession } from '@/app/actions/work-sessions';
 import { invalidateActiveSession, invalidateTodaysSessions } from '@/lib/swr';
 import { createClient as createBrowserClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
@@ -59,19 +59,22 @@ export function ClockOutModal({
   const [isPending, startTransition] = useTransition();
   const [duration, setDuration] = useState(() => formatDuration(session.started_at));
   const [reportUrl, setReportUrl] = useState<string | null>(null);
+  const [structuredReportAttached, setStructuredReportAttached] = useState(false);
   const [checkingReport, setCheckingReport] = useState(false);
 
-  // Check if a report has been auto-uploaded for this session
+  // /qualia-report posts twice: a file upload (sets work_sessions.report_url)
+  // and a structured JSON payload (inserts into session_reports). Either can
+  // succeed alone, so we check both and treat either as "attached".
   const checkForReport = useCallback(async () => {
     setCheckingReport(true);
     try {
       const supabase = createBrowserClient();
-      const { data } = await supabase
-        .from('work_sessions')
-        .select('report_url')
-        .eq('id', session.id)
-        .single();
-      setReportUrl(data?.report_url || null);
+      const [fileCheck, structuredCheck] = await Promise.all([
+        supabase.from('work_sessions').select('report_url').eq('id', session.id).single(),
+        hasStructuredReportForSession(session.id),
+      ]);
+      setReportUrl(fileCheck.data?.report_url || null);
+      setStructuredReportAttached(structuredCheck.attached);
     } catch {
       // Ignore errors
     } finally {
@@ -129,7 +132,8 @@ export function ClockOutModal({
   // without one if the upload fails or they generated the report outside
   // the normal flow. A warning is shown in the UI when the report is missing.
   const isOtherSession = !session.project;
-  const reportMissing = !isOtherSession && !reportUrl;
+  const reportAttached = !!reportUrl || structuredReportAttached;
+  const reportMissing = !isOtherSession && !reportAttached;
   const canSubmit = summary.trim() && !isPending;
 
   return (
@@ -178,25 +182,32 @@ export function ClockOutModal({
               <Loader2 className="size-4 animate-spin text-muted-foreground" />
               <span className="text-[12px] text-muted-foreground">Checking for report…</span>
             </div>
-          ) : reportUrl ? (
+          ) : reportAttached ? (
             <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5">
               <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
               <div className="min-w-0 flex-1">
                 <span className="text-[12px] font-medium text-emerald-700 dark:text-emerald-400">
-                  Report uploaded
+                  Report{' '}
+                  {reportUrl && structuredReportAttached
+                    ? 'uploaded + recorded'
+                    : reportUrl
+                      ? 'uploaded'
+                      : 'recorded'}
                 </span>
                 <p className="text-[10px] text-emerald-600/60 dark:text-emerald-500/60">
                   Auto-submitted via /qualia-report
                 </p>
               </div>
-              <a
-                href={reportUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 text-[11px] text-emerald-600 underline hover:text-emerald-700"
-              >
-                View
-              </a>
+              {reportUrl && (
+                <a
+                  href={reportUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 text-[11px] text-emerald-600 underline hover:text-emerald-700"
+                >
+                  View
+                </a>
+              )}
             </div>
           ) : (
             <div
