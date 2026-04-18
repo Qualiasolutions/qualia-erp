@@ -13,19 +13,9 @@ import { getProjectActivityFeed } from '@/app/actions/activity-feed';
 import type { ProjectFileWithUploader } from '@/app/actions/project-files';
 import type { ActivityLogEntry } from '@/lib/activity-utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  CheckCircle2,
-  Circle,
-  Loader2,
-  LayoutDashboard,
-  Map,
-  LayoutGrid,
-  FileText,
-  Bell,
-} from 'lucide-react';
-import { ProjectBoard } from '@/components/project-board/project-board';
+import { CheckCircle2, Circle, Loader2, LayoutDashboard, Map, FileText, Bell } from 'lucide-react';
 
-type TabId = 'overview' | 'roadmap' | 'board' | 'files' | 'updates';
+type TabId = 'overview' | 'roadmap' | 'files' | 'updates';
 
 interface Phase {
   id: string;
@@ -66,7 +56,6 @@ interface PortalProjectTabsProps {
 const tabs: Array<{ id: TabId; label: string; icon: typeof LayoutDashboard }> = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'roadmap', label: 'Roadmap', icon: Map },
-  { id: 'board', label: 'Board', icon: LayoutGrid },
   { id: 'files', label: 'Files', icon: FileText },
   { id: 'updates', label: 'Updates', icon: Bell },
 ];
@@ -94,7 +83,6 @@ export function PortalProjectTabs({
   const tabRefs = useRef<Record<TabId, HTMLButtonElement | null>>({
     overview: null,
     roadmap: null,
-    board: null,
     files: null,
     updates: null,
   });
@@ -271,8 +259,6 @@ export function PortalProjectTabs({
             isValidating={isValidating}
           />
         )}
-
-        {activeTab === 'board' && <ProjectBoard projectId={projectId} userRole={userRole} />}
 
         {activeTab === 'files' && (
           <FilesTab

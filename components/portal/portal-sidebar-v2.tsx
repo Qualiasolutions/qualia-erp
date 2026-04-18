@@ -32,7 +32,6 @@ import {
   BarChart3,
   ListTodo,
   ArrowRightLeft,
-  LayoutDashboard,
 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { cn } from '@/lib/utils';
@@ -141,7 +140,6 @@ const adminSubpages: NavItemDef[] = [
   { name: 'Reports', href: '/admin/reports', icon: BarChart3, appKey: 'admin-reports' },
   { name: 'Tasks', href: '/admin/tasks', icon: ListTodo, appKey: 'admin-tasks' },
   { name: 'Migrate', href: '/admin/migrate', icon: ArrowRightLeft, appKey: 'admin-migrate' },
-  { name: 'Board', href: '/admin/board', icon: LayoutDashboard, appKey: 'admin-board' },
 ];
 
 /* ------------------------------------------------------------------ */
