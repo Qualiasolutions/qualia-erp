@@ -31,10 +31,20 @@ const gapCyclesSchema = z.union([
   z.record(z.string(), z.number().int().nonnegative()),
 ]);
 
+const milestoneSummarySchema = z.object({
+  num: z.number().int(),
+  name: z.string(),
+  closed_at: z.string().optional(),
+  phases_completed: z.number().int().optional(),
+  tasks_completed: z.number().int().optional(),
+});
+
 const payloadSchema = z.object({
   project: z.string().min(1),
   client: z.string().optional().default(''),
   milestone: z.number().int().optional(),
+  milestone_name: z.string().optional(),
+  milestones: z.array(milestoneSummarySchema).optional(),
   phase: z.number().int().optional(),
   phase_name: z.string().optional(),
   total_phases: z.number().int().optional(),
@@ -49,6 +59,14 @@ const payloadSchema = z.object({
   notes: z.string().max(65000).optional().default(''),
   submitted_by: z.string().optional().default(''),
   submitted_at: z.string().datetime().optional(),
+  // v3.6+ / v4.0 stable identifiers + telemetry
+  project_id: z.string().optional(),
+  team_id: z.string().optional(),
+  git_remote: z.string().optional(),
+  session_started_at: z.string().datetime().optional(),
+  last_pushed_at: z.string().datetime().optional(),
+  build_count: z.number().int().nonnegative().optional(),
+  deploy_count: z.number().int().nonnegative().optional(),
 });
 
 type Payload = z.infer<typeof payloadSchema>;
@@ -146,6 +164,8 @@ export async function POST(request: NextRequest) {
       project_name: body.project,
       client: body.client || null,
       milestone: body.milestone ?? null,
+      milestone_name: body.milestone_name || null,
+      milestones: body.milestones ?? null,
       phase: body.phase ?? null,
       phase_name: body.phase_name || null,
       total_phases: body.total_phases ?? null,
@@ -161,6 +181,13 @@ export async function POST(request: NextRequest) {
       notes: body.notes,
       submitted_by: body.submitted_by || null,
       submitted_at: body.submitted_at ?? new Date().toISOString(),
+      framework_project_id: body.project_id || null,
+      team_id: body.team_id || null,
+      git_remote: body.git_remote || null,
+      session_started_at: body.session_started_at || null,
+      last_pushed_at: body.last_pushed_at || null,
+      build_count: body.build_count ?? null,
+      deploy_count: body.deploy_count ?? null,
       idempotency_key: idempotencyKey,
       token_id: auth.method === 'per_user_token' ? auth.tokenId : null,
       auth_method: auth.method,
