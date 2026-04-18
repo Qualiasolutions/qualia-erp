@@ -139,7 +139,7 @@ interface ProjectDetailViewProps {
   project: Project;
   profiles: Profile[];
   clients: ClientOption[];
-  userRole?: 'admin' | 'employee';
+  userRole?: 'admin' | 'manager' | 'employee' | 'client';
   integrationStatus?: IntegrationStatus;
 }
 
@@ -152,6 +152,15 @@ export function ProjectDetailView({
 }: ProjectDetailViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  // Clients get a read-only view: no settings dialog, no integration admin UI,
+  // no internal team panels (assigned employees, private notes).
+  const isClient = userRole === 'client';
+
+  // Narrowed role for downstream components that don't model 'manager'/'client'.
+  // `manager` acts like `admin` in project context; `client` is already gated out.
+  const staffRole: 'admin' | 'employee' =
+    userRole === 'admin' || userRole === 'manager' ? 'admin' : 'employee';
 
   const [project, setProject] = useState<Project>(initialProject);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -317,10 +326,12 @@ export function ProjectDetailView({
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Integration links */}
-            <div className="hidden items-center gap-1.5 sm:flex">
-              <ProjectIntegrationsDisplay projectId={project.id} userRole={userRole} />
-            </div>
+            {/* Integration links — admin tooling, hidden from clients */}
+            {!isClient && (
+              <div className="hidden items-center gap-1.5 sm:flex">
+                <ProjectIntegrationsDisplay projectId={project.id} userRole={staffRole} />
+              </div>
+            )}
 
             {/* Files — quick link to project files page */}
             <Button
@@ -346,15 +357,17 @@ export function ProjectDetailView({
               <PanelRightOpen className="h-4 w-4" />
             </Button>
 
-            {/* Settings gear */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSettingsOpen(true)}
-              className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
+            {/* Settings gear — admin-only */}
+            {!isClient && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSettingsOpen(true)}
+                className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -408,24 +421,26 @@ export function ProjectDetailView({
               )}
             </div>
 
-            {/* Assigned Employees */}
-            <div className="shrink-0 space-y-3 border-b border-border p-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-purple-500/10">
-                  <Users className="h-3.5 w-3.5 text-purple-400" />
+            {/* Assigned Employees — internal panel, hidden from clients */}
+            {!isClient && (
+              <div className="shrink-0 space-y-3 border-b border-border p-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-purple-500/10">
+                    <Users className="h-3.5 w-3.5 text-purple-400" />
+                  </div>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Assigned Team
+                  </p>
                 </div>
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Assigned Team
-                </p>
+                <AssignedEmployeesList
+                  projectId={project.id}
+                  userRole={staffRole}
+                  profiles={profiles}
+                />
               </div>
-              <AssignedEmployeesList
-                projectId={project.id}
-                userRole={userRole}
-                profiles={profiles}
-              />
-            </div>
+            )}
 
-            {/* Resources */}
+            {/* Resources — links to live docs/deploys; visible to clients */}
             <div className="min-h-0 flex-1 border-b border-border">
               <ProjectResources
                 projectId={project.id}
@@ -434,14 +449,16 @@ export function ProjectDetailView({
               />
             </div>
 
-            {/* Notes */}
-            <div className="min-h-0 flex-1">
-              <ProjectNotes
-                projectId={project.id}
-                workspaceId={project.workspace_id}
-                className="h-full rounded-none border-0"
-              />
-            </div>
+            {/* Notes — internal team notes, hidden from clients */}
+            {!isClient && (
+              <div className="min-h-0 flex-1">
+                <ProjectNotes
+                  projectId={project.id}
+                  workspaceId={project.workspace_id}
+                  className="h-full rounded-none border-0"
+                />
+              </div>
+            )}
           </aside>
         </div>
       </main>
