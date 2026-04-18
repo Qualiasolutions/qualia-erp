@@ -1,13 +1,57 @@
 # State — Portal v2
 
 ## Current Phase
-Phase 8 — Hardening + Polish Follow-up. SHIPPED.
+Post-Phase-8 hotfix/polish sprint (2026-04-18). SHIPPED.
 
 ## Status
 shipped
 
 ## Active Work
-None — Portal v2 is production-live on `portal.qualiasolutions.net`. Three deploys today (2026-04-17):
+**Another agent is currently working on** (do not touch these files/areas):
+- Hasan's clock-out → session report log-out issue
+- `npm audit` error fixing / dependency hardening
+
+## Handoff — sprint of 2026-04-18
+
+Nine deploys landed since last STATE.md update. All on prod `portal.qualiasolutions.net`.
+
+### Security + correctness fixes
+- `0bd7a9d` **canModifyTask auth bug + React.cache() no-op** — `project_assignments` column was `profile_id` (wrong) now `employee_id` + `removed_at IS NULL`; `getFinishedProjectIds` dropped its `supabase` arg so `React.cache()` actually dedupes per request (was keyed on a fresh client instance every call).
+- `4c960d7` **storage MIME whitelist mismatch** — `text/html` was in the code whitelist but NOT in the `project-files` bucket's `allowed_mime_types` → 400 on HTML upload. Aligned both + added `image/heic`/`heif`, `image/svg+xml`, `image/avif`, `application/octet-stream`, `video/webm`, `audio/ogg`. Migration `20260417221402`.
+- `a0dbb04` **client-view scoping** — project detail page hides admin-only UI from clients: Settings gear, Integration header links, Assigned Team panel, Notes panel. Resources panel kept (team shares client-visible links there). Widened `userRole` prop union from `'admin' | 'employee'` to include `'manager' | 'client'`. Also deleted bad `client_projects` row giving `underdogsales` access to Boss Brainz (Alecci Media project).
+- `6096de4` **board system removed** — deleted `components/project-board/` (8 files), `app/(portal)/admin/board/`, `app/actions/admin-boards.ts`, Board tab from `project-workflow.tsx` and `portal-project-tabs.tsx`, `/admin/board` links from both sidebars, `admin_boards` table (migration `20260418110000`). Unused icons cleaned (LayoutGrid, LayoutDashboard, Palette).
+
+### Feature work
+- `ddff86e` **username login for clients** — migration `20260417223000` adds `profiles.username TEXT` with partial unique LOWER index, backfilled client usernames from email local-part. `loginAction` resolves username → email server-side via `createAdminClient`. Login form label becomes "Username or email" for Portal variant; `type="text"` + `autoComplete="username"`; staff still use email. **All 16 client passwords reset to `qualia`** via pgcrypto (runtime data, not committed).
+- `8eae63f` **spotlight welcome tour** — full rewrite of `portal-welcome-tour.tsx`. SVG mask cutout overlay, tooltip card with auto-flip, staggered entry (30ms), 320ms ease-out-expo step transitions, 6 steps (projects/tasks/files/messages/requests/settings), filtered by `enabledApps`, keyboard nav (Esc/Arrow/Enter), focus trap, mobile bottom-sheet, respects `prefers-reduced-motion`, localStorage version bumped to `qualia-portal-tour-v3`. Sidebar links + dashboard projects grid gained `data-tour=…` anchors.
+- **Name display fix** (landed inside `8eae63f`) — `companyName` for clients now comes from `profiles.full_name` (curated) instead of `portal_project_mappings.erp_company_name` (stale CRM names like "Alecci Media" for Underdog Sales, "Mr. Morees Abawi" for Vero Models).
+
+### Client data curation (runtime, not in code)
+- **Deleted 6 clients** (rasmus, froutaria, urbans, woodlocation, mypearl, luxcars) — cascade through `auth.users → profiles → client_projects`.
+- **Renamed** 5 clients: giannis→`giannisuk`, anglobal→`aandnglobal`, gsc→`underdogsales` (+ full_name "Underdog Sales"), morees→`veromodels` (+ full_name "Vero Models"), marco→`marcopellizzeri` (+ full_name "Marco Pellizzeri").
+- 16 clients remain. All passwords = `qualia`. All usernames one-word lowercase.
+
+### Test suite
+- `f91957b` · `9765c5b` — Phase 8 broke 75 test failures (parallelization + disabled auto-assign + removed revalidatePath). Fixed all 621/621 tests across 27 suites. Added `__tests__/lib/portal-utils.test.ts` covering `assertAppEnabledForClient` + `assertNotImpersonating` + `isPortalAdminRole` (21 cases).
+
+## Known gaps / follow-ups
+- **Manager role on project workflow**: `ProjectWorkflow` gates admin UI by `isAdmin={userRole === 'admin'}`; managers don't get edit/delete phases. Intentional or should be widened? (Fawzi flagged, deferred.)
+- **Remaining Phase 8 OPTIMIZE.md low/medium findings** still deferred (see `.planning/OPTIMIZE.md` backlog section).
+- **GitHub Dependabot** — 24 transitive vulns repo-wide (3 critical / 6 high). The other agent is working on this.
+
+## Full deploy chain (2026-04-18)
+```
+dpl_o4k156slh  → board removal
+dpl_lbiu8ufca  → client-view gating + bad link cleanup
+dpl_lhrwpadlb  → spotlight tour + name fix
+dpl_94yznhuk5  → username login + password reset
+dpl_o4y9mw836  → storage MIME alignment
+dpl_82pxgvluw  → canModifyTask + React.cache fixes
+```
+
+---
+
+## Previous: 2026-04-17 — Three deploys:
 
 **Deploy 3 (`dpl_4RTZH1Z8i99wcX5gnLgKb1xhJHdL`) — Phase 8 (5 of 6 tasks, Task 6 = deploy itself):**
 - Task 1: App Library server-side bypass guards on 7 portal pages + `/files` employee branch + dashboard quickActions filter
