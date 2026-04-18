@@ -123,7 +123,13 @@ function ProjectRow({
     });
   };
 
+  // Employees can SEE every project but only open the ones they're assigned to.
+  // Admins always pass; assigned flag defaults true on rows that don't carry it
+  // (e.g. callers from non-projects pages where the gate doesn't apply).
+  const isLocked = !isSuperAdmin && project.is_assigned === false;
+
   const handleClick = () => {
+    if (isLocked) return;
     if (onProjectClick) {
       onProjectClick(project);
     } else {
@@ -147,15 +153,23 @@ function ProjectRow({
 
   // Compact row for dense display
   if (compact) {
+    const isAssignedHighlight = project.is_assigned === true;
     return (
       <div
         onClick={handleClick}
+        aria-disabled={isLocked || undefined}
+        title={isLocked ? "You're not assigned to this project" : undefined}
         className={cn(
-          'group relative flex cursor-pointer items-start gap-3 rounded-lg border px-3.5 py-2.5 transition-all duration-200',
+          'group relative flex items-start gap-3 rounded-lg border border-l-2 px-3.5 py-2.5 transition-all duration-200',
+          isLocked ? 'cursor-not-allowed opacity-55' : 'cursor-pointer',
           isDone
             ? 'border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/40 hover:bg-emerald-500/10'
             : 'bg-card/40 hover:border-primary/20 hover:bg-card hover:shadow-sm',
           !isDone && (isPartnership ? 'border-orange-500/30' : 'border-border'),
+          // Assigned-to-me marker — green left rail.
+          isAssignedHighlight &&
+            !isDone &&
+            'border-l-emerald-500/60 bg-emerald-500/[0.04] hover:border-l-emerald-500/80',
           isComplete && !isDone && 'opacity-40',
           isPending && 'pointer-events-none opacity-50'
         )}

@@ -43,6 +43,7 @@ export interface ProjectData {
   sort_order: number;
   team?: ProjectTeamMember[];
   has_github: boolean;
+  is_assigned: boolean;
 }
 
 async function ProjectListLoader() {
@@ -98,18 +99,19 @@ async function ProjectListLoader() {
     teamByProject.set(a.project_id, existing);
   }
 
-  // For employees, fetch their assigned project IDs
-  let assignedProjectIds: Set<string> | null = null;
-  if (userProfile && userProfile.role !== 'admin') {
-    assignedProjectIds = new Set(
-      (allAssignments || [])
-        .filter((a) => {
-          const emp = Array.isArray(a.employee) ? a.employee[0] : a.employee;
-          return emp?.id === userProfile.id;
-        })
-        .map((a) => a.project_id)
-    );
-  }
+  // Compute the current user's assigned project IDs so we can flag rows for the
+  // "your projects" highlight in the UI. Admins see every project as assigned.
+  const isAdmin = userProfile?.role === 'admin';
+  const userAssignedIds = userProfile
+    ? new Set(
+        (allAssignments || [])
+          .filter((a) => {
+            const emp = Array.isArray(a.employee) ? a.employee[0] : a.employee;
+            return emp?.id === userProfile.id;
+          })
+          .map((a) => a.project_id)
+      )
+    : new Set<string>();
 
   // Map RPC result to Project interface
   const allProjects: ProjectData[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
@@ -141,12 +143,11 @@ async function ProjectListLoader() {
     sort_order: (p.sort_order as number) || 0,
     team: teamByProject.get(p.id as string) || [],
     has_github: githubProjectIds.has(p.id as string),
+    is_assigned: isAdmin ? true : userAssignedIds.has(p.id as string),
   }));
 
-  // Filter for employees: only assigned projects (except Done — everyone sees all Done projects)
-  const visibleProjects = assignedProjectIds
-    ? allProjects.filter((p) => assignedProjectIds.has(p.id))
-    : allProjects;
+  // Employees see EVERY project but only assigned ones are clickable (UI-side gate).
+  const visibleProjects = allProjects;
 
   const sortByOrder = (a: ProjectData, b: ProjectData) => a.sort_order - b.sort_order;
 
