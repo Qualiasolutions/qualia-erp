@@ -71,6 +71,7 @@ interface Phase {
   target_date: string | null;
   description: string | null;
   order_index: number;
+  phase_type?: string | null;
   items?: PhaseItem[];
 }
 
@@ -409,7 +410,9 @@ function PhaseWithComments({
 
 // ─── Overall progress summary ─────────────────────────────────────────────────
 
-function ProgressSummary({ phases }: { phases: Phase[] }) {
+function ProgressSummary({ phases: allPhases }: { phases: Phase[] }) {
+  // Drop milestone rollup rows so progress reflects real work, not double-counted headers.
+  const phases = allPhases.filter((p) => p.phase_type !== 'milestone');
   const totalItems = phases.reduce((sum, p) => sum + (p.items?.length || 0), 0);
   const completedItems = phases.reduce(
     (sum, p) =>

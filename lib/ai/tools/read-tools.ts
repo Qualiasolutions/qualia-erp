@@ -790,13 +790,15 @@ export function createReadTools(supabase: SupabaseClient, workspaceId: string | 
 
         if (!project) return { error: 'Project not found' };
 
-        // Get phases with their items
+        // Get phases with their items — exclude milestone rollup rows so the
+        // count surfaced to the AI matches what the UI shows.
         const { data: phases } = await supabase
           .from('project_phases')
           .select(
             'id, name, status, is_locked, completed_at, sort_order, phase_items(id, title, status)'
           )
           .eq('project_id', targetProjectId)
+          .neq('phase_type', 'milestone')
           .order('sort_order', { ascending: true });
 
         const roadmap = (phases || []).map((phase) => {

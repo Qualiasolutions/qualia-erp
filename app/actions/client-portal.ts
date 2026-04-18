@@ -1061,7 +1061,7 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
           status,
           project_type,
           description,
-          phases:project_phases(id, name, status, sort_order)
+          phases:project_phases(id, name, status, sort_order, phase_type)
         )
       `
       )
@@ -1076,6 +1076,7 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
       name: string;
       status: string | null;
       sort_order: number | null;
+      phase_type: string | null;
     };
     type ProjectRow = {
       id: string;
@@ -1097,9 +1098,10 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
     const projects = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
 
     const projectsWithPhases = projects.map((project) => {
-      const projectPhases = [...(project.phases || [])].sort(
-        (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
-      );
+      // Exclude milestone rollup rows — they're derived headers, not real phases.
+      const projectPhases = [...(project.phases || [])]
+        .filter((p) => p.phase_type !== 'milestone')
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
       const completedCount = projectPhases.filter(
         (p) => p.status === 'completed' || p.status === 'done'
       ).length;

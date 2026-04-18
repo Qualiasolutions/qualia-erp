@@ -25,6 +25,7 @@ interface Phase {
   target_date: string | null;
   description: string | null;
   order_index: number;
+  phase_type?: string | null;
   items?: Array<{
     id: string;
     title: string;
@@ -181,9 +182,11 @@ export function PortalProjectTabs({
     setFilesLoaded(false); // Force re-fetch
   };
 
-  // Compute phase progress
-  const totalPhases = phases.length;
-  const completedPhases = phases.filter(
+  // Compute phase progress — exclude milestone rollup rows so the count reflects
+  // real work, not double-counted headers.
+  const realPhases = phases.filter((p) => p.phase_type !== 'milestone');
+  const totalPhases = realPhases.length;
+  const completedPhases = realPhases.filter(
     (p) => p.status === 'completed' || p.status === 'done'
   ).length;
   const overallProgress = totalPhases > 0 ? Math.round((completedPhases / totalPhases) * 100) : 0;
@@ -292,6 +295,8 @@ function OverviewTab({
   completedPhases: number;
   overallProgress: number;
 }) {
+  // Drop milestone rollup rows so the list matches the count above.
+  const realPhases = phases.filter((p) => p.phase_type !== 'milestone');
   return (
     <div className="space-y-4">
       {/* Project info card */}
@@ -338,9 +343,9 @@ function OverviewTab({
             {completedPhases} of {totalPhases} phases completed
           </p>
 
-          {/* Phase list */}
+          {/* Phase list — drop milestone rollup rows so the list matches the count above. */}
           <ul className="mt-4 space-y-2.5" role="list">
-            {phases.map((phase) => (
+            {realPhases.map((phase) => (
               <li key={phase.id} className="flex items-center gap-3">
                 {getPhaseStatusIndicator(phase.status)}
                 <span

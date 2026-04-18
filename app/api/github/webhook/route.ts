@@ -424,7 +424,10 @@ export async function POST(request: NextRequest) {
         .from('project_phases')
         .select('id, status')
         .eq('project_id', projectId)
-        .eq('milestone_number', milestoneNum);
+        .eq('milestone_number', milestoneNum)
+        // Exclude the milestone rollup row — its status is derived from these
+        // phases, so including it can mask a drift between rollup and children.
+        .neq('phase_type', 'milestone');
 
       if (!milestonePhases || milestonePhases.length === 0) continue;
 

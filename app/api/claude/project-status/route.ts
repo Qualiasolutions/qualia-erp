@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       `
       id, name, status, project_type,
       project_integrations(service_type, external_url),
-      project_phases(name, status, sort_order, completed_at)
+      project_phases(name, status, sort_order, completed_at, phase_type)
     `
     )
     .order('name');
@@ -78,8 +78,15 @@ export async function GET(request: NextRequest) {
   }
 
   const result = (projects || []).map((p) => {
-    const phases =
-      (p.project_phases as Array<{ name: string; status: string; sort_order: number }>) || [];
+    const allPhases =
+      (p.project_phases as Array<{
+        name: string;
+        status: string;
+        sort_order: number;
+        phase_type?: string | null;
+      }>) || [];
+    // Exclude milestone rollup rows from the count.
+    const phases = allPhases.filter((ph) => ph.phase_type !== 'milestone');
     const completed = phases.filter((ph) => ph.status === 'completed').length;
     const total = phases.length;
     const currentPhase = phases
