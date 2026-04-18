@@ -90,7 +90,18 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
     });
   }
 
+  // Normalize role to the union TasksView understands. Anything unexpected
+  // collapses to 'employee' (least privileged internal) — clients are caught
+  // earlier and routed via mode === 'client'.
+  const normalizedRole: 'admin' | 'employee' | 'client' =
+    role === 'admin' ? 'admin' : role === 'client' ? 'client' : 'employee';
+
   return (
-    <TasksView mode={mode} initialTasks={initialTasks} assignableMembers={assignableMembers} />
+    <TasksView
+      mode={mode}
+      initialTasks={initialTasks}
+      assignableMembers={assignableMembers}
+      userRole={normalizedRole}
+    />
   );
 }

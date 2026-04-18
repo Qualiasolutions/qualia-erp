@@ -242,19 +242,21 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-border bg-card p-0 text-foreground sm:max-w-[520px]">
-        <DialogHeader className="px-5 pb-0 pt-5">
-          <DialogTitle className="text-sm font-medium text-foreground/70">Edit task</DialogTitle>
+      <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-card p-0 text-foreground sm:max-w-[640px]">
+        <DialogHeader className="px-6 pb-0 pt-6">
+          <DialogTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Edit task
+          </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="px-5 pb-5">
+        <form onSubmit={handleSubmit} className="px-6 pb-6">
           {/* Title */}
           <input
             name="title"
             defaultValue={optimisticTask.title}
             placeholder="Task title"
             required
-            className="mb-1 w-full border-0 bg-transparent text-[17px] font-semibold text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+            className="mb-3 w-full border-0 bg-transparent text-xl font-semibold leading-snug text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
           />
 
           {/* Description */}
@@ -262,8 +264,8 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
             name="description"
             defaultValue={optimisticTask.description || ''}
             placeholder="Add a description..."
-            rows={2}
-            className="mb-3 w-full resize-none rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-foreground/80 placeholder:text-muted-foreground/40 focus:border-border focus:outline-none dark:bg-muted/20"
+            rows={8}
+            className="mb-4 min-h-[180px] w-full resize-y rounded-lg border border-border bg-muted/30 px-4 py-3 text-[15px] leading-relaxed text-foreground/90 placeholder:text-muted-foreground/40 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-muted/20"
           />
 
           <div className="mb-4 h-px bg-border/30" />

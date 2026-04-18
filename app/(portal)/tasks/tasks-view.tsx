@@ -73,6 +73,8 @@ interface TasksViewProps {
   initialTasks: Task[];
   /** Admin-only — populates the bulk-assign dropdown. Required when mode === 'all-tasks'. */
   assignableMembers?: Array<{ id: string; full_name: string | null; email: string | null }>;
+  /** Used to gate destructive actions. Employees can only mark/unmark done. */
+  userRole?: 'admin' | 'employee' | 'client';
 }
 
 type FilterPriority = 'all' | 'urgent' | 'high' | 'medium' | 'low';
@@ -136,6 +138,7 @@ function tasksReducer(state: Task[], action: OptimisticAction): Task[] {
 const TaskRow = React.memo(function TaskRow({
   task,
   mode,
+  canManage,
   selected,
   onToggleSelect,
   onToggle,
@@ -146,6 +149,8 @@ const TaskRow = React.memo(function TaskRow({
 }: {
   task: Task;
   mode: TasksMode;
+  /** When false, the row only exposes the done/undone toggle (employee mode). */
+  canManage: boolean;
   selected: boolean;
   onToggleSelect: (taskId: string) => void;
   onToggle: (taskId: string, completed: boolean) => void;
@@ -160,6 +165,8 @@ const TaskRow = React.memo(function TaskRow({
   const priorityColors = TASK_PRIORITY_COLORS[task.priority as TaskPriorityKey];
   const isAdminAll = mode === 'all-tasks';
   const isClient = mode === 'client';
+  // Title click + edit/delete row actions are only for users who can manage.
+  const isReadOnly = isClient || !canManage;
 
   return (
     <div
@@ -201,12 +208,13 @@ const TaskRow = React.memo(function TaskRow({
 
       <button
         type="button"
-        onClick={() => !isClient && onEdit(task)}
+        onClick={() => !isReadOnly && onEdit(task)}
+        disabled={isReadOnly}
         className={cn(
           'min-w-0 flex-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2',
-          !isClient && 'cursor-pointer'
+          !isReadOnly && 'cursor-pointer'
         )}
-        aria-label={isClient ? task.title : `Edit task: ${task.title}`}
+        aria-label={isReadOnly ? task.title : `Edit task: ${task.title}`}
       >
         <span
           className={cn(
@@ -273,7 +281,7 @@ const TaskRow = React.memo(function TaskRow({
         )}
       </div>
 
-      {!isClient && (
+      {!isReadOnly && (
         <div className="flex w-24 shrink-0 items-center justify-end gap-1 md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
           <TooltipProvider delayDuration={300}>
             <Tooltip>
@@ -324,7 +332,15 @@ const TaskRow = React.memo(function TaskRow({
   );
 });
 
-export function TasksView({ mode, initialTasks, assignableMembers = [] }: TasksViewProps) {
+export function TasksView({
+  mode,
+  initialTasks,
+  assignableMembers = [],
+  userRole,
+}: TasksViewProps) {
+  // Admin = full row actions (edit/delete/hide). Employee = mark/unmark done only.
+  // Client mode is handled via `isClient` further down.
+  const canManage = userRole === 'admin';
   const router = useRouter();
   const { toggleMobile } = useSidebar();
   const [isPending, startTransition] = useTransition();
@@ -938,6 +954,7 @@ export function TasksView({ mode, initialTasks, assignableMembers = [] }: TasksV
                   <TaskRow
                     task={task}
                     mode={mode}
+                    canManage={canManage}
                     selected={selectedIds.has(task.id)}
                     onToggleSelect={handleToggleSelect}
                     onToggle={handleToggleTask}
@@ -953,7 +970,7 @@ export function TasksView({ mode, initialTasks, assignableMembers = [] }: TasksV
         )}
       </div>
 
-      {editingTask && !isClient && (
+      {editingTask && canManage && (
         <EditTaskModal
           task={editingTask}
           open={!!editingTask}
