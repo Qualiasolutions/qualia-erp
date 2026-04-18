@@ -453,7 +453,7 @@ export function PortalDashboardV2({
       >
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
           {/* Left column (3/5): Projects overview */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3" data-tour="projects-grid">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-foreground">Your Projects</h2>
               {projects.length > 0 && (

@@ -133,16 +133,12 @@ export default async function PortalDashboard({
     return <EmployeeDashboardContent userId={effectiveUserId} displayName={displayName} />;
   }
 
-  // Client: fetch company name for personalization
-  const supabase = await createClient();
-  const { data: companyMapping } = await supabase
-    .from('portal_project_mappings')
-    .select('erp_company_name')
-    .eq('portal_client_id', effectiveUserId)
-    .not('erp_company_name', 'is', null)
-    .limit(1)
-    .maybeSingle();
-  const companyName = companyMapping?.erp_company_name || null;
+  // Client: use the profile's full_name as the company/brand name.
+  // Previously pulled from CRM `clients.name` via portal_project_mappings, but
+  // that field often stores a contact person ("Mr. Morees Abawi") or stale
+  // legal entity ("Alecci Media") that doesn't match the user's actual brand.
+  // profiles.full_name is the curated, user-facing display name.
+  const companyName = displayName;
 
   // Client: show their dashboard
   return (

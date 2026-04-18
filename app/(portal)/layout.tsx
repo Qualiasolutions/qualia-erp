@@ -73,34 +73,24 @@ export default async function PortalLayout({ children }: { children: React.React
   const effectiveIsInternal =
     effectiveRole === 'admin' || effectiveRole === 'manager' || effectiveRole === 'employee';
 
-  // Parallel batch 2: workspace lookup + companyName.
-  // Internal: workspace_members → workspace_id
-  // Client: client_projects JOIN projects → workspace_id (one query, was two)
+  // Workspace lookup only. companyName now comes from profiles.full_name
+  // (already resolved as `displayName` above) — the CRM's erp_company_name
+  // was stale/mismatched for rebranded clients (e.g. "Alecci Media" for
+  // Underdog Sales, "Mr. Morees Abawi" for Vero Models).
   const supabase = await createClient();
-  const [workspaceResult, companyNameResult] = await Promise.all([
-    effectiveIsInternal
-      ? supabase
-          .from('workspace_members')
-          .select('workspace_id')
-          .eq('profile_id', effectiveUserId)
-          .limit(1)
-          .maybeSingle()
-      : supabase
-          .from('client_projects')
-          .select('projects!inner(workspace_id)')
-          .eq('client_id', effectiveUserId)
-          .limit(1)
-          .maybeSingle(),
-    effectiveIsInternal
-      ? Promise.resolve({ data: null, error: null })
-      : supabase
-          .from('portal_project_mappings')
-          .select('erp_company_name')
-          .eq('portal_client_id', effectiveUserId)
-          .not('erp_company_name', 'is', null)
-          .limit(1)
-          .maybeSingle(),
-  ]);
+  const workspaceResult = effectiveIsInternal
+    ? await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('profile_id', effectiveUserId)
+        .limit(1)
+        .maybeSingle()
+    : await supabase
+        .from('client_projects')
+        .select('projects!inner(workspace_id)')
+        .eq('client_id', effectiveUserId)
+        .limit(1)
+        .maybeSingle();
 
   let workspaceId: string | null = null;
   if (effectiveIsInternal) {
@@ -119,7 +109,7 @@ export default async function PortalLayout({ children }: { children: React.React
     workspaceId = proj?.workspace_id || null;
   }
 
-  const companyName = effectiveIsInternal ? null : companyNameResult.data?.erp_company_name || null;
+  const companyName = effectiveIsInternal ? null : displayName;
 
   // Fetch enabled apps and branding in parallel
   const allAppKeys = [

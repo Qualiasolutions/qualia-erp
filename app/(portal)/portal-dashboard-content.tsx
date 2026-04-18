@@ -8,6 +8,7 @@ interface PortalDashboardContentProps {
   clientId: string;
   displayName: string;
   companyName?: string | null;
+  enabledApps?: string[];
 }
 
 interface DashboardStats {
@@ -41,6 +42,7 @@ export function PortalDashboardContent({
   clientId,
   displayName,
   companyName,
+  enabledApps,
 }: PortalDashboardContentProps) {
   const { data, isLoading, isError } = usePortalDashboard(clientId);
 
@@ -66,7 +68,11 @@ export function PortalDashboardContent({
   return (
     <div className="px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
       {/* Welcome tour for first-time clients */}
-      <PortalWelcomeTour displayName={displayName} companyName={companyName} />
+      <PortalWelcomeTour
+        displayName={displayName}
+        companyName={companyName}
+        enabledApps={enabledApps}
+      />
 
       <PortalDashboardV2
         stats={stats}

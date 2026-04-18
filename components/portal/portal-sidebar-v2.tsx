@@ -169,6 +169,16 @@ interface PortalSidebarV2Props {
 /* NavLink                                                             */
 /* ------------------------------------------------------------------ */
 
+/** Maps appKey → data-tour anchor for the welcome tour spotlight */
+const TOUR_ANCHORS: Record<string, string> = {
+  projects: 'projects-nav',
+  tasks: 'tasks-nav',
+  files: 'files-nav',
+  messages: 'messages-nav',
+  requests: 'requests-nav',
+  settings: 'settings-nav',
+};
+
 function NavLink({
   item,
   isActive,
@@ -209,16 +219,22 @@ function NavLink({
       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
   );
 
+  const tourAnchor = TOUR_ANCHORS[item.appKey];
+
   if (disabled || item.comingSoon || !item.href) {
     return (
-      <div className={cn(baseClasses, 'cursor-default opacity-40')} aria-disabled="true">
+      <div
+        className={cn(baseClasses, 'cursor-default opacity-40')}
+        aria-disabled="true"
+        data-tour={tourAnchor}
+      >
         {inner}
       </div>
     );
   }
 
   return (
-    <Link href={item.href} onClick={onClick} className={baseClasses}>
+    <Link href={item.href} onClick={onClick} className={baseClasses} data-tour={tourAnchor}>
       {inner}
     </Link>
   );
