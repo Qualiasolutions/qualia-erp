@@ -7,31 +7,9 @@ import { Octokit } from '@octokit/rest';
 import type { ActionResult } from './shared';
 
 const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY;
-// Transitional read-only fallback during key rotation. When rotating, set
-// TOKEN_ENCRYPTION_KEY_OLD to the previous key so existing ciphertexts keep
-// decrypting via fallback while new writes use TOKEN_ENCRYPTION_KEY. Run
-// `scripts/rotate-integration-tokens.ts` to re-encrypt all rows with the new
-// key, then remove TOKEN_ENCRYPTION_KEY_OLD from prod env.
-const ENCRYPTION_KEY_OLD = process.env.TOKEN_ENCRYPTION_KEY_OLD;
 
 function deriveKey(material: string): Buffer {
   return crypto.scryptSync(material, 'qualia-token-salt', 32);
-}
-
-function tryDecryptWith(
-  material: string,
-  ivHex: string,
-  authTagHex: string,
-  encryptedHex: string
-): string {
-  const key = deriveKey(material);
-  const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'));
-  decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
-  const decrypted = Buffer.concat([
-    decipher.update(Buffer.from(encryptedHex, 'hex')),
-    decipher.final(),
-  ]);
-  return decrypted.toString('utf8');
 }
 
 function encryptToken(token: string): string {
@@ -48,8 +26,11 @@ function encryptToken(token: string): string {
 
 function decryptToken(stored: string): string {
   if (!stored.startsWith('enc:')) {
-    console.warn(
-      `[integrations] Legacy plaintext token encountered (prefix: ${stored.slice(0, 4)}) — run migration to re-encrypt`
+    // All rows were re-encrypted during the 2026-04-19 rotation. Plaintext
+    // should never appear — log loudly if it does so the operator can
+    // investigate (manual DB edit? cross-env copy?).
+    console.error(
+      `[integrations] Plaintext token encountered after rotation (prefix: ${stored.slice(0, 4)}). Investigate.`
     );
     return stored;
   }
@@ -57,25 +38,14 @@ function decryptToken(stored: string): string {
     throw new Error('TOKEN_ENCRYPTION_KEY is not configured — cannot decrypt integration tokens');
   }
   const [, ivHex, authTagHex, encryptedHex] = stored.split(':');
-
-  // Try the current key first.
-  try {
-    return tryDecryptWith(ENCRYPTION_KEY, ivHex, authTagHex, encryptedHex);
-  } catch (primaryError) {
-    // Fall back to the old key if one is configured (rotation in progress).
-    if (ENCRYPTION_KEY_OLD) {
-      try {
-        const value = tryDecryptWith(ENCRYPTION_KEY_OLD, ivHex, authTagHex, encryptedHex);
-        console.warn(
-          '[integrations] Token decrypted via TOKEN_ENCRYPTION_KEY_OLD — run rotation script to re-encrypt with the current key.'
-        );
-        return value;
-      } catch {
-        // Both keys failed — surface the primary error (clearer message).
-      }
-    }
-    throw primaryError;
-  }
+  const key = deriveKey(ENCRYPTION_KEY);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'));
+  decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
+  const decrypted = Buffer.concat([
+    decipher.update(Buffer.from(encryptedHex, 'hex')),
+    decipher.final(),
+  ]);
+  return decrypted.toString('utf8');
 }
 import type {
   IntegrationProvider,
