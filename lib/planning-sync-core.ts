@@ -9,6 +9,7 @@ import {
   parseStateRoadmap,
   parseStateTable,
 } from '@/lib/planning-parser';
+import { decryptToken } from '@/lib/token-encryption';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 interface SyncResult {
@@ -112,7 +113,7 @@ export async function syncPlanningFromGitHubWithServiceRole(
     return { success: false, phasesUpserted: 0, error: 'No GitHub token configured' };
   }
 
-  const token = settings.encrypted_token;
+  const token = decryptToken(settings.encrypted_token);
   const repoParsed = parseRepoFromUrl(integration.external_url);
   if (!repoParsed) {
     return { success: false, phasesUpserted: 0, error: 'Cannot parse repo URL' };

@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { decryptToken } from '@/lib/token-encryption';
 import { Octokit } from '@octokit/rest';
 import type { IntegrationResult, GitHubRepoConfig, GitHubRepoResult, GitHubConfig } from './types';
 import type { ProjectType } from '@/types/database';
@@ -44,7 +45,7 @@ async function getGitHubClient(workspaceId: string): Promise<GitHubClient | null
   }
 
   const client: GitHubClient = {
-    octokit: new Octokit({ auth: settings.encrypted_token }),
+    octokit: new Octokit({ auth: decryptToken(settings.encrypted_token) }),
     org: config.org,
     templates: config.templates || {},
   };

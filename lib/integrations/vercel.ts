@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { decryptToken } from '@/lib/token-encryption';
 import type {
   IntegrationResult,
   VercelProjectConfig,
@@ -43,7 +44,7 @@ async function getVercelClient(workspaceId: string): Promise<VercelClient | null
   const config = settings.config as VercelConfig | null;
 
   const client: VercelClient = {
-    token: settings.encrypted_token,
+    token: decryptToken(settings.encrypted_token),
     teamId: config?.teamId,
   };
 

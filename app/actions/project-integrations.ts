@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { decryptToken } from '@/lib/token-encryption';
 
 import { type ActionResult, isUserManagerOrAbove } from './shared';
 
@@ -63,7 +64,7 @@ async function ensureGitHubWebhook(
       return { installed: false, reason: 'No GitHub token configured for this workspace' };
     }
 
-    const token = integration.encrypted_token;
+    const token = decryptToken(integration.encrypted_token);
     const targetUrl = `${APP_URL}${WEBHOOK_PATH}`;
 
     // 4. Idempotency: check existing hooks first.
