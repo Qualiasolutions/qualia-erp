@@ -95,7 +95,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Internal-only routes — clients cannot access these (admin/employee only)
-    const internalOnlyRoutes = ['/inbox', '/schedule', '/agent'];
+    const internalOnlyRoutes = ['/schedule', '/agent'];
     if (userRole === 'client' && internalOnlyRoutes.some((route) => pathname.startsWith(route))) {
       const url = request.nextUrl.clone();
       url.pathname = '/';

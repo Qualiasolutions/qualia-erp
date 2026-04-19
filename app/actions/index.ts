@@ -162,6 +162,9 @@ export {
   getProjectTasks,
   toggleTaskInbox,
   quickUpdateTask,
+  bulkAssignTasks,
+  bulkMarkDone,
+  bulkDelete,
 } from './inbox';
 
 // ============ PHASES (ROADMAP) ============
