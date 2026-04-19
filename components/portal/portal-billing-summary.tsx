@@ -21,9 +21,11 @@ function formatCurrency(amount: number, currency: string) {
   }).format(amount);
 }
 
+const OUTSTANDING_STATUSES = new Set(['pending', 'overdue', 'sent', 'draft', 'partially_paid']);
+
 export function PortalBillingSummary({ invoices }: PortalBillingSummaryProps) {
   const outstanding = invoices
-    .filter((inv) => inv.status === 'pending' || inv.status === 'overdue')
+    .filter((inv) => OUTSTANDING_STATUSES.has(inv.status))
     .reduce((sum, inv) => sum + Number(inv.amount), 0);
 
   const paid = invoices
@@ -32,7 +34,7 @@ export function PortalBillingSummary({ invoices }: PortalBillingSummaryProps) {
 
   // Find next due date
   const pendingInvoices = invoices
-    .filter((inv) => (inv.status === 'pending' || inv.status === 'overdue') && inv.due_date)
+    .filter((inv) => OUTSTANDING_STATUSES.has(inv.status) && inv.due_date)
     .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime());
   const nextDue = pendingInvoices[0]?.due_date;
 

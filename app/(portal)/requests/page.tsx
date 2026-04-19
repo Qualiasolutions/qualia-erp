@@ -69,6 +69,13 @@ export default async function PortalRequestsPage() {
     status: string;
     admin_response: string | null;
     created_at: string;
+    attachments?: Array<{
+      name: string;
+      path: string;
+      size: number;
+      type: string;
+      uploaded_at: string;
+    }> | null;
     project: { id: string; name: string } | null;
   }>;
 

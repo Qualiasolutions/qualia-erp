@@ -4,11 +4,31 @@ import { memo, useCallback, useState, useMemo, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { RichText } from '@/components/ui/rich-text';
-import { Lightbulb, MessageSquare, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
+import {
+  Lightbulb,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
+  Paperclip,
+  Download,
+  FileText,
+  Image as ImageIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { RequestCommentThread } from './request-comment-thread';
 import { getRequestCommentCounts } from '@/app/actions/request-comments';
+import { getRequestAttachmentUrl } from '@/app/actions/client-requests';
+import { toast } from 'sonner';
+
+interface RequestAttachmentMeta {
+  name: string;
+  path: string;
+  size: number;
+  type: string;
+  uploaded_at: string;
+}
 
 interface FeatureRequest {
   id: string;
@@ -18,7 +38,60 @@ interface FeatureRequest {
   status: string;
   admin_response: string | null;
   created_at: string;
+  attachments?: RequestAttachmentMeta[] | null;
   project: { id: string; name: string } | null;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function AttachmentRow({
+  requestId,
+  attachment,
+}: {
+  requestId: string;
+  attachment: RequestAttachmentMeta;
+}) {
+  const [downloading, setDownloading] = useState(false);
+  const Icon = attachment.type.startsWith('image/') ? ImageIcon : FileText;
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    const res = await getRequestAttachmentUrl(requestId, attachment.path);
+    setDownloading(false);
+    if (!res.success || !res.data) {
+      toast.error(res.error || 'Failed to get download URL');
+      return;
+    }
+    const { url } = res.data as { url: string; filename: string };
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <li className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-2.5 py-1.5 text-xs">
+      <div className="flex min-w-0 items-center gap-2">
+        <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <span className="truncate" title={attachment.name}>
+          {attachment.name}
+        </span>
+        <span className="shrink-0 tabular-nums text-muted-foreground">
+          {formatBytes(attachment.size)}
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={downloading}
+        aria-label={`Download ${attachment.name}`}
+        className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-wait disabled:opacity-50"
+      >
+        <Download className="h-3.5 w-3.5" />
+      </button>
+    </li>
+  );
 }
 
 interface PortalRequestListProps {
@@ -144,7 +217,20 @@ const RequestRow = memo(function RequestRow({
             <span className="text-xs text-muted-foreground">
               {new Date(request.created_at).toLocaleDateString()}
             </span>
+            {request.attachments && request.attachments.length > 0 && (
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <Paperclip className="h-3 w-3" />
+                {request.attachments.length}
+              </span>
+            )}
           </div>
+          {request.attachments && request.attachments.length > 0 && (
+            <ul className="mt-3 space-y-1.5">
+              {request.attachments.map((att) => (
+                <AttachmentRow key={att.path} requestId={request.id} attachment={att} />
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Expand/collapse for comment thread */}
