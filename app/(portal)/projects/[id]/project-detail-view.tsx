@@ -380,6 +380,7 @@ export function ProjectDetailView({
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <ProjectWorkflow
               projectId={project.id}
+              projectName={project.name}
               projectType={project.project_type}
               workspaceId={project.workspace_id}
               userRole={userRole}

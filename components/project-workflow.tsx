@@ -77,10 +77,29 @@ interface Task {
 
 interface ProjectWorkflowProps {
   projectId: string;
+  projectName: string;
   projectType: string | null;
   workspaceId: string;
   userRole?: string;
   className?: string;
+}
+
+interface LastReportMeta {
+  submitted_by: string | null;
+  submitted_at: string | null;
+  client_report_id: string | null;
+}
+
+function formatRelativeTime(iso: string | null): string {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  const diff = Date.now() - then;
+  if (diff < 60_000) return 'just now';
+  if (diff < 3600_000) return `${Math.round(diff / 60_000)}m ago`;
+  if (diff < 86400_000) return `${Math.round(diff / 3600_000)}h ago`;
+  if (diff < 2592000_000) return `${Math.round(diff / 86400_000)}d ago`;
+  const months = Math.round(diff / 2592000_000);
+  return months === 1 ? '1 month ago' : `${months} months ago`;
 }
 
 interface MilestoneGroup {
@@ -550,12 +569,14 @@ function MilestoneSection({
 
 export function ProjectWorkflow({
   projectId,
+  projectName,
   workspaceId,
   userRole,
   className,
 }: ProjectWorkflowProps) {
   const [phases, setPhases] = useState<Phase[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [lastReport, setLastReport] = useState<LastReportMeta | null>(null);
   const [activePhaseId, setActivePhaseId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -609,8 +630,48 @@ export function ProjectWorkflow({
     fetchData();
   }, [fetchData]);
 
+  // Fetch the latest session report for this project once on mount — used to
+  // show "last report by X · time ago" next to the Roadmap header so anyone
+  // opening the project can see who last pushed a /qualia-report and when.
+  useEffect(() => {
+    if (!projectName) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { getSessionReportsForProject } = await import('@/app/actions/work-sessions');
+        const rows = await getSessionReportsForProject(projectName, 1);
+        if (!cancelled && rows.length > 0) {
+          const r = rows[0];
+          setLastReport({
+            submitted_by: r.submitted_by,
+            submitted_at: r.submitted_at,
+            client_report_id: r.client_report_id,
+          });
+        }
+      } catch (err) {
+        console.error('[project-workflow] last report fetch failed:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectName]);
+
   // Check if this project has GitHub-synced phases
   const isGitHubSynced = phases.some((p) => p.github_synced_at);
+
+  // Latest sync timestamp across all phases — used to show "synced Xm ago"
+  // in the header so anyone can tell how fresh the roadmap is.
+  const lastSyncAt = useMemo(() => {
+    let max: number | null = null;
+    for (const p of phases) {
+      if (!p.github_synced_at) continue;
+      const t = new Date(p.github_synced_at).getTime();
+      if (!Number.isFinite(t)) continue;
+      if (max === null || t > max) max = t;
+    }
+    return max !== null ? new Date(max).toISOString() : null;
+  }, [phases]);
 
   // Separate milestone records from phase records
   const milestoneRecords = useMemo(
@@ -1163,17 +1224,52 @@ export function ProjectWorkflow({
   return (
     <div className={cn('flex flex-col', className)}>
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3">
-        <div className="flex items-center gap-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-y-1 border-b border-border px-5 py-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
             <MapIcon className="h-3.5 w-3.5" aria-hidden="true" />
             Roadmap
           </div>
           {isGitHubSynced && (
-            <Badge variant="outline" className="gap-1 rounded-full px-2 py-0 text-[10px]">
+            <Badge
+              variant="outline"
+              className="gap-1 rounded-full px-2 py-0 text-[10px]"
+              title={lastSyncAt ? `Last sync: ${new Date(lastSyncAt).toLocaleString()}` : undefined}
+            >
               <GitBranch className="size-2.5" />
-              Synced
+              {lastSyncAt ? `Synced ${formatRelativeTime(lastSyncAt)}` : 'Synced'}
             </Badge>
+          )}
+          {lastReport && (lastReport.submitted_by || lastReport.submitted_at) && (
+            <span
+              className="text-[11px] text-muted-foreground"
+              title={
+                lastReport.submitted_at
+                  ? `Report ${lastReport.client_report_id ?? ''} — ${new Date(
+                      lastReport.submitted_at
+                    ).toLocaleString()}`.trim()
+                  : undefined
+              }
+            >
+              Last report
+              {lastReport.client_report_id ? (
+                <>
+                  {' '}
+                  <span className="font-mono font-medium text-foreground/80">
+                    {lastReport.client_report_id}
+                  </span>
+                </>
+              ) : null}
+              {lastReport.submitted_by ? (
+                <>
+                  {' by '}
+                  <span className="font-medium text-foreground/80">{lastReport.submitted_by}</span>
+                </>
+              ) : null}
+              {lastReport.submitted_at ? (
+                <> · {formatRelativeTime(lastReport.submitted_at)}</>
+              ) : null}
+            </span>
           )}
         </div>
         <div className="flex items-center gap-2">
