@@ -88,23 +88,35 @@ async function main() {
 
   let ok = 0;
   let alreadyNewKey = 0;
+  let plaintextRows = 0;
   let failed = 0;
 
   for (const row of rows) {
     try {
-      // First, check whether the ciphertext is already decryptable with the new
-      // key (idempotency — safe to re-run this script).
       let plaintext: string;
-      try {
-        plaintext = decrypt(row.encrypted_token, NEW_KEY!);
-        alreadyNewKey++;
-        console.log(`[rotate] ${row.provider}/${row.id.slice(0, 8)}: already new-keyed, skipping`);
-        continue;
-      } catch {
-        // Fall through — try the old key.
+
+      if (!row.encrypted_token.startsWith('enc:')) {
+        // Legacy plaintext — wasn't encrypted under any key. Re-encrypt under NEW_KEY.
+        plaintext = row.encrypted_token;
+        plaintextRows++;
+        console.log(
+          `[rotate] ${row.provider}/${row.id.slice(0, 8)}: legacy plaintext → encrypt with new key`
+        );
+      } else {
+        // Ciphertext — try the new key first (idempotency).
+        try {
+          plaintext = decrypt(row.encrypted_token, NEW_KEY!);
+          alreadyNewKey++;
+          console.log(
+            `[rotate] ${row.provider}/${row.id.slice(0, 8)}: already new-keyed, skipping`
+          );
+          continue;
+        } catch {
+          // Try the old key.
+          plaintext = decrypt(row.encrypted_token, OLD_KEY!);
+        }
       }
 
-      plaintext = decrypt(row.encrypted_token, OLD_KEY!);
       const reEncrypted = encrypt(plaintext, NEW_KEY!);
 
       if (DRY_RUN) {
@@ -139,7 +151,9 @@ async function main() {
   }
 
   console.log('---');
-  console.log(`[rotate] done: ${ok} rotated, ${alreadyNewKey} already new-keyed, ${failed} failed`);
+  console.log(
+    `[rotate] done: ${ok} encrypted/rotated (${plaintextRows} were plaintext), ${alreadyNewKey} already new-keyed, ${failed} failed`
+  );
   if (failed > 0) process.exit(2);
 }
 
