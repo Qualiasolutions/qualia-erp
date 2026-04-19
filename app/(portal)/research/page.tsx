@@ -6,8 +6,6 @@ import { getResearchEntries } from '@/app/actions/research';
 
 export const metadata = { title: 'Research' };
 
-export const dynamic = 'force-dynamic';
-
 export default async function PortalResearchPage() {
   const supabase = await createClient();
   const {
