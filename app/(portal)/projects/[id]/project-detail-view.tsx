@@ -7,7 +7,6 @@ import { MobileMenuButton } from '@/components/mobile-menu-button';
 import {
   ArrowLeft,
   Folder,
-  FolderOpen,
   Trash2,
   User,
   Bot,
@@ -58,6 +57,7 @@ import { cn } from '@/lib/utils';
 import { ProjectNotes } from '@/components/project-notes';
 import { ProjectReportsPanel } from '@/components/project-reports-panel';
 import { ProjectResources } from '@/components/project-resources';
+import { ProjectFilesPanel } from '@/components/project-files-panel';
 import { LogoUpload } from '@/components/logo-upload';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { ProjectIntegrationsDisplay } from '@/components/project-integrations-display';
@@ -334,20 +334,6 @@ export function ProjectDetailView({
               </div>
             )}
 
-            {/* Files — quick link to project files page */}
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className="h-9 gap-1.5 rounded-lg text-muted-foreground hover:text-foreground"
-              title="Project files"
-            >
-              <Link href={`/projects/${project.id}/files`}>
-                <FolderOpen className="h-4 w-4" />
-                <span className="hidden sm:inline">Files</span>
-              </Link>
-            </Button>
-
             {/* Panel toggle (below xl only) */}
             <Button
               variant="ghost"
@@ -447,6 +433,15 @@ export function ProjectDetailView({
               <ProjectResources
                 projectId={project.id}
                 initialResources={project.metadata?.resources || []}
+                className="h-full rounded-none border-0"
+              />
+            </div>
+
+            {/* Files — project documents, column list */}
+            <div className="min-h-0 flex-1 border-b border-border">
+              <ProjectFilesPanel
+                projectId={project.id}
+                isClient={isClient}
                 className="h-full rounded-none border-0"
               />
             </div>
