@@ -592,6 +592,16 @@ export function ProjectWorkflow({
   const milestones = useMemo((): MilestoneGroup[] => {
     const groups = new Map<number, MilestoneGroup>();
 
+    // Normalize milestone labels so they match the framework's Milestone → Phase
+    // hierarchy visually. Upstream JOURNEY.md sometimes names milestone 0
+    // "Phase 0: …" for historical reasons, which collides with the "X/Y phases"
+    // child counter. Rewrite at display time — keeps DB + framework source intact.
+    const toMilestoneLabel = (rawName: string | undefined, msNum: number): string => {
+      if (rawName) return rawName.replace(/^Phase\s+(\d+)/i, 'Milestone $1');
+      if (msNum >= 0) return `Milestone ${msNum}`;
+      return 'Phases';
+    };
+
     for (const phase of phaseRecords) {
       const msNum = phase.milestone_number ?? -1;
       if (!groups.has(msNum)) {
@@ -599,9 +609,7 @@ export function ProjectWorkflow({
         const msRecord = milestoneRecords.find((m) => m.milestone_number === msNum);
         groups.set(msNum, {
           number: msNum,
-          name:
-            msRecord?.name ||
-            (msNum === 0 ? 'Phase 0' : msNum > 0 ? `Milestone ${msNum}` : 'Phases'),
+          name: toMilestoneLabel(msRecord?.name, msNum),
           phases: [],
           status: (msRecord?.status as MilestoneGroup['status']) || 'not_started',
         });
