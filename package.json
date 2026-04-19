@@ -37,6 +37,8 @@
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.86.0",
     "@tanstack/react-virtual": "^3.13.13",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.3.2",
     "@vercel/speed-insights": "^2.0.0",

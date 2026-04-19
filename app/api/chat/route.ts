@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     }
 
     // Rate limiting
-    const rateLimitResult = chatRateLimiter(user.id);
+    const rateLimitResult = await chatRateLimiter(user.id);
     if (!rateLimitResult.success) {
       const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
       return new Response(
