@@ -39,6 +39,14 @@ export async function POST(req: Request) {
       });
     }
 
+    // Role guard — block client accounts from AI assistant
+    if (user.role === 'client') {
+      return new Response(
+        JSON.stringify({ error: 'AI assistant is not available for client accounts' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Rate limiting
     const rateLimitResult = await chatRateLimiter(user.id);
     if (!rateLimitResult.success) {

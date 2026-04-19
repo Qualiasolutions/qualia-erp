@@ -39,6 +39,20 @@ export async function POST(req: Request) {
       });
     }
 
+    // Role guard — block client accounts from embeddings/RAG
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profile?.role === 'client') {
+      return new Response(JSON.stringify({ error: 'Access denied' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Get workspace
     const { data: membership } = await supabase
       .from('workspace_members')
