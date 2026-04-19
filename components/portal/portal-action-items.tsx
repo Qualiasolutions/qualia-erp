@@ -1,8 +1,20 @@
 'use client';
 
-import { useClientActionItems } from '@/lib/swr';
+import { useState } from 'react';
+import { useClientActionItems, invalidateClientActionItems } from '@/lib/swr';
+import { completeClientActionItem } from '@/app/actions/client-portal/action-items';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckSquare, Upload, MessageSquare, CreditCard, Circle, CheckCircle2 } from 'lucide-react';
+import {
+  CheckSquare,
+  Upload,
+  MessageSquare,
+  CreditCard,
+  Circle,
+  CheckCircle2,
+  Check,
+  Loader2,
+} from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PortalActionItemsProps {
   clientId: string;
@@ -69,8 +81,29 @@ const URGENCY_STYLES: Record<Urgency, { dot: string; date: string; icon: string 
 
 export function PortalActionItems({ clientId }: PortalActionItemsProps) {
   const { items, isLoading } = useClientActionItems(clientId);
+  const [completingId, setCompletingId] = useState<string | null>(null);
 
   const overdueCount = items.filter((item) => getUrgency(item.due_date) === 'overdue').length;
+
+  async function handleComplete(itemId: string) {
+    setCompletingId(itemId);
+    try {
+      const result = await completeClientActionItem(itemId);
+      if (result.success) {
+        toast.success('Action item completed');
+        invalidateClientActionItems(clientId);
+      } else {
+        toast.error(result.error || 'Failed to complete action item');
+        invalidateClientActionItems(clientId);
+      }
+    } catch (err) {
+      console.error('[PortalActionItems] Complete error:', err);
+      toast.error('Failed to complete action item');
+      invalidateClientActionItems(clientId);
+    } finally {
+      setCompletingId(null);
+    }
+  }
 
   return (
     <div className="rounded-xl border border-border bg-card p-6">
@@ -117,11 +150,27 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
             const styles = URGENCY_STYLES[urgency];
             const Icon = ACTION_TYPE_ICONS[item.action_type] || Circle;
 
+            const isCompleting = completingId === item.id;
+
             return (
               <div
                 key={item.id}
                 className="flex items-center gap-3 rounded-lg px-3 py-3 transition-colors duration-150 hover:bg-muted/30"
               >
+                <button
+                  type="button"
+                  onClick={() => handleComplete(item.id)}
+                  disabled={isCompleting}
+                  aria-label={`Complete "${item.title}"`}
+                  className="flex h-[44px] w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors duration-150 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isCompleting ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  ) : (
+                    <Check className="h-4 w-4 text-muted-foreground/60" />
+                  )}
+                </button>
+
                 <Icon className={`h-3.5 w-3.5 shrink-0 ${styles.icon}`} />
 
                 <div className="min-w-0 flex-1">

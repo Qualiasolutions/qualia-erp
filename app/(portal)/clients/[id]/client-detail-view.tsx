@@ -19,6 +19,7 @@ import { WorkShowcase } from '@/components/work-showcase';
 import { EditClientModal } from '@/components/edit-client-modal';
 import { LogoUpload } from '@/components/logo-upload';
 import { ClientProjectAccess } from '@/components/clients/client-project-access';
+import { AdminActionItemsPanel } from '@/components/portal/admin-action-items-panel';
 import { RichText } from '@/components/ui/rich-text';
 import { updateProject } from '@/app/actions';
 import { toast } from 'sonner';
@@ -462,6 +463,14 @@ export function ClientDetailView({
           availableProjects={availableProjects}
           isAdmin={isAdmin}
         />
+
+        {/* Action Items — admin can create action items for this client */}
+        {isAdmin && erpLinkedProjects.length > 0 && (
+          <AdminActionItemsPanel
+            clientId={client.id}
+            projects={erpLinkedProjects.map((p) => ({ id: p.id, name: p.name }))}
+          />
+        )}
 
         {/* Work Showcase */}
         {workItems.length > 0 && (
