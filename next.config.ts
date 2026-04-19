@@ -8,6 +8,8 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  // Enable Cache Components ('use cache' directive) for opt-in request-level caching
+  cacheComponents: true,
   // Security headers
   async headers() {
     return [

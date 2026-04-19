@@ -18,6 +18,7 @@ const TEAM_ID = 'c8ec2ea1-325e-4ea9-9334-4590e88845f9';
 
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),
+  updateTag: jest.fn(),
 }));
 
 jest.mock('@/lib/supabase/server', () => ({

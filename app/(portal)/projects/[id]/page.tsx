@@ -1,7 +1,8 @@
 import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { getProjectById, getProfiles, getCurrentUserProfile, getClients } from '@/app/actions';
+import { getProfiles, getCurrentUserProfile, getClients } from '@/app/actions';
+import { getCachedProjectById } from '@/lib/cached-reads';
 import { getProjectIntegrationStatus } from '@/lib/integration-utils';
 import { getPortalAuthUser } from '@/lib/portal-cache';
 import { createClient } from '@/lib/supabase/server';
@@ -35,7 +36,7 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
 
   // Fetch all data in parallel on the server
   const [project, profiles, userProfile, integrationStatus, clientsRaw] = await Promise.all([
-    getProjectById(id),
+    getCachedProjectById(id),
     getProfiles(),
     getCurrentUserProfile(),
     getProjectIntegrationStatus(id),

@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { updateTag } from 'next/cache';
 import { z } from 'zod';
 
 import {
@@ -491,6 +492,9 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
+  // Invalidate cached project data
+  updateTag(`project-${id}`);
+
   // Notify clients if status changed (fire-and-forget)
   if (status !== undefined && existingProject && existingProject.status !== status) {
     const { data: employee } = await supabase
@@ -539,6 +543,9 @@ export async function deleteProject(id: string): Promise<ActionResult> {
     console.error('Error deleting project:', error);
     return { success: false, error: error.message };
   }
+
+  // Invalidate cached project data
+  updateTag(`project-${id}`);
 
   return { success: true };
 }
@@ -656,6 +663,9 @@ export async function updateProjectStatus(
     return { success: false, error: error.message };
   }
 
+  // Invalidate cached project data
+  updateTag(`project-${projectId}`);
+
   // Notify clients if status changed (fire-and-forget)
   if (existingProject && existingProject.status !== newStatus) {
     const { data: employee } = await supabase
@@ -712,6 +722,9 @@ export async function toggleProjectPreProduction(projectId: string): Promise<Act
     console.error('Error toggling pre-production:', error);
     return { success: false, error: error.message };
   }
+
+  // Invalidate cached project data
+  updateTag(`project-${projectId}`);
 
   return { success: true };
 }

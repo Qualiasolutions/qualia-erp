@@ -6,3 +6,6 @@ export const unstable_cache = jest.fn(<T>(fn: (...args: any[]) => Promise<T>) =>
 export const revalidatePath = jest.fn();
 export const revalidateTag = jest.fn();
 export const unstable_noStore = jest.fn();
+export const updateTag = jest.fn();
+export const cacheTag = jest.fn();
+export const cacheLife = jest.fn();
