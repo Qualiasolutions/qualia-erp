@@ -10,12 +10,12 @@ import { randomBytes } from 'node:crypto';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net';
 
 /**
- * H14 (OPTIMIZE.md): `getPortalHubData` + `getPortalClientManagement` both
- * called `supabase.auth.admin.listUsers({ perPage: 1000 })` on every dashboard
+ * H14 (OPTIMIZE.md): `getPortalClientManagement` calls
+ * `supabase.auth.admin.listUsers({ perPage: 1000 })` on every dashboard
  * load. The GoTrue admin endpoint takes ~200-500ms per call and is rate-limited.
  *
  * Here we wrap the listUsers round-trip in `unstable_cache` keyed by a
- * stable tag so both action call sites share a single 120-second snapshot.
+ * stable tag so action call sites share a single 120-second snapshot.
  * The cached value is a plain object (email -> last_sign_in_at) so it round-trips
  * through the cache layer without Map serialization issues. Callers build a
  * Map from the returned record.
@@ -364,138 +364,6 @@ export async function revokePortalAccess(portalUserId: string): Promise<ActionRe
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to revoke portal access',
-    };
-  }
-}
-
-// ============================================================================
-// SECTION: Portal Admin Management
-// ============================================================================
-
-/**
- * Get admin portal management data:
- * - All projects with their assigned client count
- * - All client accounts with their project assignments
- */
-export async function getPortalAdminData(): Promise<ActionResult> {
-  try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: 'Not authenticated' };
-    }
-
-    if (!(await isUserManagerOrAbove(user.id))) {
-      return { success: false, error: 'Admin access required' };
-    }
-
-    // Get all client accounts
-    const { data: clients, error: clientsError } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, role, created_at')
-      .eq('role', 'client')
-      .order('created_at', { ascending: false });
-
-    if (clientsError) {
-      return { success: false, error: clientsError.message };
-    }
-
-    // Get all client-project assignments
-    const { data: assignments, error: assignmentsError } = await supabase
-      .from('client_projects')
-      .select(
-        `
-        id,
-        client_id,
-        project_id,
-        access_level,
-        invited_at,
-        invited_by,
-        client:profiles!client_id(id, full_name, email),
-        project:projects!project_id(id, name, status, project_type)
-      `
-      )
-      .order('invited_at', { ascending: false });
-
-    if (assignmentsError) {
-      return { success: false, error: assignmentsError.message };
-    }
-
-    // Normalize FK arrays
-    const normalizedAssignments = (assignments || []).map((a) => ({
-      ...a,
-      client: Array.isArray(a.client) ? a.client[0] || null : a.client,
-      project: Array.isArray(a.project) ? a.project[0] || null : a.project,
-    }));
-
-    return {
-      success: true,
-      data: {
-        clients: clients || [],
-        assignments: normalizedAssignments,
-      },
-    };
-  } catch (error) {
-    console.error('[getPortalAdminData] Error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to load admin data',
-    };
-  }
-}
-
-/**
- * Reset a client's password by sending a reset email
- */
-export async function sendClientPasswordReset(email: string): Promise<ActionResult> {
-  try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: 'Not authenticated' };
-    }
-
-    if (!(await isUserManagerOrAbove(user.id))) {
-      return { success: false, error: 'Admin access required' };
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-
-    // Verify target is a client-role profile before sending reset
-    const { data: targetProfile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('email', normalizedEmail)
-      .single();
-
-    if (!targetProfile) {
-      return { success: false, error: 'No portal account found for this email' };
-    }
-
-    if (targetProfile.role !== 'client') {
-      return { success: false, error: 'Password reset is only available for client accounts' };
-    }
-
-    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-      redirectTo: `${APP_URL}/auth/reset-password/confirm`,
-    });
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error('[sendClientPasswordReset] Error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to send reset email',
     };
   }
 }
@@ -926,8 +794,8 @@ export async function getPortalClientManagement(): Promise<ActionResult> {
       return { success: false, error: 'Admin access required' };
     }
 
-    // Fetch all data in parallel. The cached sign-in map (H14) is shared
-    // with getPortalHubData so both hit the same 120s snapshot.
+    // Fetch all data in parallel. The cached sign-in map (H14) avoids
+    // redundant auth.admin.listUsers calls via a 120s snapshot.
     const [clientsResult, assignmentsResult, signInRecord] = await Promise.all([
       // All client profiles
       supabase
@@ -997,110 +865,6 @@ export async function getPortalClientManagement(): Promise<ActionResult> {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to load client management data',
-    };
-  }
-}
-
-// ============================================================================
-// SECTION: Bulk Operations
-// ============================================================================
-
-/**
- * Bulk setup portal access for multiple CRM clients at once.
- * Runs setupPortalForClient sequentially for each crmClientId (not in parallel to avoid rate limits).
- * Returns per-client results. success:true if at least one client succeeded.
- */
-export async function bulkSetupPortalForClients(
-  crmClientIds: string[],
-  projectIds: string[]
-): Promise<ActionResult> {
-  try {
-    const supabase = await createClient();
-
-    // Auth check
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: 'Not authenticated' };
-    }
-
-    if (!(await isUserManagerOrAbove(user.id))) {
-      return { success: false, error: 'Admin access required' };
-    }
-
-    // Validate inputs
-    if (!crmClientIds || crmClientIds.length === 0) {
-      return { success: false, error: 'At least one CRM client must be selected' };
-    }
-
-    if (!projectIds || projectIds.length === 0) {
-      return { success: false, error: 'At least one project must be selected' };
-    }
-
-    type BulkResult = {
-      crmClientId: string;
-      success: boolean;
-      email?: string;
-      name?: string;
-      tempPassword?: string;
-      alreadyExisted?: boolean;
-      projectsLinked?: number;
-      error?: string;
-    };
-
-    const results: BulkResult[] = [];
-
-    // Run sequentially to avoid rate limits with auth admin API
-    for (const crmClientId of crmClientIds) {
-      const result = await setupPortalForClient(crmClientId, projectIds);
-
-      if (result.success && result.data) {
-        const data = result.data as {
-          userId: string;
-          email: string;
-          name: string;
-          tempPassword?: string;
-          alreadyExisted: boolean;
-          projectsLinked: number;
-        };
-
-        results.push({
-          crmClientId,
-          success: true,
-          email: data.email,
-          name: data.name,
-          tempPassword: data.tempPassword,
-          alreadyExisted: data.alreadyExisted,
-          projectsLinked: data.projectsLinked,
-        });
-      } else {
-        results.push({
-          crmClientId,
-          success: false,
-          error: result.error || 'Unknown error',
-        });
-      }
-    }
-
-    const totalSuccess = results.filter((r) => r.success).length;
-    const totalFailed = results.filter((r) => !r.success).length;
-
-    // Return success:true if at least one client succeeded; false only if ALL failed
-    return {
-      success: totalSuccess > 0,
-      data: {
-        results,
-        totalSuccess,
-        totalFailed,
-      },
-      ...(totalSuccess === 0 && { error: 'All client setups failed' }),
-    };
-  } catch (error) {
-    console.error('[bulkSetupPortalForClients] Unexpected error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to bulk setup portal clients',
     };
   }
 }
@@ -1192,7 +956,7 @@ export async function resetClientPassword(email: string): Promise<ActionResult> 
 }
 
 // ============================================================================
-// PORTAL HUB — ALL CRM CLIENTS WITH PORTAL STATUS
+// PORTAL HUB — TYPES
 // ============================================================================
 
 export interface PortalHubClient {
@@ -1204,167 +968,6 @@ export interface PortalHubClient {
   hasPortalAccess: boolean;
   portalUserId: string | null;
   lastSignIn: string | null;
-}
-
-/**
- * Get all CRM clients with their projects and portal access status.
- * Used by the admin portal hub page.
- */
-export async function getPortalHubData(): Promise<ActionResult> {
-  try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: 'Not authenticated' };
-    }
-
-    if (!(await isUserManagerOrAbove(user.id))) {
-      return { success: false, error: 'Admin access required' };
-    }
-
-    // Fetch CRM clients, contacts, projects, portal profiles, and assignments in parallel
-    const [clientsResult, contactsResult, projectsResult, portalProfilesResult, assignmentsResult] =
-      await Promise.all([
-        supabase.from('clients').select('id, name, lead_status').order('name'),
-        supabase.from('client_contacts').select('client_id, email, is_primary'),
-        supabase
-          .from('projects')
-          .select('id, name, status, project_type, client_id')
-          .not('status', 'eq', 'Canceled')
-          .order('name'),
-        supabase.from('profiles').select('id, email, full_name').eq('role', 'client'),
-        supabase.from('client_projects').select('client_id, project_id'),
-      ]);
-
-    if (clientsResult.error) {
-      return { success: false, error: clientsResult.error.message };
-    }
-
-    // Build email -> portal profile map
-    const emailToPortalProfile = new Map<string, { id: string; email: string | null }>();
-    for (const profile of portalProfilesResult.data ?? []) {
-      if (profile.email) {
-        emailToPortalProfile.set(profile.email.toLowerCase(), {
-          id: profile.id,
-          email: profile.email,
-        });
-      }
-    }
-
-    // Build portal user ID -> assigned project IDs
-    const portalAssignments = new Map<string, Set<string>>();
-    for (const a of assignmentsResult.data ?? []) {
-      const existing = portalAssignments.get(a.client_id) ?? new Set();
-      existing.add(a.project_id);
-      portalAssignments.set(a.client_id, existing);
-    }
-
-    // Build client_id -> projects map
-    const clientProjectsMap = new Map<
-      string,
-      Array<{ id: string; name: string; status: string | null; project_type: string | null }>
-    >();
-    for (const project of projectsResult.data ?? []) {
-      if (!project.client_id) continue;
-      const existing = clientProjectsMap.get(project.client_id) ?? [];
-      existing.push({
-        id: project.id,
-        name: project.name,
-        status: project.status,
-        project_type: project.project_type,
-      });
-      clientProjectsMap.set(project.client_id, existing);
-    }
-
-    // Last-sign-in data via the cached shared helper (H14). Swallows
-    // service-role-missing errors internally and returns an empty record.
-    const signInRecord = await getCachedPortalSignInMap();
-    const signInMap = new Map<string, string | null>(Object.entries(signInRecord));
-
-    // Build client_id -> primary email map from client_contacts
-    const clientEmailMap = new Map<string, string>();
-    for (const contact of contactsResult.data ?? []) {
-      if (!contact.email) continue;
-      const email = contact.email.trim().toLowerCase();
-      // Prefer primary contact, otherwise first one found
-      if (contact.is_primary || !clientEmailMap.has(contact.client_id)) {
-        clientEmailMap.set(contact.client_id, email);
-      }
-    }
-
-    // Build project ID -> project detail map for portal assignment lookups
-    const projectById = new Map<
-      string,
-      { id: string; name: string; status: string | null; project_type: string | null }
-    >();
-    for (const project of projectsResult.data ?? []) {
-      projectById.set(project.id, {
-        id: project.id,
-        name: project.name,
-        status: project.status,
-        project_type: project.project_type,
-      });
-    }
-
-    // Build the hub data — merge CRM projects + portal assignments
-    const clients: PortalHubClient[] = (clientsResult.data ?? []).map((client) => {
-      const firstEmail = clientEmailMap.get(client.id) ?? null;
-      const portalProfile = firstEmail ? emailToPortalProfile.get(firstEmail) : null;
-
-      // Start with CRM-linked projects
-      const crmProjects = clientProjectsMap.get(client.id) ?? [];
-      const projectIdSet = new Set(crmProjects.map((p) => p.id));
-
-      // Merge in portal-assigned projects (from client_projects table)
-      if (portalProfile) {
-        const assignedIds = portalAssignments.get(portalProfile.id);
-        if (assignedIds) {
-          for (const pid of assignedIds) {
-            if (!projectIdSet.has(pid)) {
-              const proj = projectById.get(pid);
-              if (proj) {
-                crmProjects.push(proj);
-                projectIdSet.add(pid);
-              }
-            }
-          }
-        }
-      }
-
-      return {
-        id: client.id,
-        name: client.name,
-        email: firstEmail,
-        leadStatus: client.lead_status,
-        projects: crmProjects,
-        hasPortalAccess: !!portalProfile,
-        portalUserId: portalProfile?.id ?? null,
-        lastSignIn: firstEmail ? (signInMap.get(firstEmail) ?? null) : null,
-      };
-    });
-
-    // Collect all project IDs that are assigned to any portal user (for deduplication in UI)
-    const allAssignedProjectIds: string[] = [];
-    for (const ids of portalAssignments.values()) {
-      for (const pid of ids) {
-        allAssignedProjectIds.push(pid);
-      }
-    }
-
-    return {
-      success: true,
-      data: { clients, assignedProjectIds: allAssignedProjectIds },
-    };
-  } catch (error) {
-    console.error('[getPortalHubData] Error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to load portal hub data',
-    };
-  }
 }
 
 // ============================================================================

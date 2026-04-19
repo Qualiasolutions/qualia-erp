@@ -1,12 +1,12 @@
 export {};
 
 /**
- * Characterization tests for client-portal.ts — safety net for the god-module split.
+ * Characterization tests for client-portal — safety net for the god-module split.
  *
- * Covers 10 exports with contract-level assertions:
- *   getPortalHubData, getPortalClientManagement, getClientDashboardData,
- *   getClientDashboardProjects, getClientInvoices, getClientActivityFeed,
- *   getClientActionItems, setupPortalForClient, getProjectFeatures,
+ * Covers 7 exports with contract-level assertions:
+ *   getPortalClientManagement, getClientDashboardData,
+ *   getClientDashboardProjects, getClientInvoices,
+ *   getClientActionItems, setupPortalForClient,
  *   createClientActionItem
  *
  * Each export has:
@@ -65,15 +65,12 @@ jest.mock('@/lib/supabase/server', () => ({
 // --- Imports ---
 
 import {
-  getPortalHubData,
   getPortalClientManagement,
   getClientDashboardData,
   getClientDashboardProjects,
   getClientInvoices,
-  getClientActivityFeed,
   getClientActionItems,
   setupPortalForClient,
-  getProjectFeatures,
   createClientActionItem,
 } from '@/app/actions/client-portal';
 import { isUserManagerOrAbove } from '@/app/actions/shared';
@@ -135,65 +132,7 @@ beforeEach(() => {
 });
 
 // ============================================================================
-// 1. getPortalHubData
-// ============================================================================
-
-describe('getPortalHubData — characterization', () => {
-  it('rejects unauthenticated calls', async () => {
-    mockAuth(null);
-    const result = await getPortalHubData();
-    expect(result).toEqual({ success: false, error: 'Not authenticated' });
-  });
-
-  it('rejects non-admin users', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
-    const result = await getPortalHubData();
-    expect(result).toEqual({ success: false, error: 'Admin access required' });
-  });
-
-  it('returns { clients, assignedProjectIds } on success', async () => {
-    // getPortalHubData does 5 parallel queries + getCachedPortalSignInMap
-    // All return empty arrays for the simplest success path
-    supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
-
-    const result = await getPortalHubData();
-    expect(result.success).toBe(true);
-    const data = result.data as { clients: unknown[]; assignedProjectIds: unknown[] };
-    expect(Array.isArray(data.clients)).toBe(true);
-    expect(Array.isArray(data.assignedProjectIds)).toBe(true);
-  });
-
-  it('returns shaped client objects with correct keys', async () => {
-    const clientRows = [{ id: 'c1', name: 'Acme Corp', lead_status: 'active' }];
-    const contactRows = [{ client_id: 'c1', email: 'acme@example.com', is_primary: true }];
-
-    // Mock the 5 from() calls in order: clients, client_contacts, projects, profiles, client_projects
-    supabase.from
-      .mockReturnValueOnce(buildChain({ data: clientRows, error: null }))
-      .mockReturnValueOnce(buildChain({ data: contactRows, error: null }))
-      .mockReturnValueOnce(buildChain({ data: [], error: null })) // projects
-      .mockReturnValueOnce(buildChain({ data: [], error: null })) // profiles (client role)
-      .mockReturnValue(buildChain({ data: [], error: null })); // client_projects
-
-    const result = await getPortalHubData();
-    expect(result.success).toBe(true);
-    const data = result.data as { clients: Array<Record<string, unknown>> };
-    expect(data.clients).toHaveLength(1);
-    expect(data.clients[0]).toEqual(
-      expect.objectContaining({
-        id: 'c1',
-        name: 'Acme Corp',
-        email: 'acme@example.com',
-        hasPortalAccess: false,
-        portalUserId: null,
-        lastSignIn: null,
-      })
-    );
-  });
-});
-
-// ============================================================================
-// 2. getPortalClientManagement
+// 1. getPortalClientManagement
 // ============================================================================
 
 describe('getPortalClientManagement — characterization', () => {
@@ -226,7 +165,7 @@ describe('getPortalClientManagement — characterization', () => {
 });
 
 // ============================================================================
-// 3. getClientDashboardData
+// 2. getClientDashboardData
 // ============================================================================
 
 describe('getClientDashboardData — characterization', () => {
@@ -273,7 +212,7 @@ describe('getClientDashboardData — characterization', () => {
 });
 
 // ============================================================================
-// 4. getClientDashboardProjects
+// 3. getClientDashboardProjects
 // ============================================================================
 
 describe('getClientDashboardProjects — characterization', () => {
@@ -345,7 +284,7 @@ describe('getClientDashboardProjects — characterization', () => {
 });
 
 // ============================================================================
-// 5. getClientInvoices
+// 4. getClientInvoices
 // ============================================================================
 
 describe('getClientInvoices — characterization', () => {
@@ -402,67 +341,7 @@ describe('getClientInvoices — characterization', () => {
 });
 
 // ============================================================================
-// 6. getClientActivityFeed
-// ============================================================================
-
-describe('getClientActivityFeed — characterization', () => {
-  it('rejects unauthenticated calls', async () => {
-    mockAuth(null);
-    const result = await getClientActivityFeed(CLIENT_ID);
-    expect(result).toEqual({ success: false, error: 'Not authenticated' });
-  });
-
-  it('rejects unauthorized users (not self and not admin)', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
-    const result = await getClientActivityFeed(CLIENT_ID);
-    expect(result).toEqual({ success: false, error: 'Not authorized' });
-  });
-
-  it('returns empty feed when client has no projects (self-access)', async () => {
-    mockAuth({ id: CLIENT_ID, email: 'client@test.com' });
-    supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
-
-    const result = await getClientActivityFeed(CLIENT_ID);
-    expect(result.success).toBe(true);
-    const data = result.data as { items: unknown[]; hasMore: boolean; nextCursor: unknown };
-    expect(data.items).toEqual([]);
-    expect(data.hasMore).toBe(false);
-    expect(data.nextCursor).toBeNull();
-  });
-
-  it('returns normalized activity items with FK objects (not arrays)', async () => {
-    mockAuth({ id: CLIENT_ID, email: 'client@test.com' });
-    const clientProjects = [{ project_id: PROJECT_ID }];
-    const activityData = [
-      {
-        id: 'act-1',
-        project_id: PROJECT_ID,
-        action_type: 'phase_completed',
-        actor_id: USER_ID,
-        action_data: {},
-        is_client_visible: true,
-        created_at: '2024-06-01T10:00:00Z',
-        project: [{ id: PROJECT_ID, name: 'Test Project' }],
-        actor: [{ id: USER_ID, full_name: 'Admin', avatar_url: null }],
-      },
-    ];
-
-    supabase.from
-      .mockReturnValueOnce(buildChain({ data: clientProjects, error: null }))
-      .mockReturnValue(buildChain({ data: activityData, error: null }));
-
-    const result = await getClientActivityFeed(CLIENT_ID, 20);
-    expect(result.success).toBe(true);
-    const data = result.data as { items: Array<{ project: unknown; actor: unknown }> };
-    expect(data.items).toHaveLength(1);
-    // FK arrays must be normalized to plain objects
-    expect(Array.isArray(data.items[0].project)).toBe(false);
-    expect(Array.isArray(data.items[0].actor)).toBe(false);
-  });
-});
-
-// ============================================================================
-// 7. getClientActionItems
+// 5. getClientActionItems
 // ============================================================================
 
 describe('getClientActionItems — characterization', () => {
@@ -518,7 +397,7 @@ describe('getClientActionItems — characterization', () => {
 });
 
 // ============================================================================
-// 8. setupPortalForClient
+// 6. setupPortalForClient
 // ============================================================================
 
 describe('setupPortalForClient — characterization', () => {
@@ -559,79 +438,7 @@ describe('setupPortalForClient — characterization', () => {
 });
 
 // ============================================================================
-// 9. getProjectFeatures
-// ============================================================================
-
-describe('getProjectFeatures — characterization', () => {
-  it('rejects unauthenticated calls', async () => {
-    mockAuth(null);
-    const result = await getProjectFeatures(PROJECT_ID);
-    expect(result).toEqual({ success: false, error: 'Not authenticated' });
-  });
-
-  it('rejects unauthorized non-admin who is not linked to project', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
-    // client_projects check returns nothing
-    supabase.from.mockReturnValue(
-      buildChain({ data: null, error: { code: 'PGRST116', message: 'No rows' } })
-    );
-
-    const result = await getProjectFeatures(PROJECT_ID);
-    expect(result.success).toBe(false);
-    expect(result.error).toBe('Not authorized to view this project');
-  });
-
-  it('returns features with normalized uploader and url for admin', async () => {
-    const fileRows = [
-      {
-        id: 'file-1',
-        name: 'design-v1.png',
-        original_name: 'design-v1.png',
-        description: null,
-        file_size: 1024,
-        mime_type: 'image/png',
-        storage_path: 'projects/abc/design-v1.png',
-        phase_name: 'Design',
-        created_at: '2024-06-01T00:00:00Z',
-        uploaded_by: USER_ID,
-        uploader: [{ id: USER_ID, full_name: 'Admin', avatar_url: null }],
-      },
-    ];
-    supabase.from.mockReturnValue(buildChain({ data: fileRows, error: null }));
-
-    const result = await getProjectFeatures(PROJECT_ID);
-    expect(result.success).toBe(true);
-    const data = result.data as Array<Record<string, unknown>>;
-    expect(data).toHaveLength(1);
-    expect(data[0]).toEqual(
-      expect.objectContaining({
-        id: 'file-1',
-        name: 'design-v1.png',
-      })
-    );
-    // FK normalized: uploader is object, not array
-    expect(Array.isArray(data[0].uploader)).toBe(false);
-    // URL is populated from storage mock
-    expect(data[0].url).toBe('https://example.com/test.png');
-  });
-
-  it('allows client access when linked to project', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
-
-    // First from() call: client_projects check succeeds
-    // Second from() call: project_files query
-    supabase.from
-      .mockReturnValueOnce(buildChain({ data: { id: 'link-1' }, error: null }))
-      .mockReturnValue(buildChain({ data: [], error: null }));
-
-    const result = await getProjectFeatures(PROJECT_ID);
-    expect(result.success).toBe(true);
-    expect(result.data).toEqual([]);
-  });
-});
-
-// ============================================================================
-// 10. createClientActionItem
+// 7. createClientActionItem
 // ============================================================================
 
 describe('createClientActionItem — characterization', () => {

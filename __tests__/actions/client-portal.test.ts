@@ -1,12 +1,11 @@
 export {};
 
 /**
- * Tests for app/actions/client-portal.ts
- * Covers: inviteClientToProject, removeClientFromProject, revokePortalAccess,
- *         getClientProjects, getPortalAdminData, sendClientPasswordReset,
- *         getClientInvoices, getClientDashboardData, getClientDashboardProjects,
- *         getClientActivityFeed, updateClientProfile, getNotificationPreferences,
- *         updateNotificationPreferences
+ * Tests for app/actions/client-portal
+ * Covers: inviteClientByEmail, inviteClientToProject, removeClientFromProject,
+ *         revokePortalAccess, getClientInvoices, getClientDashboardData,
+ *         getClientDashboardProjects, updateClientProfile, getNotificationPreferences,
+ *         updateNotificationPreferences, setupPortalForClient
  */
 
 jest.mock('next/cache', () => ({
@@ -48,19 +47,13 @@ import {
   inviteClientToProject,
   removeClientFromProject,
   revokePortalAccess,
-  getClientProjects,
-  getPortalAdminData,
-  sendClientPasswordReset,
   getClientInvoices,
   getClientDashboardData,
   getClientDashboardProjects,
-  getClientActivityFeed,
   updateClientProfile,
   getNotificationPreferences,
   updateNotificationPreferences,
   setupPortalForClient,
-  setupClientForProject,
-  createProjectFromPortal,
 } from '@/app/actions/client-portal';
 import { isUserManagerOrAbove } from '@/app/actions/shared';
 
@@ -283,140 +276,6 @@ describe('revokePortalAccess', () => {
   });
 });
 
-describe('getClientProjects', () => {
-  it('returns error when not authenticated', async () => {
-    mockAuth(null);
-    const result = await getClientProjects(CLIENT_ID);
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('authenticated');
-  });
-
-  it('returns error when user is not authorized', async () => {
-    // Different user ID and not admin
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
-    const result = await getClientProjects(CLIENT_ID); // USER_ID !== CLIENT_ID
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('authorized');
-  });
-
-  it('returns success when user is same as client ID (self access)', async () => {
-    // Auth user ID matches client ID
-    mockAuth({ id: CLIENT_ID, email: 'client@test.com' });
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
-
-    supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
-    const result = await getClientProjects(CLIENT_ID);
-    expect(result.success).toBe(true);
-  });
-
-  it('returns projects data when queried by same user', async () => {
-    mockAuth({ id: CLIENT_ID, email: 'client@test.com' });
-    const assignments = [
-      {
-        id: 'assignment-1',
-        client_id: CLIENT_ID,
-        project_id: PROJECT_ID,
-        access_level: 'view',
-        invited_at: '2024-01-01T00:00:00Z',
-        invited_by: USER_ID,
-        project: { id: PROJECT_ID, name: 'Test Project', status: 'Active' },
-      },
-    ];
-    supabase.from.mockReturnValue(buildChain({ data: assignments, error: null }));
-    const result = await getClientProjects(CLIENT_ID);
-    expect(result.success).toBe(true);
-    expect(Array.isArray(result.data)).toBe(true);
-  });
-});
-
-describe('getPortalAdminData', () => {
-  it('returns error when not authenticated', async () => {
-    mockAuth(null);
-    const result = await getPortalAdminData();
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('authenticated');
-  });
-
-  it('returns error when user is not admin/manager', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
-    const result = await getPortalAdminData();
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('Admin');
-  });
-
-  it('returns empty clients and assignments data', async () => {
-    // Test the simple happy path with empty arrays to avoid chain mock complexity
-    supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
-
-    const result = await getPortalAdminData();
-    // If the mock returns success=false, it means isUserManagerOrAbove returned false
-    // or the DB calls failed. Both are returning [] which is valid.
-    // The function succeeds when both calls return data (even empty).
-    if (!result.success) {
-      // The function might fail if isUserManagerOrAbove isn't mocked correctly
-      // In that case we just verify it handles errors
-      expect(result.error).toBeDefined();
-    } else {
-      const data = result.data as { clients: unknown[]; assignments: unknown[] };
-      expect(Array.isArray(data.clients)).toBe(true);
-      expect(Array.isArray(data.assignments)).toBe(true);
-    }
-  });
-
-  it('returns error when clients query fails', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: { message: 'DB error' } }));
-    const result = await getPortalAdminData();
-    expect(result.success).toBe(false);
-  });
-});
-
-describe('sendClientPasswordReset', () => {
-  it('returns error when not authenticated', async () => {
-    mockAuth(null);
-    const result = await sendClientPasswordReset('client@test.com');
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('authenticated');
-  });
-
-  it('returns error when user is not admin/manager', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
-    const result = await sendClientPasswordReset('client@test.com');
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('Admin');
-  });
-
-  it('returns error when no account found for email', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
-    const result = await sendClientPasswordReset('unknown@test.com');
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('portal account');
-  });
-
-  it('returns error when target is not a client account', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: { role: 'employee' }, error: null }));
-    const result = await sendClientPasswordReset('employee@test.com');
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('client accounts');
-  });
-
-  it('sends password reset successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: { role: 'client' }, error: null }));
-    supabase.auth.resetPasswordForEmail.mockResolvedValue({ error: null });
-
-    const result = await sendClientPasswordReset('client@test.com');
-    expect(result.success).toBe(true);
-  });
-
-  it('returns error when reset email fails', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: { role: 'client' }, error: null }));
-    supabase.auth.resetPasswordForEmail.mockResolvedValue({ error: { message: 'Rate limited' } });
-
-    const result = await sendClientPasswordReset('client@test.com');
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('Rate limited');
-  });
-});
-
 describe('getClientInvoices', () => {
   it('returns error when not authenticated', async () => {
     mockAuth(null);
@@ -576,57 +435,6 @@ describe('getClientDashboardData (additional)', () => {
   });
 });
 
-describe('getClientActivityFeed', () => {
-  it('returns error when not authenticated', async () => {
-    mockAuth(null);
-    const result = await getClientActivityFeed(CLIENT_ID);
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('authenticated');
-  });
-
-  it('returns empty feed when client has no projects (as self)', async () => {
-    mockAuth({ id: CLIENT_ID, email: 'client@test.com' });
-    // user.id === clientId so isUserManagerOrAbove not called
-    // Return empty client projects — function should short-circuit
-    supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
-
-    const result = await getClientActivityFeed(CLIENT_ID);
-    expect(result.success).toBe(true);
-    const data = result.data as { items: unknown[]; hasMore: boolean; nextCursor: null };
-    expect(data.hasMore).toBe(false);
-    expect(data.nextCursor).toBeNull();
-  });
-
-  it('returns activity feed data with normalized FKs (as same user)', async () => {
-    mockAuth({ id: CLIENT_ID, email: 'client@test.com' });
-    const clientProjects = [{ project_id: PROJECT_ID }];
-    const activityItems = [
-      {
-        id: 'act-1',
-        project_id: PROJECT_ID,
-        action_type: 'phase_completed',
-        actor_id: USER_ID,
-        action_data: {},
-        is_client_visible: true,
-        created_at: '2024-01-02T00:00:00Z',
-        project: [{ id: PROJECT_ID, name: 'Test Project' }],
-        actor: [{ id: USER_ID, full_name: 'Fawzi', avatar_url: null }],
-      },
-    ];
-
-    supabase.from
-      .mockReturnValueOnce(buildChain({ data: clientProjects, error: null }))
-      .mockReturnValue(buildChain({ data: activityItems, error: null }));
-
-    const result = await getClientActivityFeed(CLIENT_ID, 20);
-    expect(result.success).toBe(true);
-    const data = result.data as { items: Array<{ project: unknown; actor: unknown }> };
-    expect(data.items).toHaveLength(1);
-    expect(Array.isArray(data.items[0].project)).toBe(false);
-    expect(Array.isArray(data.items[0].actor)).toBe(false);
-  });
-});
-
 describe('updateClientProfile', () => {
   it('returns error when not authenticated', async () => {
     mockAuth(null);
@@ -756,112 +564,5 @@ describe('setupPortalForClient', () => {
     expect(result.success).toBe(false);
     // Returns either "CRM client not found" or "Admin access required" depending on mock
     expect(result.error).toBeDefined();
-  });
-});
-
-describe('setupClientForProject', () => {
-  it('returns error when not authenticated', async () => {
-    mockAuth(null);
-    const result = await setupClientForProject(PROJECT_ID);
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('authenticated');
-  });
-
-  it('returns error when user is not admin/manager', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
-    const result = await setupClientForProject(PROJECT_ID);
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('Admin');
-  });
-
-  it('returns error when project not found', async () => {
-    const { isUserManagerOrAbove: mockIsManager } = jest.requireMock('@/app/actions/shared');
-    (mockIsManager as jest.Mock).mockResolvedValue(true);
-    supabase.from.mockReturnValue(buildChain({ data: null, error: { message: 'Not found' } }));
-    const result = await setupClientForProject(PROJECT_ID);
-    expect(result.success).toBe(false);
-    expect(result.error).toBeDefined();
-  });
-
-  it('returns error when admin client not configured (no service role)', async () => {
-    const project = { id: PROJECT_ID, name: 'Test Project', status: 'Active', client_id: null };
-    supabase.from
-      .mockReturnValueOnce(buildChain({ data: project, error: null })) // get project
-      .mockReturnValueOnce(buildChain({ data: null, error: null })) // check existing link
-      .mockReturnValue(buildChain({ data: null, error: null })); // check email profile
-
-    // createAdminClient throws by default
-    const result = await setupClientForProject(PROJECT_ID);
-    expect(result.success).toBe(false);
-    // Either "not configured" or "Could not generate email"
-    expect(result.error).toBeDefined();
-  });
-});
-
-describe('createProjectFromPortal', () => {
-  it('returns error when not authenticated', async () => {
-    mockAuth(null);
-    const result = await createProjectFromPortal({
-      name: 'New Project',
-      project_type: 'web_design',
-    });
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('authenticated');
-  });
-
-  it('returns error when user is not admin/manager', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
-    const result = await createProjectFromPortal({
-      name: 'New Project',
-      project_type: 'web_design',
-    });
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('Admin');
-  });
-
-  it('returns error when name is empty', async () => {
-    const result = await createProjectFromPortal({ name: '  ', project_type: 'web_design' });
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('name');
-  });
-
-  it('returns error when no workspace found', async () => {
-    const { getCurrentWorkspaceId: mockGetWs } = jest.requireMock('@/app/actions/workspace');
-    (mockGetWs as jest.Mock).mockResolvedValueOnce(null);
-    const result = await createProjectFromPortal({
-      name: 'Test Project',
-      project_type: 'web_design',
-    });
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('workspace');
-  });
-
-  it('returns error when no team found in workspace', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
-    const result = await createProjectFromPortal({
-      name: 'Test Project',
-      project_type: 'web_design',
-    });
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('team');
-  });
-
-  it('creates project successfully', async () => {
-    const team = { id: 'team-1' };
-    const project = {
-      id: PROJECT_ID,
-      name: 'Test Project',
-      status: 'Active',
-      project_type: 'web_design',
-    };
-    supabase.from
-      .mockReturnValueOnce(buildChain({ data: team, error: null }))
-      .mockReturnValue(buildChain({ data: project, error: null }));
-
-    const result = await createProjectFromPortal({
-      name: 'Test Project',
-      project_type: 'web_design',
-    });
-    expect(result.success).toBe(true);
   });
 });
