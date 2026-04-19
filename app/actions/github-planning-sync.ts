@@ -8,6 +8,8 @@ import type { ActionResult } from './shared';
 interface SyncResult {
   milestonesFound: number;
   phasesUpserted: number;
+  milestonesUpserted: number;
+  phasesOnly: number;
   repoFullName: string;
 }
 
@@ -51,8 +53,10 @@ export async function syncPlanningFromGitHub(
   return {
     success: true,
     data: {
-      milestonesFound: 0, // not tracked in core, but not critical
+      milestonesFound: result.milestonesUpserted,
       phasesUpserted: result.phasesUpserted,
+      milestonesUpserted: result.milestonesUpserted,
+      phasesOnly: result.phasesOnly,
       repoFullName: '', // not exposed from core
     },
   };

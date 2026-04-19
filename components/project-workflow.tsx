@@ -776,9 +776,17 @@ export function ProjectWorkflow({
     try {
       const result = await syncPlanningFromGitHub(projectId);
       if (result.success && result.data) {
-        toast.success(
-          `Synced ${result.data.phasesUpserted} phases from ${result.data.repoFullName}`
-        );
+        const ms = result.data.milestonesUpserted;
+        const ph = result.data.phasesOnly;
+        const summary =
+          ms > 0 && ph > 0
+            ? `Synced ${ms} milestone${ms === 1 ? '' : 's'} with ${ph} phase${ph === 1 ? '' : 's'}`
+            : ms > 0
+              ? `Synced ${ms} milestone${ms === 1 ? '' : 's'}`
+              : ph > 0
+                ? `Synced ${ph} phase${ph === 1 ? '' : 's'}`
+                : 'Sync ran — nothing changed';
+        toast.success(summary);
         await fetchData();
         invalidateProjectPhases(projectId);
       } else {

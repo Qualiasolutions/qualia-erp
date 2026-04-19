@@ -14,7 +14,14 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 interface SyncResult {
   success: boolean;
+  // Total rows written to project_phases (milestones + phases). Kept for
+  // backward compat with all downstream callers that surface a single number.
   phasesUpserted: number;
+  // Breakdown of the above so UI toasts can show the real Milestone → Phase
+  // hierarchy ("Synced 11 milestones with 42 phases") instead of the
+  // misleading "Synced 53 phases".
+  milestonesUpserted: number;
+  phasesOnly: number;
   error?: string;
 }
 
@@ -98,7 +105,13 @@ export async function syncPlanningFromGitHubWithServiceRole(
     .single();
 
   if (!integration?.external_url) {
-    return { success: false, phasesUpserted: 0, error: 'No GitHub repo linked' };
+    return {
+      success: false,
+      phasesUpserted: 0,
+      milestonesUpserted: 0,
+      phasesOnly: 0,
+      error: 'No GitHub repo linked',
+    };
   }
 
   // 2. Get GitHub token from workspace
@@ -110,13 +123,25 @@ export async function syncPlanningFromGitHubWithServiceRole(
     .single();
 
   if (!settings?.encrypted_token) {
-    return { success: false, phasesUpserted: 0, error: 'No GitHub token configured' };
+    return {
+      success: false,
+      phasesUpserted: 0,
+      milestonesUpserted: 0,
+      phasesOnly: 0,
+      error: 'No GitHub token configured',
+    };
   }
 
   const token = decryptToken(settings.encrypted_token);
   const repoParsed = parseRepoFromUrl(integration.external_url);
   if (!repoParsed) {
-    return { success: false, phasesUpserted: 0, error: 'Cannot parse repo URL' };
+    return {
+      success: false,
+      phasesUpserted: 0,
+      milestonesUpserted: 0,
+      phasesOnly: 0,
+      error: 'Cannot parse repo URL',
+    };
   }
 
   // 3. Try to fetch ROADMAP.md (try multiple org names)
@@ -174,6 +199,8 @@ export async function syncPlanningFromGitHubWithServiceRole(
       return {
         success: false,
         phasesUpserted: 0,
+        milestonesUpserted: 0,
+        phasesOnly: 0,
         error:
           'No .planning/ROADMAP.md found, and .planning/STATE.md does not contain a parseable roadmap table.',
       };
@@ -185,7 +212,13 @@ export async function syncPlanningFromGitHubWithServiceRole(
         : lastStatus === 401 || lastStatus === 403
           ? 'GitHub token lacks access to this repo'
           : `GitHub fetch failed (HTTP ${lastStatus})`;
-    return { success: false, phasesUpserted: 0, error: detail };
+    return {
+      success: false,
+      phasesUpserted: 0,
+      milestonesUpserted: 0,
+      phasesOnly: 0,
+      error: detail,
+    };
   }
 
   // 6. For archived milestones with no inline phases, scan phase directories
@@ -275,7 +308,8 @@ export async function syncPlanningFromGitHubWithServiceRole(
   }
 
   // 8. Upsert milestones and phases
-  let phasesUpserted = 0;
+  let milestonesUpserted = 0;
+  let phasesOnly = 0;
   let sortOrder = 0;
   const phaseItemQueue: PhaseItemWork[] = [];
 
@@ -313,7 +347,7 @@ export async function syncPlanningFromGitHubWithServiceRole(
     } else {
       await supabase.from('project_phases').insert(msData);
     }
-    phasesUpserted++;
+    milestonesUpserted++;
 
     // 8b. Upsert phase records within this milestone
     for (const phase of ms.phases) {
@@ -371,7 +405,7 @@ export async function syncPlanningFromGitHubWithServiceRole(
           .single();
         phaseRowId = inserted?.id ?? null;
       }
-      phasesUpserted++;
+      phasesOnly++;
 
       // Queue phase_items work for the parallel second pass below.
       if (phaseRowId) {
@@ -399,7 +433,12 @@ export async function syncPlanningFromGitHubWithServiceRole(
     phaseItemQueue
   );
 
-  return { success: true, phasesUpserted };
+  return {
+    success: true,
+    phasesUpserted: milestonesUpserted + phasesOnly,
+    milestonesUpserted,
+    phasesOnly,
+  };
 }
 
 interface PhaseItemWork {
