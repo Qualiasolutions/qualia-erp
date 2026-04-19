@@ -68,6 +68,16 @@ import { normalizeFKResponse } from '@/lib/server-utils';
 const project = normalizeFKResponse(data.project);
 ```
 
+### Unified Tasks Page
+
+`/tasks` serves all three roles via server-side mode resolution in `app/(portal)/tasks/page.tsx`:
+
+- **Employees:** `scope=mine` (default) — own assigned/created tasks, `inboxOnly=true`
+- **Admins:** `scope=mine` (default) with Mine/All toggle; `?scope=all` reveals workspace-wide view with bulk assign/done/delete
+- **Clients:** `getClientVisibleTasks` — read-only, `is_client_visible=true` tasks for linked projects
+
+`/inbox` redirects to `/tasks`. `/admin/tasks` redirects to `/tasks?scope=all` (admin) or `/tasks` (non-admin).
+
 ## Database
 
 **63 tables + 1 view.** Use Supabase MCP tools — don't write raw SQL in code. Migrations go in `supabase/migrations/`.
@@ -88,14 +98,14 @@ Enum values live in `types/database.ts` — check there before using string lite
 - `middleware.ts` protects all routes except `/auth/*` and `/api/*`
 - Session via `supabase.auth.getClaims()` (JWT custom claims through `custom_access_token_hook`)
 - **Role-based routing** (three roles):
-  - `client` → blocked from `/inbox`, `/schedule`, `/agent`; sees `/portal/*`
-  - `employee` → all internal routes except `/admin/*`, `/clients`, `/workspace`, `/seo`
-  - `admin` → everything
+  - `client` → blocked from `/schedule`, `/agent`; sees `/tasks` in client mode (read-only, `is_client_visible` only), portal hub, billing, requests, settings
+  - `employee` → all internal routes except `/admin/*`, `/clients`, `/workspace`, `/seo`, `/tasks` shows own assigned tasks (inbox default)
+  - `admin` → everything, `/tasks` default is own tasks; `?scope=all` for workspace-wide view
 - **API routes are NOT middleware-protected** — each must implement its own auth check
 
 ## Routes (high level)
 
-- **Internal**: `/`, `/inbox`, `/projects`, `/projects/[id]/{roadmap,files}`, `/clients`, `/schedule`, `/team`, `/payments`, `/knowledge`, `/research`, `/seo`, `/status`, `/agent`, `/settings/{integrations,notifications}`
+- **Internal**: `/`, `/tasks` (unified — inbox default, `?scope=all` for admin workspace view), `/projects`, `/projects/[id]/{roadmap,files}`, `/clients`, `/schedule`, `/team`, `/payments`, `/knowledge`, `/research`, `/seo`, `/status`, `/agent`, `/settings/{integrations,notifications}`
 - **Admin-only**: `/admin`, `/admin/{assignments,attendance,migrate}`
 - **Portal**: `/portal`, `/portal/[id]/{features,files,updates}`, `/portal/{billing,requests,settings}`
 - **Auth**: `/auth/{login,signup,reset-password,error}`
