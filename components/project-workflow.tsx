@@ -460,20 +460,25 @@ function MilestoneSection({
     <div className="mb-4 last:mb-0">
       {/* Milestone header */}
       <button
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => milestone.phases.length > 0 && setExpanded(!expanded)}
+        disabled={milestone.phases.length === 0}
         className={cn(
           'flex w-full items-center gap-3 rounded-lg border px-4 py-2.5 text-left transition-all',
           msConfig.bg,
           msConfig.border,
-          'hover:shadow-sm'
+          milestone.phases.length > 0 ? 'hover:shadow-sm' : 'cursor-default opacity-80'
         )}
       >
-        <ChevronDown
-          className={cn(
-            'size-4 shrink-0 text-muted-foreground transition-transform duration-200',
-            !expanded && '-rotate-90'
-          )}
-        />
+        {milestone.phases.length > 0 ? (
+          <ChevronDown
+            className={cn(
+              'size-4 shrink-0 text-muted-foreground transition-transform duration-200',
+              !expanded && '-rotate-90'
+            )}
+          />
+        ) : (
+          <span className="size-4 shrink-0" aria-hidden="true" />
+        )}
         {milestone.status === 'completed' ? (
           <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
         ) : milestone.status === 'in_progress' ? (
@@ -485,12 +490,16 @@ function MilestoneSection({
           <span className="text-sm font-semibold text-foreground">{milestone.name}</span>
         </div>
         <span className={cn('text-xs font-medium tabular-nums', msConfig.text)}>
-          {completedCount}/{milestone.phases.length} phases
+          {milestone.phases.length === 0
+            ? milestone.status === 'completed'
+              ? 'Closed'
+              : 'No phases synced'
+            : `${completedCount}/${milestone.phases.length} phases`}
         </span>
       </button>
 
       {/* Phases inside milestone */}
-      {expanded && (
+      {expanded && milestone.phases.length > 0 && (
         <div className="mt-2 pl-4 sm:pl-6">
           {milestone.phases.map((phase, idx) => {
             const phaseTasks = tasksByPhase.get(phase.name) || [];
@@ -602,25 +611,46 @@ export function ProjectWorkflow({
       return 'Phases';
     };
 
+    // Seed a group for EVERY milestone record first, even ones with no child
+    // phases yet (e.g. future milestones from JOURNEY.md that haven't been
+    // broken down into phases, or milestones closed by the framework's
+    // close-milestone action without a per-phase sync). Without this seed
+    // step, empty milestones disappear from the tree because the phase loop
+    // below never visits them.
+    for (const msRecord of milestoneRecords) {
+      const msNum = msRecord.milestone_number ?? -1;
+      groups.set(msNum, {
+        number: msNum,
+        name: toMilestoneLabel(msRecord.name, msNum),
+        phases: [],
+        status: (msRecord.status as MilestoneGroup['status']) || 'not_started',
+      });
+    }
+
     for (const phase of phaseRecords) {
       const msNum = phase.milestone_number ?? -1;
       if (!groups.has(msNum)) {
-        // Look for a milestone record with this number for the real name
-        const msRecord = milestoneRecords.find((m) => m.milestone_number === msNum);
+        // Phase refers to a milestone that has no milestone_record. Synthesize
+        // one from the msNum so the phase still renders.
         groups.set(msNum, {
           number: msNum,
-          name: toMilestoneLabel(msRecord?.name, msNum),
+          name: toMilestoneLabel(undefined, msNum),
           phases: [],
-          status: (msRecord?.status as MilestoneGroup['status']) || 'not_started',
+          status: 'not_started',
         });
       }
       groups.get(msNum)!.phases.push(phase);
     }
 
-    // Recalculate milestone statuses from child phases
+    // Recalculate milestone status from child phases — but ONLY when the
+    // milestone has phases. Empty milestones keep their stored status (so a
+    // milestone closed via the framework's close-milestone action still reads
+    // "completed" even though no per-phase breakdown was synced).
     const sorted = Array.from(groups.values()).sort((a, b) => a.number - b.number);
     for (const ms of sorted) {
-      ms.status = getMilestoneStatus(ms.phases);
+      if (ms.phases.length > 0) {
+        ms.status = getMilestoneStatus(ms.phases);
+      }
     }
     return sorted;
   }, [phaseRecords, milestoneRecords]);
