@@ -179,15 +179,39 @@ function formatShortDate(dateStr: string | null): string {
 function ProgressSummary({ phases: allPhases }: { phases: Phase[] }) {
   // Only count actual phases (not milestone headers) in progress
   const phases = allPhases.filter((p) => p.phase_type !== 'milestone');
-  const completedPhases = phases.filter((p) => {
-    const s = (p.status || '').toLowerCase();
-    return s.includes('complete') || s.includes('done');
-  }).length;
+  const milestones = allPhases.filter((p) => p.phase_type === 'milestone');
+  const isComplete = (s: string | null | undefined): boolean => {
+    const lower = (s || '').toLowerCase();
+    return lower.includes('complete') || lower.includes('done');
+  };
+  const isInProgress = (s: string | null | undefined): boolean => {
+    const lower = (s || '').toLowerCase();
+    return lower.includes('progress') || lower.includes('active');
+  };
+  const completedPhases = phases.filter((p) => isComplete(p.status)).length;
 
-  const activePhase = phases.find((p) => {
-    const s = (p.status || '').toLowerCase();
-    return s.includes('progress');
-  });
+  // "Current" card — prefer phase in progress, then milestone in progress,
+  // then the first not-complete item by sort_order (= upcoming), and if
+  // everything is done announce completion instead of showing "Not started".
+  const inProgressPhase = phases.find((p) => isInProgress(p.status));
+  const inProgressMilestone = milestones.find((p) => isInProgress(p.status));
+  const nextPhase = [...phases]
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .find((p) => !isComplete(p.status));
+  const nextMilestone = [...milestones]
+    .sort((a, b) => (a.milestone_number ?? 99) - (b.milestone_number ?? 99))
+    .find((p) => !isComplete(p.status));
+  const everythingComplete = allPhases.length > 0 && allPhases.every((p) => isComplete(p.status));
+
+  const activePhase = inProgressPhase ?? inProgressMilestone ?? nextPhase ?? nextMilestone ?? null;
+  const currentHeader =
+    inProgressPhase || inProgressMilestone ? 'Current' : everythingComplete ? 'Status' : 'Next up';
+  const currentLabel = everythingComplete
+    ? 'All milestones complete'
+    : activePhase?.name
+        ?.replace(/^Phase\s+(\d+):/i, 'Milestone $1:')
+        .replace(/^\d+\.\d+\s*[—–-]\s*/, '')
+        .replace(/^(Milestone\s+\d+):\s*/i, '$1 · ') || 'Not started';
 
   const totalPlans = phases.reduce((sum, p) => sum + (p.plan_count || 0), 0);
 
@@ -261,17 +285,15 @@ function ProgressSummary({ phases: allPhases }: { phases: Phase[] }) {
         </div>
       )}
 
-      {/* Current phase */}
+      {/* Current / Next up / Status card */}
       <div className="min-w-0 flex-1 rounded-lg border border-border bg-card/50 p-3">
         <div className="flex items-center gap-1.5">
           <Compass className="size-3 text-muted-foreground/50" />
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Current
+            {currentHeader}
           </p>
         </div>
-        <p className="mt-1.5 truncate text-xs font-semibold text-foreground">
-          {activePhase?.name?.replace(/^\d+\.\d+\s*[—–-]\s*/, '') || 'Not started'}
-        </p>
+        <p className="mt-1.5 truncate text-xs font-semibold text-foreground">{currentLabel}</p>
       </div>
     </div>
   );

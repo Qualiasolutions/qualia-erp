@@ -426,10 +426,30 @@ function ProgressSummary({ phases: allPhases }: { phases: Phase[] }) {
     const s = p.status.toLowerCase();
     return s.includes('complete') || s.includes('done');
   }).length;
-  const activePhase = phases.find((p) => {
-    const s = p.status.toLowerCase();
-    return s.includes('progress') || s.includes('active');
-  });
+  // Current card — prefer "in progress", fall back to the next "not started"
+  // item by order_index so a project that's between active phases still shows
+  // what's coming up. If everything is complete, announce that instead of the
+  // misleading "Not started" default.
+  const isComplete = (s: string): boolean => {
+    const lower = s.toLowerCase();
+    return lower.includes('complete') || lower.includes('done');
+  };
+  const isInProgress = (s: string): boolean => {
+    const lower = s.toLowerCase();
+    return lower.includes('progress') || lower.includes('active');
+  };
+  const inProgressPhase = phases.find((p) => isInProgress(p.status));
+  const nextUpPhase =
+    inProgressPhase ??
+    [...phases]
+      .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+      .find((p) => !isComplete(p.status));
+  const everythingComplete = phases.length > 0 && phases.every((p) => isComplete(p.status));
+  const activePhase = nextUpPhase;
+  const currentLabel = everythingComplete
+    ? 'All milestones complete'
+    : activePhase?.name?.replace(/^(Phase \d+|Milestone \d+):\s*/, '') || 'Not started';
+  const currentHeader = inProgressPhase ? 'Current' : everythingComplete ? 'Status' : 'Next up';
 
   const overallProgress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
@@ -491,17 +511,15 @@ function ProgressSummary({ phases: allPhases }: { phases: Phase[] }) {
         </div>
       </div>
 
-      {/* Current phase */}
+      {/* Current / Next / Status card */}
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex items-center gap-1.5">
           <Compass className="size-3 text-muted-foreground/50" />
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Current
+            {currentHeader}
           </p>
         </div>
-        <p className="mt-2 truncate text-sm font-semibold text-foreground">
-          {activePhase?.name?.replace(/^(Phase \d+|Milestone \d+):\s*/, '') || 'Not started'}
-        </p>
+        <p className="mt-2 truncate text-sm font-semibold text-foreground">{currentLabel}</p>
       </div>
     </div>
   );
