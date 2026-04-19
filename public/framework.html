@@ -730,7 +730,7 @@ code {
     <span class="header-title">Qualia Framework</span>
     <span class="header-subtitle">Internal Documentation v2.0</span>
   </div>
-  <span class="badge badge-teal">GSD System</span>
+  <span class="badge badge-teal">Qualia Framework</span>
 </header>
 
 <div class="tabs-container">
@@ -753,7 +753,7 @@ code {
     <!-- ======================== TAB 1: FRAMEWORK ======================== -->
     <div class="tab-panel panel-framework">
       <h2>Project Lifecycle</h2>
-      <p class="section-desc">Every Qualia project follows the GSD (Get Stuff Done) system &mdash; a structured lifecycle from intake to delivery with parallel execution and automated verification.</p>
+      <p class="section-desc">Every Qualia project follows the Qualia Framework &mdash; a structured lifecycle from intake to delivery with parallel execution and automated verification.</p>
 
       <div class="flow-diagram">
         <div class="flow-step">
@@ -1136,12 +1136,12 @@ code {
       </div>
 
       <h3>Claude Code Integration</h3>
-      <p>Claude Code runs locally and pushes to GitHub, which triggers the webhook pipeline. The GSD system generates <code>.planning/</code> files as it works through phases, giving the portal real-time visibility.</p>
+      <p>Claude Code runs locally and pushes to GitHub, which triggers the webhook pipeline. The Qualia Framework generates <code>.planning/</code> files as it works through phases, giving the portal real-time visibility.</p>
 
       <div class="code-block">
 <span class="cm"># Claude Code workflow</span>
 <span class="kw">1.</span> Claude Code receives task
-<span class="kw">2.</span> GSD system creates .planning/phases/phase-N/
+<span class="kw">2.</span> Qualia Framework creates .planning/phases/phase-N/
 <span class="kw">3.</span> Writes PLAN.md, executes tasks, writes SUMMARY.md
 <span class="kw">4.</span> Runs verification, writes VERIFICATION.md
 <span class="kw">5.</span> Commits and pushes to GitHub
@@ -1461,7 +1461,7 @@ code {
             <tr><th>Command</th><th>Description</th></tr>
           </thead>
           <tbody>
-            <tr><td>/qualia:start</td><td>Initialize a new project with GSD system</td></tr>
+            <tr><td>/qualia:start</td><td>Initialize a new project with the Qualia Framework</td></tr>
             <tr><td>/qualia:plan</td><td>Generate phase plan for current project</td></tr>
             <tr><td>/qualia:execute</td><td>Execute next phase in the plan</td></tr>
             <tr><td>/qualia:verify</td><td>Run verification on completed phase</td></tr>

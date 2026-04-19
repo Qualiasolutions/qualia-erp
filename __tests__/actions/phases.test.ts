@@ -23,7 +23,7 @@ jest.mock('@/lib/supabase/server', () => ({
   createClient: jest.fn(),
 }));
 
-jest.mock('@/lib/gsd-templates', () => ({
+jest.mock('@/lib/qualia-framework-templates', () => ({
   getTemplateForType: jest.fn().mockReturnValue({
     phases: [],
   }),

@@ -42,8 +42,8 @@ Sets `is_default` true/false from the browser. Was BH4 in OPTIMIZE.md.
 `for (const task of unlinkedTasks) { await supabase.from('tasks').update(…).eq('id', task.id) }`. Admin-only migration helper so impact is contained, but flagged in OPTIMIZE.md and still present verbatim.
 **Fix:** Group by `phaseId`, then `.in('id', ids)` per group — or switch to an RPC.
 
-**H4 — C2 N+1 in `migrateAllProjectsToGSD` prerequisite-phase linking** — `app/actions/pipeline.ts:404-411`
-Another `for (let i…) { await supabase.update(…) }` loop. Admin-only.
+**H4 — C2 N+1 in Qualia Framework migration helper, prerequisite-phase linking** — `app/actions/pipeline.ts:404-411`
+Another `for (let i…) { await supabase.update(…) }` loop. Admin-only. Migration helper and `/admin/migrate` page removed 2026-04-19 — obsolete.
 **Fix:** Batch via CASE statement in single UPDATE, or `Promise.all` with concurrency cap.
 
 **H5 — C3 stale-session cleanup still sequential on clock-in hot path** — `app/actions/work-sessions.ts:78-89`
@@ -74,7 +74,7 @@ Swallows errors silently. Was H7 in REVIEW.md (2026-04-11).
 - `lib/email.ts` — 2353
 - `lib/swr.ts` — 2146
 - `app/actions/inbox.ts` — 1429
-- `lib/gsd-templates.ts` — 1370
+- `lib/qualia-framework-templates.ts` — 1370
 - `app/actions/pipeline.ts` — 1343
 - `components/project-workflow.tsx` — 1265
 **Fix:** Split by domain. `client-portal.ts` is the most urgent — mixes dashboard, messaging, files, settings, invoices.

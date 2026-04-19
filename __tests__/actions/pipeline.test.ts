@@ -16,7 +16,7 @@ jest.mock('@/app/actions/shared', () => ({
   isUserAdmin: jest.fn().mockResolvedValue(true),
 }));
 
-jest.mock('@/lib/gsd-templates', () => ({
+jest.mock('@/lib/qualia-framework-templates', () => ({
   getTemplateForType: jest.fn().mockReturnValue({
     phases: [
       {
@@ -119,7 +119,9 @@ beforeEach(() => {
   mockAuth();
   const { isUserAdmin: mockIsAdmin } = jest.requireMock('@/app/actions/shared');
   (mockIsAdmin as jest.Mock).mockResolvedValue(true);
-  const { getTemplateForType: mockGetTemplate } = jest.requireMock('@/lib/gsd-templates');
+  const { getTemplateForType: mockGetTemplate } = jest.requireMock(
+    '@/lib/qualia-framework-templates'
+  );
   (mockGetTemplate as jest.Mock).mockReturnValue({
     phases: [
       {

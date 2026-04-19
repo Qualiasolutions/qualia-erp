@@ -6,7 +6,7 @@
 
 ## The Qualia Workflow
 
-At Qualia, we use a structured workflow (previously called "GSD" — Get Shit Done) to manage projects. The core idea is simple: **discover → plan → execute → verify**. Every project goes through phases with clear milestones, and we track state using planning files (`.planning/STATE.md` and `.planning/ROADMAP.md`) in each project.
+At Qualia, we use the **Qualia Framework** — a structured workflow for managing projects. The core idea is simple: **discover → plan → execute → verify**. Every project goes through phases with clear milestones, and we track state using planning files (`.planning/STATE.md` and `.planning/ROADMAP.md`) in each project.
 
 Key principles:
 

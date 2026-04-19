@@ -1,6 +1,6 @@
 /**
- * GSD (Get Shit Done) Templates
- * Type-specific phase and task templates aligned with GSD workflow
+ * Qualia Framework Templates
+ * Type-specific phase and task templates aligned with the Qualia Framework workflow
  */
 
 import type { Database } from '@/types/database';
@@ -11,42 +11,42 @@ type ProjectType = Database['public']['Enums']['project_type'];
 // TYPES
 // ============================================================================
 
-export interface GSDTask {
+export interface QualiaFrameworkTask {
   title: string;
   description?: string;
   helperText: string; // Trainee-friendly guidance
   templateKey: string;
 }
 
-export interface GSDPhaseTemplate {
+export interface QualiaFrameworkPhaseTemplate {
   name: string;
   description: string;
   prompt: string; // "Perfect prompt" for this phase
-  gsdCommand: string; // e.g., '/gsd:discuss-phase 1'
+  qualiaCommand: string; // e.g., '/qualia-discuss'
   qualiaSkills: string[]; // e.g., ['/fd', '/fb']
-  tasks: GSDTask[];
+  tasks: QualiaFrameworkTask[];
 }
 
-export interface GSDProjectTemplate {
+export interface QualiaFrameworkProjectTemplate {
   type: ProjectType;
-  phases: GSDPhaseTemplate[];
+  phases: QualiaFrameworkPhaseTemplate[];
 }
 
 // ============================================================================
 // WEB DESIGN TEMPLATE
 // ============================================================================
 
-export const WEB_DESIGN_TEMPLATE: GSDProjectTemplate = {
+export const WEB_DESIGN_TEMPLATE: QualiaFrameworkProjectTemplate = {
   type: 'web_design',
   phases: [
     {
       name: 'SETUP',
       description: 'Get everything ready before coding',
-      gsdCommand: '/gsd:new-project',
+      qualiaCommand: '/qualia-new',
       qualiaSkills: ['/sb'],
       prompt: `You are setting up a new website project. Run:
 
-/gsd:new-project
+/qualia-new
 
 Then ensure you have:
 1. Local folder created at ~/Desktop/Projects/websites/[project-name]
@@ -92,11 +92,11 @@ Get client requirements document and list 3-5 MVP features only.`,
     {
       name: 'DISCUSS',
       description: 'Clarify scope and align with stakeholders',
-      gsdCommand: '/gsd:discuss-phase 1',
+      qualiaCommand: '/qualia-discuss',
       qualiaSkills: [],
       prompt: `You are clarifying requirements for a website project.
 
-/gsd:discuss-phase 1
+/qualia-discuss
 
 Ask the client about:
 1. Target audience - Who uses this site? What do they need?
@@ -138,11 +138,11 @@ Lock these decisions before planning.`,
     {
       name: 'PLAN',
       description: 'Create the build plan',
-      gsdCommand: '/gsd:plan-phase 2',
+      qualiaCommand: '/qualia-plan',
       qualiaSkills: [],
       prompt: `Create a structured build plan for the website.
 
-/gsd:plan-phase 2
+/qualia-plan
 
 This generates atomic tasks (2-3 per execution phase).
 
@@ -153,7 +153,7 @@ Review the plan and ensure:
 4. Nothing is over-engineered`,
       tasks: [
         {
-          title: 'Run /gsd:plan-phase to generate plan',
+          title: 'Run /qualia-plan to generate plan',
           helperText: 'This creates atomic tasks based on your requirements',
           templateKey: 'web_plan_1',
         },
@@ -172,11 +172,11 @@ Review the plan and ensure:
     {
       name: 'EXECUTE',
       description: 'Build UI first, then backend',
-      gsdCommand: '/gsd:execute-phase 3',
+      qualiaCommand: '/qualia-build',
       qualiaSkills: ['/fd', '/fb', '/responsive', '/sb'],
       prompt: `Build the website following this order:
 
-/gsd:execute-phase 3
+/qualia-build
 
 1. Design first:
    /fd "[describe the main UI you want]"
@@ -248,11 +248,11 @@ Repeat until MVP is complete.`,
     {
       name: 'VERIFY',
       description: 'Test and review',
-      gsdCommand: '/gsd:verify-work',
+      qualiaCommand: '/qualia-verify',
       qualiaSkills: ['/dd', '/sf'],
       prompt: `Verify the website is production-ready.
 
-/gsd:verify-work
+/qualia-verify
 
 1. Manual testing:
    - Click every link
@@ -298,11 +298,11 @@ Do NOT proceed until all tests pass.`,
     {
       name: 'SHIP',
       description: 'Deploy and deliver',
-      gsdCommand: '/gsd:complete-milestone',
+      qualiaCommand: '/qualia-milestone',
       qualiaSkills: [],
       prompt: `Ship the website to production.
 
-/gsd:complete-milestone
+/qualia-milestone
 
 1. Final checks:
    - Verify ALL env vars are set in Vercel dashboard
@@ -366,17 +366,17 @@ Do NOT proceed until all tests pass.`,
 // AI AGENT TEMPLATE
 // ============================================================================
 
-export const AI_AGENT_TEMPLATE: GSDProjectTemplate = {
+export const AI_AGENT_TEMPLATE: QualiaFrameworkProjectTemplate = {
   type: 'ai_agent',
   phases: [
     {
       name: 'SETUP',
       description: 'Define the agent and gather requirements',
-      gsdCommand: '/gsd:new-project',
+      qualiaCommand: '/qualia-new',
       qualiaSkills: ['/sb'],
       prompt: `You are setting up a new AI agent project.
 
-/gsd:new-project
+/qualia-new
 
 1. Define the agent's purpose:
    - What problem does it solve?
@@ -423,11 +423,11 @@ export const AI_AGENT_TEMPLATE: GSDProjectTemplate = {
     {
       name: 'DISCUSS',
       description: 'Define agent behavior and capabilities',
-      gsdCommand: '/gsd:discuss-phase 1',
+      qualiaCommand: '/qualia-discuss',
       qualiaSkills: [],
       prompt: `Clarify the AI agent's behavior.
 
-/gsd:discuss-phase 1
+/qualia-discuss
 
 Define:
 1. Conversation style - Formal? Casual? Technical?
@@ -468,11 +468,11 @@ Document these decisions before building.`,
     {
       name: 'PLAN',
       description: 'Design agent architecture',
-      gsdCommand: '/gsd:plan-phase 2',
+      qualiaCommand: '/qualia-plan',
       qualiaSkills: [],
       prompt: `Plan the AI agent architecture.
 
-/gsd:plan-phase 2
+/qualia-plan
 
 Design decisions:
 1. Model selection - GPT-4? Claude? Local model?
@@ -504,11 +504,11 @@ Create atomic implementation tasks.`,
     {
       name: 'EXECUTE',
       description: 'Build the agent',
-      gsdCommand: '/gsd:execute-phase 3',
+      qualiaCommand: '/qualia-build',
       qualiaSkills: ['/sb'],
       prompt: `Build the AI agent.
 
-/gsd:execute-phase 3
+/qualia-build
 
 Implementation order:
 1. Core agent logic:
@@ -573,11 +573,11 @@ Commit frequently. Test each component before moving on.`,
     {
       name: 'VERIFY',
       description: 'Test agent thoroughly',
-      gsdCommand: '/gsd:verify-work',
+      qualiaCommand: '/qualia-verify',
       qualiaSkills: ['/dd', '/sf'],
       prompt: `Verify the AI agent works correctly.
 
-/gsd:verify-work
+/qualia-verify
 
 Testing checklist:
 1. Happy path - Normal conversations work
@@ -614,11 +614,11 @@ Run automated tests and manual QA.`,
     {
       name: 'SHIP',
       description: 'Deploy and monitor',
-      gsdCommand: '/gsd:complete-milestone',
+      qualiaCommand: '/qualia-milestone',
       qualiaSkills: [],
       prompt: `Ship the AI agent to production.
 
-/gsd:complete-milestone
+/qualia-milestone
 
 1. Production deployment:
    - Set all production env vars
@@ -674,17 +674,17 @@ Run automated tests and manual QA.`,
 // VOICE AGENT TEMPLATE
 // ============================================================================
 
-export const VOICE_AGENT_TEMPLATE: GSDProjectTemplate = {
+export const VOICE_AGENT_TEMPLATE: QualiaFrameworkProjectTemplate = {
   type: 'voice_agent',
   phases: [
     {
       name: 'SETUP',
       description: 'Prepare voice infrastructure',
-      gsdCommand: '/gsd:new-project',
+      qualiaCommand: '/qualia-new',
       qualiaSkills: ['/va', '/sb'],
       prompt: `You are setting up a new voice agent project.
 
-/gsd:new-project
+/qualia-new
 
 1. Account setup:
    - Create VAPI account (vapi.ai)
@@ -731,11 +731,11 @@ export const VOICE_AGENT_TEMPLATE: GSDProjectTemplate = {
     {
       name: 'DISCUSS',
       description: 'Design conversation flow',
-      gsdCommand: '/gsd:discuss-phase 1',
+      qualiaCommand: '/qualia-discuss',
       qualiaSkills: [],
       prompt: `Design the voice agent conversation flow.
 
-/gsd:discuss-phase 1
+/qualia-discuss
 
 Define:
 1. Voice personality - Warm? Professional? Energetic?
@@ -777,11 +777,11 @@ Write out the full conversation script.`,
     {
       name: 'PLAN',
       description: 'Plan technical implementation',
-      gsdCommand: '/gsd:plan-phase 2',
+      qualiaCommand: '/qualia-plan',
       qualiaSkills: [],
       prompt: `Plan the voice agent technical implementation.
 
-/gsd:plan-phase 2
+/qualia-plan
 
 Technical decisions:
 1. VAPI assistant configuration
@@ -810,11 +810,11 @@ Technical decisions:
     {
       name: 'EXECUTE',
       description: 'Build and configure voice agent',
-      gsdCommand: '/gsd:execute-phase 3',
+      qualiaCommand: '/qualia-build',
       qualiaSkills: ['/va', '/sb'],
       prompt: `Build the voice agent.
 
-/gsd:execute-phase 3
+/qualia-build
 
 Implementation:
 1. Create VAPI assistant:
@@ -869,11 +869,11 @@ Implementation:
     {
       name: 'VERIFY',
       description: 'Test calls thoroughly',
-      gsdCommand: '/gsd:verify-work',
+      qualiaCommand: '/qualia-verify',
       qualiaSkills: ['/dd'],
       prompt: `Test the voice agent with real calls.
 
-/gsd:verify-work
+/qualia-verify
 
 Testing checklist:
 1. Make test calls - Try different scenarios
@@ -915,11 +915,11 @@ Do NOT launch until calls feel natural.`,
     {
       name: 'SHIP',
       description: 'Launch and monitor',
-      gsdCommand: '/gsd:complete-milestone',
+      qualiaCommand: '/qualia-milestone',
       qualiaSkills: [],
       prompt: `Launch the voice agent.
 
-/gsd:complete-milestone
+/qualia-milestone
 
 1. Go live:
    - Enable the phone number for real calls
@@ -970,17 +970,17 @@ Do NOT launch until calls feel natural.`,
 // SEO TEMPLATE (Simplified)
 // ============================================================================
 
-export const SEO_TEMPLATE: GSDProjectTemplate = {
+export const SEO_TEMPLATE: QualiaFrameworkProjectTemplate = {
   type: 'seo',
   phases: [
     {
       name: 'SETUP',
       description: 'Gather access and baseline data',
-      gsdCommand: '/gsd:new-project',
+      qualiaCommand: '/qualia-new',
       qualiaSkills: [],
       prompt: `Setup SEO project access and gather baseline data.
 
-/gsd:new-project
+/qualia-new
 
 Get access to:
 - Google Search Console
@@ -1013,11 +1013,11 @@ Get access to:
     {
       name: 'DISCUSS',
       description: 'Define SEO goals and priorities',
-      gsdCommand: '/gsd:discuss-phase 1',
+      qualiaCommand: '/qualia-discuss',
       qualiaSkills: [],
       prompt: `Define SEO goals and target keywords.
 
-/gsd:discuss-phase 1
+/qualia-discuss
 
 Discuss:
 - Target keywords and topics
@@ -1045,11 +1045,11 @@ Discuss:
     {
       name: 'PLAN',
       description: 'Create SEO strategy',
-      gsdCommand: '/gsd:plan-phase 2',
+      qualiaCommand: '/qualia-plan',
       qualiaSkills: [],
       prompt: `Create SEO implementation plan.
 
-/gsd:plan-phase 2`,
+/qualia-plan`,
       tasks: [
         {
           title: 'Create keyword strategy',
@@ -1071,11 +1071,11 @@ Discuss:
     {
       name: 'EXECUTE',
       description: 'Implement SEO changes',
-      gsdCommand: '/gsd:execute-phase 3',
+      qualiaCommand: '/qualia-build',
       qualiaSkills: [],
       prompt: `Implement SEO improvements.
 
-/gsd:execute-phase 3`,
+/qualia-build`,
       tasks: [
         {
           title: 'Optimize existing pages',
@@ -1102,11 +1102,11 @@ Discuss:
     {
       name: 'VERIFY',
       description: 'Validate improvements',
-      gsdCommand: '/gsd:verify-work',
+      qualiaCommand: '/qualia-verify',
       qualiaSkills: [],
       prompt: `Verify SEO changes are working.
 
-/gsd:verify-work`,
+/qualia-verify`,
       tasks: [
         {
           title: 'Check indexing status',
@@ -1128,11 +1128,11 @@ Discuss:
     {
       name: 'SHIP',
       description: 'Report and monitor',
-      gsdCommand: '/gsd:complete-milestone',
+      qualiaCommand: '/qualia-milestone',
       qualiaSkills: [],
       prompt: `Create SEO report and setup monitoring.
 
-/gsd:complete-milestone`,
+/qualia-milestone`,
       tasks: [
         {
           title: 'Create baseline report',
@@ -1158,17 +1158,17 @@ Discuss:
 // ADS TEMPLATE (Simplified)
 // ============================================================================
 
-export const ADS_TEMPLATE: GSDProjectTemplate = {
+export const ADS_TEMPLATE: QualiaFrameworkProjectTemplate = {
   type: 'ads',
   phases: [
     {
       name: 'SETUP',
       description: 'Setup ad accounts and tracking',
-      gsdCommand: '/gsd:new-project',
+      qualiaCommand: '/qualia-new',
       qualiaSkills: [],
       prompt: `Setup advertising accounts and tracking.
 
-/gsd:new-project`,
+/qualia-new`,
       tasks: [
         {
           title: 'Create/access ad accounts',
@@ -1190,11 +1190,11 @@ export const ADS_TEMPLATE: GSDProjectTemplate = {
     {
       name: 'DISCUSS',
       description: 'Define targeting and messaging',
-      gsdCommand: '/gsd:discuss-phase 1',
+      qualiaCommand: '/qualia-discuss',
       qualiaSkills: [],
       prompt: `Define ad targeting and messaging.
 
-/gsd:discuss-phase 1`,
+/qualia-discuss`,
       tasks: [
         {
           title: 'Define target audience',
@@ -1216,11 +1216,11 @@ export const ADS_TEMPLATE: GSDProjectTemplate = {
     {
       name: 'PLAN',
       description: 'Plan campaign structure',
-      gsdCommand: '/gsd:plan-phase 2',
+      qualiaCommand: '/qualia-plan',
       qualiaSkills: [],
       prompt: `Plan ad campaign structure.
 
-/gsd:plan-phase 2`,
+/qualia-plan`,
       tasks: [
         {
           title: 'Design campaign structure',
@@ -1238,11 +1238,11 @@ export const ADS_TEMPLATE: GSDProjectTemplate = {
     {
       name: 'EXECUTE',
       description: 'Create and launch ads',
-      gsdCommand: '/gsd:execute-phase 3',
+      qualiaCommand: '/qualia-build',
       qualiaSkills: [],
       prompt: `Create and launch ad campaigns.
 
-/gsd:execute-phase 3`,
+/qualia-build`,
       tasks: [
         {
           title: 'Create ad creatives',
@@ -1264,11 +1264,11 @@ export const ADS_TEMPLATE: GSDProjectTemplate = {
     {
       name: 'VERIFY',
       description: 'Verify tracking and performance',
-      gsdCommand: '/gsd:verify-work',
+      qualiaCommand: '/qualia-verify',
       qualiaSkills: [],
       prompt: `Verify ads are tracking and performing.
 
-/gsd:verify-work`,
+/qualia-verify`,
       tasks: [
         {
           title: 'Verify conversion tracking',
@@ -1290,11 +1290,11 @@ export const ADS_TEMPLATE: GSDProjectTemplate = {
     {
       name: 'SHIP',
       description: 'Optimize and report',
-      gsdCommand: '/gsd:complete-milestone',
+      qualiaCommand: '/qualia-milestone',
       qualiaSkills: [],
       prompt: `Create report and optimize campaigns.
 
-/gsd:complete-milestone`,
+/qualia-milestone`,
       tasks: [
         {
           title: 'Create performance report',
@@ -1320,7 +1320,7 @@ export const ADS_TEMPLATE: GSDProjectTemplate = {
 // TEMPLATE LOOKUP
 // ============================================================================
 
-export const GSD_TEMPLATES: Record<ProjectType, GSDProjectTemplate> = {
+export const QUALIA_FRAMEWORK_TEMPLATES: Record<ProjectType, QualiaFrameworkProjectTemplate> = {
   web_design: WEB_DESIGN_TEMPLATE,
   ai_agent: AI_AGENT_TEMPLATE,
   voice_agent: VOICE_AGENT_TEMPLATE,
@@ -1330,13 +1330,13 @@ export const GSD_TEMPLATES: Record<ProjectType, GSDProjectTemplate> = {
   ads: ADS_TEMPLATE,
 };
 
-export function getTemplateForType(type: ProjectType): GSDProjectTemplate {
-  return GSD_TEMPLATES[type] || WEB_DESIGN_TEMPLATE;
+export function getTemplateForType(type: ProjectType): QualiaFrameworkProjectTemplate {
+  return QUALIA_FRAMEWORK_TEMPLATES[type] || WEB_DESIGN_TEMPLATE;
 }
 
 export function getPhasePromptData(
   templateKey: string | null | undefined
-): { gsdCommand: string; qualiaSkills: string[] } | null {
+): { qualiaCommand: string; qualiaSkills: string[] } | null {
   if (!templateKey) return null;
 
   // Parse template key: "web_setup" -> type: web_design, phase: SETUP
@@ -1358,13 +1358,13 @@ export function getPhasePromptData(
   const projectType = typeMap[typePrefix];
   if (!projectType) return null;
 
-  const template = GSD_TEMPLATES[projectType];
+  const template = QUALIA_FRAMEWORK_TEMPLATES[projectType];
   const phase = template.phases.find((p) => p.name.toUpperCase() === phaseName);
 
   if (!phase) return null;
 
   return {
-    gsdCommand: phase.gsdCommand,
+    qualiaCommand: phase.qualiaCommand,
     qualiaSkills: phase.qualiaSkills,
   };
 }

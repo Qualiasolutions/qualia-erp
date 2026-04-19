@@ -30,7 +30,7 @@ async function ensureGitHubWebhook(
   try {
     // 1. Need the webhook secret. Without it the receiver can't verify
     //    signatures, so installing the hook would just produce 401 errors.
-    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET || process.env.GSD_WEBHOOK_SECRET;
+    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
     if (!webhookSecret) {
       return { installed: false, reason: 'GITHUB_WEBHOOK_SECRET not configured' };
     }

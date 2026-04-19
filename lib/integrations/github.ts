@@ -1215,7 +1215,7 @@ export async function setupRepoWebhook(
       return { success: true, data: { created: false } };
     }
 
-    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET || process.env.GSD_WEBHOOK_SECRET || '';
+    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET || '';
     await client.octokit.repos.createWebhook({
       owner,
       repo,

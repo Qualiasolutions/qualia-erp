@@ -3,7 +3,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { uuidParam, createPhaseSchema, updatePhaseSchema } from '@/lib/validation';
 
-import { getTemplateForType, type GSDPhaseTemplate } from '@/lib/gsd-templates';
+import {
+  getTemplateForType,
+  type QualiaFrameworkPhaseTemplate,
+} from '@/lib/qualia-framework-templates';
 import { type ActionResult, canAccessProject, isUserManagerOrAbove } from './shared';
 import { assertNotImpersonating } from '@/lib/portal-utils';
 import type { Database } from '@/types/database';
@@ -481,7 +484,7 @@ export async function calculateProjectsProgress(
 }
 
 /**
- * Load Qualia Framework Pipeline — auto-populate GSD phases + tasks for a project.
+ * Load Qualia Framework Pipeline — auto-populate phases + tasks for a project.
  * Creates 6 phases (SETUP→DISCUSS→PLAN→EXECUTE→VERIFY→SHIP) with type-specific tasks.
  */
 export async function loadQualiaFrameworkPipeline(projectId: string) {
@@ -527,7 +530,7 @@ export async function loadQualiaFrameworkPipeline(projectId: string) {
           : projectType;
 
   for (let i = 0; i < template.phases.length; i++) {
-    const phase: GSDPhaseTemplate = template.phases[i];
+    const phase: QualiaFrameworkPhaseTemplate = template.phases[i];
     const templateKey = `${typePrefix}_${phase.name.toLowerCase()}`;
 
     // Create phase

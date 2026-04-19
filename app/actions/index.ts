@@ -228,8 +228,6 @@ export {
   initializePipelinesForAllProjects,
   populateDefaultTasksForAllProjects,
   getPhaseTasks,
-  updateAllProjectPhaseTasks,
-  migrateAllProjectsToGSD,
 } from './pipeline';
 
 // ============ INTEGRATIONS ============

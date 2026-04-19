@@ -127,9 +127,9 @@ function parsePlanningFiles(allChangedFiles: string[]): PhaseUpdate[] {
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
-    const secret = process.env.GITHUB_WEBHOOK_SECRET || process.env.GSD_WEBHOOK_SECRET;
+    const secret = process.env.GITHUB_WEBHOOK_SECRET;
 
-    // Verify auth: GitHub HMAC signature OR X-API-Key header (for GSD_WEBHOOK_SECRET)
+    // Verify auth: GitHub HMAC signature OR X-API-Key header
     if (!secret) {
       console.error('[GitHub webhook] No webhook secret configured');
       return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });

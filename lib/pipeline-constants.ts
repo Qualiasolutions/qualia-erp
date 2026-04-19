@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 // ============================================================================
-// GSD 6-STAGE PIPELINE (Get Shit Done)
+// QUALIA FRAMEWORK 6-STAGE PIPELINE
 // ============================================================================
 
 export interface PipelinePhase {
@@ -31,11 +31,11 @@ export interface PipelinePhase {
 }
 
 /**
- * GSD Workflow Phases:
+ * Qualia Framework Workflow Phases:
  * SETUP → DISCUSS → PLAN → EXECUTE → VERIFY → SHIP
  *
  * This is the universal pipeline applied to all projects.
- * Type-specific tasks are loaded from gsd-templates.ts
+ * Type-specific tasks are loaded from qualia-framework-templates.ts
  */
 export const UNIVERSAL_PIPELINE: PipelinePhase[] = [
   {
@@ -87,9 +87,6 @@ export const UNIVERSAL_PIPELINE: PipelinePhase[] = [
     bgColor: 'bg-emerald-500/10',
   },
 ];
-
-// Legacy alias for backwards compatibility
-export const GSD_PHASES = UNIVERSAL_PIPELINE;
 
 // ============================================================================
 // PHASE STATUS

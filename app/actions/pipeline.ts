@@ -7,14 +7,14 @@ import { isUserAdmin } from './shared';
 import {
   getTemplateForType,
   WEB_DESIGN_TEMPLATE,
-  type GSDProjectTemplate,
-} from '@/lib/gsd-templates';
+  type QualiaFrameworkProjectTemplate,
+} from '@/lib/qualia-framework-templates';
 import type { Database } from '@/types/database';
 
 type ProjectType = Database['public']['Enums']['project_type'];
 
 // Legacy fallback for backwards compatibility with existing code
-// Maps GSD template to old format
+// Maps Qualia Framework template to old format
 const UNIVERSAL_PIPELINE = WEB_DESIGN_TEMPLATE.phases.map((phase) => ({
   name: phase.name,
   order: phase.tasks.length,
@@ -334,7 +334,7 @@ export async function deleteProjectNote(noteId: string): Promise<ActionResult> {
 // ============================================================================
 
 /**
- * Initialize project pipeline with GSD phases.
+ * Initialize project pipeline with Qualia Framework phases.
  * Now type-aware: uses different templates for web_design, ai_agent, voice_agent, etc.
  *
  * @param projectId - The project ID to initialize
@@ -372,9 +372,9 @@ export async function initializeProjectPipeline(
   const effectiveType: ProjectType = projectType || project.project_type || 'web_design';
 
   // Get type-specific template
-  const template: GSDProjectTemplate = getTemplateForType(effectiveType);
+  const template: QualiaFrameworkProjectTemplate = getTemplateForType(effectiveType);
 
-  // Create all 6 GSD phases (first phase unlocked, rest locked)
+  // Create all 6 Qualia Framework phases (first phase unlocked, rest locked)
   const phases = template.phases.map((phase, index) => ({
     project_id: projectId,
     workspace_id: project.workspace_id,
@@ -1160,197 +1160,4 @@ export async function togglePhaseTask(itemId: string, phaseId: string): Promise<
     console.error('[togglePhaseTask] Unexpected error:', error);
     return { success: false, error: 'Failed to toggle task' };
   }
-}
-
-// ============================================================================
-// UPDATE ALL PROJECT PHASE TASKS TO NEW TEMPLATE
-// ============================================================================
-
-/**
- * Updates tasks for phases 2-5 (Design, Build, Test, Ship) on all existing projects
- * to use the new Claude workflow format. Preserves completion status where titles match.
- */
-export async function updateAllProjectPhaseTasks(): Promise<ActionResult> {
-  // Redirect to the new GSD migration
-  return migrateAllProjectsToGSD();
-}
-
-// ============================================================================
-// MIGRATE ALL PROJECTS TO GSD 6-PHASE WORKFLOW
-// ============================================================================
-
-/**
- * Full migration to GSD 6-phase workflow:
- * SETUP → DISCUSS → PLAN → EXECUTE → VERIFY → SHIP
- *
- * This will:
- * 1. Delete all existing phases and phase-linked tasks
- * 2. Recreate phases using project_type-specific templates
- * 3. Create type-appropriate tasks for each phase
- */
-export async function migrateAllProjectsToGSD(): Promise<ActionResult> {
-  const supabase = await createClient();
-
-  // Auth check: only admins can run bulk migration
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Not authenticated' };
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-  if (profile?.role !== 'admin') return { success: false, error: 'Admin access required' };
-
-  // Get all projects with their types
-  const { data: projects, error: projectsError } = await supabase
-    .from('projects')
-    .select('id, workspace_id, project_type, name');
-
-  if (projectsError) {
-    console.error('[migrateAllProjectsToGSD] Error fetching projects:', projectsError);
-    return { success: false, error: projectsError.message };
-  }
-
-  if (!projects || projects.length === 0) {
-    return { success: true, data: { message: 'No projects found', count: 0 } };
-  }
-
-  let projectsUpdated = 0;
-  let phasesCreated = 0;
-  let tasksCreated = 0;
-  const errors: string[] = [];
-
-  for (const project of projects) {
-    try {
-      // Delete existing phases (cascades to tasks via phase_id)
-      const { data: existingPhases } = await supabase
-        .from('project_phases')
-        .select('id')
-        .eq('project_id', project.id);
-
-      if (existingPhases && existingPhases.length > 0) {
-        const phaseIds = existingPhases.map((p) => p.id);
-
-        // Delete tasks linked to these phases
-        await supabase.from('tasks').delete().in('phase_id', phaseIds);
-
-        // Delete phase resources
-        await supabase.from('phase_resources').delete().in('phase_id', phaseIds);
-
-        // Delete the phases
-        await supabase.from('project_phases').delete().eq('project_id', project.id);
-      }
-
-      // Also delete any orphaned tasks with phase_name but no phase_id
-      await supabase
-        .from('tasks')
-        .delete()
-        .eq('project_id', project.id)
-        .not('phase_name', 'is', null);
-
-      // Get the type-specific template
-      const effectiveType: ProjectType = project.project_type || 'web_design';
-      const template = getTemplateForType(effectiveType);
-
-      // Create new GSD phases
-      const phases = template.phases.map((phase, index) => ({
-        project_id: project.id,
-        workspace_id: project.workspace_id,
-        name: phase.name,
-        description: phase.description,
-        helper_text: phase.prompt,
-        template_key: `${effectiveType}_${phase.name.toLowerCase()}`,
-        display_order: index + 1,
-        status: 'not_started',
-        is_locked: index > 0, // First phase unlocked
-        auto_progress: true,
-        is_custom: false,
-      }));
-
-      const { data: createdPhases, error: phasesError } = await supabase
-        .from('project_phases')
-        .insert(phases)
-        .select('id, name, display_order');
-
-      if (phasesError || !createdPhases) {
-        errors.push(
-          `Project ${project.name}: ${phasesError?.message || 'Failed to create phases'}`
-        );
-        continue;
-      }
-
-      phasesCreated += createdPhases.length;
-
-      // Set up prerequisite links
-      const sortedPhases = [...createdPhases].sort((a, b) => a.display_order - b.display_order);
-      for (let i = 1; i < sortedPhases.length; i++) {
-        await supabase
-          .from('project_phases')
-          .update({ prerequisite_phase_id: sortedPhases[i - 1].id })
-          .eq('id', sortedPhases[i].id);
-      }
-
-      // Create tasks from template
-      const tasks: Array<{
-        workspace_id: string;
-        project_id: string;
-        phase_id: string;
-        phase_name: string;
-        title: string;
-        description: string | null;
-        status: string;
-        sort_order: number;
-        show_in_inbox: boolean;
-      }> = [];
-
-      for (const createdPhase of createdPhases) {
-        const phaseDef = template.phases.find(
-          (p) => p.name.toUpperCase() === createdPhase.name.toUpperCase()
-        );
-        if (phaseDef) {
-          phaseDef.tasks.forEach((task, index) => {
-            tasks.push({
-              workspace_id: project.workspace_id,
-              project_id: project.id,
-              phase_id: createdPhase.id,
-              phase_name: createdPhase.name,
-              title: task.title,
-              description: task.helperText,
-              status: 'Todo',
-              sort_order: index,
-              show_in_inbox: false,
-            });
-          });
-        }
-      }
-
-      if (tasks.length > 0) {
-        const { error: tasksError } = await supabase.from('tasks').insert(tasks);
-        if (tasksError) {
-          errors.push(`Project ${project.name} tasks: ${tasksError.message}`);
-        } else {
-          tasksCreated += tasks.length;
-        }
-      }
-
-      projectsUpdated++;
-    } catch (err) {
-      errors.push(`Project ${project.name}: ${err}`);
-    }
-  }
-
-  return {
-    success: errors.length === 0,
-    data: {
-      message: `Migrated ${projectsUpdated} projects to GSD workflow`,
-      projectsUpdated,
-      phasesCreated,
-      tasksCreated,
-      errors: errors.length > 0 ? errors : undefined,
-    },
-    error: errors.length > 0 ? `${errors.length} errors occurred` : undefined,
-  };
 }

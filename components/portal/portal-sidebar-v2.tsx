@@ -28,7 +28,6 @@ import {
   Users,
   UserCheck,
   BarChart3,
-  ArrowRightLeft,
 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { cn } from '@/lib/utils';
@@ -127,7 +126,6 @@ const adminSubpages: NavItemDef[] = [
     appKey: 'admin-attendance',
   },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3, appKey: 'admin-reports' },
-  { name: 'Migrate', href: '/admin/migrate', icon: ArrowRightLeft, appKey: 'admin-migrate' },
 ];
 
 /* ------------------------------------------------------------------ */

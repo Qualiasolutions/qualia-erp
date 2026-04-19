@@ -528,7 +528,7 @@ export async function syncGitHubWebhooks(
   }
 
   const octokit = new Octokit({ auth: decryptToken(githubIntegration.encrypted_token) });
-  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET || process.env.GSD_WEBHOOK_SECRET || '';
+  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET || '';
 
   // Get all GitHub-linked projects
   const { data: integrations } = await supabase

@@ -29,7 +29,7 @@ Three specialist agents (frontend + backend + performance) scanned the codebase 
 | # | Dimension | Finding | Location | Fix | Status |
 |---|-----------|---------|----------|-----|--------|
 | C1 | Perf | N+1 sequential UPDATE per unlinked task | `app/actions/pipeline.ts:816-828` | Batch via `.in('id', ...)` or RPC | ✅ FIXED 2026-04-18 (grouped by phase_id, one UPDATE per group) |
-| C2 | Perf | N+1 in `migrateAllProjectsToGSD` — nested per-project × per-phase loops | `app/actions/pipeline.ts:404-411`, `:1213-1329` | Controlled-concurrency `Promise.all` batches of 5 | ✅ FIXED 2026-04-18 (prerequisite-phase linking now `Promise.all`) |
+| C2 | Perf | N+1 in Qualia Framework migration — nested per-project × per-phase loops | `app/actions/pipeline.ts:404-411` (migration helper later removed with `/admin/migrate`) | Controlled-concurrency `Promise.all` batches of 5 | ✅ FIXED 2026-04-18 (prerequisite-phase linking now `Promise.all`); migration helper removed 2026-04-19 |
 | C3 | Perf | N+1 stale session cleanup on every clock-in | `app/actions/work-sessions.ts:78-89` | `Promise.all` — each update is independent | ✅ FIXED 2026-04-18 |
 
 ## High Priority
