@@ -68,5 +68,42 @@
 - H4 — `initializeProjectPipeline` prerequisite-phase linking parallelized via `Promise.all`
 - H5 — clock-in stale session cleanup parallelized via `Promise.all`
 
+## Phase 9: Task System Consolidation 🟡 (ready to plan)
+
+**Goal:** Single `/tasks` page serving clients, employees, and admins — folds `/inbox` and `/admin/tasks` into one role-aware surface.
+
+**Why:** Three task surfaces today (`/inbox`, `/tasks`, `/admin/tasks`) are confusing, duplicate UI work, and split mental models. Aligns with Fawzi's "unified portal for all roles" vision.
+
+**Success criteria:**
+- `/inbox` redirects to `/tasks` (any role, query params preserved)
+- `/admin/tasks` redirects to `/tasks?scope=all` (admin) or `/tasks` (non-admin)
+- Employees on `/tasks`: own assigned tasks only, no scope toggle, no bulk actions
+- Admins on `/tasks`: own tasks by default; "All" toggle reveals workspace tasks; bulk select + assign / done / delete
+- Clients on `/tasks`: only `is_client_visible=true` tasks for their linked projects; read-only
+- Sidebar shows exactly one "Tasks" entry — no Inbox, no admin Tasks subpage
+- Bulk assign sends one notification per affected assignee
+- `npx tsc --noEmit`, `npm run lint`, `npm test` clean
+- No regressions in `inbox-widget` "see all" link or welcome tour selector
+
+**Pre-scope reference:** `.planning/phases/9-tasks-consolidation/PLAN.md` (2026-04-18 draft).
+
+---
+
+## Phase 10: God-Module Split + Cache Components 🔵 (queued)
+
+**Goal:** Characterize + split `app/actions/client-portal.ts` (2679 LOC); add Next.js 16 `use cache` to hot read paths.
+
+**Why:** Biggest god-module in the codebase blocks safe refactors and inflates bundle size. Native Cache Components (not Redis) is the right caching layer on Vercel for Next.js 16 — cheaper, tag-integrated, zero new infra.
+
+**Success criteria:**
+- Characterization tests cover 8-12 most-used `client-portal.ts` exports (tests pass before + after refactor)
+- `client-portal.ts` split into `app/actions/client-portal/{projects,invoices,feature-requests,action-items,activities}.ts`
+- Thin `client-portal.ts` barrel re-exports everything (backcompat; zero caller changes required)
+- `use cache` + `cacheTag` added to `getProjectById`, dashboard aggregates, roadmap reads
+- `updateTag` called from corresponding mutations to invalidate
+- `npx tsc --noEmit`, `npm run lint`, `npm test` clean; test coverage net-positive on touched modules
+
+---
+
 ## Status
-Portal v2 is **live on `portal.qualiasolutions.net`**. All planned phases shipped. Remaining work is OPTIMIZE.md medium/low backlog (not ship-blocking).
+Portal v2 is **live on `portal.qualiasolutions.net`**. Phase 9 (tasks consolidation) ready to plan. Phase 10 (god-module + caching) queued. Remaining OPTIMIZE.md medium/low backlog (not ship-blocking).
