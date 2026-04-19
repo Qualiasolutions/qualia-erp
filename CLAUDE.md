@@ -184,13 +184,13 @@ Project uses Qualia `.planning/` structure:
 
 ## Technical Debt
 
-| Priority | Issue                         | Status  |
-| -------- | ----------------------------- | ------- |
-| P1       | Test coverage (1.68% → 50%)   | Pending |
-| P2       | N+1 query in `getProjectById` | Pending |
-| P2       | Redis rate limiting           | Pending |
+| Priority | Issue                       | Status  |
+| -------- | --------------------------- | ------- |
+| P1       | Test coverage (1.68% → 50%) | Pending |
+| P2       | Redis rate limiting         | Pending |
+| P2       | God-module splits           | Pending |
 
-P0 items (IDOR in file downloads, `deleteTask` auth, webhook secret) — DONE.
+DONE: P0 items (IDOR in file downloads, `deleteTask` auth, webhook secret). P2 N+1 in `getProjectById` (parallelized via `Promise.all`). Token encryption hardened + rotated (2026-04-19). v4.0.4 framework sync contract (`client_report_id`, `dry_run` + 7-day retention).
 
 ## Trainee Resources
 
