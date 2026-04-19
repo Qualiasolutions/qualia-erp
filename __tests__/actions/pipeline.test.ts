@@ -14,6 +14,7 @@ jest.mock('next/cache', () => ({
 
 jest.mock('@/app/actions/shared', () => ({
   isUserAdmin: jest.fn().mockResolvedValue(true),
+  getCachedUserRole: jest.fn().mockResolvedValue('admin'),
 }));
 
 jest.mock('@/lib/qualia-framework-templates', () => ({
@@ -321,13 +322,18 @@ describe('createProjectNote', () => {
 
 describe('updateProjectNote', () => {
   it('updates note successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    // Phase 11: ownership check fetches note.user_id first, then runs the UPDATE.
+    supabase.from
+      .mockReturnValueOnce(buildChain({ data: { user_id: USER_ID }, error: null }))
+      .mockReturnValue(buildChain({ data: null, error: null }));
     const result = await updateProjectNote(NOTE_ID, 'Updated content');
     expect(result.success).toBe(true);
   });
 
   it('returns error on DB failure', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: { message: 'Update failed' } }));
+    supabase.from
+      .mockReturnValueOnce(buildChain({ data: { user_id: USER_ID }, error: null }))
+      .mockReturnValue(buildChain({ data: null, error: { message: 'Update failed' } }));
     const result = await updateProjectNote(NOTE_ID, 'Updated');
     expect(result.success).toBe(false);
   });
@@ -335,13 +341,18 @@ describe('updateProjectNote', () => {
 
 describe('deleteProjectNote', () => {
   it('deletes note successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    // Phase 11: ownership check fetches note.user_id first, then runs the DELETE.
+    supabase.from
+      .mockReturnValueOnce(buildChain({ data: { user_id: USER_ID }, error: null }))
+      .mockReturnValue(buildChain({ data: null, error: null }));
     const result = await deleteProjectNote(NOTE_ID);
     expect(result.success).toBe(true);
   });
 
   it('returns error on DB failure', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: { message: 'Delete failed' } }));
+    supabase.from
+      .mockReturnValueOnce(buildChain({ data: { user_id: USER_ID }, error: null }))
+      .mockReturnValue(buildChain({ data: null, error: { message: 'Delete failed' } }));
     const result = await deleteProjectNote(NOTE_ID);
     expect(result.success).toBe(false);
   });
