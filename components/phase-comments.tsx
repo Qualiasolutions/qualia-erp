@@ -1,22 +1,22 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, Trash2, Lock, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  createPhaseComment,
-  getPhaseComments,
-  deletePhaseComment,
-} from '@/app/actions/phase-comments';
+import { createPhaseComment, deletePhaseComment } from '@/app/actions/phase-comments';
+import { usePhaseComments, invalidatePhaseComments } from '@/lib/swr';
+import { createClient } from '@/lib/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
+// Runtime shape from getPhaseComments (after FK normalization)
 interface Comment {
   id: string;
   comment_text: string;
   is_internal: boolean | null;
   created_at: string | null;
+  commented_by: string;
   profile: {
     id: string;
     full_name: string | null;
@@ -29,34 +29,37 @@ interface PhaseCommentsProps {
   projectId: string;
   phaseName: string;
   isAdmin: boolean;
+  currentUserId?: string;
 }
 
-export function PhaseComments({ projectId, phaseName, isAdmin }: PhaseCommentsProps) {
-  const [comments, setComments] = useState<Comment[]>([]);
+export function PhaseComments({
+  projectId,
+  phaseName,
+  isAdmin,
+  currentUserId,
+}: PhaseCommentsProps) {
+  const { comments: rawComments, isLoading } = usePhaseComments(projectId, phaseName, isAdmin);
+  // The SWR hook type annotation may not exactly match the runtime shape from
+  // getPhaseComments. Cast through unknown to the actual runtime shape.
+  const comments = (rawComments ?? []) as unknown as Comment[];
+
   const [text, setText] = useState('');
   const [isInternal, setIsInternal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(currentUserId ?? null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const loadComments = useCallback(async () => {
-    const result = await getPhaseComments(projectId, phaseName, isAdmin);
-    if (result.success) {
-      setComments(result.data as Comment[]);
-    }
-    return result;
-  }, [projectId, phaseName, isAdmin]);
-
+  // If currentUserId is not provided as prop, resolve from browser client
   useEffect(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    loadComments().then(() => {
-      if (!cancelled) setIsLoading(false);
+    if (currentUserId) {
+      setResolvedUserId(currentUserId);
+      return;
+    }
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setResolvedUserId(user?.id ?? null);
     });
-    return () => {
-      cancelled = true;
-    };
-  }, [loadComments]);
+  }, [currentUserId]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -79,7 +82,7 @@ export function PhaseComments({ projectId, phaseName, isAdmin }: PhaseCommentsPr
 
       if (result.success) {
         setText('');
-        await loadComments();
+        invalidatePhaseComments(projectId, phaseName);
       } else {
         toast.error(result.error || 'Failed to save comment');
       }
@@ -91,16 +94,15 @@ export function PhaseComments({ projectId, phaseName, isAdmin }: PhaseCommentsPr
   }
 
   async function handleDelete(commentId: string) {
-    setComments((prev) => prev.filter((c) => c.id !== commentId));
     try {
       const result = await deletePhaseComment(commentId, projectId);
-      if (!result.success) {
+      if (result.success) {
+        invalidatePhaseComments(projectId, phaseName);
+      } else {
         toast.error(result.error || 'Failed to delete comment');
-        await loadComments();
       }
     } catch {
       toast.error('Failed to delete comment');
-      await loadComments();
     }
   }
 
@@ -163,13 +165,15 @@ export function PhaseComments({ projectId, phaseName, isAdmin }: PhaseCommentsPr
                           ? formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })
                           : ''}
                       </span>
-                      <button
-                        onClick={() => handleDelete(comment.id)}
-                        disabled={isSending}
-                        className="ml-auto hidden h-5 w-5 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-red-500/10 hover:text-red-500 group-hover:flex"
-                      >
-                        <Trash2 className="h-2.5 w-2.5" />
-                      </button>
+                      {(isAdmin || comment.profile?.id === resolvedUserId) && (
+                        <button
+                          onClick={() => handleDelete(comment.id)}
+                          disabled={isSending}
+                          className="ml-auto hidden h-5 w-5 cursor-pointer items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-red-500/10 hover:text-red-500 group-hover:flex"
+                        >
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </button>
+                      )}
                     </div>
                     <p className="mt-0.5 whitespace-pre-wrap text-xs leading-relaxed text-foreground/80">
                       {comment.comment_text}
@@ -216,7 +220,7 @@ export function PhaseComments({ projectId, phaseName, isAdmin }: PhaseCommentsPr
             onClick={handleSubmit}
             disabled={isSending || !text.trim()}
             className={cn(
-              'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+              'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors',
               text.trim() && !isSending
                 ? 'bg-qualia-500 text-primary-foreground hover:bg-qualia-600'
                 : 'bg-muted text-muted-foreground/30'

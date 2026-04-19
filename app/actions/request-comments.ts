@@ -6,6 +6,7 @@ import type { ActionResult } from './shared';
 import { isUserManagerOrAbove } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { uuidParam, requestCommentSchema } from '@/lib/validation';
+import { notifyEmployeesOfClientComment } from '@/lib/email';
 
 /**
  * Get all comments for a feature request
@@ -141,6 +142,22 @@ export async function createRequestComment(
     ...comment,
     author: normalizeFKResponse(comment.author),
   };
+
+  // Notify assigned employees when a client posts a comment
+  if (profile?.role === 'client') {
+    const { data: request } = await supabase
+      .from('client_feature_requests')
+      .select('project_id, title')
+      .eq('id', requestId)
+      .single();
+
+    if (request?.project_id) {
+      const authorName = normalized.author?.full_name || 'A client';
+      notifyEmployeesOfClientComment(request.project_id, authorName, content.trim()).catch((err) =>
+        console.error('[request-comment notify]', err)
+      );
+    }
+  }
 
   return { success: true, data: normalized };
 }

@@ -5,6 +5,7 @@ import { sendMessageSchema, markChannelReadSchema, validateData } from '@/lib/va
 import type { ActionResult } from '@/app/actions/shared';
 import { getUserRole } from '@/app/actions/shared';
 import { getClientProjectIds } from '@/lib/portal-utils';
+import { notifyAssignedEmployees } from '@/lib/notifications';
 
 // ============ RESULT TYPES ============
 // More specific return types so SWR hooks can access nested data properties
@@ -500,6 +501,21 @@ export async function sendMessage(input: {
     if (updateError) {
       // Non-fatal — message was already sent successfully
       console.error('[sendMessage] Channel update error:', updateError);
+    }
+
+    // Notify assigned employees when a client sends a message
+    if (role === 'client') {
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      notifyAssignedEmployees(
+        projectId,
+        'New message from ' + (senderProfile?.full_name || 'a client'),
+        { type: 'portal_message', projectId, messagePreview: content.substring(0, 100) }
+      ).catch((err) => console.error('[sendMessage notify]', err));
     }
 
     // Normalize the sender FK
