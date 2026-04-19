@@ -45,6 +45,10 @@ jest.mock('@/lib/email', () => ({
   notifyTaskCreated: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('@/app/actions/notifications', () => ({
+  notifyTaskAssigned: jest.fn().mockResolvedValue(undefined),
+}));
+
 // ---- Setup helpers ----
 
 function buildChain(resolvedData: { data: unknown; error: unknown } = { data: null, error: null }) {
@@ -677,6 +681,264 @@ describe('inbox actions', () => {
       const result = await quickUpdateTask(TASK_ID, { status: 'Done' });
 
       expect(result.success).toBe(true);
+    });
+  });
+
+  // ============ getTasks scope: 'all' ============
+  describe('getTasks with scope: all', () => {
+    it('returns all tasks for admin with scope=all', async () => {
+      const { getTasks } = await import('@/app/actions/inbox');
+      const tasks = [
+        createMockTask({ id: TASK_ID, title: 'Task A' }),
+        createMockTask({ id: 'b35d99bd-97d5-454b-b86e-b52afb106526', title: 'Task B' }),
+      ];
+      setupMockClient(tasks, null);
+
+      const result = await getTasks(WORKSPACE_ID, { scope: 'all' });
+
+      expect(result).toHaveLength(2);
+      expect(result[0].title).toBe('Task A');
+      expect(result[1].title).toBe('Task B');
+    });
+
+    it('returns empty array for non-admin with scope=all', async () => {
+      const { getTasks } = await import('@/app/actions/inbox');
+      const { isUserAdmin } = jest.requireMock('@/app/actions/shared');
+      (isUserAdmin as jest.Mock).mockResolvedValue(false);
+      setupMockClient([createMockTask()], null);
+
+      const result = await getTasks(WORKSPACE_ID, { scope: 'all' });
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  // ============ bulkAssignTasks ============
+  describe('bulkAssignTasks', () => {
+    const ASSIGNEE_ID = 'c3d40c07-f159-457e-a809-03c2aa5ba785';
+
+    it('admin can bulk-assign tasks', async () => {
+      const { bulkAssignTasks } = await import('@/app/actions/inbox');
+      const chain = setupMockClient(
+        [{ id: TASK_ID, title: 'Test Task', workspace_id: WORKSPACE_ID }],
+        null
+      );
+      // Mock the profiles query for actor name lookup (single() call)
+      chain.single.mockResolvedValue({
+        data: { full_name: 'Admin User', email: 'admin@qualia.dev' },
+        error: null,
+      });
+
+      const result = await bulkAssignTasks([TASK_ID], ASSIGNEE_ID);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({ count: 1 });
+    });
+
+    it('non-admin gets admin access required error', async () => {
+      const { bulkAssignTasks } = await import('@/app/actions/inbox');
+      const { isUserAdmin } = jest.requireMock('@/app/actions/shared');
+      (isUserAdmin as jest.Mock).mockResolvedValue(false);
+      setupMockClient(null, null);
+
+      const result = await bulkAssignTasks([TASK_ID], ASSIGNEE_ID);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Admin access required');
+    });
+
+    it('returns error for empty task array', async () => {
+      const { bulkAssignTasks } = await import('@/app/actions/inbox');
+      setupMockClient(null, null);
+
+      const result = await bulkAssignTasks([], ASSIGNEE_ID);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('No tasks selected');
+    });
+
+    it('returns error when not authenticated', async () => {
+      const { bulkAssignTasks } = await import('@/app/actions/inbox');
+      setUnauthenticated();
+
+      const result = await bulkAssignTasks([TASK_ID], ASSIGNEE_ID);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Not authenticated');
+    });
+
+    it('returns error on Supabase failure', async () => {
+      const { bulkAssignTasks } = await import('@/app/actions/inbox');
+      setupMockClient(null, { message: 'Update failed' });
+
+      const result = await bulkAssignTasks([TASK_ID], ASSIGNEE_ID);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Update failed');
+    });
+
+    it('notifies assignee for each assigned task', async () => {
+      const { bulkAssignTasks } = await import('@/app/actions/inbox');
+      const chain = setupMockClient(
+        [
+          { id: TASK_ID, title: 'Task 1', workspace_id: WORKSPACE_ID },
+          {
+            id: 'e45d99bd-97d5-454b-b86e-b52afb106527',
+            title: 'Task 2',
+            workspace_id: WORKSPACE_ID,
+          },
+        ],
+        null
+      );
+      chain.single.mockResolvedValue({
+        data: { full_name: 'Admin User', email: 'admin@qualia.dev' },
+        error: null,
+      });
+
+      await bulkAssignTasks([TASK_ID, 'e45d99bd-97d5-454b-b86e-b52afb106527'], ASSIGNEE_ID);
+
+      const { notifyTaskAssigned } = jest.requireMock('@/app/actions/notifications');
+      expect(notifyTaskAssigned).toHaveBeenCalledTimes(2);
+    });
+
+    it('skips notification when unassigning (assigneeId is null)', async () => {
+      const { bulkAssignTasks } = await import('@/app/actions/inbox');
+      setupMockClient([{ id: TASK_ID, title: 'Test Task', workspace_id: WORKSPACE_ID }], null);
+
+      await bulkAssignTasks([TASK_ID], null);
+
+      const { notifyTaskAssigned } = jest.requireMock('@/app/actions/notifications');
+      expect(notifyTaskAssigned).not.toHaveBeenCalled();
+    });
+  });
+
+  // ============ bulkMarkDone ============
+  describe('bulkMarkDone', () => {
+    it('admin can bulk-mark tasks as done', async () => {
+      const { bulkMarkDone } = await import('@/app/actions/inbox');
+      setupMockClient([{ id: TASK_ID }], null);
+
+      const result = await bulkMarkDone([TASK_ID]);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({ count: 1 });
+    });
+
+    it('non-admin gets admin access required error', async () => {
+      const { bulkMarkDone } = await import('@/app/actions/inbox');
+      const { isUserAdmin } = jest.requireMock('@/app/actions/shared');
+      (isUserAdmin as jest.Mock).mockResolvedValue(false);
+      setupMockClient(null, null);
+
+      const result = await bulkMarkDone([TASK_ID]);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Admin access required');
+    });
+
+    it('returns error for empty task array', async () => {
+      const { bulkMarkDone } = await import('@/app/actions/inbox');
+      setupMockClient(null, null);
+
+      const result = await bulkMarkDone([]);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('No tasks selected');
+    });
+
+    it('returns error when not authenticated', async () => {
+      const { bulkMarkDone } = await import('@/app/actions/inbox');
+      setUnauthenticated();
+
+      const result = await bulkMarkDone([TASK_ID]);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Not authenticated');
+    });
+
+    it('returns error on Supabase failure', async () => {
+      const { bulkMarkDone } = await import('@/app/actions/inbox');
+      setupMockClient(null, { message: 'Update failed' });
+
+      const result = await bulkMarkDone([TASK_ID]);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Update failed');
+    });
+
+    it('returns correct count for multiple tasks', async () => {
+      const { bulkMarkDone } = await import('@/app/actions/inbox');
+      setupMockClient([{ id: TASK_ID }, { id: 'f55d99bd-97d5-454b-b86e-b52afb106528' }], null);
+
+      const result = await bulkMarkDone([TASK_ID, 'f55d99bd-97d5-454b-b86e-b52afb106528']);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({ count: 2 });
+    });
+  });
+
+  // ============ bulkDelete ============
+  describe('bulkDelete', () => {
+    it('admin can bulk-delete tasks', async () => {
+      const { bulkDelete } = await import('@/app/actions/inbox');
+      setupMockClient([{ id: TASK_ID }], null);
+
+      const result = await bulkDelete([TASK_ID]);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({ count: 1 });
+    });
+
+    it('non-admin gets admin access required error', async () => {
+      const { bulkDelete } = await import('@/app/actions/inbox');
+      const { isUserAdmin } = jest.requireMock('@/app/actions/shared');
+      (isUserAdmin as jest.Mock).mockResolvedValue(false);
+      setupMockClient(null, null);
+
+      const result = await bulkDelete([TASK_ID]);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Admin access required');
+    });
+
+    it('returns error for empty task array', async () => {
+      const { bulkDelete } = await import('@/app/actions/inbox');
+      setupMockClient(null, null);
+
+      const result = await bulkDelete([]);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('No tasks selected');
+    });
+
+    it('returns error when not authenticated', async () => {
+      const { bulkDelete } = await import('@/app/actions/inbox');
+      setUnauthenticated();
+
+      const result = await bulkDelete([TASK_ID]);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Not authenticated');
+    });
+
+    it('returns error on Supabase failure', async () => {
+      const { bulkDelete } = await import('@/app/actions/inbox');
+      setupMockClient(null, { message: 'Delete failed' });
+
+      const result = await bulkDelete([TASK_ID]);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Delete failed');
+    });
+
+    it('returns correct count for multiple tasks', async () => {
+      const { bulkDelete } = await import('@/app/actions/inbox');
+      setupMockClient([{ id: TASK_ID }, { id: 'g65d99bd-97d5-454b-b86e-b52afb106529' }], null);
+
+      const result = await bulkDelete([TASK_ID, 'g65d99bd-97d5-454b-b86e-b52afb106529']);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({ count: 2 });
     });
   });
 });
