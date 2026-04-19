@@ -250,56 +250,58 @@ function UserMenu({
 
   return (
     <>
-      <DropdownMenu open={open} onOpenChange={setOpen}>
-        <DropdownMenuTrigger asChild>
-          <button
-            className={cn(
-              'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150',
-              'hover:bg-primary/[0.04]',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+      <div className="flex items-center gap-1">
+        <DropdownMenu open={open} onOpenChange={setOpen}>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn(
+                'flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150',
+                'hover:bg-primary/[0.04]',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+              )}
+            >
+              {/* Avatar */}
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20">
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-medium text-foreground">{displayName}</p>
+                <p className="truncate text-[11px] text-muted-foreground/60">{displayEmail}</p>
+              </div>
+              <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground/25" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-52">
+            <div className="px-2 py-1.5">
+              <p className="text-sm font-medium">{displayName}</p>
+              <p className="text-xs text-muted-foreground/70">{displayEmail}</p>
+            </div>
+            <DropdownMenuSeparator />
+            {isAdminViewing && (
+              <>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setOpen(false);
+                    setViewAsOpen(true);
+                  }}
+                >
+                  <Eye className="h-4 w-4" />
+                  View as
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
             )}
-          >
-            {/* Avatar */}
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20">
-              {displayName.charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-medium text-foreground">{displayName}</p>
-              <p className="truncate text-[11px] text-muted-foreground/60">{displayEmail}</p>
-            </div>
-            <ThemeSwitcher />
-            <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground/25" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-52">
-          <div className="px-2 py-1.5">
-            <p className="text-sm font-medium">{displayName}</p>
-            <p className="text-xs text-muted-foreground/70">{displayEmail}</p>
-          </div>
-          <DropdownMenuSeparator />
-          {isAdminViewing && (
-            <>
-              <DropdownMenuItem
-                onClick={() => {
-                  setOpen(false);
-                  setViewAsOpen(true);
-                }}
-              >
-                <Eye className="h-4 w-4" />
-                View as
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-            </>
-          )}
-          <DropdownMenuItem
-            onClick={handleSignOut}
-            className="text-destructive focus:text-destructive"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="text-destructive focus:text-destructive"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <ThemeSwitcher />
+      </div>
 
       {isAdminViewing && <ViewAsDialog open={viewAsOpen} onOpenChange={setViewAsOpen} />}
     </>
