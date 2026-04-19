@@ -1,16 +1,13 @@
 'use client';
 
-import { useState, useEffect, useOptimistic, useCallback } from 'react';
+import { useState, useOptimistic } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import {
-  getRequestComments,
-  createRequestComment,
-  deleteRequestComment,
-} from '@/app/actions/request-comments';
+import { createRequestComment, deleteRequestComment } from '@/app/actions/request-comments';
+import { useRequestComments, invalidateRequestComments } from '@/lib/swr';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { MessageSquare, Loader2 } from 'lucide-react';
@@ -47,10 +44,12 @@ export function RequestCommentThread({
   userRole,
   legacyAdminResponse,
 }: RequestCommentThreadProps) {
-  const [comments, setComments] = useState<RequestComment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { comments: swrComments, isLoading: loading } = useRequestComments(requestId);
   const [commentText, setCommentText] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Cast SWR data to our local type
+  const comments = swrComments as RequestComment[];
 
   const [optimisticComments, addOptimisticComment] = useOptimistic<
     RequestComment[],
@@ -59,40 +58,26 @@ export function RequestCommentThread({
 
   const isStaff = userRole === 'admin' || userRole === 'employee';
 
-  // Load comments on mount
-  const loadComments = useCallback(async () => {
-    const result = await getRequestComments(requestId);
-    if (result.success && result.data) {
-      setComments(result.data as RequestComment[]);
-    }
-    setLoading(false);
-  }, [requestId]);
-
-  useEffect(() => {
-    loadComments();
-  }, [loadComments]);
-
   const { execute: submitComment, isPending } = useServerAction<RequestComment, [string, string]>(
     createRequestComment,
     {
-      onSuccess: (data?: RequestComment) => {
-        if (data) {
-          setComments((prev) => [...prev.filter((c) => !c.id.startsWith('temp-')), data]);
-        }
+      onSuccess: () => {
+        invalidateRequestComments(requestId);
       },
       onError: (errorMsg: string) => {
-        // Rollback optimistic comments
-        setComments((prev) => prev.filter((c) => !c.id.startsWith('temp-')));
+        invalidateRequestComments(requestId);
         toast.error(errorMsg);
       },
     }
   );
 
   const { execute: removeComment, isPending: isDeleting } = useServerAction(deleteRequestComment, {
+    onSuccess: () => {
+      invalidateRequestComments(requestId);
+    },
     onError: (errorMsg: string) => {
       toast.error(errorMsg);
-      // Re-fetch to restore state
-      loadComments();
+      invalidateRequestComments(requestId);
     },
   });
 
@@ -133,9 +118,6 @@ export function RequestCommentThread({
     const commentId = deleteConfirmId;
     if (!commentId) return;
     setDeleteConfirmId(null);
-
-    // Optimistically remove
-    setComments((prev) => prev.filter((c) => c.id !== commentId));
 
     await removeComment(commentId);
   };

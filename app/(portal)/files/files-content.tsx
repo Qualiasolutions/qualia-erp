@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronRight,
   ExternalLink,
+  Info,
 } from 'lucide-react';
 import { cn, formatRelativeTime } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -452,6 +453,10 @@ export function PortalFilesContent({ files }: PortalFilesContentProps) {
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground/80">
             Deliverables and project files will appear here once your team shares them.
           </p>
+          <div className="mx-auto mt-6 flex items-center gap-2 rounded-md border border-dashed border-muted-foreground/20 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>To upload files, open a project and use the Files tab.</span>
+          </div>
         </div>
       </div>
     );
@@ -459,6 +464,12 @@ export function PortalFilesContent({ files }: PortalFilesContentProps) {
 
   return (
     <div className="space-y-4">
+      {/* Upload hint banner */}
+      <div className="flex items-center gap-2 rounded-md border border-dashed border-muted-foreground/20 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+        <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span>To upload files, open a project and use the Files tab.</span>
+      </div>
+
       {/* Search bar */}
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />

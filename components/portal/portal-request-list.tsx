@@ -14,12 +14,14 @@ import {
   Download,
   FileText,
   Image as ImageIcon,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { RequestCommentThread } from './request-comment-thread';
 import { getRequestCommentCounts } from '@/app/actions/request-comments';
-import { getRequestAttachmentUrl } from '@/app/actions/client-requests';
+import { getRequestAttachmentUrl, deleteRequestAttachment } from '@/app/actions/client-requests';
 import { toast } from 'sonner';
 
 interface RequestAttachmentMeta {
@@ -51,11 +53,16 @@ function formatBytes(bytes: number): string {
 function AttachmentRow({
   requestId,
   attachment,
+  userRole,
 }: {
   requestId: string;
   attachment: RequestAttachmentMeta;
+  userRole: string;
 }) {
   const [downloading, setDownloading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [removed, setRemoved] = useState(false);
+  const router = useRouter();
   const Icon = attachment.type.startsWith('image/') ? ImageIcon : FileText;
 
   const handleDownload = async () => {
@@ -70,6 +77,23 @@ function AttachmentRow({
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete attachment "${attachment.name}"?`)) return;
+    setDeleting(true);
+    setRemoved(true);
+    const res = await deleteRequestAttachment(requestId, attachment.path);
+    setDeleting(false);
+    if (res.success) {
+      toast.success(`Deleted ${attachment.name}`);
+      router.refresh();
+    } else {
+      setRemoved(false);
+      toast.error(res.error || 'Failed to delete attachment');
+    }
+  };
+
+  if (removed) return null;
+
   return (
     <li className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-2.5 py-1.5 text-xs">
       <div className="flex min-w-0 items-center gap-2">
@@ -81,15 +105,28 @@ function AttachmentRow({
           {formatBytes(attachment.size)}
         </span>
       </div>
-      <button
-        type="button"
-        onClick={handleDownload}
-        disabled={downloading}
-        aria-label={`Download ${attachment.name}`}
-        className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-wait disabled:opacity-50"
-      >
-        <Download className="h-3.5 w-3.5" />
-      </button>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={downloading}
+          aria-label={`Download ${attachment.name}`}
+          className="cursor-pointer rounded p-1 text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground disabled:cursor-wait disabled:opacity-50"
+        >
+          <Download className="h-3.5 w-3.5" />
+        </button>
+        {userRole === 'admin' && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            aria-label={`Delete ${attachment.name}`}
+            className="cursor-pointer rounded p-1 text-muted-foreground transition-colors duration-150 hover:bg-red-100 hover:text-red-600 disabled:cursor-wait disabled:opacity-50 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
     </li>
   );
 }
@@ -227,7 +264,12 @@ const RequestRow = memo(function RequestRow({
           {request.attachments && request.attachments.length > 0 && (
             <ul className="mt-3 space-y-1.5">
               {request.attachments.map((att) => (
-                <AttachmentRow key={att.path} requestId={request.id} attachment={att} />
+                <AttachmentRow
+                  key={att.path}
+                  requestId={request.id}
+                  attachment={att}
+                  userRole={userRole}
+                />
               ))}
             </ul>
           )}
