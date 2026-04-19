@@ -308,6 +308,12 @@ export async function syncPlanningFromGitHubWithServiceRole(
   }
 
   // 8. Upsert milestones and phases
+  //
+  // Capture sync start time BEFORE any writes. Rows inserted/updated below
+  // will have github_synced_at >= syncStartedAt. Any older github-sourced
+  // rows left over from a previous ROADMAP.md structure are stale and
+  // cleaned up after the upsert pass (step 10).
+  const syncStartedAt = new Date().toISOString();
   let milestonesUpserted = 0;
   let phasesOnly = 0;
   let sortOrder = 0;
@@ -432,6 +438,23 @@ export async function syncPlanningFromGitHubWithServiceRole(
     phaseDirs,
     phaseItemQueue
   );
+
+  // 10. Cleanup stale github-sourced rows.
+  //
+  // Rows whose github_synced_at is older than this sync's start time were
+  // imported from a previous ROADMAP.md structure (e.g. a milestone that
+  // no longer exists, or an old "Phase 0" fallback bucket). Delete them so
+  // the UI doesn't show ghost milestones alongside the current structure.
+  // Manually-added phases have github_synced_at = NULL and are untouched.
+  const { error: cleanupError } = await supabase
+    .from('project_phases')
+    .delete()
+    .eq('project_id', projectId)
+    .not('github_synced_at', 'is', null)
+    .lt('github_synced_at', syncStartedAt);
+  if (cleanupError) {
+    console.error('[sync] cleanup of stale phases failed', cleanupError);
+  }
 
   return {
     success: true,
