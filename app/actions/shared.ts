@@ -207,13 +207,14 @@ export async function canModifyTask(userId: string, taskId: string): Promise<boo
 
 // ============ PROJECT FILE AUTHORIZATION HELPERS ============
 
-// Check if user can access a project (workspace member)
+// Check if user can access a project (admin, client with link, or workspace member)
 export async function canAccessProject(userId: string, projectId: string): Promise<boolean> {
   const supabase = await createClient();
 
-  // Parallelize the admin check and project fetch — both only need userId/projectId
-  const [isAdmin, { data: project }] = await Promise.all([
+  // Parallelize the admin check, role lookup, and project fetch — all independent
+  const [isAdmin, role, { data: project }] = await Promise.all([
     isUserAdmin(userId),
+    getCachedUserRole(userId),
     supabase.from('projects').select('workspace_id').eq('id', projectId).single(),
   ]);
 
@@ -222,7 +223,18 @@ export async function canAccessProject(userId: string, projectId: string): Promi
 
   if (!project?.workspace_id) return false;
 
-  // Check if user is a member of the workspace
+  // Client role: check client_projects link instead of workspace membership
+  if (role === 'client') {
+    const { data: link } = await supabase
+      .from('client_projects')
+      .select('id')
+      .eq('client_id', userId)
+      .eq('project_id', projectId)
+      .maybeSingle();
+    return !!link;
+  }
+
+  // Employee: check workspace membership (existing behavior)
   const { data: membership } = await supabase
     .from('workspace_members')
     .select('id')

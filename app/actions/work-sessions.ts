@@ -807,6 +807,9 @@ export async function getSessionReportsForProject(
     .maybeSingle();
   const role = profile?.role;
 
+  // Clients must never access session reports — block by design, not by coincidence
+  if (role === 'client') return [];
+
   if (role !== 'admin') {
     const { data: assignment } = await admin
       .from('project_assignments')

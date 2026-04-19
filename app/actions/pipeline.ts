@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 
 import type { ActionResult } from './shared';
-import { isUserAdmin } from './shared';
+import { isUserAdmin, getCachedUserRole } from './shared';
 import {
   getTemplateForType,
   WEB_DESIGN_TEMPLATE,
@@ -197,6 +197,14 @@ export async function deletePhaseResource(resourceId: string): Promise<ActionRes
 export async function getProjectNotes(projectId: string): Promise<ProjectNote[]> {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const role = await getCachedUserRole(user.id);
+  if (role === 'client') return [];
+
   const { data, error } = await supabase
     .from('project_notes')
     .select(
@@ -273,6 +281,11 @@ export async function createProjectNote(
     return { success: false, error: 'Not authenticated' };
   }
 
+  const role = await getCachedUserRole(user.id);
+  if (role === 'client') {
+    return { success: false, error: 'Not authorized' };
+  }
+
   const { data, error } = await supabase
     .from('project_notes')
     .insert({
@@ -306,6 +319,34 @@ export async function createProjectNote(
 export async function updateProjectNote(noteId: string, content: string): Promise<ActionResult> {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const [role, isAdmin] = await Promise.all([getCachedUserRole(user.id), isUserAdmin(user.id)]);
+
+  if (role === 'client') {
+    return { success: false, error: 'Not authorized' };
+  }
+
+  // Ownership check: only the note author or an admin can edit
+  const { data: note } = await supabase
+    .from('project_notes')
+    .select('user_id')
+    .eq('id', noteId)
+    .single();
+
+  if (!note) {
+    return { success: false, error: 'Note not found' };
+  }
+
+  if (note.user_id !== user.id && !isAdmin) {
+    return { success: false, error: 'Not authorized' };
+  }
+
   const { error } = await supabase.from('project_notes').update({ content }).eq('id', noteId);
 
   if (error) {
@@ -318,6 +359,34 @@ export async function updateProjectNote(noteId: string, content: string): Promis
 
 export async function deleteProjectNote(noteId: string): Promise<ActionResult> {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const [role, isAdmin] = await Promise.all([getCachedUserRole(user.id), isUserAdmin(user.id)]);
+
+  if (role === 'client') {
+    return { success: false, error: 'Not authorized' };
+  }
+
+  // Ownership check: only the note author or an admin can delete
+  const { data: note } = await supabase
+    .from('project_notes')
+    .select('user_id')
+    .eq('id', noteId)
+    .single();
+
+  if (!note) {
+    return { success: false, error: 'Note not found' };
+  }
+
+  if (note.user_id !== user.id && !isAdmin) {
+    return { success: false, error: 'Not authorized' };
+  }
 
   const { error } = await supabase.from('project_notes').delete().eq('id', noteId);
 
