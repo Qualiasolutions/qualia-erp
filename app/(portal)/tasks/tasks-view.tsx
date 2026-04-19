@@ -75,6 +75,8 @@ interface TasksViewProps {
   assignableMembers?: Array<{ id: string; full_name: string | null; email: string | null }>;
   /** Used to gate destructive actions. Employees can only mark/unmark done. */
   userRole?: 'admin' | 'employee' | 'client';
+  /** When true, renders the Mine/All scope toggle in the toolbar. */
+  isAdmin?: boolean;
 }
 
 type FilterPriority = 'all' | 'urgent' | 'high' | 'medium' | 'low';
@@ -337,6 +339,7 @@ export function TasksView({
   initialTasks,
   assignableMembers = [],
   userRole,
+  isAdmin = false,
 }: TasksViewProps) {
   // Admin = full row actions (edit/delete/hide). Employee = mark/unmark done only.
   // Client mode is handled via `isClient` further down.
@@ -718,6 +721,37 @@ export function TasksView({
       </header>
 
       <div className="flex flex-wrap items-center gap-4 border-b border-border px-6 py-3">
+        {isAdmin && !isClient && (
+          <div className="flex h-9 items-center gap-0.5 rounded-lg border border-border bg-muted/30 p-0.5">
+            <button
+              type="button"
+              onClick={() => router.push('/tasks')}
+              className={cn(
+                'h-8 rounded-md px-3 text-sm font-medium transition-colors duration-150 ease-out',
+                mode !== 'all-tasks'
+                  ? 'bg-primary/10 text-primary'
+                  : 'cursor-pointer text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+              )}
+              aria-pressed={mode !== 'all-tasks'}
+            >
+              Mine
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/tasks?scope=all')}
+              className={cn(
+                'h-8 rounded-md px-3 text-sm font-medium transition-colors duration-150 ease-out',
+                mode === 'all-tasks'
+                  ? 'bg-primary/10 text-primary'
+                  : 'cursor-pointer text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+              )}
+              aria-pressed={mode === 'all-tasks'}
+            >
+              All
+            </button>
+          </div>
+        )}
+
         <div className="relative w-full max-w-md flex-1 sm:w-auto">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input

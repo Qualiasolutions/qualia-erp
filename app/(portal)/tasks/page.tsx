@@ -102,6 +102,7 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
       initialTasks={initialTasks}
       assignableMembers={assignableMembers}
       userRole={normalizedRole}
+      isAdmin={isAdmin}
     />
   );
 }
