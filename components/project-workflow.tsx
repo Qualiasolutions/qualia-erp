@@ -1281,20 +1281,22 @@ export function ProjectWorkflow({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {/* Sync button */}
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground disabled:opacity-50"
-            title="Sync from GitHub .planning"
-          >
-            {isSyncing ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3 w-3" />
-            )}
-            Sync
-          </button>
+          {/* Sync button — internal only, hidden from clients */}
+          {userRole !== 'client' && (
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground disabled:opacity-50"
+              title="Sync from GitHub .planning"
+            >
+              {isSyncing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3" />
+              )}
+              Sync
+            </button>
+          )}
           {/* Add phase */}
           {showNewPhase ? (
             <div className="flex items-center gap-1.5">

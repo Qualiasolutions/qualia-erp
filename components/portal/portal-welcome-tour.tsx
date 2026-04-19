@@ -14,6 +14,8 @@ interface PortalWelcomeTourProps {
   displayName: string;
   companyName?: string | null;
   enabledApps?: string[];
+  logoUrl?: string | null;
+  enabled?: boolean;
 }
 
 interface TourStepDef {
@@ -288,12 +290,14 @@ function WelcomeModal({
   onDismiss,
   exiting,
   headingId,
+  logoUrl,
 }: {
   name: string;
   onStart: () => void;
   onDismiss: () => void;
   exiting: boolean;
   headingId: string;
+  logoUrl?: string | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   useFocusTrap(containerRef, !exiting);
@@ -333,9 +337,16 @@ function WelcomeModal({
         </button>
 
         <div className="px-8 pb-8 pt-12 text-center">
-          {/* Qualia logo mark */}
-          <div className="mx-auto mb-6 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/20 ring-4 ring-primary/[0.12]">
-            <span className="text-xl font-bold text-primary-foreground">Q</span>
+          {/* Client/project logo mark — falls back to first letter */}
+          <div className="mx-auto mb-6 flex size-14 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/20 ring-4 ring-primary/[0.12]">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt={`${name} logo`} className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-xl font-bold text-primary-foreground">
+                {name.charAt(0).toUpperCase()}
+              </span>
+            )}
           </div>
 
           <h2 id={headingId} className="text-xl font-semibold tracking-tight text-foreground">
@@ -578,6 +589,8 @@ export function PortalWelcomeTour({
   displayName,
   companyName,
   enabledApps,
+  logoUrl,
+  enabled = true,
 }: PortalWelcomeTourProps) {
   const [phase, setPhase] = useState<'hidden' | 'welcome' | 'tour' | 'done'>('hidden');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -610,13 +623,13 @@ export function PortalWelcomeTour({
 
   // Check localStorage on mount
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !enabled) return;
     const seen = localStorage.getItem(TOUR_STORAGE_KEY);
     if (!seen) {
       const timer = setTimeout(() => setPhase('welcome'), 400);
       return () => clearTimeout(timer);
     }
-  }, [mounted]);
+  }, [mounted, enabled]);
 
   // Resolve which steps have visible DOM targets
   useEffect(() => {
@@ -803,6 +816,7 @@ export function PortalWelcomeTour({
           onDismiss={dismiss}
           exiting={welcomeExiting}
           headingId={welcomeHeadingId}
+          logoUrl={logoUrl}
         />
       )}
 

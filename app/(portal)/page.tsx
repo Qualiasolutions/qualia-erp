@@ -1,7 +1,13 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { isPortalAdminRole } from '@/lib/portal-utils';
-import { getPortalAuthUser, getPortalProfile, getViewAsCookieId } from '@/lib/portal-cache';
+import {
+  getPortalAuthUser,
+  getPortalProfile,
+  getViewAsCookieId,
+  getClientPrimaryLogo,
+  getWorkspaceClientLogo,
+} from '@/lib/portal-cache';
 import { PortalDashboardContent } from './portal-dashboard-content';
 import { getClientWorkspaces } from '@/app/actions/portal-workspaces';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
@@ -92,11 +98,14 @@ export default async function PortalDashboard({
       if (!rawClient) {
         redirect('/');
       }
+      const logoUrl = await getWorkspaceClientLogo(workspaceId);
       return (
         <PortalDashboardContent
           clientId={workspaceId}
           displayName={displayName}
           companyName={rawClient.name}
+          logoUrl={logoUrl}
+          showWelcomeTour={false}
         />
       );
     }
@@ -118,12 +127,15 @@ export default async function PortalDashboard({
 
     const clientId = portalUserId || workspaceId;
     const companyName = client?.name || null;
+    const logoUrl = await getWorkspaceClientLogo(workspaceId);
 
     return (
       <PortalDashboardContent
         clientId={clientId}
         displayName={displayName}
         companyName={companyName}
+        logoUrl={logoUrl}
+        showWelcomeTour={false}
       />
     );
   }
@@ -139,13 +151,18 @@ export default async function PortalDashboard({
   // legal entity ("Alecci Media") that doesn't match the user's actual brand.
   // profiles.full_name is the curated, user-facing display name.
   const companyName = displayName;
+  const logoUrl = await getClientPrimaryLogo(effectiveUserId);
 
-  // Client: show their dashboard
+  // Client: show their dashboard. Welcome tour is gated to the real user
+  // (not admin impersonating), so it only triggers for actual clients on
+  // their first login in a given browser.
   return (
     <PortalDashboardContent
       clientId={effectiveUserId}
       displayName={displayName}
       companyName={companyName}
+      logoUrl={logoUrl}
+      showWelcomeTour={realRole === 'client'}
     />
   );
 }

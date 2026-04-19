@@ -2,7 +2,12 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { isPortalAdminRole } from '@/lib/portal-utils';
-import { getPortalAuthUser, getPortalProfile, getViewAsCookieId } from '@/lib/portal-cache';
+import {
+  getPortalAuthUser,
+  getPortalProfile,
+  getViewAsCookieId,
+  getClientPrimaryLogo,
+} from '@/lib/portal-cache';
 import { PortalSidebarV2 } from '@/components/portal/portal-sidebar-v2';
 import { PageTransition } from '@/components/page-transition';
 import { ViewAsBanner } from '@/components/portal/view-as-banner';
@@ -161,6 +166,11 @@ export default async function PortalLayout({ children }: { children: React.React
     }
   }
 
+  // For client users, resolve their primary project's logo so the sidebar
+  // avatar shows their brand mark instead of a letter. Cached via React
+  // so the /portal page can reuse the same result without re-querying.
+  const userLogoUrl = !effectiveIsInternal ? await getClientPrimaryLogo(effectiveUserId) : null;
+
   return (
     <ClockGateProvider userRole={effectiveRole}>
       <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -179,6 +189,7 @@ export default async function PortalLayout({ children }: { children: React.React
           enabledApps={enabledApps}
           branding={branding}
           userRole={effectiveRole}
+          userLogoUrl={userLogoUrl}
         />
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* View-as banner — only shows when admin is actively impersonating someone */}

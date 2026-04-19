@@ -147,6 +147,7 @@ interface PortalSidebarV2Props {
   enabledApps?: string[];
   branding?: PortalBranding | null;
   userRole?: string;
+  userLogoUrl?: string | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -232,10 +233,12 @@ function UserMenu({
   displayName,
   displayEmail,
   isAdminViewing,
+  logoUrl,
 }: {
   displayName: string;
   displayEmail: string;
   isAdminViewing: boolean;
+  logoUrl?: string | null;
   onLinkClick?: () => void;
 }) {
   const router = useRouter();
@@ -260,9 +263,14 @@ function UserMenu({
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
               )}
             >
-              {/* Avatar */}
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20">
-                {displayName.charAt(0).toUpperCase()}
+              {/* Avatar — project/client logo for clients, letter fallback */}
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20">
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoUrl} alt={displayName} className="h-full w-full object-cover" />
+                ) : (
+                  displayName.charAt(0).toUpperCase()
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium text-foreground">{displayName}</p>
@@ -463,6 +471,7 @@ function SidebarContent({
   enabledApps,
   branding,
   userRole,
+  userLogoUrl,
   onLinkClick,
 }: PortalSidebarV2Props & { onLinkClick?: () => void }) {
   const pathname = usePathname();
@@ -574,6 +583,7 @@ function SidebarContent({
           displayName={displayName}
           displayEmail={displayEmail}
           isAdminViewing={isAdminViewing}
+          logoUrl={userLogoUrl}
           onLinkClick={onLinkClick}
         />
       </div>

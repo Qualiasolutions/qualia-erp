@@ -9,6 +9,8 @@ interface PortalDashboardContentProps {
   displayName: string;
   companyName?: string | null;
   enabledApps?: string[];
+  logoUrl?: string | null;
+  showWelcomeTour?: boolean;
 }
 
 interface DashboardStats {
@@ -43,6 +45,8 @@ export function PortalDashboardContent({
   displayName,
   companyName,
   enabledApps,
+  logoUrl,
+  showWelcomeTour = true,
 }: PortalDashboardContentProps) {
   const { data, isLoading, isError } = usePortalDashboard(clientId);
 
@@ -72,6 +76,8 @@ export function PortalDashboardContent({
         displayName={displayName}
         companyName={companyName}
         enabledApps={enabledApps}
+        logoUrl={logoUrl}
+        enabled={showWelcomeTour}
       />
 
       <PortalDashboardV2
