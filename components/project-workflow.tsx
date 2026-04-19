@@ -1183,8 +1183,8 @@ export function ProjectWorkflow({
           </div>
         </div>
 
-        {/* Phase Comments */}
-        {activePhase && (
+        {/* Phase Comments — hidden from clients (they can't post and would see errors) */}
+        {activePhase && userRole !== 'client' && (
           <PhaseComments
             projectId={projectId}
             phaseName={activePhase.name}

@@ -15,7 +15,7 @@ export default async function PortalSettingsPage() {
 
   // Fetch profile and notification preferences in parallel on the server
   const [profileResult, prefsResult] = await Promise.all([
-    supabase.from('profiles').select('full_name, email, company').eq('id', user.id).single(),
+    supabase.from('profiles').select('full_name, email, company, role').eq('id', user.id).single(),
     getNotificationPreferences(),
   ]);
 
@@ -47,6 +47,10 @@ export default async function PortalSettingsPage() {
         };
 
   return (
-    <SettingsContent initialProfile={initialProfile} initialNotifications={initialNotifications} />
+    <SettingsContent
+      initialProfile={initialProfile}
+      initialNotifications={initialNotifications}
+      userRole={profile?.role || 'client'}
+    />
   );
 }

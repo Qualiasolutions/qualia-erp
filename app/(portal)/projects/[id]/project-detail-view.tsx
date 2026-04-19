@@ -296,7 +296,7 @@ export function ProjectDetailView({
                 >
                   {project.status}
                 </span>
-                {integrationStatus && (
+                {!isClient && integrationStatus && (
                   <IntegrationStatusBadge
                     hasPortalAccess={integrationStatus.hasPortalAccess}
                     hasERPClient={integrationStatus.hasERPClient}
@@ -672,19 +672,25 @@ export function ProjectDetailView({
           </SheetHeader>
 
           <Tabs defaultValue="resources" className="flex min-h-0 flex-1 flex-col">
-            <TabsList className="mx-4 mt-3 grid w-auto grid-cols-3">
+            <TabsList
+              className={cn('mx-4 mt-3 grid w-auto', isClient ? 'grid-cols-1' : 'grid-cols-3')}
+            >
               <TabsTrigger value="resources" className="gap-1.5 text-xs">
                 <LinkIcon className="h-3.5 w-3.5" />
                 Resources
               </TabsTrigger>
-              <TabsTrigger value="reports" className="gap-1.5 text-xs">
-                <LineChart className="h-3.5 w-3.5" />
-                Reports
-              </TabsTrigger>
-              <TabsTrigger value="notes" className="gap-1.5 text-xs">
-                <MessageSquare className="h-3.5 w-3.5" />
-                Notes
-              </TabsTrigger>
+              {!isClient && (
+                <TabsTrigger value="reports" className="gap-1.5 text-xs">
+                  <LineChart className="h-3.5 w-3.5" />
+                  Reports
+                </TabsTrigger>
+              )}
+              {!isClient && (
+                <TabsTrigger value="notes" className="gap-1.5 text-xs">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  Notes
+                </TabsTrigger>
+              )}
             </TabsList>
             <TabsContent value="resources" className="mt-0 min-h-0 flex-1">
               <ProjectResources
@@ -693,16 +699,20 @@ export function ProjectDetailView({
                 className="h-full rounded-none border-0"
               />
             </TabsContent>
-            <TabsContent value="reports" className="mt-0 min-h-0 flex-1">
-              <ProjectReportsPanel projectName={project.name} className="h-full" />
-            </TabsContent>
-            <TabsContent value="notes" className="mt-0 min-h-0 flex-1">
-              <ProjectNotes
-                projectId={project.id}
-                workspaceId={project.workspace_id}
-                className="h-full rounded-none border-0"
-              />
-            </TabsContent>
+            {!isClient && (
+              <TabsContent value="reports" className="mt-0 min-h-0 flex-1">
+                <ProjectReportsPanel projectName={project.name} className="h-full" />
+              </TabsContent>
+            )}
+            {!isClient && (
+              <TabsContent value="notes" className="mt-0 min-h-0 flex-1">
+                <ProjectNotes
+                  projectId={project.id}
+                  workspaceId={project.workspace_id}
+                  className="h-full rounded-none border-0"
+                />
+              </TabsContent>
+            )}
           </Tabs>
         </SheetContent>
       </Sheet>

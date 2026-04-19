@@ -52,8 +52,10 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
     notFound();
   }
 
+  const isClient = userProfile?.role === 'client';
+
   // Clients can only view projects they have explicit access to via client_projects
-  if (userProfile?.role === 'client') {
+  if (isClient) {
     const supabase = await createClient();
     const { data: link } = await supabase
       .from('client_projects')
@@ -84,13 +86,25 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
     redirect('/projects');
   }
 
+  // Strip sensitive data from RSC payload for client users:
+  // - profiles and clients lists are internal CRM data
+  // - integrationStatus exposes internal tooling state
+  // - lead email is PII not needed by client views
+  const projectForClient =
+    isClient && project
+      ? {
+          ...project,
+          lead: project.lead ? { ...project.lead, email: undefined } : project.lead,
+        }
+      : project;
+
   return (
     <ProjectDetailView
-      project={project}
-      profiles={profiles}
-      clients={clients}
+      project={projectForClient}
+      profiles={isClient ? [] : profiles}
+      clients={isClient ? [] : clients}
       userRole={userProfile?.role || 'employee'}
-      integrationStatus={integrationStatus}
+      integrationStatus={isClient ? undefined : integrationStatus}
     />
   );
 }

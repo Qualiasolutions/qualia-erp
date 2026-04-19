@@ -29,6 +29,7 @@ interface NotificationPreferences {
 interface SettingsContentProps {
   initialProfile: ProfileFormData;
   initialNotifications: NotificationPreferences;
+  userRole?: string;
 }
 
 const notificationItems = [
@@ -165,12 +166,26 @@ function PasswordChangeSection() {
   );
 }
 
-export function SettingsContent({ initialProfile, initialNotifications }: SettingsContentProps) {
+// Clients should only see notifications relevant to their role
+const CLIENT_VISIBLE_NOTIFICATIONS = ['task_due_soon', 'project_update'] as const;
+
+export function SettingsContent({
+  initialProfile,
+  initialNotifications,
+  userRole,
+}: SettingsContentProps) {
   const [profileData, setProfileData] = useState<ProfileFormData>(initialProfile);
   const [notificationPrefs, setNotificationPrefs] =
     useState<NotificationPreferences>(initialNotifications);
   const [profileSaving, setProfileSaving] = useState(false);
   const [notificationsSaving, setNotificationsSaving] = useState(false);
+
+  const filteredNotificationItems =
+    userRole === 'client'
+      ? notificationItems.filter((item) =>
+          (CLIENT_VISIBLE_NOTIFICATIONS as readonly string[]).includes(item.id)
+        )
+      : notificationItems;
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -326,7 +341,7 @@ export function SettingsContent({ initialProfile, initialNotifications }: Settin
         <form onSubmit={handleNotificationSubmit}>
           {/* Notification Toggles */}
           <div className="divide-y divide-border/50">
-            {notificationItems.map((item) => (
+            {filteredNotificationItems.map((item) => (
               <div
                 key={item.id}
                 className="flex min-h-[56px] items-center justify-between px-6 py-4"
