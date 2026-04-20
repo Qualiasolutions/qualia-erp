@@ -1,15 +1,20 @@
 # State — Portal v2
 
 ## Current Phase
-Post-Phase-8 hotfix/polish sprint (2026-04-18). SHIPPED.
+UI Remake Milestone — Phases 14 (foundation), 15 (shell), 16.1 (Today) SHIPPED. Phases 16.2–16.5 + 17 pending.
 
 ## Status
 shipped
 
+## Last deploy
+- 2026-04-20 09:13 UTC
+- Commit: `22ac5d3`
+- Alias: https://portal.qualiasolutions.net
+- Deploy URL: https://qualia-39jn1uw15-qualiasolutionscy.vercel.app
+- Post-deploy: `/` 307 (auth redirect ✓), `/auth/login` 200, `/api/health` 200 @ 1.6s (cold start)
+
 ## Active Work
-**Another agent is currently working on** (do not touch these files/areas):
-- Hasan's clock-out → session report log-out issue
-- `npm audit` error fixing / dependency hardening
+None active. Ready for Phase 16.2 (Tasks redesign) next session.
 
 ## Handoff — sprint of 2026-04-18
 
