@@ -1356,17 +1356,22 @@ export function usePortalDashboard(clientId: string | null) {
     async () => {
       if (!clientId) return null;
 
-      const { getCachedClientDashboardData, getCachedClientDashboardProjects } =
-        await import('@/lib/cached-reads');
+      // NOTE: uses the uncached server actions (not lib/cached-reads.ts wrappers).
+      // cached-reads.ts imports createAdminClient which is server-only —
+      // importing it into this client-side SWR hook leaks server code into the
+      // browser bundle. The server-side initial render DOES use the cached
+      // wrappers; SWR client-side revalidation uses the server actions.
+      const { getClientDashboardData, getClientDashboardProjects } =
+        await import('@/app/actions/client-portal/projects');
 
-      const [stats, projects] = await Promise.all([
-        getCachedClientDashboardData(clientId),
-        getCachedClientDashboardProjects(clientId),
+      const [statsResult, projectsResult] = await Promise.all([
+        getClientDashboardData(clientId),
+        getClientDashboardProjects(clientId),
       ]);
 
       return {
-        stats,
-        projects,
+        stats: statsResult.success ? statsResult.data : null,
+        projects: projectsResult.success ? projectsResult.data : [],
       };
     },
     {
