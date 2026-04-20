@@ -103,7 +103,7 @@ const PAGES: PageDef[] = [
     icon: 'admin',
     href: '/admin',
     roles: ['admin'],
-    appKey: 'admin-team',
+    appKey: 'control',
   },
   {
     id: 'requests',
