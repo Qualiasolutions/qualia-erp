@@ -1,7 +1,7 @@
 'use client';
 
 import { usePortalDashboard } from '@/lib/swr';
-import { PortalDashboardV2 } from '@/components/portal/portal-dashboard-v2';
+import { QualiaPortalHub } from '@/components/portal/qualia-portal-hub';
 import { PortalWelcomeTour } from '@/components/portal/portal-welcome-tour';
 
 interface PortalDashboardContentProps {
@@ -53,7 +53,6 @@ export function PortalDashboardContent({
   const stats = (data.stats as DashboardStats | null) || null;
   const projects = (data.projects as ProjectWithPhases[]) || [];
 
-  // Map projects to the shape expected by PortalDashboardV2
   const mappedProjects = projects.map((p) => ({
     id: p.id,
     name: p.name,
@@ -66,12 +65,10 @@ export function PortalDashboardContent({
     currentPhase: p.currentPhase?.name,
   }));
 
-  // Extract recent activity from stats
   const recentActivity = stats?.recentActivity || [];
 
   return (
-    <div className="px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
-      {/* Welcome tour for first-time clients */}
+    <>
       <PortalWelcomeTour
         displayName={displayName}
         companyName={companyName}
@@ -79,8 +76,7 @@ export function PortalDashboardContent({
         logoUrl={logoUrl}
         enabled={showWelcomeTour}
       />
-
-      <PortalDashboardV2
+      <QualiaPortalHub
         stats={stats}
         projects={mappedProjects}
         recentActivity={recentActivity}
@@ -89,7 +85,8 @@ export function PortalDashboardContent({
         clientId={clientId}
         displayName={displayName}
         companyName={companyName || undefined}
+        enabledApps={enabledApps}
       />
-    </div>
+    </>
   );
 }
