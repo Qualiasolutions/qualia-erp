@@ -8,7 +8,7 @@ import {
   getViewAsCookieId,
   getClientPrimaryLogo,
 } from '@/lib/portal-cache';
-import { PortalSidebarV2 } from '@/components/portal/portal-sidebar-v2';
+import { QualiaSidebar } from '@/components/portal/qualia-sidebar';
 import { PageTransition } from '@/components/page-transition';
 import { ViewAsBanner } from '@/components/portal/view-as-banner';
 import { ClockGateProvider } from '@/components/clock-gate-provider';
@@ -180,10 +180,11 @@ export default async function PortalLayout({ children }: { children: React.React
         >
           Skip to main content
         </a>
-        <PortalSidebarV2
+        <QualiaSidebar
           displayName={displayName}
           displayEmail={displayEmail}
           isAdminViewing={isAdminViewing}
+          isImpersonating={isImpersonating}
           companyName={companyName}
           userId={effectiveUserId}
           enabledApps={enabledApps}
