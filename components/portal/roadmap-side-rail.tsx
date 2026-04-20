@@ -66,7 +66,11 @@ function SkeletonRow() {
 
 function PersonnelSection({ lead, client }: { lead: LeadInfo | null; client: ClientInfo | null }) {
   return (
-    <div className="shrink-0 space-y-3 border-b border-border p-4">
+    <div
+      className="shrink-0 space-y-3 border-b border-border p-4"
+      aria-label="Project lead and client"
+      role="group"
+    >
       <SectionLabel>Lead</SectionLabel>
       <div className="flex items-center gap-3">
         <EntityAvatar
@@ -112,7 +116,11 @@ function TeamSection({ projectId }: { projectId: string }) {
     : [];
 
   return (
-    <div className="shrink-0 space-y-3 border-b border-border p-4">
+    <div
+      className="shrink-0 space-y-3 border-b border-border p-4"
+      aria-label="Assigned team"
+      role="group"
+    >
       <div className="flex items-center gap-2">
         <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-purple-500/10">
           <Users className="h-3.5 w-3.5 text-purple-400" />
@@ -193,6 +201,7 @@ export function RoadmapSideRail({
 
   return (
     <aside
+      aria-label="Project details"
       className={cn(
         'flex flex-col border-l border-border bg-card/30',
         'lg:h-full lg:max-h-[calc(100vh-180px)] lg:overflow-y-auto'
@@ -205,32 +214,32 @@ export function RoadmapSideRail({
       {!isClient && <TeamSection projectId={projectId} />}
 
       {/* Resources */}
-      <div className="min-h-0 flex-1 border-b border-border">
+      <section aria-label="Project resources" className="min-h-0 flex-1 border-b border-border">
         <ProjectResources
           projectId={projectId}
           initialResources={[]}
           className="h-full rounded-none border-0"
         />
-      </div>
+      </section>
 
       {/* Files */}
-      <div className="min-h-0 flex-1 border-b border-border">
+      <section aria-label="Project files" className="min-h-0 flex-1 border-b border-border">
         <ProjectFilesPanel
           projectId={projectId}
           isClient={isClient}
           className="h-full rounded-none border-0"
         />
-      </div>
+      </section>
 
       {/* Notes — hidden from clients */}
       {!isClient && (
-        <div className="min-h-0 flex-1">
+        <section aria-label="Project notes" className="min-h-0 flex-1">
           <ProjectNotes
             projectId={projectId}
             workspaceId={workspaceId}
             className="h-full rounded-none border-0"
           />
-        </div>
+        </section>
       )}
     </aside>
   );

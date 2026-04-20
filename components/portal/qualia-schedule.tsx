@@ -419,8 +419,13 @@ export function QualiaSchedule({
           </div>
 
           {/* + Event */}
-          <Button onClick={() => setMeetingModalOpen(true)} className="gap-2" size="sm">
-            <Plus className="h-4 w-4" />
+          <Button
+            onClick={() => setMeetingModalOpen(true)}
+            className="gap-2"
+            size="sm"
+            aria-label="New event"
+          >
+            <Plus className="h-4 w-4" aria-hidden />
             <span className="hidden sm:inline">Event</span>
           </Button>
         </div>

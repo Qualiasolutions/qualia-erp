@@ -231,6 +231,32 @@ export function QualiaControl({ initialTab, data }: QualiaControlProps) {
 
   const activeTab = TABS.find((t) => t.id === tab) ?? TABS[0];
 
+  /* Arrow-key handler for roving tabindex (WAI-ARIA Tabs pattern) */
+  const handleTabKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>) => {
+      const currentIndex = TABS.findIndex((t) => t.id === tab);
+      let nextIndex: number | null = null;
+
+      if (e.key === 'ArrowRight') {
+        nextIndex = (currentIndex + 1) % TABS.length;
+      } else if (e.key === 'ArrowLeft') {
+        nextIndex = (currentIndex - 1 + TABS.length) % TABS.length;
+      } else if (e.key === 'Home') {
+        nextIndex = 0;
+      } else if (e.key === 'End') {
+        nextIndex = TABS.length - 1;
+      }
+
+      if (nextIndex !== null) {
+        e.preventDefault();
+        const nextTab = TABS[nextIndex];
+        changeTab(nextTab.id);
+        document.getElementById(`tab-${nextTab.id}`)?.focus();
+      }
+    },
+    [tab, changeTab]
+  );
+
   return (
     <div className="flex flex-col">
       <header className="border-b border-border bg-muted/30 px-6 pt-8 lg:px-8">
@@ -256,15 +282,24 @@ export function QualiaControl({ initialTab, data }: QualiaControlProps) {
               </Button>
             </div>
           </div>
-          <nav className="mt-6 flex items-center gap-6 overflow-x-auto" aria-label="Control tabs">
+          <nav
+            role="tablist"
+            aria-label="Control tabs"
+            className="mt-6 flex items-center gap-6 overflow-x-auto"
+          >
             {TABS.map((t) => {
               const active = t.id === tab;
               return (
                 <button
                   key={t.id}
                   type="button"
+                  role="tab"
+                  id={`tab-${t.id}`}
+                  aria-selected={active}
+                  aria-controls={`tabpanel-${t.id}`}
+                  tabIndex={active ? 0 : -1}
                   onClick={() => changeTab(t.id)}
-                  aria-current={active ? 'page' : undefined}
+                  onKeyDown={handleTabKeyDown}
                   className={cn(
                     'relative whitespace-nowrap border-b-2 pb-3 pt-1 text-sm font-medium transition-colors duration-150',
                     'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2',
@@ -281,7 +316,12 @@ export function QualiaControl({ initialTab, data }: QualiaControlProps) {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-[1400px] p-6 lg:p-8">
+      <div
+        role="tabpanel"
+        id={`tabpanel-${tab}`}
+        aria-labelledby={`tab-${tab}`}
+        className="mx-auto w-full max-w-[1400px] p-6 lg:p-8"
+      >
         {tab === 'overview' && <ControlOverview data={data.overview} />}
         {tab === 'clients' && <ControlClients data={data.clients} />}
         {tab === 'team' && <ControlTeam data={data.team} />}
