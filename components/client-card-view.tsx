@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Globe, Phone, Folder } from 'lucide-react';
+import { Globe, Phone, Folder, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getInitials, getStatusConfig, type Client } from '@/lib/client-utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -21,7 +21,7 @@ const ClientCard = React.memo(function ClientCard({
     <button
       type="button"
       onClick={() => onOpenDetail(client)}
-      className="card-interactive flex w-full flex-col gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all"
+      className="ease-[premium] flex w-full cursor-pointer flex-col gap-3 rounded-xl border border-border bg-card p-5 text-left transition-all duration-200 hover:border-primary/20 hover:shadow-md"
     >
       {/* Header: Avatar + Name + Status */}
       <div className="flex items-start gap-3">
@@ -84,8 +84,10 @@ interface ClientCardViewProps {
 export function ClientCardView({ clients, onOpenDetail }: ClientCardViewProps) {
   if (clients.length === 0) {
     return (
-      <div className="flex h-40 items-center justify-center text-center">
-        <p className="text-sm text-muted-foreground">No clients match your filters</p>
+      <div className="flex h-48 flex-col items-center justify-center text-center">
+        <Inbox className="h-12 w-12 text-muted-foreground/30" />
+        <p className="mt-4 text-base font-medium text-foreground">No clients found</p>
+        <p className="mt-1 text-sm text-muted-foreground">Try adjusting your search or filters</p>
       </div>
     );
   }

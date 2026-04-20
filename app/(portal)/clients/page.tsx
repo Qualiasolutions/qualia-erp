@@ -46,15 +46,15 @@ function ClientTableSkeleton() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Skeleton className="h-9 w-full sm:max-w-xs sm:flex-1" />
         <Skeleton className="h-9 w-[130px]" />
         <Skeleton className="h-9 w-[140px]" />
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <div className="flex items-center border-b border-border/40 bg-muted/50 px-4 py-3">
+      <div className="elevation-1 overflow-hidden rounded-xl border border-border bg-card">
+        <div className="flex items-center border-b border-border/40 bg-muted/30 px-4 py-3">
           <Skeleton className="mr-4 h-3 w-6" />
           <Skeleton className="h-3 w-24" />
           <Skeleton className="ml-auto h-3 w-14" />
@@ -99,7 +99,7 @@ export default async function PortalClientsPage() {
         <NewClientModal />
       </PageHeader>
 
-      <div className="flex-1 overflow-y-auto p-5 sm:p-8">
+      <div className="flex-1 overflow-y-auto p-6 lg:p-8">
         <Suspense fallback={<ClientTableSkeleton />}>
           <ClientListLoader />
         </Suspense>

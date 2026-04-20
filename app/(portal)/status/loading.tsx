@@ -16,7 +16,7 @@ export default function StatusLoading() {
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-10 px-6 py-8 lg:px-8">
+        <div className="space-y-10 p-6 lg:p-8">
           {/* Desktop header skeleton */}
           <div className="hidden items-end justify-between md:flex">
             <div className="space-y-1">
@@ -42,12 +42,12 @@ export default function StatusLoading() {
           </div>
 
           {/* Stats bar skeleton */}
-          <div className="overflow-hidden rounded-2xl border border-emerald-500/15">
+          <div className="overflow-hidden rounded-xl border border-emerald-500/15 bg-card">
             <div className="bg-gradient-to-r from-emerald-500/[0.04] via-transparent to-emerald-500/[0.02]">
               <div className="grid grid-cols-5 divide-x divide-border/20">
                 {/* Status */}
                 <div className="col-span-2 flex items-center gap-4 p-6">
-                  <Skeleton className="size-12 rounded-2xl" />
+                  <Skeleton className="size-12 rounded-xl" />
                   <div className="space-y-2">
                     <Skeleton className="h-5 w-36" />
                     <Skeleton className="h-3 w-24" />
@@ -80,15 +80,15 @@ export default function StatusLoading() {
               </div>
 
               {/* Monitor cards grid */}
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {[...Array(4)].map((_, i) => (
                   <div
                     key={i}
-                    className="overflow-hidden rounded-2xl border border-border bg-card p-5"
+                    className="overflow-hidden rounded-xl border border-border bg-card p-5"
                   >
                     {/* Top row */}
                     <div className="mb-4 flex items-start justify-between">
-                      <Skeleton className="size-14 rounded-2xl" />
+                      <Skeleton className="size-14 rounded-xl" />
                       <Skeleton className="size-2.5 rounded-full" />
                     </div>
                     {/* Name */}

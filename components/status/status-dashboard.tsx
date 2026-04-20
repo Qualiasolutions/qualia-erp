@@ -16,6 +16,7 @@ import {
   Activity,
   ArrowUpRight,
   Clock,
+  Inbox,
 } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import type { Monitor, MonitorStatus, MonitorSource } from '@/lib/uptime';
@@ -113,7 +114,6 @@ function MonitorCard({
   index: number;
   project?: ProjectInfo;
 }) {
-  const [hovered, setHovered] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const faviconUrl = getFaviconUrl(monitor.url);
   const responseTime = parseInt(monitor.average_response_time || '0');
@@ -131,53 +131,25 @@ function MonitorCard({
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out',
-        // 3D tilt effect via perspective
-        'hover:[transform:perspective(800px)_rotateX(1deg)_rotateY(-1deg)_translateY(-2px)]',
-        monitor.status === 2 && [
-          'border-border bg-card',
-          'hover:border-emerald-500/30',
-          'hover:shadow-[0_8px_30px_-8px_rgba(16,185,129,0.12),0_2px_8px_-2px_rgba(0,0,0,0.1)]',
-        ],
-        monitor.status === 8 && [
-          'border-amber-500/30 bg-card',
-          'shadow-[0_4px_20px_-6px_rgba(245,158,11,0.15)]',
-        ],
-        monitor.status === 9 && [
-          'border-red-500/40 bg-card',
-          'shadow-[0_4px_20px_-6px_rgba(239,68,68,0.2)]',
-        ],
-        (monitor.status === 0 || monitor.status === 1) && 'border-border bg-card/60 opacity-50'
+        'ease-[premium] group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card p-5 transition-all duration-200',
+        'hover:border-primary/20 hover:shadow-md',
+        monitor.status === 8 && 'border-amber-500/30',
+        monitor.status === 9 && 'border-red-500/40',
+        (monitor.status === 0 || monitor.status === 1) && 'opacity-50'
       )}
       style={{
         animationDelay: `${index * 50}ms`,
         animationFillMode: 'backwards',
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       onClick={() => setExpanded(!expanded)}
     >
-      {/* Glow effect on hover */}
-      <div
-        className={cn(
-          'pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500',
-          monitor.status === 2 &&
-            'bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.06)_0%,transparent_70%)]',
-          monitor.status === 9 &&
-            'bg-[radial-gradient(ellipse_at_top,rgba(239,68,68,0.08)_0%,transparent_70%)] opacity-100',
-          monitor.status === 8 &&
-            'bg-[radial-gradient(ellipse_at_top,rgba(245,158,11,0.06)_0%,transparent_70%)] opacity-100',
-          hovered && 'opacity-100'
-        )}
-      />
-
       {/* Content */}
-      <div className="relative z-10 p-5">
+      <div className="relative z-10">
         {/* Top row: favicon + status */}
         <div className="mb-4 flex items-start justify-between">
           <div
             className={cn(
-              'flex size-14 items-center justify-center overflow-hidden rounded-2xl border-2 transition-all duration-300',
+              'ease-[premium] flex size-14 items-center justify-center overflow-hidden rounded-xl border-2 transition-all duration-200',
               'bg-gradient-to-br from-muted/40 to-muted/10',
               monitor.status === 2 && 'border-border group-hover:border-emerald-500/20',
               monitor.status === 8 && 'border-amber-500/20',
@@ -216,7 +188,7 @@ function MonitorCard({
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
-                  'flex size-7 items-center justify-center rounded-lg border transition-all duration-200',
+                  'ease-[premium] flex size-7 items-center justify-center rounded-lg border transition-all duration-200',
                   'border-transparent opacity-0 group-hover:border-border group-hover:opacity-100',
                   'hover:bg-muted/40'
                 )}
@@ -423,7 +395,7 @@ function MonitorSection({
       </div>
 
       {/* Grid */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {monitors.map((monitor, i) => (
           <MonitorCard
             key={monitor.id}
@@ -494,7 +466,7 @@ export function StatusDashboard({
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-10 px-6 py-8 lg:px-8">
+        <div className="space-y-10 p-6 lg:p-8">
           {/* Header — desktop only */}
           <div className="hidden items-end justify-between md:flex">
             <div className="space-y-1">
@@ -520,7 +492,7 @@ export function StatusDashboard({
           {/* Stats bar */}
           <div
             className={cn(
-              'relative overflow-hidden rounded-2xl border',
+              'relative overflow-hidden rounded-xl border bg-card p-6',
               overall.allUp
                 ? 'border-emerald-500/15'
                 : overall.downCount > 0
@@ -545,7 +517,7 @@ export function StatusDashboard({
               <div className="col-span-2 flex items-center gap-4 p-6">
                 <div
                   className={cn(
-                    'flex size-12 items-center justify-center rounded-2xl',
+                    'flex size-12 items-center justify-center rounded-xl',
                     overall.allUp && 'bg-emerald-500/10',
                     overall.downCount > 0 && 'bg-red-500/10',
                     overall.degradedCount > 0 && overall.downCount === 0 && 'bg-amber-500/10'
@@ -599,6 +571,17 @@ export function StatusDashboard({
           {error && (
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.03] p-4">
               <p className="text-sm text-amber-600 dark:text-amber-400">{error}</p>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {monitors.length === 0 && !error && (
+            <div className="flex h-64 flex-col items-center justify-center text-center">
+              <Inbox className="h-12 w-12 text-muted-foreground/30" />
+              <p className="mt-4 text-base font-medium text-foreground">No monitors found</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                No services are assigned to your projects yet
+              </p>
             </div>
           )}
 

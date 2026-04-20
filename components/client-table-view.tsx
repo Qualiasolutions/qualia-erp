@@ -147,7 +147,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
       <tr
         onClick={handleRowClick}
         className={cn(
-          'group cursor-pointer border-b border-border transition-colors duration-150',
+          'ease-[premium] group cursor-pointer border-b border-border transition-colors duration-150',
           'hover:bg-muted/30',
           isPending && 'pointer-events-none opacity-50'
         )}
@@ -213,7 +213,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
                   {getInitials(client.assigned.full_name || 'U')}
                 </AvatarFallback>
               </Avatar>
-              <span className="max-w-[80px] truncate text-sm text-muted-foreground">
+              <span className="truncate text-sm text-muted-foreground">
                 {client.assigned.full_name?.split(' ')[0]}
               </span>
             </div>
@@ -249,9 +249,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
             >
               <Globe className="h-3.5 w-3.5" />
-              <span className="max-w-[100px] truncate">
-                {client.website.replace(/^https?:\/\//, '')}
-              </span>
+              <span className="truncate">{client.website.replace(/^https?:\/\//, '')}</span>
             </a>
           ) : (
             <span className="text-sm text-muted-foreground/50">-</span>
@@ -460,10 +458,8 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
   if (clients.length === 0) {
     return (
       <div className="flex h-64 flex-col items-center justify-center text-center">
-        <div className="mb-4 rounded-xl bg-secondary/50 p-5">
-          <Inbox className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <p className="text-lg font-semibold text-foreground">No clients yet</p>
+        <Inbox className="h-12 w-12 text-muted-foreground/30" />
+        <p className="mt-4 text-base font-medium text-foreground">No clients yet</p>
         <p className="mt-1 text-sm text-muted-foreground">Add your first client to get started</p>
       </div>
     );
@@ -522,7 +518,7 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         {/* Search */}
         <div className="relative w-full min-w-0 sm:max-w-xs sm:flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -580,10 +576,10 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
       {viewMode === 'cards' ? (
         <ClientCardView clients={processedClients} onOpenDetail={handleOpenDetail} />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+        <div className="elevation-1 overflow-x-auto rounded-xl border border-border bg-card">
           <table className="w-full min-w-[900px]">
             <thead>
-              <tr className="border-b border-border/40 bg-muted/50">
+              <tr className="border-b border-border/40 bg-muted/30">
                 <th className="w-12 py-3 pl-4 pr-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   #
                 </th>
@@ -656,9 +652,13 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
 
           {/* Empty filtered state */}
           {processedClients.length === 0 && clients.length > 0 && (
-            <div className="flex h-40 flex-col items-center justify-center text-center">
-              <p className="text-sm text-muted-foreground">No clients match your filters</p>
-              <Button variant="link" size="sm" onClick={clearFilters} className="mt-2">
+            <div className="flex h-48 flex-col items-center justify-center text-center">
+              <Inbox className="h-12 w-12 text-muted-foreground/30" />
+              <p className="mt-4 text-base font-medium text-foreground">No clients found</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Try adjusting your search or filters
+              </p>
+              <Button variant="link" size="sm" onClick={clearFilters} className="mt-3">
                 Clear filters
               </Button>
             </div>
