@@ -4,7 +4,16 @@ import { memo, useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
-import { LayoutGrid, List, AlertTriangle } from 'lucide-react';
+import {
+  LayoutGrid,
+  List,
+  AlertTriangle,
+  Columns3,
+  Beaker,
+  Hammer,
+  ClipboardCheck,
+  Rocket,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { PROJECT_TYPE_CONFIG, type ProjectTypeStyle } from '@/lib/project-type-config';
@@ -32,8 +41,53 @@ export interface GalleryProject {
   team?: { id: string; full_name: string | null; avatar_url: string | null }[];
 }
 
-type ViewMode = 'gallery' | 'list';
+type ViewMode = 'columns' | 'gallery' | 'list';
 type FilterMode = 'all' | 'active' | 'attention' | 'launched';
+
+type StageKey = 'demo' | 'building' | 'preProduction' | 'live';
+
+const STAGE_CONFIG: Record<
+  StageKey,
+  { title: string; icon: typeof Beaker; accent: string; bg: string; ring: string }
+> = {
+  demo: {
+    title: 'Demos',
+    icon: Beaker,
+    accent: 'text-violet-600 dark:text-violet-400',
+    bg: 'bg-violet-500/10',
+    ring: 'ring-violet-500/20',
+  },
+  building: {
+    title: 'Building',
+    icon: Hammer,
+    accent: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-emerald-500/10',
+    ring: 'ring-emerald-500/20',
+  },
+  preProduction: {
+    title: 'Pre-Production',
+    icon: ClipboardCheck,
+    accent: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-500/10',
+    ring: 'ring-amber-500/20',
+  },
+  live: {
+    title: 'Live',
+    icon: Rocket,
+    accent: 'text-sky-600 dark:text-sky-400',
+    bg: 'bg-sky-500/10',
+    ring: 'ring-sky-500/20',
+  },
+};
+
+function getStage(project: GalleryProject): StageKey | null {
+  if (project.status === 'Demos') return 'demo';
+  if (project.status === 'Launched') return 'live';
+  if (project.status === 'Active' || project.status === 'Delayed') {
+    return project.is_pre_production ? 'preProduction' : 'building';
+  }
+  return null; // Done, Archived, Canceled
+}
 
 interface QualiaProjectsGalleryProps {
   projects: GalleryProject[];
@@ -183,6 +237,20 @@ function ProjectsEditorialHeader({
         <div className="flex flex-col items-start gap-3 lg:items-end">
           {/* View toggle */}
           <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode('columns')}
+              className={cn(
+                'flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150',
+                viewMode === 'columns'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+              aria-pressed={viewMode === 'columns'}
+            >
+              <Columns3 className="h-3.5 w-3.5" />
+              Columns
+            </button>
             <button
               type="button"
               onClick={() => setViewMode('gallery')}
@@ -417,7 +485,7 @@ const ProjectListRow = memo(function ProjectListRow({ project }: { project: Gall
    ====================================================================== */
 
 export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('gallery');
+  const [viewMode, setViewMode] = useState<ViewMode>('columns');
   const [filter, setFilter] = useState<FilterMode>('all');
 
   // Filter projects based on current filter mode
@@ -437,6 +505,21 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
     }
   }, [projects, filter]);
 
+  // Group filteredProjects into the 4 pipeline stages for the columns view
+  const stages = useMemo(() => {
+    const groups: Record<StageKey, GalleryProject[]> = {
+      demo: [],
+      building: [],
+      preProduction: [],
+      live: [],
+    };
+    for (const p of filteredProjects) {
+      const stage = getStage(p);
+      if (stage) groups[stage].push(p);
+    }
+    return groups;
+  }, [filteredProjects]);
+
   return (
     <div className="q-page-enter w-full p-6 lg:p-8">
       <ProjectsEditorialHeader
@@ -454,6 +537,8 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
           </div>
           <p className="text-sm text-muted-foreground">No projects match the current filter.</p>
         </div>
+      ) : viewMode === 'columns' ? (
+        <StageColumns stages={stages} />
       ) : viewMode === 'gallery' ? (
         <div
           className="q-stagger grid gap-[14px]"
@@ -496,5 +581,70 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
         </div>
       )}
     </div>
+  );
+}
+
+/* ======================================================================
+   StageColumns — 4-column pipeline
+   ====================================================================== */
+
+function StageColumns({ stages }: { stages: Record<StageKey, GalleryProject[]> }) {
+  const order: StageKey[] = ['demo', 'building', 'preProduction', 'live'];
+  return (
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+      {order.map((key) => (
+        <StageColumn key={key} stage={key} projects={stages[key]} />
+      ))}
+    </div>
+  );
+}
+
+function StageColumn({ stage, projects }: { stage: StageKey; projects: GalleryProject[] }) {
+  const config = STAGE_CONFIG[stage];
+  const Icon = config.icon;
+
+  return (
+    <section className="flex min-h-[200px] flex-col rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      {/* Column header */}
+      <header
+        className={cn(
+          'flex items-center gap-2.5 rounded-t-xl border-b border-border bg-muted/20 px-4 py-3',
+          `ring-1 ring-inset ${config.ring}`
+        )}
+      >
+        <span
+          className={cn('flex h-8 w-8 items-center justify-center rounded-lg', config.bg)}
+          aria-hidden
+        >
+          <Icon className={cn('h-4 w-4', config.accent)} />
+        </span>
+        <h2 className="text-sm font-semibold tracking-tight text-foreground">{config.title}</h2>
+        <span
+          className={cn(
+            'ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold',
+            config.bg,
+            config.accent
+          )}
+        >
+          {projects.length}
+        </span>
+      </header>
+
+      {/* Column body */}
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        {projects.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
+            <span className={cn('mb-2 rounded-xl p-3', config.bg)} aria-hidden>
+              <Icon className={cn('h-5 w-5', config.accent)} />
+            </span>
+            <p className="text-xs text-muted-foreground">
+              No {config.title.toLowerCase()} projects
+            </p>
+          </div>
+        ) : (
+          projects.map((project) => <ProjectCardTile key={project.id} project={project} />)
+        )}
+      </div>
+    </section>
   );
 }
