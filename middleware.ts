@@ -56,14 +56,21 @@ export async function middleware(request: NextRequest) {
   }
 
   // Role-based routing: read role from JWT claims (injected by custom_access_token_hook).
-  // Zero DB queries for role when the hook is active in Supabase Dashboard.
+  // Three-tier resolution: app_metadata (instant) → getClaims() (local JWT) → DB (final fallback).
   if (user) {
-    // Primary: read role from JWT custom claims set by custom_access_token_hook
-    const { data: claimsData } = await supabase.auth.getClaims();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let userRole: string | undefined = (claimsData?.claims as any)?.user_role as string | undefined;
+    // Primary: app_metadata set by custom_access_token_hook (no parsing, no roundtrip)
+    let userRole: string | undefined = (user.app_metadata as Record<string, unknown> | null)
+      ?.user_role as string | undefined;
 
-    // Fallback: query DB if hook is not yet enabled (remove once hook is confirmed working)
+    // Fallback 1: getClaims() — local JWT parse, no server roundtrip
+    if (!userRole) {
+      const { data: claimsData } = await supabase.auth.getClaims();
+      userRole = (claimsData?.claims as Record<string, unknown> | null)?.user_role as
+        | string
+        | undefined;
+    }
+
+    // Final fallback: DB query (for brand-new users whose hook hasn't fired yet)
     if (!userRole) {
       const { data: profile } = await supabase
         .from('profiles')

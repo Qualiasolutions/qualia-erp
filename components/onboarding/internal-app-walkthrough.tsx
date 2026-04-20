@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from 'motion/react';
 
 const WALKTHROUGH_VERSION = 2;
 const WALKTHROUGH_STORAGE_KEY = 'qualia-internal-walkthrough';

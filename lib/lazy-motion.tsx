@@ -1,10 +1,10 @@
 'use client';
 
-import { LazyMotion } from 'framer-motion';
+import { LazyMotion } from 'motion/react';
 import type { ReactNode } from 'react';
 
-// Async import = true lazy loading — framer-motion is NOT in the initial JS bundle
-const loadFeatures = () => import('framer-motion').then((mod) => mod.domAnimation);
+// Async import = true lazy loading — motion is NOT in the initial JS bundle
+const loadFeatures = () => import('motion/react').then((mod) => mod.domAnimation);
 
 export function LazyMotionProvider({ children }: { children: ReactNode }) {
   return (
@@ -14,6 +14,6 @@ export function LazyMotionProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Re-export m from the mini entry point to avoid pulling in the full framer-motion bundle.
-// framer-motion/m exports the m proxy as the module namespace (m.div, m.span, etc.).
-export { m, AnimatePresence } from 'framer-motion';
+// Re-export m from motion/react to avoid pulling in the full motion bundle.
+// m is the proxy for LazyMotion-compatible components (m.div, m.span, etc.).
+export { m, AnimatePresence } from 'motion/react';
