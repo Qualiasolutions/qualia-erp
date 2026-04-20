@@ -315,7 +315,7 @@ export const guides: Guide[] = [
         tips: [
           'RLS is enforced by the migration-guard hook. It blocks migrations that CREATE TABLE without RLS.',
           'Use lib/supabase/server.ts for mutations, lib/supabase/client.ts for reads in client components.',
-          'Never import the service_role key anywhere client-side. The pre-deploy hook scans for it and blocks the ship.',
+          'Never import the service-role key anywhere client-side. The pre-deploy hook scans for it and blocks the ship.',
         ],
       },
       {
@@ -383,7 +383,7 @@ export const guides: Guide[] = [
     checklist: {
       title: 'Tools and Services Checklist',
       items: [
-        'Supabase: database, auth, storage, realtime. RLS on every table, service_role server-only.',
+        'Supabase: database, auth, storage, realtime. RLS on every table, service-role server-only.',
         'Vercel: 3 teams, NO auto-deploy, ship through /qualia-ship only.',
         'Railway: long-running AI agents and background workers.',
         'OpenRouter: one key for all models, automatic failover.',
@@ -505,7 +505,7 @@ export const guides: Guide[] = [
         'Every milestone closed with /qualia-milestone',
         'Handoff milestone: polish + content/SEO + final QA + ship all complete',
         'RLS enabled on every Supabase table',
-        'No service_role key in client-facing code',
+        'No service-role key in client-facing code',
         '/qualia-ship succeeded — production URL loads and passes post-deploy checks',
         '/qualia-handoff produced all 4 deliverables',
         '/qualia-report uploaded to ERP (clock-out unblocked)',
@@ -700,7 +700,7 @@ export const guides: Guide[] = [
       items: [
         'Every milestone verified and closed with /qualia-milestone',
         'RLS on every Supabase table with proper auth policies',
-        'No service_role key in client-facing code',
+        'No service-role key in client-facing code',
         'Server-side auth checks on every mutation',
         'Input validation with Zod on forms, API routes, webhooks',
         'Subscription tier enforcement is server-side (not just client)',
@@ -877,7 +877,7 @@ export const guides: Guide[] = [
         id: 'dq-5',
         title: 'Quality Gates (Automatic)',
         description:
-          '/qualia-ship runs a gate chain before any production deploy: TypeScript compiles, linter passes, tests green, build succeeds, no leaked service_role keys. If any check fails, the deploy is blocked with the exact error. You can run the gates manually any time.',
+          '/qualia-ship runs a gate chain before any production deploy: TypeScript compiles, linter passes, tests green, build succeeds, no leaked service-role keys. If any check fails, the deploy is blocked with the exact error. You can run the gates manually any time.',
         commands: [
           'npx tsc --noEmit     # Type check',
           'npm run lint          # Linter',
@@ -886,7 +886,7 @@ export const guides: Guide[] = [
         ],
         tips: [
           'The most common blocker is TypeScript errors — fix them before shipping.',
-          'Secret key detection is a grep for service_role, SUPABASE_SERVICE_ROLE_KEY, and known anti-patterns.',
+          'Secret key detection is a grep for service-role, SUPABASE-SERVICE-ROLE-KEY, and known anti-patterns.',
           'If the build passes locally but fails on Vercel, run vercel build locally to reproduce.',
         ],
       },
@@ -1101,10 +1101,10 @@ export const guides: Guide[] = [
         id: 'sc-4',
         title: 'Security',
         description:
-          'No service_role key in client-facing code (pre-deploy hook scans for it). RLS on every Supabase table with policies that check auth.uid(). Server-side auth checks on every mutation. Zod validation on all inputs. No .env committed.',
+          'No service-role key in client-facing code (pre-deploy hook scans for it). RLS on every Supabase table with policies that check auth.uid(). Server-side auth checks on every mutation. Zod validation on all inputs. No .env committed.',
         tips: [
           'RLS on every table — the migration-guard hook enforces this for new tables.',
-          'service_role key is server-only — import it only in files under lib/supabase/server.ts or equivalent.',
+          'service-role key is server-only — import it only in files under lib/supabase/server.ts or equivalent.',
           'Validate inputs with Zod on forms, API routes, webhooks.',
           'For apps with subscriptions, enforce tiers server-side. Client-only checks are bypassable.',
         ],
@@ -1152,7 +1152,7 @@ export const guides: Guide[] = [
         'Handoff Phase 1 /qualia-polish completed',
         'Content + SEO phase done (if applicable)',
         'Final QA phase done — RLS, auth, inputs, subscriptions all checked',
-        'No service_role key in client-facing code',
+        'No service-role key in client-facing code',
         '/qualia-ship succeeded — production URL live, post-deploy checks pass',
         '/qualia-handoff produced all 4 deliverables',
         '/qualia-report uploaded to ERP (clock-out unblocked)',
