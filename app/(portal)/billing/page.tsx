@@ -2,26 +2,20 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientInvoices } from '@/app/actions/client-portal';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
+import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { PortalInvoiceList } from '@/components/portal/portal-invoice-list';
 import { PortalInvoiceFormDialog } from '@/components/portal/portal-invoice-form-dialog';
 import { PortalBillingSummary } from '@/components/portal/portal-billing-summary';
 
 export default async function PortalBillingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getPortalAuthUser();
 
   if (!user) {
     redirect('/auth/login');
   }
 
   // Billing is only accessible to admin, manager, and client roles
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+  const profile = await getPortalProfile(user.id);
 
   if (profile?.role === 'employee') {
     redirect('/');
@@ -35,6 +29,7 @@ export default async function PortalBillingPage() {
     if (!allowed) redirect('/');
   }
 
+  const supabase = await createClient();
   const [invoiceResult, clientList] = await Promise.all([
     getClientInvoices(),
     isAdmin

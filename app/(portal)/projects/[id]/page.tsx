@@ -2,8 +2,7 @@ import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getProfiles, getCurrentUserProfile, getClients } from '@/app/actions';
-import { getCachedProjectById } from '@/lib/cached-reads';
-import { getProjectIntegrationStatus } from '@/lib/integration-utils';
+import { getCachedProjectById, getCachedProjectIntegrationStatus } from '@/lib/cached-reads';
 import { getPortalAuthUser } from '@/lib/portal-cache';
 import { createClient } from '@/lib/supabase/server';
 import { ProjectDetailView } from './project-detail-view';
@@ -34,13 +33,17 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
 
-  // Fetch all data in parallel on the server
-  const [project, profiles, userProfile, integrationStatus, clientsRaw] = await Promise.all([
+  // Fetch userProfile first (React.cache'd, cheap) so we can conditionally
+  // skip the admin-only getProfiles()/getClients() queries for non-admin users.
+  // This closes the Phase 11 RSC leak at the query layer, not just the render layer.
+  const userProfile = await getCurrentUserProfile();
+  const isAdmin = userProfile?.role === 'admin';
+
+  const [project, profiles, integrationStatus, clientsRaw] = await Promise.all([
     getCachedProjectById(id),
-    getProfiles(),
-    getCurrentUserProfile(),
-    getProjectIntegrationStatus(id),
-    getClients(),
+    isAdmin ? getProfiles() : Promise.resolve([]),
+    getCachedProjectIntegrationStatus(id),
+    isAdmin ? getClients() : Promise.resolve([]),
   ]);
 
   const clients = (clientsRaw || []).map((c) => ({

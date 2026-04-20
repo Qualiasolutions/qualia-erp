@@ -1,21 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
+import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { ActivityContent } from './activity-content';
 
 export default async function PortalActivityPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getPortalAuthUser();
 
   if (!user) redirect('/auth/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+  const profile = await getPortalProfile(user.id);
 
   const role = profile?.role || 'client';
 
@@ -26,6 +20,7 @@ export default async function PortalActivityPage() {
   }
 
   // Get all project IDs the user has access to
+  const supabase = await createClient();
   let projectIds: string[] = [];
   if (role === 'admin') {
     const { data } = await supabase.from('projects').select('id').not('status', 'eq', 'Canceled');

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { EmployeeAssignmentManager } from '@/components/admin/employee-assignment-manager';
 import { AssignmentHistoryTable } from '@/components/admin/assignment-history-table';
 
@@ -9,21 +9,14 @@ export const metadata = {
 };
 
 export default async function AdminAssignmentsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getPortalAuthUser();
 
   if (!user) {
     redirect('/auth/login');
   }
 
   // Check admin role
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+  const profile = await getPortalProfile(user.id);
 
   if (profile?.role !== 'admin') {
     redirect('/');

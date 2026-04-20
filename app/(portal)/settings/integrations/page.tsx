@@ -2,33 +2,27 @@ import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { IntegrationsClient } from './integrations-client';
 
 async function IntegrationsLoader() {
   await connection();
-  const supabase = await createClient();
 
-  // Check auth
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Auth + profile via request-scoped cache (shared with layout)
+  const user = await getPortalAuthUser();
 
   if (!user) {
     redirect('/auth/login');
   }
 
-  // Check admin permission
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+  const profile = await getPortalProfile(user.id);
 
   if (profile?.role !== 'admin') {
     redirect('/settings');
   }
 
   // Get user's workspace
+  const supabase = await createClient();
   const { data: membership } = await supabase
     .from('workspace_members')
     .select('workspace_id')

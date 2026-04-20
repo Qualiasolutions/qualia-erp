@@ -5,6 +5,7 @@ import { getCurrentWorkspaceId } from '@/app/actions';
 import { getTasks, getClientVisibleTasks, type Task } from '@/app/actions/inbox';
 import { isUserAdmin } from '@/app/actions/shared';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
+import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { TasksView, type TasksMode } from './tasks-view';
 
 export const metadata: Metadata = {
@@ -17,17 +18,10 @@ interface PageProps {
 }
 
 export default async function PortalTasksPage({ searchParams }: PageProps) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+  const profile = await getPortalProfile(user.id);
 
   const role = profile?.role || 'client';
   const params = await searchParams;
@@ -53,6 +47,7 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
 
   const workspaceId = await getCurrentWorkspaceId();
 
+  const supabase = await createClient();
   let initialTasks: Task[] = [];
   let assignableMembers: Array<{
     id: string;

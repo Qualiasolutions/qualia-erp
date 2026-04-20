@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getProjectFiles } from '@/app/actions/project-files';
+import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { FileUploadForm } from '@/components/project-files/file-upload-form';
 import { FileList } from '@/components/project-files/file-list';
 import { Suspense } from 'react';
@@ -11,27 +12,22 @@ interface ProjectFilesPageProps {
 }
 
 async function ProjectFilesContent({ projectId }: { projectId: string }) {
-  const supabase = await createClient();
-
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Auth + profile via request-scoped cache (shared with layout)
+  const user = await getPortalAuthUser();
 
   if (!user) {
     redirect('/auth/login');
   }
 
-  // Check user role - only admin/employee can access this page
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+  const profile = await getPortalProfile(user.id);
 
+  // Check user role - only admin/employee can access this page
   if (!profile || (profile.role !== 'admin' && profile.role !== 'employee')) {
     redirect(`/projects/${projectId}`);
   }
+
+  // Supabase client for page-specific queries (assignments, project details, phases)
+  const supabase = await createClient();
 
   // Employees can only access files for projects they're assigned to
   if (profile.role !== 'admin') {

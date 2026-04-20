@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { isPortalAdminRole, assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
+import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { PortalFilesContent } from './files-content';
 import { fadeInClasses } from '@/lib/transitions';
 
@@ -26,21 +27,14 @@ export interface PortalFileWithProject {
 }
 
 export default async function PortalFilesPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getPortalAuthUser();
 
   if (!user) {
     redirect('/auth/login');
   }
 
   // Get user profile/role
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+  const profile = await getPortalProfile(user.id);
 
   const role = profile?.role || 'client';
   const isAdmin = isPortalAdminRole(role);
@@ -51,6 +45,7 @@ export default async function PortalFilesPage() {
     if (!allowed) redirect('/');
   }
 
+  const supabase = await createClient();
   let projectIds: string[] = [];
 
   if (isAdmin) {
