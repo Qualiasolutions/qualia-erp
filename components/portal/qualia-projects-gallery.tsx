@@ -193,120 +193,6 @@ function generateSummary(projects: GalleryProject[]): string {
 }
 
 /* ======================================================================
-   Editorial Header
-   ====================================================================== */
-
-function ProjectsEditorialHeader({
-  projects,
-  viewMode,
-  setViewMode,
-  filter,
-  setFilter,
-}: {
-  projects: GalleryProject[];
-  viewMode: ViewMode;
-  setViewMode: (v: ViewMode) => void;
-  filter: FilterMode;
-  setFilter: (f: FilterMode) => void;
-}) {
-  const now = new Date();
-  const monthYear = format(now, 'MMMM yyyy');
-  const issueNo = String(now.getMonth() + 1).padStart(2, '0');
-  const summary = useMemo(() => generateSummary(projects), [projects]);
-
-  return (
-    <header className="mb-7 border-b border-border pb-8 pt-6">
-      <div className="grid grid-cols-1 items-end gap-6 lg:grid-cols-[2fr_1fr]">
-        {/* LEFT: editorial text */}
-        <div>
-          <div className="q-eyebrow mb-3">
-            Issue No. {issueNo} &middot; {monthYear}
-          </div>
-          <h1 className="q-display text-[clamp(3rem,8vw,5.5rem)] leading-[0.92] tracking-[-0.04em]">
-            Projects<span className="text-primary">.</span>
-          </h1>
-          <p
-            className="mt-4 max-w-[520px] text-[15px] leading-[1.5]"
-            style={{ color: 'var(--text-soft, hsl(var(--muted-foreground)))' }}
-          >
-            {summary}
-          </p>
-        </div>
-
-        {/* RIGHT: toggles + filters */}
-        <div className="flex flex-col items-start gap-3 lg:items-end">
-          {/* View toggle */}
-          <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-1">
-            <button
-              type="button"
-              onClick={() => setViewMode('columns')}
-              className={cn(
-                'flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150',
-                viewMode === 'columns'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-              aria-pressed={viewMode === 'columns'}
-            >
-              <Columns3 className="h-3.5 w-3.5" />
-              Columns
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('gallery')}
-              className={cn(
-                'flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150',
-                viewMode === 'gallery'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-              aria-pressed={viewMode === 'gallery'}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-              Gallery
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={cn(
-                'flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150',
-                viewMode === 'list'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-              aria-pressed={viewMode === 'list'}
-            >
-              <List className="h-3.5 w-3.5" />
-              List
-            </button>
-          </div>
-
-          {/* Filter pills */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            {(['all', 'active', 'attention', 'launched'] as const).map((f) => (
-              <button
-                key={f}
-                type="button"
-                onClick={() => setFilter(f)}
-                className={cn(
-                  'cursor-pointer rounded-full px-3 py-1 text-xs font-medium capitalize transition-all duration-150',
-                  filter === f
-                    ? 'border border-primary/20 bg-primary/10 text-primary'
-                    : 'border border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground'
-                )}
-                aria-pressed={filter === f}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-/* ======================================================================
    Gallery Card
    ====================================================================== */
 
@@ -333,56 +219,56 @@ const ProjectCardTile = memo(function ProjectCardTile({ project }: { project: Ga
       )}
     >
       {/* Accent tape */}
-      <div className="relative h-[72px] overflow-hidden" style={{ background: gradient }}>
+      <div className="relative h-[56px] overflow-hidden" style={{ background: gradient }}>
         {/* Logo overlay (when present) */}
         {project.logo_url && (
           <Image
             src={project.logo_url}
             alt=""
             aria-hidden
-            width={48}
-            height={48}
-            className="absolute right-3 top-3 h-10 w-10 rounded object-contain opacity-80 mix-blend-luminosity"
+            width={40}
+            height={40}
+            className="absolute right-2 top-2 h-8 w-8 rounded object-contain opacity-80 mix-blend-luminosity"
             unoptimized
           />
         )}
         {/* Watermark — client first word */}
         <span
-          className="absolute bottom-2 left-4 select-none text-[42px] font-semibold italic leading-none"
-          style={{ color: 'rgba(255,255,255,0.2)' }}
+          className="absolute bottom-1 left-3 select-none text-[32px] font-semibold italic leading-none"
+          style={{ color: 'rgba(255,255,255,0.22)' }}
           aria-hidden
         >
           {clientFirstWord}
         </span>
         {/* Bottom row: kind + progress */}
-        <div className="absolute bottom-2 right-4 flex items-center gap-3">
-          <span className="font-mono text-[10px] uppercase tracking-wider text-white/80">
+        <div className="absolute bottom-1.5 right-3 flex items-center gap-2">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-white/80">
             {typeLabel}
           </span>
-          <span className="font-mono text-[12px] font-semibold tabular-nums text-white">
+          <span className="font-mono text-[11px] font-semibold tabular-nums text-white">
             {progress}%
           </span>
         </div>
         {/* Attention indicator */}
         {attention && (
-          <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-amber-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
+          <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-semibold text-white">
             <AlertTriangle className="h-3 w-3" />
           </span>
         )}
       </div>
 
       {/* Body */}
-      <div className="p-[18px_20px_20px]">
-        <h3 className="q-display truncate text-[18px] leading-[1.3] text-foreground">
+      <div className="px-3 pb-3 pt-2">
+        <h3 className="truncate text-sm font-semibold leading-tight text-foreground">
           {project.name}
         </h3>
-        <p className="mb-4 mt-1 truncate text-xs text-muted-foreground">
+        <p className="mb-2 mt-0.5 truncate text-[11px] text-muted-foreground">
           {project.client_name ?? 'No client'}
           {project.is_pre_production ? ' \u00B7 Pre-Production' : ''}
         </p>
 
         {/* Progress bar */}
-        <div className="mb-4 h-[3px] overflow-hidden rounded-full bg-border/30">
+        <div className="mb-2 h-[2px] overflow-hidden rounded-full bg-border/30">
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{
@@ -394,9 +280,11 @@ const ProjectCardTile = memo(function ProjectCardTile({ project }: { project: Ga
 
         {/* Footer: avatars + due date */}
         <div className="flex items-center justify-between">
-          <AvatarStack people={avatars} size={22} max={4} />
+          <AvatarStack people={avatars} size={18} max={3} />
           {dueStr ? (
-            <span className="q-tabular font-mono text-[11px] text-muted-foreground">{dueStr}</span>
+            <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
+              {dueStr}
+            </span>
           ) : null}
         </div>
       </div>
@@ -520,66 +408,113 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
     return groups;
   }, [filteredProjects]);
 
-  return (
-    <div className="q-page-enter w-full p-6 lg:p-8">
-      <ProjectsEditorialHeader
-        projects={projects}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        filter={filter}
-        setFilter={setFilter}
-      />
+  const summary = useMemo(() => generateSummary(projects), [projects]);
 
-      {filteredProjects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="mb-3 rounded-xl bg-muted/50 p-5">
-            <LayoutGrid className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <p className="text-sm text-muted-foreground">No projects match the current filter.</p>
-        </div>
-      ) : viewMode === 'columns' ? (
-        <StageColumns stages={stages} />
-      ) : viewMode === 'gallery' ? (
-        <div
-          className="q-stagger grid gap-[14px]"
-          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}
-        >
-          {filteredProjects.map((project) => (
-            <ProjectCardTile key={project.id} project={project} />
+  return (
+    <div className="q-page-enter flex h-full min-h-0 w-full flex-col">
+      {/* Compact toolbar — page title is already in PageHeader */}
+      <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border px-5 py-3 lg:px-6">
+        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{summary}</span>
+
+        {/* Filter pills */}
+        <div className="flex flex-wrap items-center gap-1">
+          {(['all', 'active', 'attention', 'launched'] as const).map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFilter(f)}
+              className={cn(
+                'h-7 cursor-pointer rounded-md px-2.5 text-[11px] font-medium capitalize transition-all duration-150',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                filter === f
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+              )}
+              aria-pressed={filter === f}
+            >
+              {f}
+            </button>
           ))}
         </div>
-      ) : (
-        <div className="rounded-xl border border-border bg-card">
-          {/* List header */}
-          <div
-            className="grid items-center gap-3 border-b border-border px-4 py-2.5"
-            style={{ gridTemplateColumns: '24px 1.5fr 1fr 120px 100px 80px' }}
-          >
-            <span />
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Project
-            </span>
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Status
-            </span>
-            <span className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Team
-            </span>
-            <span className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Due
-            </span>
-            <span className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Progress
-            </span>
+
+        {/* View toggle */}
+        <div className="flex items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5">
+          {(['columns', 'gallery', 'list'] as const).map((v) => {
+            const Icon = v === 'columns' ? Columns3 : v === 'gallery' ? LayoutGrid : List;
+            return (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setViewMode(v)}
+                title={v === 'columns' ? 'Columns' : v === 'gallery' ? 'Gallery' : 'List'}
+                className={cn(
+                  'flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm transition-colors duration-150',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                  viewMode === v
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                aria-pressed={viewMode === v}
+                aria-label={`${v} view`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Content — fills remaining viewport */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 py-4 lg:px-6">
+        {filteredProjects.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center text-center">
+            <div className="mb-3 rounded-xl bg-muted/50 p-5">
+              <LayoutGrid className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">No projects match the current filter.</p>
           </div>
-          {/* List rows */}
-          <div className="divide-y divide-border/50">
+        ) : viewMode === 'columns' ? (
+          <StageColumns stages={stages} />
+        ) : viewMode === 'gallery' ? (
+          <div
+            className="q-stagger grid gap-3 overflow-auto"
+            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}
+          >
             {filteredProjects.map((project) => (
-              <ProjectListRow key={project.id} project={project} />
+              <ProjectCardTile key={project.id} project={project} />
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="overflow-auto rounded-xl border border-border bg-card">
+            <div
+              className="sticky top-0 grid items-center gap-3 border-b border-border bg-card px-4 py-2.5"
+              style={{ gridTemplateColumns: '24px 1.5fr 1fr 120px 100px 80px' }}
+            >
+              <span />
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Project
+              </span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Status
+              </span>
+              <span className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Team
+              </span>
+              <span className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Due
+              </span>
+              <span className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Progress
+              </span>
+            </div>
+            <div className="divide-y divide-border/50">
+              {filteredProjects.map((project) => (
+                <ProjectListRow key={project.id} project={project} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -591,7 +526,7 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
 function StageColumns({ stages }: { stages: Record<StageKey, GalleryProject[]> }) {
   const order: StageKey[] = ['demo', 'building', 'preProduction', 'live'];
   return (
-    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
       {order.map((key) => (
         <StageColumn key={key} stage={key} projects={stages[key]} />
       ))}
@@ -604,24 +539,23 @@ function StageColumn({ stage, projects }: { stage: StageKey; projects: GalleryPr
   const Icon = config.icon;
 
   return (
-    <section className="flex min-h-[200px] flex-col rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-      {/* Column header */}
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
       <header
         className={cn(
-          'flex items-center gap-2.5 rounded-t-xl border-b border-border bg-muted/20 px-4 py-3',
+          'flex shrink-0 items-center gap-2 border-b border-border bg-muted/20 px-3 py-2',
           `ring-1 ring-inset ${config.ring}`
         )}
       >
         <span
-          className={cn('flex h-8 w-8 items-center justify-center rounded-lg', config.bg)}
+          className={cn('flex h-6 w-6 items-center justify-center rounded-md', config.bg)}
           aria-hidden
         >
-          <Icon className={cn('h-4 w-4', config.accent)} />
+          <Icon className={cn('h-3.5 w-3.5', config.accent)} />
         </span>
-        <h2 className="text-sm font-semibold tracking-tight text-foreground">{config.title}</h2>
+        <h2 className="text-xs font-semibold tracking-tight text-foreground">{config.title}</h2>
         <span
           className={cn(
-            'ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold',
+            'ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold',
             config.bg,
             config.accent
           )}
@@ -630,16 +564,13 @@ function StageColumn({ stage, projects }: { stage: StageKey; projects: GalleryPr
         </span>
       </header>
 
-      {/* Column body */}
-      <div className="flex flex-1 flex-col gap-2 p-3">
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-2">
         {projects.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
-            <span className={cn('mb-2 rounded-xl p-3', config.bg)} aria-hidden>
-              <Icon className={cn('h-5 w-5', config.accent)} />
+          <div className="flex flex-1 flex-col items-center justify-center py-6 text-center">
+            <span className={cn('mb-2 rounded-lg p-2.5', config.bg)} aria-hidden>
+              <Icon className={cn('h-4 w-4', config.accent)} />
             </span>
-            <p className="text-xs text-muted-foreground">
-              No {config.title.toLowerCase()} projects
-            </p>
+            <p className="text-[11px] text-muted-foreground">No {config.title.toLowerCase()}</p>
           </div>
         ) : (
           projects.map((project) => <ProjectCardTile key={project.id} project={project} />)
