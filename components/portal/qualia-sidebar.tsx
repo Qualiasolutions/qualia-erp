@@ -505,7 +505,9 @@ function SidebarBody({
   };
 
   const brandName = branding?.company_name ?? 'Qualia';
-  const brandLogoUrl = branding?.logo_url ?? null;
+  // Fall back to the project's ship logo when branding doesn't supply one —
+  // matches PortalSidebarV2 behaviour so admins never see a bare placeholder.
+  const brandLogoUrl = branding?.logo_url ?? '/logo.webp';
 
   const handleTweaksGear = () => {
     if (isAdmin) setTweaksOpen(true);
@@ -523,29 +525,18 @@ function SidebarBody({
         <Link
           href="/"
           onClick={onLinkClick}
-          className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-[7px] font-semibold text-white"
-          style={{
-            background:
-              'linear-gradient(135deg, var(--accent-teal), color-mix(in oklch, var(--accent-teal), #003A3D 30%))',
-            boxShadow:
-              '0 0 0 1px color-mix(in oklch, var(--accent-teal), transparent 60%), inset 0 1px 0 rgba(255,255,255,0.15)',
-            letterSpacing: '-0.02em',
-            fontSize: 14,
-          }}
+          className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-[7px]"
           aria-label="Qualia home"
         >
-          {brandLogoUrl ? (
-            <Image
-              src={brandLogoUrl}
-              alt={brandName}
-              width={26}
-              height={26}
-              className="h-full w-full object-cover"
-              unoptimized
-            />
-          ) : (
-            'q'
-          )}
+          <Image
+            src={brandLogoUrl}
+            alt={brandName}
+            width={26}
+            height={26}
+            className="h-full w-full object-contain"
+            priority
+            unoptimized={brandLogoUrl !== '/logo.webp'}
+          />
         </Link>
         <span className="flex min-w-0 flex-col leading-[1.1]">
           <span className="q-display truncate text-[18px] text-[var(--text)]">{brandName}</span>
