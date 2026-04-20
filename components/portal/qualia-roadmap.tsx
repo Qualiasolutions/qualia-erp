@@ -3,6 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import { format, parseISO, differenceInDays, isValid, startOfMonth, addMonths } from 'date-fns';
 
 import { cn } from '@/lib/utils';
+import { hueFromId, clientAccent } from '@/lib/color-constants';
 
 type ProjectPhaseRow = {
   id: string;
@@ -36,13 +37,6 @@ export interface QualiaRoadmapProps {
 /* ======================================================================
    Helpers
    ====================================================================== */
-
-function hueFromId(id: string | null | undefined): number {
-  if (!id) return 174;
-  let hash = 0;
-  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
-  return Math.abs(hash) % 360;
-}
 
 function safeParse(date: string | null | undefined): Date | null {
   if (!date) return null;
@@ -162,7 +156,7 @@ function RoadmapHeader({
       <div className="mb-2 flex items-center gap-2.5">
         <span
           className="size-2 rounded-[2px]"
-          style={{ background: `oklch(55% 0.15 ${clientHue})` }}
+          style={{ background: clientAccent(clientHue) }}
           aria-hidden
         />
         <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
@@ -207,7 +201,7 @@ function RoadmapHeader({
           className="h-full rounded-full transition-[width] duration-500"
           style={{
             width: `${overallProgress * 100}%`,
-            background: `oklch(55% 0.15 ${clientHue})`,
+            background: clientAccent(clientHue),
           }}
         />
       </div>
@@ -223,7 +217,7 @@ function KPI({ label, value, accentHue }: { label: string; value: string; accent
       </dt>
       <dd
         className="text-lg font-semibold tabular-nums tracking-tight"
-        style={accentHue !== undefined ? { color: `oklch(55% 0.15 ${accentHue})` } : undefined}
+        style={accentHue !== undefined ? { color: clientAccent(accentHue) } : undefined}
       >
         {value}
       </dd>
@@ -265,7 +259,7 @@ function RoadmapSchedule({
         <h2 className="text-base font-semibold tracking-tight">Schedule</h2>
         <div className="flex gap-4 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
           <LegendDot className="bg-emerald-500" label="Done" />
-          <LegendDot style={{ background: `oklch(55% 0.15 ${clientHue})` }} label="Active" />
+          <LegendDot style={{ background: clientAccent(clientHue) }} label="Active" />
           <LegendDot className="bg-muted-foreground/40" label="Upcoming" />
         </div>
       </div>
@@ -295,12 +289,12 @@ function RoadmapSchedule({
                 className="pointer-events-none absolute inset-y-0 z-10 border-l-[1.5px]"
                 style={{
                   left: `${todayOffset}%`,
-                  borderColor: `oklch(55% 0.15 ${clientHue})`,
+                  borderColor: clientAccent(clientHue),
                 }}
               >
                 <span
                   className="absolute -left-5 top-2 whitespace-nowrap rounded-sm px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider text-white"
-                  style={{ background: `oklch(55% 0.15 ${clientHue})` }}
+                  style={{ background: clientAccent(clientHue) }}
                 >
                   Today
                 </span>
@@ -358,10 +352,7 @@ function RoadmapSchedule({
                   {phase.plan_count ? <span>{phase.plan_count} items</span> : null}
                   {days > 0 && <span>· {days}d</span>}
                   {status === 'active' && progress > 0 && (
-                    <span
-                      className="font-semibold"
-                      style={{ color: `oklch(55% 0.15 ${clientHue})` }}
-                    >
+                    <span className="font-semibold" style={{ color: clientAccent(clientHue) }}>
                       · {Math.round(progress * 100)}%
                     </span>
                   )}
@@ -383,7 +374,7 @@ function RoadmapSchedule({
                     className="absolute inset-y-0 z-10 border-l-[1.5px]"
                     style={{
                       left: `${todayOffset}%`,
-                      borderColor: `oklch(55% 0.15 ${clientHue})`,
+                      borderColor: clientAccent(clientHue),
                     }}
                   />
                 )}
@@ -524,7 +515,7 @@ function PhaseBreakdownTable({
                         status === 'done'
                           ? 'hsl(142 76% 36%)'
                           : status === 'active'
-                            ? `oklch(55% 0.15 ${clientHue})`
+                            ? clientAccent(clientHue)
                             : 'hsl(var(--muted-foreground) / 0.4)',
                     }}
                   />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { memo, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   format,
@@ -126,7 +126,7 @@ function formatHour(hour: number): string {
    TzBand — live timezone clock
    ====================================================================== */
 
-function TzBand({ label, timezone }: { label: string; timezone: string }) {
+const TzBand = memo(function TzBand({ label, timezone }: { label: string; timezone: string }) {
   const [time, setTime] = useState(() => formatTzTime(timezone));
 
   useEffect(() => {
@@ -146,7 +146,7 @@ function TzBand({ label, timezone }: { label: string; timezone: string }) {
       </span>
     </div>
   );
-}
+});
 
 function formatTzTime(timezone: string): string {
   return new Intl.DateTimeFormat('en-GB', {
@@ -161,7 +161,7 @@ function formatTzTime(timezone: string): string {
    EventBlock — single event in the grid
    ====================================================================== */
 
-function EventBlock({
+const EventBlock = memo(function EventBlock({
   meeting,
   kind,
   topPx,
@@ -248,7 +248,7 @@ function EventBlock({
       </PopoverContent>
     </Popover>
   );
-}
+});
 
 /* ======================================================================
    CurrentTimeIndicator

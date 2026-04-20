@@ -440,3 +440,27 @@ export const PHASE_BADGE_COLORS = {
 } as const;
 
 export type PhaseBadgeKey = keyof typeof PHASE_BADGE_COLORS;
+
+/* ======================================================================
+   Client accent helpers — deterministic per-client colors for UI accents.
+   Used across QualiaProjectsGallery, QualiaRoadmap, QualiaToday to give
+   each client a stable visual identity without hardcoding per-client tokens.
+   ====================================================================== */
+
+/** Deterministic 0-359 hue from an id string (stable across renders). */
+export function hueFromId(id: string | null | undefined): number {
+  if (!id) return 174; // Qualia teal fallback
+  let hash = 0;
+  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
+  return Math.abs(hash) % 360;
+}
+
+/** Canonical client accent color in oklch space. */
+export function clientAccent(hue: number, lightness = 55, chroma = 0.15): string {
+  return `oklch(${lightness}% ${chroma} ${hue})`;
+}
+
+/** 135deg gradient — for card accent tapes. */
+export function clientAccentGradient(hue: number): string {
+  return `linear-gradient(135deg, oklch(55% 0.15 ${hue}) 0%, oklch(45% 0.12 ${hue}) 100%)`;
+}

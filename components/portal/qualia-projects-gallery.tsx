@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { memo, useState, useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { LayoutGrid, List, AlertTriangle } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { PROJECT_TYPE_CONFIG, type ProjectTypeStyle } from '@/lib/project-type-config';
 import { AvatarStack, type AvatarStackPerson } from '@/components/ui/avatar-stack';
+import { hueFromId, clientAccent, clientAccentGradient } from '@/lib/color-constants';
 import type { ProjectType } from '@/types/database';
 
 /* ======================================================================
@@ -41,13 +43,6 @@ interface QualiaProjectsGalleryProps {
    Helpers
    ====================================================================== */
 
-/** Deterministic accent hue from a string id hash. */
-function hueFromId(id: string): number {
-  let hash = 0;
-  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
-  return Math.abs(hash) % 360;
-}
-
 /** Get the accent color for a project (uses project_type config, fallback to client-id hue). */
 function getProjectAccent(project: GalleryProject): { hue: number; gradient: string } {
   const typeConfig = project.project_type
@@ -57,9 +52,9 @@ function getProjectAccent(project: GalleryProject): { hue: number; gradient: str
   // Build a hue: prefer client-based deterministic hue for variety
   const hue = project.client_id ? hueFromId(project.client_id) : hueFromId(project.id);
 
-  // Use the project type's bar color class to derive semantics
+  // Typed projects get a slightly higher-chroma gradient; untyped fall back to a softer one.
   const gradient = typeConfig
-    ? `linear-gradient(135deg, oklch(55% 0.15 ${hue}) 0%, oklch(45% 0.12 ${hue}) 100%)`
+    ? clientAccentGradient(hue)
     : `linear-gradient(135deg, oklch(55% 0.14 ${hue}) 0%, oklch(42% 0.11 ${hue}) 100%)`;
 
   return { hue, gradient };
@@ -247,7 +242,7 @@ function ProjectsEditorialHeader({
    Gallery Card
    ====================================================================== */
 
-function ProjectCardTile({ project }: { project: GalleryProject }) {
+const ProjectCardTile = memo(function ProjectCardTile({ project }: { project: GalleryProject }) {
   const { gradient, hue } = getProjectAccent(project);
   const progress = getProgress(project);
   const typeLabel = getTypeLabel(project.project_type);
@@ -271,6 +266,18 @@ function ProjectCardTile({ project }: { project: GalleryProject }) {
     >
       {/* Accent tape */}
       <div className="relative h-[72px] overflow-hidden" style={{ background: gradient }}>
+        {/* Logo overlay (when present) */}
+        {project.logo_url && (
+          <Image
+            src={project.logo_url}
+            alt=""
+            aria-hidden
+            width={48}
+            height={48}
+            className="absolute right-3 top-3 h-10 w-10 rounded object-contain opacity-80 mix-blend-luminosity"
+            unoptimized
+          />
+        )}
         {/* Watermark — client first word */}
         <span
           className="absolute bottom-2 left-4 select-none text-[42px] font-semibold italic leading-none"
@@ -290,7 +297,7 @@ function ProjectCardTile({ project }: { project: GalleryProject }) {
         </div>
         {/* Attention indicator */}
         {attention && (
-          <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-amber-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
+          <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-amber-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
             <AlertTriangle className="h-3 w-3" />
           </span>
         )}
@@ -312,7 +319,7 @@ function ProjectCardTile({ project }: { project: GalleryProject }) {
             className="h-full rounded-full transition-all duration-500"
             style={{
               width: `${progress}%`,
-              background: `oklch(52% 0.14 ${hue})`,
+              background: clientAccent(hue, 52, 0.14),
             }}
           />
         </div>
@@ -327,13 +334,13 @@ function ProjectCardTile({ project }: { project: GalleryProject }) {
       </div>
     </Link>
   );
-}
+});
 
 /* ======================================================================
    List Row
    ====================================================================== */
 
-function ProjectListRow({ project }: { project: GalleryProject }) {
+const ProjectListRow = memo(function ProjectListRow({ project }: { project: GalleryProject }) {
   const { hue } = getProjectAccent(project);
   const progress = getProgress(project);
   const typeLabel = getTypeLabel(project.project_type);
@@ -360,7 +367,7 @@ function ProjectListRow({ project }: { project: GalleryProject }) {
       <span
         className="h-2.5 w-2.5 rounded-full"
         aria-hidden
-        style={{ background: `oklch(55% 0.14 ${hue})` }}
+        style={{ background: clientAccent(hue, 55, 0.14) }}
       />
 
       {/* Name + client + kind */}
@@ -396,14 +403,14 @@ function ProjectListRow({ project }: { project: GalleryProject }) {
       <div className="text-right">
         <span
           className="q-tabular font-mono text-[12px] font-medium"
-          style={{ color: `oklch(45% 0.12 ${hue})` }}
+          style={{ color: clientAccent(hue, 45, 0.12) }}
         >
           {progress}%
         </span>
       </div>
     </Link>
   );
-}
+});
 
 /* ======================================================================
    Main Gallery Export

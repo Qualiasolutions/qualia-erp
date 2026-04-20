@@ -11,6 +11,7 @@ import React, {
 } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
 import {
   quickUpdateTask,
@@ -644,6 +645,189 @@ function BulkToolbar({
 }
 
 /* ======================================================================
+   TaskListContainer — virtualized scroll surface with skeleton + empty
+   ====================================================================== */
+
+type TaskListContainerProps = {
+  isPending: boolean;
+  tasks: Task[];
+  isAdminAll: boolean;
+  isClient: boolean;
+  canManage: boolean;
+  mode: QualiaTasksMode;
+  selectedIds: Set<string>;
+  onToggleSelect: (id: string) => void;
+  onToggle: (taskId: string, completed: boolean) => void;
+  onEdit: (task: Task) => void;
+  onDelete: (taskId: string) => void;
+  onHide: (taskId: string) => void;
+  isLoadingFirst: boolean;
+};
+
+const VIRTUAL_THRESHOLD = 50;
+const ROW_ESTIMATE = 68;
+
+function TaskListContainer({
+  isPending,
+  tasks,
+  isAdminAll,
+  isClient,
+  canManage,
+  mode,
+  selectedIds,
+  onToggleSelect,
+  onToggle,
+  onEdit,
+  onDelete,
+  onHide,
+  isLoadingFirst,
+}: TaskListContainerProps) {
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useWindowVirtualizer({
+    count: tasks.length,
+    estimateSize: () => ROW_ESTIMATE,
+    overscan: 8,
+    scrollMargin: listRef.current?.offsetTop ?? 0,
+  });
+
+  const useVirtual = tasks.length >= VIRTUAL_THRESHOLD;
+
+  // Skeleton on first load
+  if (isLoadingFirst) {
+    return (
+      <div
+        className="overflow-hidden rounded-xl border border-border bg-card"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 border-b border-border/60 px-4 py-3 last:border-b-0"
+          >
+            <div className="size-5 shrink-0 animate-pulse rounded-full bg-muted" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-3 w-2/5 animate-pulse rounded bg-muted" />
+              <div className="h-2.5 w-1/4 animate-pulse rounded bg-muted/70" />
+            </div>
+            <div className="h-5 w-12 shrink-0 animate-pulse rounded-full bg-muted" />
+          </div>
+        ))}
+        <span className="sr-only">Loading tasks…</span>
+      </div>
+    );
+  }
+
+  if (tasks.length === 0) {
+    return (
+      <div
+        className="overflow-hidden rounded-xl border border-border bg-card"
+        role="table"
+        aria-label="Task list"
+      >
+        <div className="flex items-center justify-center px-4 py-16">
+          <p className="text-center text-sm italic text-muted-foreground">Nothing here. Nice.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const renderRow = (task: Task) => (
+    <div className="flex items-center">
+      {isAdminAll && (
+        <div className="flex shrink-0 items-center pl-4">
+          <input
+            type="checkbox"
+            checked={selectedIds.has(task.id)}
+            onChange={() => onToggleSelect(task.id)}
+            aria-label={
+              selectedIds.has(task.id) ? `Deselect "${task.title}"` : `Select "${task.title}"`
+            }
+            className="size-4 rounded border-muted-foreground/40 text-primary focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <TaskRow
+          task={task}
+          isClient={isClient}
+          canManage={canManage}
+          onToggle={onToggle}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onHide={onHide}
+          mode={mode}
+        />
+      </div>
+    </div>
+  );
+
+  if (!useVirtual) {
+    return (
+      <div
+        className={cn(
+          'overflow-hidden rounded-xl border border-border bg-card',
+          isPending && 'opacity-70 transition-opacity duration-200'
+        )}
+        role="table"
+        aria-label="Task list"
+      >
+        {tasks.map((task) => (
+          <div key={task.id}>{renderRow(task)}</div>
+        ))}
+      </div>
+    );
+  }
+
+  const virtualItems = virtualizer.getVirtualItems();
+  const totalSize = virtualizer.getTotalSize();
+  const offsetTop = virtualItems[0]?.start ?? 0;
+  const scrollOffset = virtualizer.options.scrollMargin;
+
+  return (
+    <div
+      ref={listRef}
+      className={cn(
+        'overflow-hidden rounded-xl border border-border bg-card',
+        isPending && 'opacity-70 transition-opacity duration-200'
+      )}
+      role="table"
+      aria-label="Task list"
+      aria-rowcount={tasks.length}
+      style={{ minHeight: totalSize }}
+    >
+      <div style={{ height: totalSize, position: 'relative' }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            transform: `translateY(${offsetTop - scrollOffset}px)`,
+          }}
+        >
+          {virtualItems.map((v) => {
+            const task = tasks[v.index];
+            if (!task) return null;
+            return (
+              <div
+                key={task.id}
+                data-index={v.index}
+                ref={virtualizer.measureElement}
+                aria-rowindex={v.index + 1}
+              >
+                {renderRow(task)}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ======================================================================
    QualiaTasksList — main export
    ====================================================================== */
 
@@ -985,52 +1169,26 @@ export function QualiaTasksList({
       )}
 
       {/* Task list */}
-      <div
-        className={cn(
-          'overflow-hidden rounded-xl border border-border bg-card',
-          isPending && 'opacity-70 transition-opacity duration-200'
-        )}
-        role="table"
-        aria-label="Task list"
-      >
-        {filteredTasks.length === 0 ? (
-          <div className="flex items-center justify-center px-4 py-16">
-            <p className="text-center text-sm italic text-muted-foreground">Nothing here. Nice.</p>
-          </div>
-        ) : (
-          filteredTasks.map((task) => (
-            <div key={task.id} className="flex items-center">
-              {isAdminAll && (
-                <div className="flex shrink-0 items-center pl-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(task.id)}
-                    onChange={() => handleToggleSelect(task.id)}
-                    aria-label={
-                      selectedIds.has(task.id)
-                        ? `Deselect "${task.title}"`
-                        : `Select "${task.title}"`
-                    }
-                    className="size-4 rounded border-muted-foreground/40 text-primary focus:ring-2 focus:ring-primary/30"
-                  />
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <TaskRow
-                  task={task}
-                  isClient={isClient}
-                  canManage={canManage}
-                  onToggle={handleToggleTask}
-                  onEdit={setEditingTask}
-                  onDelete={handleDeleteTask}
-                  onHide={handleHideTask}
-                  mode={mode}
-                />
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      <TaskListContainer
+        isPending={isPending}
+        tasks={filteredTasks}
+        isAdminAll={isAdminAll}
+        isClient={isClient}
+        canManage={canManage}
+        mode={mode}
+        selectedIds={selectedIds}
+        onToggleSelect={handleToggleSelect}
+        onToggle={handleToggleTask}
+        onEdit={setEditingTask}
+        onDelete={handleDeleteTask}
+        onHide={handleHideTask}
+        isLoadingFirst={
+          mode === 'inbox' &&
+          initialTasks.length === 0 &&
+          inboxLive.tasks.length === 0 &&
+          inboxLive.isValidating
+        }
+      />
 
       {/* Edit modal */}
       {editingTask && canManage && (

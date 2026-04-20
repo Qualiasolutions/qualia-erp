@@ -209,7 +209,11 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
  *   - the meeting's project_id is in the user's project_assignments.
  * This is used to scope meetings for employees so they don't see unrelated meetings.
  */
-export async function getMeetings(workspaceId?: string | null, scopeToUserId?: string | null) {
+export async function getMeetings(
+  workspaceId?: string | null,
+  scopeToUserId?: string | null,
+  dateRange?: { start: string; end: string } | null
+) {
   const supabase = await createClient();
 
   // Get workspace ID from parameter or user's default
@@ -218,9 +222,16 @@ export async function getMeetings(workspaceId?: string | null, scopeToUserId?: s
     wsId = await getCurrentWorkspaceId();
   }
 
-  // Only fetch meetings from the last 30 days forward (avoids hitting limit with old data)
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 30);
+  // Resolve time bounds. A caller-provided range wins; otherwise fall back to
+  // "last 30 days forward" which avoids unbounded scans for the default call.
+  const rangeStart =
+    dateRange?.start ??
+    (() => {
+      const c = new Date();
+      c.setDate(c.getDate() - 30);
+      return c.toISOString();
+    })();
+  const rangeEnd = dateRange?.end ?? null;
 
   let query = supabase
     .from('meetings')
@@ -245,9 +256,13 @@ export async function getMeetings(workspaceId?: string | null, scopeToUserId?: s
             )
         `
     )
-    .gte('start_time', cutoff.toISOString())
+    .gte('start_time', rangeStart)
     .order('start_time', { ascending: true })
     .limit(500);
+
+  if (rangeEnd) {
+    query = query.lt('start_time', rangeEnd);
+  }
 
   if (wsId) {
     query = query.eq('workspace_id', wsId);

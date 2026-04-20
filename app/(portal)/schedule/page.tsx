@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { startOfWeek, parseISO, isValid, formatISO } from 'date-fns';
+import { startOfWeek, parseISO, isValid, formatISO, addDays } from 'date-fns';
 import { getMeetings, getProfiles } from '@/app/actions';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
@@ -37,8 +37,14 @@ async function ScheduleLoader({
 
   try {
     const workspaceId = await getCurrentWorkspaceId();
+    // Fetch only the displayed week — 7-day range.
+    const weekStart = parseISO(weekStartISO);
+    const dateRange = {
+      start: weekStart.toISOString(),
+      end: addDays(weekStart, 7).toISOString(),
+    };
     const [meetings, profiles] = await Promise.all([
-      getMeetings(undefined, scopeToUserId),
+      getMeetings(undefined, scopeToUserId, dateRange),
       getProfiles(workspaceId || undefined),
     ]);
 
