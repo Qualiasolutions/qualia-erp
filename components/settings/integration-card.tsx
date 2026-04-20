@@ -148,7 +148,7 @@ export function IntegrationCard({
 
   return (
     <>
-      <div className="rounded-lg border border-border bg-card p-5">
+      <div className="rounded-xl border border-border bg-card p-5 transition-all duration-200">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
             <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', iconColor)}>
@@ -158,7 +158,7 @@ export function IntegrationCard({
               <div className="flex items-center gap-2">
                 <h3 className="font-medium text-foreground">{title}</h3>
                 {isConnected ? (
-                  <span className="flex items-center gap-1 text-xs text-green-500">
+                  <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
                     <CheckCircle2 className="h-3 w-3" />
                     Connected
                   </span>
@@ -237,9 +237,9 @@ export function IntegrationCard({
         {testResult && (
           <div
             className={cn(
-              'mt-3 rounded-md px-3 py-2 text-sm',
+              'mt-3 rounded-lg px-3 py-2 text-sm',
               testResult.valid
-                ? 'bg-green-500/10 text-green-500'
+                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
                 : 'bg-destructive/10 text-destructive'
             )}
           >

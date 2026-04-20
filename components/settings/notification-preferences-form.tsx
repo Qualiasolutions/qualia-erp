@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { updateNotificationPreferences } from '@/app/actions/notification-preferences';
 import { type NotificationPreferencesInput } from '@/lib/validation';
-import { Mail, Bell, CheckCircle2 } from 'lucide-react';
+import { Mail, Bell, Loader2, Save } from 'lucide-react';
 
 type NotificationPreferencesFormProps = {
   initialPreferences: NotificationPreferencesInput;
@@ -47,22 +46,26 @@ export function NotificationPreferencesForm({
 
   return (
     <div className="space-y-6">
-      {/* Notification Types Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-primary" />
-            Email Notifications
-          </CardTitle>
-          <CardDescription>
-            Choose which notifications you&apos;d like to receive via email
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      {/* Notification Types */}
+      <section className="rounded-xl border border-border bg-card">
+        <div className="p-5 pb-0">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
+              <Bell className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-foreground">Email Notifications</h2>
+              <p className="text-sm text-muted-foreground">
+                Choose which notifications you&apos;d like to receive via email
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="divide-y divide-border/50">
           {isClient ? (
             <>
-              {/* Client notification toggles */}
-              <div className="flex items-center justify-between space-x-4">
+              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
                 <div className="flex-1">
                   <Label htmlFor="project_update" className="text-sm font-medium">
                     Project Status Changes
@@ -78,7 +81,7 @@ export function NotificationPreferencesForm({
                 />
               </div>
 
-              <div className="flex items-center justify-between space-x-4">
+              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
                 <div className="flex-1">
                   <Label htmlFor="meeting_reminder" className="text-sm font-medium">
                     Meeting Reminders
@@ -96,8 +99,7 @@ export function NotificationPreferencesForm({
             </>
           ) : (
             <>
-              {/* Employee notification toggles */}
-              <div className="flex items-center justify-between space-x-4">
+              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
                 <div className="flex-1">
                   <Label htmlFor="task_assigned" className="text-sm font-medium">
                     Task Assignments
@@ -113,7 +115,7 @@ export function NotificationPreferencesForm({
                 />
               </div>
 
-              <div className="flex items-center justify-between space-x-4">
+              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
                 <div className="flex-1">
                   <Label htmlFor="task_due_soon" className="text-sm font-medium">
                     Task Due Soon
@@ -129,7 +131,7 @@ export function NotificationPreferencesForm({
                 />
               </div>
 
-              <div className="flex items-center justify-between space-x-4">
+              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
                 <div className="flex-1">
                   <Label htmlFor="project_update" className="text-sm font-medium">
                     Project Updates
@@ -145,7 +147,7 @@ export function NotificationPreferencesForm({
                 />
               </div>
 
-              <div className="flex items-center justify-between space-x-4">
+              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
                 <div className="flex-1">
                   <Label htmlFor="meeting_reminder" className="text-sm font-medium">
                     Meeting Reminders
@@ -161,7 +163,7 @@ export function NotificationPreferencesForm({
                 />
               </div>
 
-              <div className="flex items-center justify-between space-x-4">
+              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
                 <div className="flex-1">
                   <Label htmlFor="client_activity" className="text-sm font-medium">
                     Client Activity
@@ -178,62 +180,77 @@ export function NotificationPreferencesForm({
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      {/* Delivery Method Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-primary" />
-            Delivery Method
-          </CardTitle>
-          <CardDescription>Choose how you&apos;d like to receive notifications</CardDescription>
-        </CardHeader>
-        <CardContent>
+      {/* Delivery Method */}
+      <section className="rounded-xl border border-border bg-card">
+        <div className="p-5 pb-0">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
+              <Mail className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-foreground">Delivery Method</h2>
+              <p className="text-sm text-muted-foreground">
+                Choose how you&apos;d like to receive notifications
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-5 pb-5">
           <RadioGroup
             value={preferences.delivery_method}
             onValueChange={handleDeliveryMethodChange}
+            className="space-y-2"
           >
-            <div className="flex items-center space-x-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/50">
+            <div className="flex items-center space-x-3 rounded-lg border border-border p-4 transition-colors duration-150 hover:bg-muted/30">
               <RadioGroupItem value="both" id="both" />
               <Label htmlFor="both" className="flex-1 cursor-pointer">
-                <div className="font-medium">Email and In-App</div>
+                <div className="text-sm font-medium">Email and In-App</div>
                 <p className="text-sm text-muted-foreground">
                   Receive notifications via email and in the app
                 </p>
               </Label>
             </div>
 
-            <div className="flex items-center space-x-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/50">
+            <div className="flex items-center space-x-3 rounded-lg border border-border p-4 transition-colors duration-150 hover:bg-muted/30">
               <RadioGroupItem value="email" id="email" />
               <Label htmlFor="email" className="flex-1 cursor-pointer">
-                <div className="font-medium">Email Only</div>
+                <div className="text-sm font-medium">Email Only</div>
                 <p className="text-sm text-muted-foreground">Only receive email notifications</p>
               </Label>
             </div>
 
-            <div className="flex items-center space-x-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/50">
+            <div className="flex items-center space-x-3 rounded-lg border border-border p-4 transition-colors duration-150 hover:bg-muted/30">
               <RadioGroupItem value="in_app" id="in_app" />
               <Label htmlFor="in_app" className="flex-1 cursor-pointer">
-                <div className="font-medium">In-App Only</div>
+                <div className="text-sm font-medium">In-App Only</div>
                 <p className="text-sm text-muted-foreground">
                   Only receive notifications within the app
                 </p>
               </Label>
             </div>
           </RadioGroup>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={isPending} className="min-w-[120px]">
+        <Button
+          onClick={handleSave}
+          disabled={isPending}
+          className="min-h-[44px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
+        >
           {isPending ? (
-            <>Saving...</>
+            <>
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              Saving...
+            </>
           ) : (
             <>
-              <CheckCircle2 className="mr-2 h-4 w-4" />
+              <Save className="mr-1.5 h-4 w-4" />
               Save Changes
             </>
           )}

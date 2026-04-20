@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Sparkles, PanelLeft, X } from 'lucide-react';
+import { Send, Bot, User, Sparkles, PanelLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ConversationSidebar } from '@/components/ai-assistant/conversation-sidebar';
 import {
   useConversations,
@@ -28,26 +30,26 @@ function getQuickActions(userRole: string): string[] {
     .map((action) => action.label);
 }
 
-// Thinking indicator with animated dots
+// Thinking indicator with animated dots — respects prefers-reduced-motion
 function ThinkingIndicator() {
   return (
-    <div className="flex animate-slide-up items-start gap-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
+    <div className="flex items-start gap-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
         <Bot className="h-4 w-4 text-primary" />
       </div>
-      <div className="rounded-xl bg-secondary px-4 py-2.5">
+      <div className="max-w-[80%] rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 motion-reduce:animate-none">
             <span
-              className="shimmer h-2 w-2 rounded-full bg-primary"
+              className="shimmer h-2 w-2 rounded-full bg-primary motion-reduce:animate-none"
               style={{ animationDelay: '0ms', animationDuration: '1.2s' }}
             />
             <span
-              className="shimmer h-2 w-2 rounded-full bg-primary"
+              className="shimmer h-2 w-2 rounded-full bg-primary motion-reduce:animate-none"
               style={{ animationDelay: '200ms', animationDuration: '1.2s' }}
             />
             <span
-              className="shimmer h-2 w-2 rounded-full bg-primary"
+              className="shimmer h-2 w-2 rounded-full bg-primary motion-reduce:animate-none"
               style={{ animationDelay: '400ms', animationDuration: '1.2s' }}
             />
           </div>
@@ -65,7 +67,7 @@ interface AgentClientProps {
 export function AgentClient({ userRole = 'employee' }: AgentClientProps) {
   const quickActions = getQuickActions(userRole);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
@@ -192,41 +194,49 @@ export function AgentClient({ userRole = 'employee' }: AgentClientProps) {
 
   return (
     <div className="flex h-full">
-      {/* Sidebar */}
-      <div
-        className={cn(
-          'w-72 border-r border-border transition-transform duration-300',
-          'md:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'
-        )}
-      >
+      {/* Desktop Sidebar */}
+      <div className="hidden w-72 border-r border-border bg-card md:flex md:flex-col">
         <ConversationSidebar
           activeConversationId={activeConversationId}
           onSelectConversation={(id) => setActiveConversationId(id)}
           onNewConversation={handleNewConversation}
-          onClose={() => setSidebarOpen(false)}
+          onClose={() => setMobileSidebarOpen(false)}
         />
       </div>
 
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {/* Mobile Sidebar Sheet */}
+      <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+        <SheetContent side="left" className="w-72 p-0">
+          <SheetTitle className="sr-only">Conversations</SheetTitle>
+          <ConversationSidebar
+            activeConversationId={activeConversationId}
+            onSelectConversation={(id) => {
+              setActiveConversationId(id);
+              setMobileSidebarOpen(false);
+            }}
+            onNewConversation={() => {
+              handleNewConversation();
+              setMobileSidebarOpen(false);
+            }}
+            onClose={() => setMobileSidebarOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
 
       {/* Main Chat Area */}
       <div className="flex flex-1 flex-col bg-background">
         {/* Header */}
         <div className="flex h-14 items-center justify-between border-b border-border bg-card/80 px-4 backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted md:hidden"
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileSidebarOpen(true)}
+              className="min-h-[44px] min-w-[44px] md:hidden"
+              aria-label="Open conversations"
             >
-              {sidebarOpen ? <X className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
-            </button>
+              <PanelLeft className="h-4 w-4" />
+            </Button>
             <h1 className="text-sm font-medium">
               {activeConversation?.title || 'New Conversation'}
             </h1>
@@ -234,7 +244,7 @@ export function AgentClient({ userRole = 'employee' }: AgentClientProps) {
           {activeConversationId && (
             <button
               onClick={handleNewConversation}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="cursor-pointer text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
             >
               New chat
             </button>
@@ -246,26 +256,20 @@ export function AgentClient({ userRole = 'employee' }: AgentClientProps) {
           {!hasMessages ? (
             // Empty State
             <div className="flex h-full flex-col items-center justify-center px-6 py-16">
-              <div className="mb-6 flex h-16 w-16 animate-float items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 ring-1 ring-primary/10">
-                <Sparkles className="h-8 w-8 text-primary/70" />
+              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl">
+                <Sparkles className="h-12 w-12 text-muted-foreground/30" />
               </div>
-              <h2 className="stagger-1 mb-2 animate-stagger-in text-xl font-semibold">
-                The Real Qualia
-              </h2>
-              <p className="stagger-2 mb-8 animate-stagger-in text-center text-sm text-muted-foreground">
+              <h2 className="mb-2 text-base font-medium text-foreground">Start a conversation</h2>
+              <p className="mb-8 text-center text-sm text-muted-foreground">
                 Ask about tasks, projects, invoices, or anything else
               </p>
 
-              <div className="grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
-                {quickActions.map((action, i) => (
+              <div className="flex flex-wrap justify-center gap-2">
+                {quickActions.map((action) => (
                   <button
                     key={action}
                     onClick={() => handleQuickAction(action)}
-                    className={cn(
-                      'animate-stagger-in rounded-xl border border-border bg-card px-4 py-3 text-left text-sm transition-all duration-200 ease-premium',
-                      'hover:-translate-y-0.5 hover:border-primary/50 hover:bg-muted/50 hover:shadow-sm'
-                    )}
-                    style={{ animationDelay: `${(i + 3) * 50}ms` }}
+                    className="cursor-pointer rounded-full border border-border px-4 py-2 text-sm transition-colors duration-150 hover:bg-muted/30"
                   >
                     {action}
                   </button>
@@ -274,7 +278,7 @@ export function AgentClient({ userRole = 'employee' }: AgentClientProps) {
             </div>
           ) : (
             // Messages
-            <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
+            <div className="flex-1 space-y-4 overflow-y-auto p-6">
               {localMessages.map((message) => (
                 <div
                   key={message.id}
@@ -286,7 +290,7 @@ export function AgentClient({ userRole = 'employee' }: AgentClientProps) {
                   <div
                     className={cn(
                       'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-                      message.role === 'user' ? 'bg-primary' : 'bg-secondary'
+                      message.role === 'user' ? 'bg-primary' : 'bg-muted'
                     )}
                   >
                     {message.role === 'user' ? (
@@ -297,10 +301,10 @@ export function AgentClient({ userRole = 'employee' }: AgentClientProps) {
                   </div>
                   <div
                     className={cn(
-                      'max-w-[85%] rounded-xl px-4 py-2.5 text-sm',
+                      'max-w-[80%] px-4 py-2.5 text-sm',
                       message.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-secondary text-foreground'
+                        ? 'ml-auto rounded-2xl rounded-br-sm bg-primary text-primary-foreground'
+                        : 'rounded-2xl rounded-bl-sm bg-muted text-foreground'
                     )}
                   >
                     <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
@@ -319,36 +323,34 @@ export function AgentClient({ userRole = 'employee' }: AgentClientProps) {
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-border bg-background p-4">
-          <form onSubmit={handleSendMessage} className="mx-auto max-w-3xl">
-            <div className="flex items-center gap-3">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your message..."
-                disabled={isStreaming}
-                className={cn(
-                  'h-11 flex-1 rounded-xl border border-border bg-muted/30 px-4 text-sm transition-all duration-200 ease-premium',
-                  'placeholder:text-muted-foreground/60',
-                  'focus:border-primary/50 focus:shadow-glow-sm focus:outline-none focus:ring-[3px] focus:ring-primary/15',
-                  'disabled:opacity-50'
-                )}
-              />
-              <button
-                type="submit"
-                disabled={!input.trim() || isStreaming}
-                className={cn(
-                  'flex h-11 w-11 items-center justify-center rounded-xl',
-                  'bg-primary text-primary-foreground',
-                  'hover:bg-primary/90 hover:shadow-glow-sm disabled:cursor-not-allowed disabled:opacity-50',
-                  'transition-all duration-200 ease-premium active:scale-[0.97]'
-                )}
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </div>
+        <div className="border-t border-border bg-card/80 p-4 backdrop-blur-xl">
+          <form onSubmit={handleSendMessage} className="flex gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your message..."
+              disabled={isStreaming}
+              className={cn(
+                'h-11 flex-1 rounded-xl border border-border bg-muted/30 px-4 text-sm transition-all duration-200 ease-premium',
+                'placeholder:text-muted-foreground/60',
+                'focus:border-primary/50 focus:outline-none focus:ring-[3px] focus:ring-primary/15',
+                'disabled:opacity-50'
+              )}
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isStreaming}
+              className={cn(
+                'flex h-10 w-10 items-center justify-center rounded-full',
+                'bg-primary text-primary-foreground',
+                'hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50',
+                'cursor-pointer transition-all duration-150 ease-premium active:scale-[0.97]'
+              )}
+            >
+              <Send className="h-4 w-4" />
+            </button>
           </form>
         </div>
       </div>

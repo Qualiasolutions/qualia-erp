@@ -229,9 +229,11 @@ export function SettingsContent({
   };
 
   return (
-    <div className="animate-fade-in-up space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Settings</h1>
+    <div className="animate-fade-in-up space-y-6 p-6 lg:p-8">
+      <div className="mb-6 border-b border-border pb-4">
+        <h1 className="text-[clamp(1.25rem,1.1rem+0.75vw,1.625rem)] font-semibold tracking-tight text-foreground">
+          Settings
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage your account and notification preferences
         </p>

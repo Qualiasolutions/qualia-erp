@@ -1,8 +1,10 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
+import { Settings2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
+import { PageHeader } from '@/components/page-header';
 import { IntegrationsClient } from './integrations-client';
 
 async function IntegrationsLoader() {
@@ -33,7 +35,7 @@ async function IntegrationsLoader() {
 
   if (!workspaceId) {
     return (
-      <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-500">
+      <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-500">
         No workspace found. Please contact support.
       </div>
     );
@@ -52,7 +54,7 @@ function IntegrationsSkeleton() {
   return (
     <div className="space-y-4">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="animate-pulse rounded-lg border border-border bg-card p-5">
+        <div key={i} className="animate-pulse rounded-xl border border-border bg-card p-5">
           <div className="flex items-start gap-4">
             <div className="h-10 w-10 rounded-lg bg-muted" />
             <div className="flex-1 space-y-2">
@@ -70,26 +72,24 @@ function IntegrationsSkeleton() {
 export default function IntegrationsPage() {
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-border bg-card/80 px-6 py-3.5 backdrop-blur-xl">
-        <div>
-          <h1 className="text-lg font-medium text-foreground">Integrations</h1>
-          <p className="text-sm text-muted-foreground">
-            Connect external services to automate project setup
-          </p>
-        </div>
+      <PageHeader
+        icon={<Settings2 className="h-4 w-4 text-primary" />}
+        iconBg="bg-primary/10"
+        title="Integrations"
+      >
         <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
           Admin Only
         </span>
-      </header>
+      </PageHeader>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6 lg:p-8">
         <div className="space-y-6">
           <Suspense fallback={<IntegrationsSkeleton />}>
             <IntegrationsLoader />
           </Suspense>
 
           {/* Help Section */}
-          <div className="rounded-lg border border-border bg-muted/30 p-4">
+          <div className="rounded-xl border border-border bg-muted/30 p-5">
             <h3 className="text-sm font-medium text-foreground">How it works</h3>
             <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
               <li>

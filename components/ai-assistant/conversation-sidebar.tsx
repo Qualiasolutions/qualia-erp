@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Plus, X, Trash2, Loader2 } from 'lucide-react';
 import { cn, formatTimeAgo } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { useConversations, invalidateConversations } from '@/lib/swr';
 import { deleteConversation, type Conversation } from '@/app/actions/ai-conversations';
 import {
@@ -81,7 +82,6 @@ function ConversationItem({
   onDelete: () => void;
 }) {
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent selecting the conversation
@@ -100,27 +100,25 @@ function ConversationItem({
   return (
     <button
       onClick={onSelect}
-      onMouseEnter={() => setShowDelete(true)}
-      onMouseLeave={() => setShowDelete(false)}
       className={cn(
-        'group relative flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition-all',
+        'group relative flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left transition-colors duration-150',
         isActive
-          ? 'bg-primary/10 text-foreground ring-1 ring-primary/20'
-          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+          ? 'border-l-2 border-primary bg-primary/[0.06] text-primary'
+          : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium">{conversation.title}</p>
+        <p className="truncate text-sm font-medium">{conversation.title}</p>
         <p className="text-[10px] text-muted-foreground">
           {formatTimeAgo(conversation.updated_at)}
         </p>
       </div>
 
       {/* Delete button - shown on hover */}
-      {showDelete && !isDeleting && (
+      {!isDeleting && (
         <button
           onClick={handleDelete}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity duration-150 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
           aria-label="Delete conversation"
         >
           <Trash2 className="h-3 w-3" />
@@ -160,26 +158,40 @@ export function ConversationSidebar({
   const isEmpty = conversations.length === 0;
 
   return (
-    <div className="flex h-full w-64 flex-col border-r border-border bg-card">
+    <div className="flex h-full flex-col bg-card">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
-        <h2 className="text-xs font-semibold text-foreground">Conversations</h2>
+        <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Conversations
+        </h2>
         <div className="flex items-center gap-1">
           <button
             onClick={onNewConversation}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted/30 hover:text-foreground"
             aria-label="New conversation"
           >
             <Plus className="h-4 w-4" />
           </button>
           <button
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted/30 hover:text-foreground md:hidden"
             aria-label="Close sidebar"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
+      </div>
+
+      {/* New chat button */}
+      <div className="px-3 py-3">
+        <Button
+          variant="outline"
+          onClick={onNewConversation}
+          className="w-full cursor-pointer justify-start gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          New chat
+        </Button>
       </div>
 
       {/* Scrollable conversation list */}
@@ -190,23 +202,13 @@ export function ConversationSidebar({
           </div>
         ) : isEmpty ? (
           <div className="flex h-full flex-col items-center justify-center px-4 text-center">
-            <p className="mb-3 text-xs text-muted-foreground">No conversations yet</p>
-            <button
-              onClick={onNewConversation}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-medium text-primary',
-                'transition-colors hover:bg-primary/10'
-              )}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Start a conversation
-            </button>
+            <p className="text-sm text-muted-foreground">No conversations yet</p>
           </div>
         ) : (
-          <div className="space-y-4 p-2">
+          <div className="space-y-4 px-2 pb-2">
             {groups.map((group) => (
               <div key={group.label} className="space-y-1">
-                <h3 className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                <h3 className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   {group.label}
                 </h3>
                 <div className="space-y-0.5">
