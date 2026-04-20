@@ -2,12 +2,12 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
+import { startOfWeek, parseISO, isValid, formatISO } from 'date-fns';
 import { getMeetings, getProfiles } from '@/app/actions';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
-import { ScheduleContent } from '@/components/schedule-content';
-import { ScheduleViewToggle } from '@/components/schedule-view-toggle';
+import { QualiaSchedule } from '@/components/portal/qualia-schedule';
 import { Calendar } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 
@@ -16,11 +16,21 @@ export const metadata: Metadata = {
   description: 'Team schedule and calendar',
 };
 
+function resolveWeekStart(weekParam?: string): Date {
+  if (weekParam) {
+    const parsed = parseISO(weekParam);
+    if (isValid(parsed)) return startOfWeek(parsed, { weekStartsOn: 1 });
+  }
+  return startOfWeek(new Date(), { weekStartsOn: 1 });
+}
+
 async function ScheduleLoader({
-  view,
+  weekStartISO,
+  userId,
   scopeToUserId,
 }: {
-  view: string;
+  weekStartISO: string;
+  userId: string;
   scopeToUserId?: string | null;
 }) {
   await connection();
@@ -32,7 +42,14 @@ async function ScheduleLoader({
       getProfiles(workspaceId || undefined),
     ]);
 
-    return <ScheduleContent view={view} initialMeetings={meetings} profiles={profiles} />;
+    return (
+      <QualiaSchedule
+        initialMeetings={meetings}
+        profiles={profiles}
+        currentUserId={userId}
+        weekStart={weekStartISO}
+      />
+    );
   } catch (error) {
     console.error('Failed to load schedule data:', error);
     return (
@@ -50,59 +67,28 @@ async function ScheduleLoader({
 
 function ScheduleSkeleton() {
   return (
-    <div className="flex h-full gap-5">
-      {/* Sidebar skeleton — xl only, matches MeetingDaySidebar */}
-      <div className="hidden w-80 shrink-0 overflow-hidden rounded-xl border border-border bg-card xl:block">
-        <div className="px-5 pb-3 pt-5">
-          <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+    <div className="flex h-full flex-col gap-4 p-6 lg:p-8">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-3 w-40 animate-pulse rounded bg-muted" />
+          <div className="h-7 w-36 animate-pulse rounded bg-muted" />
         </div>
-        <div className="space-y-1 px-3 pb-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2.5">
-              <div className="size-8 shrink-0 animate-pulse rounded-full bg-muted" />
-              <div className="flex-1 space-y-1.5">
-                <div className="h-3.5 w-24 animate-pulse rounded bg-muted" />
-                <div className="h-3 w-16 animate-pulse rounded bg-muted" />
-              </div>
-            </div>
-          ))}
+        <div className="flex gap-3">
+          <div className="h-10 w-20 animate-pulse rounded-lg bg-muted" />
+          <div className="h-10 w-20 animate-pulse rounded-lg bg-muted" />
         </div>
       </div>
-
-      {/* Calendar skeleton */}
-      <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
-        {/* Toolbar */}
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="h-6 w-40 animate-pulse rounded bg-muted" />
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
-            <div className="h-8 w-20 animate-pulse rounded-lg bg-muted" />
-            <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
-          </div>
-        </div>
-
-        {/* Day headers */}
-        <div className="grid grid-cols-7 gap-px border-t border-border bg-border">
-          {[...Array(7)].map((_, i) => (
-            <div key={i} className="bg-muted/50 py-3 text-center">
+      <div className="flex-1 rounded-xl border border-border bg-card">
+        <div className="grid grid-cols-8 gap-px border-b border-border bg-border/30">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="bg-muted/20 p-3">
               <div className="mx-auto h-3 w-8 animate-pulse rounded bg-muted" />
             </div>
           ))}
         </div>
-
-        {/* Calendar cells */}
-        <div className="grid grid-cols-7 gap-px bg-border">
-          {[...Array(35)].map((_, i) => (
-            <div key={i} className="h-24 bg-card p-2">
-              <div className="size-7 animate-pulse rounded-full bg-muted" />
-              {i % 5 === 1 && <div className="mt-1.5 h-4 w-full animate-pulse rounded bg-muted" />}
-              {i % 7 === 3 && (
-                <div className="mt-1.5 space-y-1">
-                  <div className="h-4 w-full animate-pulse rounded bg-muted" />
-                  <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-                </div>
-              )}
-            </div>
+        <div className="grid grid-cols-8 gap-px bg-border/30">
+          {Array.from({ length: 8 * 12 }).map((_, i) => (
+            <div key={i} className="h-14 bg-card" />
           ))}
         </div>
       </div>
@@ -113,7 +99,7 @@ function ScheduleSkeleton() {
 export default async function PortalSchedulePage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ week?: string }>;
 }) {
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
@@ -121,9 +107,9 @@ export default async function PortalSchedulePage({
   if (profile?.role === 'client') redirect('/');
 
   const params = await searchParams;
-  const view = params.view || 'week';
+  const weekStart = resolveWeekStart(params.week);
+  const weekStartISO = formatISO(weekStart, { representation: 'date' });
 
-  // Scope meetings for employees so they only see their own relevant meetings
   const scopeToUserId = profile?.role === 'employee' ? user.id : null;
 
   return (
@@ -133,13 +119,16 @@ export default async function PortalSchedulePage({
         iconBg="bg-violet-500/10"
         title="Schedule"
       >
-        <ScheduleViewToggle currentView={view} />
         <NewMeetingModal />
       </PageHeader>
 
-      <div className="flex-1 overflow-hidden px-4 py-3 sm:px-6 sm:py-4">
+      <div className="flex-1 overflow-hidden">
         <Suspense fallback={<ScheduleSkeleton />}>
-          <ScheduleLoader view={view} scopeToUserId={scopeToUserId} />
+          <ScheduleLoader
+            weekStartISO={weekStartISO}
+            userId={user.id}
+            scopeToUserId={scopeToUserId}
+          />
         </Suspense>
       </div>
     </div>
