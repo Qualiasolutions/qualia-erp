@@ -1,0 +1,314 @@
+{
+  "backup_date": "2026-04-20T07:50:19.346439+00:00",
+  "reason": "Post-Phase-13 client logins + portal access wipe (keep CRM clients + projects)",
+  "restored_via": "For each entry in 'clients', recreate auth.users via supabase.auth.admin.createUser with email + password 'qualia'. Profile + role get auto-populated via custom_access_token_hook or can be set manually. Then re-insert the client_projects rows linking each new profile.id to the project_id.",
+  "clients": [
+    {
+      "id": "36797abc-a19d-402e-9671-2f598bdb65a1",
+      "username": "aandnglobal",
+      "full_name": "A&N Global Exchange",
+      "email": "anglobal@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "anglobal@qualiasolutions.net",
+      "last_sign_in_at": null
+    },
+    {
+      "id": "9ecf716a-3ce6-40d2-861d-954988627913",
+      "username": "alkemy",
+      "full_name": "Chrysanthos Fakas",
+      "email": "alkemy@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "alkemy@qualiasolutions.net",
+      "last_sign_in_at": null
+    },
+    {
+      "id": "fb42b3b6-4825-40c1-a6d9-04414437163d",
+      "username": "aquador",
+      "full_name": "AQUADOR",
+      "email": "aquador@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "aquador@qualiasolutions.net",
+      "last_sign_in_at": "2026-04-19T10:44:43.193691+00:00"
+    },
+    {
+      "id": "01ec1990-8112-45a2-892c-337e0c9dc4f7",
+      "username": "armenius",
+      "full_name": "I.T. Armenius LTD",
+      "email": "armenius@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "armenius@qualiasolutions.net",
+      "last_sign_in_at": "2026-04-19T10:54:20.932082+00:00"
+    },
+    {
+      "id": "7f9b2d18-334c-4a17-b5fd-ce186521a36c",
+      "username": "dawadose",
+      "full_name": "DawaDose",
+      "email": "dawadose@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "dawadose@qualiasolutions.net",
+      "last_sign_in_at": "2026-04-19T10:55:20.649121+00:00"
+    },
+    {
+      "id": "c7f621d8-d08c-4f5a-af20-e76eef03155c",
+      "username": "giannisuk",
+      "full_name": "GIannis UK",
+      "email": "giannis@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "giannis@qualiasolutions.net",
+      "last_sign_in_at": "2026-04-19T10:58:24.323427+00:00"
+    },
+    {
+      "id": "31f3ffd5-46d8-4749-8fca-04feaf7d4e30",
+      "username": "innrvo",
+      "full_name": "InrVo",
+      "email": "innrvo@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "innrvo@qualiasolutions.net",
+      "last_sign_in_at": "2026-04-19T11:02:04.42525+00:00"
+    },
+    {
+      "id": "6d618edb-0933-4411-8da6-21667672a278",
+      "username": "kronospan",
+      "full_name": "Kronospan",
+      "email": "kronospan@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "kronospan@qualiasolutions.net",
+      "last_sign_in_at": "2026-04-19T11:02:57.102348+00:00"
+    },
+    {
+      "id": "853b680c-8b38-4d44-9067-a788fe408608",
+      "username": "marcopellizzeri",
+      "full_name": "Marco Pellizzeri",
+      "email": "marco@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "marco@qualiasolutions.net",
+      "last_sign_in_at": "2026-04-19T11:03:44.1699+00:00"
+    },
+    {
+      "id": "185c9d74-3cdb-40a9-a029-5eac22e0c7a0",
+      "username": "peta",
+      "full_name": "Peta",
+      "email": "peta@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "peta@qualiasolutions.net",
+      "last_sign_in_at": "2026-04-19T11:47:08.960275+00:00"
+    },
+    {
+      "id": "7782545f-650b-45af-8142-9c39d310456e",
+      "username": "sakani",
+      "full_name": "Sakani",
+      "email": "sakani@qualiasolutions.cy",
+      "role": "client",
+      "auth_email": "sakani@qualiasolutions.cy",
+      "last_sign_in_at": "2026-04-19T11:52:13.89175+00:00"
+    },
+    {
+      "id": "c12e19a6-f661-4568-98ef-179c63cf0496",
+      "username": "sslaw",
+      "full_name": "SSlaw",
+      "email": "sslaw@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "sslaw@qualiasolutions.net",
+      "last_sign_in_at": null
+    },
+    {
+      "id": "1ad72605-36e6-46cc-96ae-93809bda6558",
+      "username": "underdogsales",
+      "full_name": "Underdog Sales",
+      "email": "gsc@underdogsales.com",
+      "role": "client",
+      "auth_email": "gsc@underdogsales.com",
+      "last_sign_in_at": "2026-04-19T10:26:00.269756+00:00"
+    },
+    {
+      "id": "a5c05778-b904-4d32-a8f1-0cb92065f35b",
+      "username": "veromodels",
+      "full_name": "Vero Models",
+      "email": "morees@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "morees@qualiasolutions.net",
+      "last_sign_in_at": null
+    },
+    {
+      "id": "9bed13e9-b275-421a-84f8-f8788f023f69",
+      "username": "znso",
+      "full_name": "ZNSO Architecture",
+      "email": "znso@qualiasolutions.net",
+      "role": "client",
+      "auth_email": "znso@qualiasolutions.net",
+      "last_sign_in_at": null
+    },
+    {
+      "id": "fad677ef-5dfe-47cd-bd04-407a46e30da7",
+      "username": "zyprus",
+      "full_name": "CSC Zyprus Property Group Ltd",
+      "email": "zyprus@qualiasolutions.cy",
+      "role": "client",
+      "auth_email": "zyprus@qualiasolutions.cy",
+      "last_sign_in_at": null
+    }
+  ],
+  "client_projects": [
+    {
+      "mapping_id": "81435d97-a2b1-4050-9104-188353025872",
+      "profile_id": "36797abc-a19d-402e-9671-2f598bdb65a1",
+      "username": "aandnglobal",
+      "project_id": "f5922ae8-eb8b-4c36-a433-664f7190e0ee",
+      "project_name": "A&N Global"
+    },
+    {
+      "mapping_id": "fc46aa17-b589-4cd3-b1b6-5912c546fdbd",
+      "profile_id": "9ecf716a-3ce6-40d2-861d-954988627913",
+      "username": "alkemy",
+      "project_id": "7894cc42-fc1c-468f-8839-19b34b8ae8e8",
+      "project_name": "Alkemy"
+    },
+    {
+      "mapping_id": "5197fe1f-e48c-4c8b-a2a0-0374e0b09283",
+      "profile_id": "fb42b3b6-4825-40c1-a6d9-04414437163d",
+      "username": "aquador",
+      "project_id": "28f93cfd-a9a5-4fe1-964e-717161752689",
+      "project_name": "Aquador"
+    },
+    {
+      "mapping_id": "1f06dd43-5127-4d65-be92-17eccd5b5c21",
+      "profile_id": "01ec1990-8112-45a2-892c-337e0c9dc4f7",
+      "username": "armenius",
+      "project_id": "565d8e22-818f-42ac-8c18-843186bd9612",
+      "project_name": "Alexis AI"
+    },
+    {
+      "mapping_id": "f4b3ac21-14f0-41c4-8fa7-21baea4cac7e",
+      "profile_id": "7f9b2d18-334c-4a17-b5fd-ce186521a36c",
+      "username": "dawadose",
+      "project_id": "987ba044-f370-4d52-bab6-6635e945cfaf",
+      "project_name": "Dawadose"
+    },
+    {
+      "mapping_id": "39e4b57f-3b79-4986-9e24-56e9b8e743cd",
+      "profile_id": "c7f621d8-d08c-4f5a-af20-e76eef03155c",
+      "username": "giannisuk",
+      "project_id": "7ee7f9a3-76f5-4d28-ab2e-8dfb18740e2a",
+      "project_name": "Giannois UK"
+    },
+    {
+      "mapping_id": "6e8f9060-5e28-44f8-9e20-420a02c1da66",
+      "profile_id": "31f3ffd5-46d8-4749-8fca-04feaf7d4e30",
+      "username": "innrvo",
+      "project_id": "9aa58340-3463-45f3-997e-c2676a2b5b57",
+      "project_name": "Innrvo"
+    },
+    {
+      "mapping_id": "9d261659-2714-4237-bb77-8e87c533a350",
+      "profile_id": "31f3ffd5-46d8-4749-8fca-04feaf7d4e30",
+      "username": "innrvo",
+      "project_id": "00f62439-a258-4c19-951d-d5bdaadcc608",
+      "project_name": "Innrvo Marketing"
+    },
+    {
+      "mapping_id": "07e2904c-b4ec-4554-89b0-83b8cf40c3ea",
+      "profile_id": "6d618edb-0933-4411-8da6-21667672a278",
+      "username": "kronospan",
+      "project_id": "bfae3c1d-338c-4705-a4bd-785e85542d54",
+      "project_name": "Kronospan"
+    },
+    {
+      "mapping_id": "80d2b599-6050-4393-9333-bc98bb144097",
+      "profile_id": "853b680c-8b38-4d44-9067-a788fe408608",
+      "username": "marcopellizzeri",
+      "project_id": "3f4484a7-81bf-4063-954e-9d39cd757075",
+      "project_name": "Doctor Marco"
+    },
+    {
+      "mapping_id": "35a60327-8f9c-4341-834c-dcbc8bacd25a",
+      "profile_id": "185c9d74-3cdb-40a9-a029-5eac22e0c7a0",
+      "username": "peta",
+      "project_id": "19bbeb1b-d0ad-451c-80d4-c9e0594bff4b",
+      "project_name": "Peta"
+    },
+    {
+      "mapping_id": "b55cd4ed-c4a6-4703-a41c-b6635985dea2",
+      "profile_id": "7782545f-650b-45af-8142-9c39d310456e",
+      "username": "sakani",
+      "project_id": "2cf87734-5fe1-4ee6-b766-5352865eaa6e",
+      "project_name": "Sakani"
+    },
+    {
+      "mapping_id": "4bc4a762-4004-4f9a-a395-433fa4169f25",
+      "profile_id": "c12e19a6-f661-4568-98ef-179c63cf0496",
+      "username": "sslaw",
+      "project_id": "50f04449-d775-4e21-aa98-890f7760c393",
+      "project_name": "AlJaber Engineering WLLImage"
+    },
+    {
+      "mapping_id": "dc0534ec-98b9-4cf4-bde2-040c4d00cb08",
+      "profile_id": "c12e19a6-f661-4568-98ef-179c63cf0496",
+      "username": "sslaw",
+      "project_id": "9d4144b2-a97d-4a7d-ba23-7c6cb398182f",
+      "project_name": "SS Law (Dababneh)"
+    },
+    {
+      "mapping_id": "60da62df-cc97-4f1d-a4c0-fc40ea29ca95",
+      "profile_id": "1ad72605-36e6-46cc-96ae-93809bda6558",
+      "username": "underdogsales",
+      "project_id": "f419633c-7f79-4ee6-b1d2-6b52637d79be",
+      "project_name": "AI Sales Coach"
+    },
+    {
+      "mapping_id": "10c42e29-ac9f-4dc4-bd08-7d0e99a185eb",
+      "profile_id": "1ad72605-36e6-46cc-96ae-93809bda6558",
+      "username": "underdogsales",
+      "project_id": "4ac013fd-162b-413d-bd2e-128bb9305cf5",
+      "project_name": "Cold Calling Wiki"
+    },
+    {
+      "mapping_id": "d9301ca3-7161-4b48-9aac-9824a2800e93",
+      "profile_id": "1ad72605-36e6-46cc-96ae-93809bda6558",
+      "username": "underdogsales",
+      "project_id": "c58811d1-e175-4c56-bfa4-88a3413c2be8",
+      "project_name": "Giulio Orchestractor"
+    },
+    {
+      "mapping_id": "38311e1f-6fd6-4640-8c05-6a3feb7b5711",
+      "profile_id": "1ad72605-36e6-46cc-96ae-93809bda6558",
+      "username": "underdogsales",
+      "project_id": "cc86698a-50d4-4537-be07-0e5642afb26e",
+      "project_name": "Underdog"
+    },
+    {
+      "mapping_id": "7cae3861-425b-45f7-9c0e-e1fbb2500e7a",
+      "profile_id": "1ad72605-36e6-46cc-96ae-93809bda6558",
+      "username": "underdogsales",
+      "project_id": "4d32ed54-e712-4e9d-9fb2-df0db325a091",
+      "project_name": "Underdog Sales Academy"
+    },
+    {
+      "mapping_id": "5e9a9ee1-0d37-429d-ab94-22f6e9edae17",
+      "profile_id": "a5c05778-b904-4d32-a8f1-0cb92065f35b",
+      "username": "veromodels",
+      "project_id": "c42ebbef-cf9f-4ac2-b2dc-3a2840c09db6",
+      "project_name": "Vero Models"
+    },
+    {
+      "mapping_id": "36e2e9e1-1c80-4455-a7a0-7c4a63a13067",
+      "profile_id": "9bed13e9-b275-421a-84f8-f8788f023f69",
+      "username": "znso",
+      "project_id": "830b3edf-3169-4a7a-80bf-9beac2a80474",
+      "project_name": "Haamah Integrated"
+    },
+    {
+      "mapping_id": "da4a68c3-1788-4ee8-80ea-25d45144b3b0",
+      "profile_id": "9bed13e9-b275-421a-84f8-f8788f023f69",
+      "username": "znso",
+      "project_id": "e847c302-479f-49c9-8918-7a9534e885f3",
+      "project_name": "ZNSO Architects"
+    },
+    {
+      "mapping_id": "711b06ac-ab36-4ce3-97b2-8f5d7e4f9ccf",
+      "profile_id": "fad677ef-5dfe-47cd-bd04-407a46e30da7",
+      "username": "zyprus",
+      "project_id": "39c1665a-3b88-4a05-a42b-f816456a4146",
+      "project_name": "Sophia - Zyprus"
+    }
+  ]
+}
