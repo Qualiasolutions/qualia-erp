@@ -687,6 +687,7 @@ export type Database = {
       client_feature_requests: {
         Row: {
           admin_response: string | null;
+          attachments: Json;
           client_id: string;
           created_at: string | null;
           description: string | null;
@@ -699,6 +700,7 @@ export type Database = {
         };
         Insert: {
           admin_response?: string | null;
+          attachments?: Json;
           client_id: string;
           created_at?: string | null;
           description?: string | null;
@@ -711,6 +713,7 @@ export type Database = {
         };
         Update: {
           admin_response?: string | null;
+          attachments?: Json;
           client_id?: string;
           created_at?: string | null;
           description?: string | null;
@@ -2538,6 +2541,7 @@ export type Database = {
           role: Database['public']['Enums']['user_role'] | null;
           skill_level: string | null;
           theme: string;
+          ui_density: string;
           updated_at: string | null;
           username: string | null;
         };
@@ -2560,6 +2564,7 @@ export type Database = {
           role?: Database['public']['Enums']['user_role'] | null;
           skill_level?: string | null;
           theme?: string;
+          ui_density?: string;
           updated_at?: string | null;
           username?: string | null;
         };
@@ -2582,6 +2587,7 @@ export type Database = {
           role?: Database['public']['Enums']['user_role'] | null;
           skill_level?: string | null;
           theme?: string;
+          ui_density?: string;
           updated_at?: string | null;
           username?: string | null;
         };

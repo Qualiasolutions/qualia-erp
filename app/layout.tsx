@@ -5,6 +5,7 @@ import { GeistMono } from 'geist/font/mono';
 import './globals.css';
 import { CommandMenu } from '@/components/command-menu';
 import { ThemeProvider } from '@/components/theme-provider';
+import { DensityProvider } from '@/components/density-provider';
 import { WorkspaceProvider } from '@/components/workspace-provider';
 import { SidebarProvider } from '@/components/sidebar-provider';
 import { SWRProvider } from '@/components/swr-provider';
@@ -99,9 +100,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Preconnect hints for faster resource loading */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Supabase origin hint — fonts are self-hosted via next/font (Geist) */}
         <link rel="dns-prefetch" href="https://vbpzaiqovffpsroxaulv.supabase.co" />
       </head>
       <body
@@ -109,31 +108,33 @@ export default function RootLayout({
       >
         <LazyMotionProvider>
           <ThemeProvider>
-            <SWRProvider>
-              <AccessibilityAnnouncer>
-                <AdminProvider>
-                  <WorkspaceProvider>
-                    <SidebarProvider>
-                      <AIAssistantProvider>
-                        <Suspense fallback={null}>
-                          <CommandMenu />
-                        </Suspense>
-                        <Suspense fallback={null}>
-                          <AIAssistantWidget />
-                        </Suspense>
-                        <Suspense fallback={null}>
-                          <SessionGuard />
-                        </Suspense>
-                        <Suspense fallback={null}>
-                          <PlannedLogoutBanner />
-                        </Suspense>
-                        {children}
-                      </AIAssistantProvider>
-                    </SidebarProvider>
-                  </WorkspaceProvider>
-                </AdminProvider>
-              </AccessibilityAnnouncer>
-            </SWRProvider>
+            <DensityProvider>
+              <SWRProvider>
+                <AccessibilityAnnouncer>
+                  <AdminProvider>
+                    <WorkspaceProvider>
+                      <SidebarProvider>
+                        <AIAssistantProvider>
+                          <Suspense fallback={null}>
+                            <CommandMenu />
+                          </Suspense>
+                          <Suspense fallback={null}>
+                            <AIAssistantWidget />
+                          </Suspense>
+                          <Suspense fallback={null}>
+                            <SessionGuard />
+                          </Suspense>
+                          <Suspense fallback={null}>
+                            <PlannedLogoutBanner />
+                          </Suspense>
+                          {children}
+                        </AIAssistantProvider>
+                      </SidebarProvider>
+                    </WorkspaceProvider>
+                  </AdminProvider>
+                </AccessibilityAnnouncer>
+              </SWRProvider>
+            </DensityProvider>
           </ThemeProvider>
         </LazyMotionProvider>
         <Toaster position="top-center" richColors closeButton />

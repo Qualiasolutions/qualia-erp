@@ -75,6 +75,38 @@
     --space-lg: clamp(1rem, 0.8rem + 1vw, 1.75rem);
     --space-xl: clamp(1.5rem, 1.2rem + 1.5vw, 2.5rem);
     --space-2xl: clamp(2rem, 1.6rem + 2vw, 3.5rem);
+
+    /* === Design-handoff token aliases (UI remake, phase 14) ===
+       Named vocabulary for redesigned components. Existing components
+       continue using --background / --foreground / etc. via Tailwind. */
+    --bg: hsl(var(--background));
+    --bg-sub: hsl(var(--muted));
+    --surface: hsl(var(--card));
+    --surface-hi: hsl(var(--surface-3));
+    --line: hsl(var(--border));
+    --line-2: hsl(var(--input));
+    --text: hsl(var(--foreground));
+    --text-soft: hsl(185 10% 22%);
+    --text-mute: hsl(var(--muted-foreground));
+    --accent-teal: hsl(var(--primary));
+    --accent-hi: hsl(175 65% 44%);
+    --accent-soft: hsl(175 60% 34% / 0.12);
+    --on-accent: hsl(var(--primary-foreground));
+
+    /* Status colors — named, used by StatusDot/PriorityBadge */
+    --q-amber: #b7791f;
+    --q-rust: #c0392b;
+    --q-moss: #3f7a4e;
+    --q-plum: #6e4b9e;
+
+    /* Density scale — applied via [data-density] attr on <html> */
+    --row-h: 44px;
+    --pad: 24px;
+    --gap: 16px;
+
+    /* Shell dimensions */
+    --sidebar-w: 232px;
+    --rightrail-w: 320px;
   }
 
   .dark {
@@ -122,7 +154,29 @@
     --elevation-floating: 0 8px 24px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.12);
     --elevation-modal: 0 16px 48px rgba(0, 0, 0, 0.28), 0 4px 16px rgba(0, 0, 0, 0.16);
     --elevation-max: 0 24px 64px rgba(0, 0, 0, 0.36), 0 8px 24px rgba(0, 0, 0, 0.2);
+
+    /* === Design-handoff token overrides for dark === */
+    --accent-hi: hsl(175 70% 52%);
+    --accent-soft: hsl(175 65% 48% / 0.14);
+    --text-soft: hsl(185 6% 72%);
+    --q-moss: #5fa574;
+    --q-amber: #d4a64a;
+    --q-rust: #e0614e;
+    --q-plum: #9470c7;
   }
+}
+
+/* === Density system (UI remake, phase 14) ===
+   Applied via <html data-density="..."> — see components/density-provider.tsx */
+[data-density='compact'] {
+  --row-h: 36px;
+  --pad: 16px;
+  --gap: 10px;
+}
+[data-density='spacious'] {
+  --row-h: 56px;
+  --pad: 36px;
+  --gap: 24px;
 }
 
 /* ============================================
@@ -969,4 +1023,109 @@ textarea:focus-visible {
   .list-item-active {
     @apply bg-muted/50;
   }
+}
+
+/* ============================================
+   DESIGN-HANDOFF UTILITIES (UI remake, phase 14)
+   Prefixed `q-` so they never collide with existing Tailwind/shadcn.
+   ============================================ */
+@layer components {
+  .q-eyebrow {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+    font-weight: 500;
+  }
+
+  .q-label-mono {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--text-mute);
+  }
+
+  .q-display {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  .q-tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+}
+
+@keyframes q-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes q-stagger {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes q-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent-soft);
+  }
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.q-page-enter {
+  animation: q-fade-up 380ms var(--ease-out-expo) both;
+}
+
+.q-stagger > * {
+  animation: q-stagger 400ms var(--ease-out-expo) both;
+}
+.q-stagger > *:nth-child(1) {
+  animation-delay: 40ms;
+}
+.q-stagger > *:nth-child(2) {
+  animation-delay: 80ms;
+}
+.q-stagger > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+.q-stagger > *:nth-child(4) {
+  animation-delay: 160ms;
+}
+.q-stagger > *:nth-child(5) {
+  animation-delay: 200ms;
+}
+.q-stagger > *:nth-child(6) {
+  animation-delay: 240ms;
+}
+.q-stagger > *:nth-child(7) {
+  animation-delay: 280ms;
+}
+.q-stagger > *:nth-child(8) {
+  animation-delay: 320ms;
+}
+
+.q-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-hi);
+  animation: q-pulse-ring 2s infinite;
 }
