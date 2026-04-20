@@ -1,39 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
-import { EmployeeAssignmentManager } from '@/components/admin/employee-assignment-manager';
-import { AssignmentHistoryTable } from '@/components/admin/assignment-history-table';
 
-export const metadata = {
-  title: 'Employee Assignments - Qualia',
-  description: 'Manage employee-project assignments',
-};
-
-export default async function AdminAssignmentsPage() {
-  const user = await getPortalAuthUser();
-
-  if (!user) {
-    redirect('/auth/login');
-  }
-
-  // Check admin role
-  const profile = await getPortalProfile(user.id);
-
-  if (profile?.role !== 'admin') {
-    redirect('/');
-  }
-
-  return (
-    <div className="space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Employee Assignments</h1>
-        <p className="mt-2 text-muted-foreground">
-          Manage which employees are assigned to which projects
-        </p>
-      </div>
-
-      <EmployeeAssignmentManager />
-
-      <AssignmentHistoryTable />
-    </div>
-  );
+export default function AdminAssignmentsPage() {
+  redirect('/admin?tab=team');
 }
