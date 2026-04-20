@@ -3,10 +3,9 @@
 import { memo, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { Activity, Search, Plus } from 'lucide-react';
+import { Activity } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import type {
   ControlTab,
   OverviewPayload,
@@ -270,16 +269,6 @@ export function QualiaControl({ initialTab, data }: QualiaControlProps) {
                 Control
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">{activeTab.desc}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="gap-1.5" disabled>
-                <Search className="size-3.5" aria-hidden />
-                Audit log
-              </Button>
-              <Button size="sm" className="gap-1.5" disabled>
-                <Plus className="size-3.5" aria-hidden />
-                New…
-              </Button>
             </div>
           </div>
           <nav
