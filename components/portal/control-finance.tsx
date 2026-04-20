@@ -4,7 +4,9 @@ import { memo } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
+import { Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 import { formatEUR } from '@/lib/currency';
 import type {
   FinancePayload,
@@ -19,11 +21,12 @@ import type {
 export function ControlFinance({ data }: { data: FinancePayload | undefined }) {
   if (!data || data.kpis.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center">
-        <p className="text-sm italic text-muted-foreground">
-          No financial data yet. Sync Zoho to start tracking.
-        </p>
-      </div>
+      <EmptyState
+        icon={Receipt}
+        title="No financial data yet"
+        description="Sync Zoho to start tracking revenue and invoices."
+        compact
+      />
     );
   }
 
@@ -88,7 +91,13 @@ const RecentPaymentsTable = memo(function RecentPaymentsTable({
         </span>
       </header>
       {rows.length === 0 ? (
-        <p className="p-6 text-center text-xs italic text-muted-foreground">No recent payments.</p>
+        <EmptyState
+          icon={Receipt}
+          title="No recent payments"
+          description="Payment history will appear here."
+          compact
+          minimal
+        />
       ) : (
         <ul className="divide-y divide-border">
           {rows.map((p) => (
@@ -140,9 +149,13 @@ const OpenInvoicesTable = memo(function OpenInvoicesTable({ rows }: { rows: Fina
         </span>
       </header>
       {rows.length === 0 ? (
-        <p className="p-6 text-center text-xs italic text-muted-foreground">
-          No open invoices. Nice.
-        </p>
+        <EmptyState
+          icon={Receipt}
+          title="No open invoices"
+          description="All invoices are settled."
+          compact
+          minimal
+        />
       ) : (
         <ul className="divide-y divide-border">
           {rows.map((inv) => (

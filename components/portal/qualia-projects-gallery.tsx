@@ -13,11 +13,13 @@ import {
   Hammer,
   ClipboardCheck,
   Rocket,
+  FolderOpen,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { PROJECT_TYPE_CONFIG, type ProjectTypeStyle } from '@/lib/project-type-config';
 import { AvatarStack, type AvatarStackPerson } from '@/components/ui/avatar-stack';
+import { EmptyState } from '@/components/ui/empty-state';
 import { hueFromId, clientAccent, clientAccentGradient } from '@/lib/color-constants';
 import type { ProjectType } from '@/types/database';
 
@@ -467,11 +469,13 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
       {/* Content — fills remaining viewport */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 py-4 lg:px-6">
         {filteredProjects.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center text-center">
-            <div className="mb-3 rounded-xl bg-muted/50 p-5">
-              <LayoutGrid className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <p className="text-sm text-muted-foreground">No projects match the current filter.</p>
+          <div className="flex flex-1 flex-col items-center justify-center">
+            <EmptyState
+              icon={FolderOpen}
+              title="No projects found"
+              description="No projects match the current filter."
+              minimal
+            />
           </div>
         ) : viewMode === 'columns' ? (
           <StageColumns stages={stages} />

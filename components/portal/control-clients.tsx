@@ -2,12 +2,13 @@
 
 import { memo, useDeferredValue, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search } from 'lucide-react';
+import { Search, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { cn } from '@/lib/utils';
 import { hueFromId, clientAccent } from '@/lib/color-constants';
 import type { ClientsPayload, ClientSummaryRow } from '@/app/actions/admin-control';
+import { EmptyState } from '@/components/ui/empty-state';
 
 /* ======================================================================
    ControlClients — admin-eye directory
@@ -53,11 +54,16 @@ export function ControlClients({ data }: { data: ClientsPayload | undefined }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center">
-          <p className="text-sm italic text-muted-foreground">
-            {clients.length === 0 ? 'No clients yet.' : 'No clients match your search.'}
-          </p>
-        </div>
+        <EmptyState
+          icon={Building2}
+          title={clients.length === 0 ? 'No clients yet' : 'No matching clients'}
+          description={
+            clients.length === 0
+              ? 'Clients will appear here once added.'
+              : 'Try adjusting your search query.'
+          }
+          compact
+        />
       ) : (
         <div className="overflow-hidden rounded-xl border border-border bg-card">
           <div

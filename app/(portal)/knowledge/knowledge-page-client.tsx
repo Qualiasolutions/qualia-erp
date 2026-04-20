@@ -28,6 +28,7 @@ import {
   Database,
 } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 import { m, AnimatePresence } from '@/lib/lazy-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1010,13 +1011,12 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
             })}
 
             {filteredGuides.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <Search className="mb-3 h-12 w-12 text-muted-foreground/30" />
-                <p className="text-base font-medium text-foreground">No guides found</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Try adjusting your search or filter
-                </p>
-              </div>
+              <EmptyState
+                icon={BookOpen}
+                title="No guides found"
+                description="Try adjusting your search or filter."
+                minimal
+              />
             )}
           </div>
         </div>

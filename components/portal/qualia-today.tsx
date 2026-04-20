@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 
+import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useTodaysTasks, useInboxTasks, useEmployeeAssignments } from '@/lib/swr';
 import { QIcon } from '@/components/ui/q-icon';
 import { ProgressRing } from '@/components/ui/progress-ring';
@@ -186,9 +188,13 @@ function TodayTimeline({ tasks }: { tasks: TimelineTask[] }) {
       </div>
 
       {tasks.length === 0 ? (
-        <div className="py-10 text-center text-[13px]" style={{ color: 'var(--text-mute)' }}>
-          No tasks scoped for today.
-        </div>
+        <EmptyState
+          icon={CheckCircle2}
+          title="No tasks today"
+          description="Nothing scoped for today. Enjoy the breathing room."
+          compact
+          minimal
+        />
       ) : (
         <div className="relative">
           <div

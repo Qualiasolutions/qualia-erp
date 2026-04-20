@@ -4,9 +4,10 @@ import type { ReactNode } from 'react';
 import { memo } from 'react';
 import Link from 'next/link';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { Github, Cloud, Database, Settings } from 'lucide-react';
+import { Github, Cloud, Database, Settings, Server, FileText } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 import type {
   SystemPayload,
   IntegrationHealth,
@@ -45,12 +46,17 @@ export function ControlSystem({
   emptyFallback?: ReactNode;
 }) {
   if (!data) {
-    return (
+    return emptyFallback ? (
       <div className="rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center">
-        {emptyFallback ?? (
-          <p className="text-sm italic text-muted-foreground">System data not loaded.</p>
-        )}
+        {emptyFallback}
       </div>
+    ) : (
+      <EmptyState
+        icon={Server}
+        title="System data not loaded"
+        description="Integration health and audit data will appear here."
+        compact
+      />
     );
   }
 
@@ -137,9 +143,13 @@ const AuditLogTable = memo(function AuditLogTable({ entries }: { entries: AuditL
         </span>
       </header>
       {entries.length === 0 ? (
-        <p className="p-6 text-center text-xs italic text-muted-foreground">
-          No admin actions logged yet.
-        </p>
+        <EmptyState
+          icon={FileText}
+          title="No audit entries"
+          description="Admin actions will appear here."
+          compact
+          minimal
+        />
       ) : (
         <ul className="divide-y divide-dashed divide-border">
           {entries.map((e) => (
@@ -189,9 +199,13 @@ const FrameworkReportsMini = memo(function FrameworkReportsMini({
         </Link>
       </header>
       {reports.length === 0 ? (
-        <p className="p-6 text-center text-xs italic text-muted-foreground">
-          No session reports received yet.
-        </p>
+        <EmptyState
+          icon={Server}
+          title="No session reports"
+          description="Framework session reports will appear here."
+          compact
+          minimal
+        />
       ) : (
         <ul className="divide-y divide-dashed divide-border">
           {reports.map((r) => (

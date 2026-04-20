@@ -3,7 +3,7 @@
 import { memo, useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { Crown, Shield, User } from 'lucide-react';
+import { Crown, Shield, User, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { hueFromId, clientAccent } from '@/lib/color-constants';
@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { EmptyState } from '@/components/ui/empty-state';
 import { updateUserRole, removeTeamMember, type AdminProfile } from '@/app/actions/admin';
 import type { TeamPayload, AssignmentProject } from '@/app/actions/admin-control';
 import type { Database } from '@/types/database';
@@ -47,9 +48,12 @@ const ROLE_META: Record<string, { label: string; icon: typeof Shield; tone: stri
 export function ControlTeam({ data }: { data: TeamPayload | undefined }) {
   if (!data || (data.members.length === 0 && data.liveStatus.length === 0)) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center">
-        <p className="text-sm italic text-muted-foreground">No team members yet.</p>
-      </div>
+      <EmptyState
+        icon={Users}
+        title="No team members yet"
+        description="Invite team members to get started."
+        compact
+      />
     );
   }
 

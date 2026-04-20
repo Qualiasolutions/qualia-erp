@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/select';
 import { TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constants';
 import { Plus, Search, X, Check, UserPlus, Trash2, CheckCircle2 } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 
 /* ======================================================================
    Types
@@ -726,9 +727,13 @@ function TaskListContainer({
         role="table"
         aria-label="Task list"
       >
-        <div className="flex items-center justify-center px-4 py-16">
-          <p className="text-center text-sm italic text-muted-foreground">Nothing here. Nice.</p>
-        </div>
+        <EmptyState
+          icon={CheckCircle2}
+          title="All caught up"
+          description="No tasks match the current filter."
+          compact
+          minimal
+        />
       </div>
     );
   }

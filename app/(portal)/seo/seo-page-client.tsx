@@ -29,6 +29,7 @@ import {
   Clock,
   FileText,
   Send,
+  PenTool,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +58,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/page-header';
 import {
   type BlogPost,
@@ -389,9 +391,13 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
               </div>
               <div className="max-h-[400px] overflow-y-auto">
                 {recentTasks.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                    No blog tasks yet. The cron job will create daily tasks automatically.
-                  </div>
+                  <EmptyState
+                    icon={PenTool}
+                    title="No blog tasks yet"
+                    description="The cron job will create daily tasks automatically."
+                    compact
+                    minimal
+                  />
                 ) : (
                   recentTasks.map((task) => {
                     const StatusIcon = TASK_STATUS_ICON[task.status] || Circle;

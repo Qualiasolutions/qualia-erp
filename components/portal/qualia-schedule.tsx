@@ -12,12 +12,13 @@ import {
   isSameDay,
   isSameWeek,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMeetings, type MeetingWithRelations } from '@/lib/swr';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 /* ======================================================================
    Types
@@ -434,6 +435,18 @@ export function QualiaSchedule({
           </span>
         ))}
       </div>
+
+      {/* ── Empty week banner ── */}
+      {weekMeetings.length === 0 && (
+        <div className="mb-4">
+          <EmptyState
+            icon={Calendar}
+            title="No meetings this week"
+            description="Your schedule is clear. Use the + Event button to add a meeting."
+            compact
+          />
+        </div>
+      )}
 
       {/* ── Grid Card ── */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card">

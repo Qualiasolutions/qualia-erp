@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, CalendarRange } from 'lucide-react';
 import { format, parseISO, differenceInDays, isValid, startOfMonth, addMonths } from 'date-fns';
+import { EmptyState } from '@/components/ui/empty-state';
 
 import { cn } from '@/lib/utils';
 import { hueFromId, clientAccent } from '@/lib/color-constants';
@@ -589,10 +590,12 @@ export function QualiaRoadmap({
           {start && end && phases.length > 0 ? (
             <RoadmapSchedule phases={phases} start={start} end={end} clientHue={clientHue} />
           ) : (
-            <section className="mb-10 rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center">
-              <p className="text-sm text-muted-foreground">
-                No scheduled phases yet. Add phase dates to see the timeline.
-              </p>
+            <section className="mb-10">
+              <EmptyState
+                icon={CalendarRange}
+                title="No scheduled phases yet"
+                description="Add phase dates to see the timeline."
+              />
             </section>
           )}
           {phases.length > 0 && <PhaseBreakdownTable phases={phases} clientHue={clientHue} />}

@@ -16,9 +16,9 @@ import {
   Activity,
   ArrowUpRight,
   Clock,
-  Inbox,
 } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { Monitor, MonitorStatus, MonitorSource } from '@/lib/uptime';
 import { getStatusLabel } from '@/lib/uptime';
 
@@ -576,13 +576,11 @@ export function StatusDashboard({
 
           {/* Empty state */}
           {monitors.length === 0 && !error && (
-            <div className="flex h-64 flex-col items-center justify-center text-center">
-              <Inbox className="h-12 w-12 text-muted-foreground/30" />
-              <p className="mt-4 text-base font-medium text-foreground">No monitors found</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                No services are assigned to your projects yet
-              </p>
-            </div>
+            <EmptyState
+              icon={Activity}
+              title="No monitors found"
+              description="No services are assigned to your projects yet."
+            />
           )}
 
           {/* Sections by source */}
