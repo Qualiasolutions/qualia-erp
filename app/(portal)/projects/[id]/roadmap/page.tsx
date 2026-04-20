@@ -84,6 +84,18 @@ async function RoadmapLoader({ id }: { id: string }) {
         plan_count: p.plan_count,
         plans_completed: p.plans_completed,
       }))}
+      lead={
+        project.lead
+          ? {
+              id: project.lead.id,
+              full_name: project.lead.full_name,
+              avatar_url: project.lead.avatar_url,
+            }
+          : null
+      }
+      client={project.client ? { id: project.client.id, name: project.client.name } : null}
+      workspaceId={project.workspace_id}
+      userRole={role as 'admin' | 'employee' | 'client'}
     />
   );
 }

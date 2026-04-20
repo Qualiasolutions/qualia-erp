@@ -4,6 +4,7 @@ import { format, parseISO, differenceInDays, isValid, startOfMonth, addMonths } 
 
 import { cn } from '@/lib/utils';
 import { hueFromId, clientAccent } from '@/lib/color-constants';
+import { RoadmapSideRail } from './roadmap-side-rail';
 
 type ProjectPhaseRow = {
   id: string;
@@ -32,6 +33,10 @@ type RoadmapProjectRow = {
 export interface QualiaRoadmapProps {
   project: RoadmapProjectRow;
   phases: ProjectPhaseRow[];
+  lead?: { id: string; full_name: string | null; avatar_url: string | null } | null;
+  client?: { id: string; name: string } | null;
+  workspaceId?: string;
+  userRole?: 'admin' | 'employee' | 'client';
 }
 
 /* ======================================================================
@@ -536,7 +541,14 @@ function PhaseBreakdownTable({
    Main export
    ====================================================================== */
 
-export function QualiaRoadmap({ project, phases }: QualiaRoadmapProps) {
+export function QualiaRoadmap({
+  project,
+  phases,
+  lead,
+  client,
+  workspaceId,
+  userRole,
+}: QualiaRoadmapProps) {
   const phasesWithDates = phases.filter((p) => p.start_date || p.target_date);
 
   const starts = phasesWithDates
@@ -558,27 +570,47 @@ export function QualiaRoadmap({ project, phases }: QualiaRoadmapProps) {
   const overallProgress =
     phases.length > 0 ? phases.reduce((sum, p) => sum + phaseProgress(p), 0) / phases.length : 0;
 
+  const showRail = !!workspaceId;
+
   return (
-    <div className="mx-auto w-full p-6 lg:p-8">
-      <Breadcrumb clientName={project.client?.name ?? 'Internal'} projectName={project.name} />
-      <RoadmapHeader
-        project={project}
-        phases={phases}
-        start={start}
-        end={end}
-        overallProgress={overallProgress}
-        clientHue={clientHue}
-      />
-      {start && end && phases.length > 0 ? (
-        <RoadmapSchedule phases={phases} start={start} end={end} clientHue={clientHue} />
-      ) : (
-        <section className="mb-10 rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center">
-          <p className="text-sm text-muted-foreground">
-            No scheduled phases yet. Add phase dates to see the timeline.
-          </p>
-        </section>
+    <div className="flex w-full flex-col overflow-x-hidden lg:h-full lg:flex-row">
+      {/* Main content — Gantt + breakdown */}
+      <div className="min-w-0 flex-1">
+        <div className="w-full p-6 lg:p-8">
+          <Breadcrumb clientName={project.client?.name ?? 'Internal'} projectName={project.name} />
+          <RoadmapHeader
+            project={project}
+            phases={phases}
+            start={start}
+            end={end}
+            overallProgress={overallProgress}
+            clientHue={clientHue}
+          />
+          {start && end && phases.length > 0 ? (
+            <RoadmapSchedule phases={phases} start={start} end={end} clientHue={clientHue} />
+          ) : (
+            <section className="mb-10 rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center">
+              <p className="text-sm text-muted-foreground">
+                No scheduled phases yet. Add phase dates to see the timeline.
+              </p>
+            </section>
+          )}
+          {phases.length > 0 && <PhaseBreakdownTable phases={phases} clientHue={clientHue} />}
+        </div>
+      </div>
+
+      {/* Side rail — stacks below on mobile, pinned right on lg+ */}
+      {showRail && (
+        <div className="w-full lg:w-80 lg:shrink-0">
+          <RoadmapSideRail
+            projectId={project.id}
+            workspaceId={workspaceId}
+            lead={lead ?? null}
+            client={client ?? null}
+            userRole={userRole ?? 'employee'}
+          />
+        </div>
       )}
-      {phases.length > 0 && <PhaseBreakdownTable phases={phases} clientHue={clientHue} />}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { User, Building2, Users } from 'lucide-react';
+import { User, Building2, Users, AlertCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { ProjectResources } from '@/components/project-resources';
@@ -105,7 +105,7 @@ function PersonnelSection({ lead, client }: { lead: LeadInfo | null; client: Cli
    ====================================================================== */
 
 function TeamSection({ projectId }: { projectId: string }) {
-  const { data: assignments, isLoading } = useProjectAssignments(projectId);
+  const { data: assignments, isLoading, error } = useProjectAssignments(projectId);
 
   const activeAssignments = Array.isArray(assignments)
     ? assignments.filter((a: { removed_at?: string | null }) => !a.removed_at)
@@ -120,6 +120,7 @@ function TeamSection({ projectId }: { projectId: string }) {
         <SectionLabel>Assigned Team</SectionLabel>
       </div>
 
+      {/* Loading skeleton */}
       {isLoading && (
         <div className="space-y-2.5">
           <SkeletonRow />
@@ -127,11 +128,24 @@ function TeamSection({ projectId }: { projectId: string }) {
         </div>
       )}
 
-      {!isLoading && activeAssignments.length === 0 && (
-        <p className="text-xs text-muted-foreground">No employees assigned yet.</p>
+      {/* Error state — DESIGN.md inline error pattern */}
+      {!isLoading && error && (
+        <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 dark:bg-red-500/10">
+          <AlertCircle className="h-4 w-4 flex-shrink-0 text-destructive/70" />
+          <p className="text-xs text-destructive/70">Failed to load team</p>
+        </div>
       )}
 
-      {!isLoading && activeAssignments.length > 0 && (
+      {/* Empty state — DESIGN.md empty state pattern */}
+      {!isLoading && !error && activeAssignments.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-4">
+          <Users className="h-8 w-8 text-muted-foreground/30" />
+          <p className="mt-2 text-xs text-muted-foreground">No team assigned</p>
+        </div>
+      )}
+
+      {/* Team list */}
+      {!isLoading && !error && activeAssignments.length > 0 && (
         <div className="space-y-2">
           {activeAssignments.map(
             (assignment: {
@@ -178,7 +192,12 @@ export function RoadmapSideRail({
   const isClient = userRole === 'client';
 
   return (
-    <aside className={cn('flex flex-col overflow-y-auto border-l border-border bg-card/30')}>
+    <aside
+      className={cn(
+        'flex flex-col border-l border-border bg-card/30',
+        'lg:h-full lg:max-h-[calc(100vh-180px)] lg:overflow-y-auto'
+      )}
+    >
       {/* Lead + Client */}
       <PersonnelSection lead={lead} client={client} />
 
