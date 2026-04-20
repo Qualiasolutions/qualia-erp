@@ -1,7 +1,13 @@
+import type { Metadata } from 'next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Suspense } from 'react';
+
+export const metadata: Metadata = {
+  title: 'Error',
+  description: 'An authentication error occurred. Please try again or contact support.',
+};
 
 const errorMessages: Record<string, { title: string; message: string }> = {
   access_denied: {

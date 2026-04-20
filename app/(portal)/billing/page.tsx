@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientInvoices } from '@/app/actions/client-portal';
@@ -6,6 +7,8 @@ import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { PortalInvoiceList } from '@/components/portal/portal-invoice-list';
 import { PortalInvoiceFormDialog } from '@/components/portal/portal-invoice-form-dialog';
 import { PortalBillingSummary } from '@/components/portal/portal-billing-summary';
+
+export const metadata: Metadata = { title: 'Billing' };
 
 export default async function PortalBillingPage() {
   const user = await getPortalAuthUser();

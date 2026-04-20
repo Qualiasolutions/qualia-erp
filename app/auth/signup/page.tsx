@@ -1,8 +1,15 @@
+import type { Metadata } from 'next';
 import { getInvitationByToken, markInvitationOpened } from '@/app/actions/client-invitations';
 import { SignupForm } from '@/components/auth/signup-form';
 import Image from 'next/image';
 import { FileText, MessageSquare, Shield } from 'lucide-react';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Create Account',
+  description:
+    'Create your Qualia Suite account — join your team on the project portal by Qualia Solutions.',
+};
 
 interface PageProps {
   searchParams: Promise<{ token?: string }>;

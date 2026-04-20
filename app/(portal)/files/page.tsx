@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { isPortalAdminRole, assertAppEnabledForClient } from '@/lib/portal-utils';
@@ -5,6 +6,8 @@ import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { PortalFilesContent } from './files-content';
 import { fadeInClasses } from '@/lib/transitions';
+
+export const metadata: Metadata = { title: 'Files' };
 
 export interface PortalFileWithProject {
   id: string;

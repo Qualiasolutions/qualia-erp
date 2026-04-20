@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getNotificationPreferences } from '@/app/actions/client-portal';
 import { SettingsContent } from './settings-content';
+
+export const metadata: Metadata = { title: 'Settings' };
 
 export default async function PortalSettingsPage() {
   const supabase = await createClient();

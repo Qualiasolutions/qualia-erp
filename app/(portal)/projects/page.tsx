@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
@@ -9,6 +10,8 @@ import { Folder } from 'lucide-react';
 import { ProjectsClient } from './projects-client';
 import { PageHeader } from '@/components/page-header';
 import type { ProjectType } from '@/types/database';
+
+export const metadata: Metadata = { title: 'Projects' };
 
 export interface ProjectTeamMember {
   id: string;

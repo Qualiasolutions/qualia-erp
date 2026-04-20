@@ -1,8 +1,11 @@
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { ActivityContent } from './activity-content';
+
+export const metadata: Metadata = { title: 'Activity' };
 
 export default async function PortalActivityPage() {
   const user = await getPortalAuthUser();

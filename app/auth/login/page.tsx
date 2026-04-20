@@ -1,6 +1,12 @@
+import type { Metadata } from 'next';
 import { LoginForm } from '@/components/login-form';
 import { LoginLeftPanel } from '@/components/login-left-panel';
 import Image from 'next/image';
+
+export const metadata: Metadata = {
+  title: 'Sign In',
+  description: 'Sign in to Qualia Suite — your project portal by Qualia Solutions.',
+};
 
 export default function Page() {
   return (
