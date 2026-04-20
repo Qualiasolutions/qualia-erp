@@ -17,7 +17,6 @@ import {
   CheckCheck,
   ClipboardList,
   ArrowRight,
-  Terminal,
   Code2,
   Pencil,
   Save,
@@ -30,6 +29,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { m, AnimatePresence } from '@/lib/lazy-motion';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -79,39 +79,39 @@ const categoryColors: Record<
   { bg: string; text: string; border: string; accent: string; gradient: string }
 > = {
   foundations: {
-    bg: 'bg-teal-500/8',
-    text: 'text-teal-600 dark:text-teal-400',
-    border: 'border-teal-500/20',
-    accent: 'bg-teal-500',
-    gradient: 'from-teal-500/10 via-transparent to-transparent',
+    bg: 'bg-blue-50 dark:bg-blue-500/10',
+    text: 'text-blue-600 dark:text-blue-400',
+    border: 'border-blue-500/20',
+    accent: 'bg-blue-500',
+    gradient: 'from-blue-500/10 via-transparent to-transparent',
   },
   lifecycle: {
-    bg: 'bg-violet-500/8',
-    text: 'text-violet-600 dark:text-violet-400',
-    border: 'border-violet-500/20',
-    accent: 'bg-violet-500',
-    gradient: 'from-violet-500/10 via-transparent to-transparent',
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    border: 'border-emerald-500/20',
+    accent: 'bg-emerald-500',
+    gradient: 'from-emerald-500/10 via-transparent to-transparent',
   },
   operations: {
-    bg: 'bg-amber-500/8',
+    bg: 'bg-amber-50 dark:bg-amber-500/10',
     text: 'text-amber-600 dark:text-amber-400',
     border: 'border-amber-500/20',
     accent: 'bg-amber-500',
     gradient: 'from-amber-500/10 via-transparent to-transparent',
   },
   reference: {
-    bg: 'bg-sky-500/8',
-    text: 'text-sky-600 dark:text-sky-400',
-    border: 'border-sky-500/20',
-    accent: 'bg-sky-500',
-    gradient: 'from-sky-500/10 via-transparent to-transparent',
+    bg: 'bg-violet-50 dark:bg-violet-500/10',
+    text: 'text-violet-600 dark:text-violet-400',
+    border: 'border-violet-500/20',
+    accent: 'bg-violet-500',
+    gradient: 'from-violet-500/10 via-transparent to-transparent',
   },
   checklist: {
-    bg: 'bg-rose-500/8',
-    text: 'text-rose-600 dark:text-rose-400',
-    border: 'border-rose-500/20',
-    accent: 'bg-rose-500',
-    gradient: 'from-rose-500/10 via-transparent to-transparent',
+    bg: 'bg-primary/[0.06]',
+    text: 'text-primary',
+    border: 'border-primary/20',
+    accent: 'bg-primary',
+    gradient: 'from-primary/10 via-transparent to-transparent',
   },
 };
 
@@ -127,8 +127,8 @@ function LifecyclePipeline({ onStepClick }: { onStepClick?: (slug: string) => vo
   ];
 
   return (
-    <div className="mb-6 rounded-xl border border-violet-500/15 bg-violet-500/[0.03] p-4">
-      <div className="mb-2.5 text-center text-[11px] font-semibold uppercase tracking-widest text-violet-500/60">
+    <div className="mb-6 rounded-xl border border-border bg-card p-4">
+      <div className="mb-2.5 text-center text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">
         Build Lifecycle
       </div>
       <div className="flex items-center justify-center gap-1 sm:gap-2">
@@ -136,18 +136,16 @@ function LifecyclePipeline({ onStepClick }: { onStepClick?: (slug: string) => vo
           <div key={step.slug} className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={() => onStepClick?.(step.slug)}
-              className="group flex flex-col items-center gap-1 transition-all hover:scale-105"
+              className="ease-[cubic-bezier(0.16,1,0.3,1)] group flex flex-col items-center gap-1 transition-all duration-150 hover:scale-105"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-500/10 text-[11px] font-bold text-violet-500 transition-colors group-hover:bg-violet-500/20 sm:h-9 sm:w-9 sm:text-xs">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-[11px] font-bold text-emerald-600 transition-colors duration-150 group-hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:group-hover:bg-emerald-500/20 sm:h-9 sm:w-9 sm:text-xs">
                 {step.icon}
               </div>
-              <span className="text-[10px] font-medium text-muted-foreground/70 transition-colors group-hover:text-violet-500 sm:text-[11px]">
+              <span className="text-[10px] font-medium text-muted-foreground/70 transition-colors duration-150 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 sm:text-[11px]">
                 {step.label}
               </span>
             </button>
-            {i < steps.length - 1 && (
-              <div className="mt-[-14px] h-px w-3 bg-violet-500/20 sm:w-6" />
-            )}
+            {i < steps.length - 1 && <div className="mt-[-14px] h-px w-3 bg-border sm:w-6" />}
           </div>
         ))}
       </div>
@@ -170,13 +168,13 @@ function CommandBlock({ command }: { command: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="group/cmd flex w-full items-center gap-2.5 rounded-lg border border-slate-800/60 bg-slate-950 px-3.5 py-2.5 text-left font-mono text-[13px] text-slate-300 transition-all hover:border-slate-700 hover:bg-slate-900"
+      className="group/cmd flex w-full items-center gap-2.5 rounded-lg bg-muted px-3.5 py-2.5 text-left font-mono text-sm transition-all duration-150 hover:bg-muted/80"
     >
-      <span className="text-slate-600">$</span>
-      <span className="min-w-0 flex-1 break-all">{command}</span>
-      <span className="shrink-0 text-slate-600 transition-colors group-hover/cmd:text-slate-400">
+      <span className="text-muted-foreground/50">$</span>
+      <span className="min-w-0 flex-1 break-all text-foreground">{command}</span>
+      <span className="shrink-0 text-muted-foreground/50 transition-colors duration-150 group-hover/cmd:text-muted-foreground">
         {copied ? (
-          <CheckCheck className="h-3.5 w-3.5 text-emerald-400" />
+          <CheckCheck className="h-3.5 w-3.5 text-emerald-500" />
         ) : (
           <Copy className="h-3.5 w-3.5" />
         )}
@@ -196,26 +194,26 @@ function ExampleBlock({ title, content }: { title?: string; content: string }) {
   };
 
   return (
-    <div className="mt-3 overflow-hidden rounded-lg border border-slate-800/60 bg-slate-950">
+    <div className="mt-3 overflow-hidden rounded-lg bg-muted">
       {title && (
-        <div className="flex items-center justify-between border-b border-slate-800/40 px-3.5 py-2">
-          <span className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+        <div className="flex items-center justify-between border-b border-border/50 px-4 py-2">
+          <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
             <Code2 className="h-3 w-3" />
             {title}
           </span>
           <button
             onClick={handleCopy}
-            className="text-slate-600 transition-colors hover:text-slate-400"
+            className="text-muted-foreground/50 transition-colors duration-150 hover:text-muted-foreground"
           >
             {copied ? (
-              <CheckCheck className="h-3 w-3 text-emerald-400" />
+              <CheckCheck className="h-3 w-3 text-emerald-500" />
             ) : (
               <Copy className="h-3 w-3" />
             )}
           </button>
         </div>
       )}
-      <pre className="overflow-x-auto px-3.5 py-3 font-mono text-[12px] leading-relaxed text-slate-300">
+      <pre className="overflow-x-auto p-4 font-mono text-sm leading-relaxed text-foreground">
         {content}
       </pre>
     </div>
@@ -248,10 +246,10 @@ function StepCard({
         {/* text-white ok: sits on solid bg-amber-500 milestone dot */}
         <div
           className={cn(
-            'relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold',
+            'relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold tabular-nums',
             step.isMilestone
               ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
-              : `${accentColor}/15 ${accentColor === 'bg-teal-500' ? 'text-teal-600 dark:text-teal-400' : accentColor === 'bg-violet-500' ? 'text-violet-600 dark:text-violet-400' : accentColor === 'bg-amber-500' ? 'text-amber-600 dark:text-amber-400' : accentColor === 'bg-sky-500' ? 'text-sky-600 dark:text-sky-400' : 'text-rose-600 dark:text-rose-400'}`
+              : `${accentColor}/15 text-muted-foreground`
           )}
         >
           {index + 1}
@@ -637,7 +635,7 @@ function GuidePanel({
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.3 }}
-        className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-2xl flex-col border-l border-border bg-background shadow-2xl"
+        className="elevation-3 fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-2xl flex-col border-l border-border bg-card"
       >
         <div className="relative shrink-0 border-b border-border px-6 pb-5 pt-6">
           <div
@@ -707,24 +705,17 @@ function GuidePanel({
               )}
               {editing && (
                 <>
-                  <button
-                    onClick={cancelEditing}
-                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50"
-                  >
+                  <Button variant="ghost" size="sm" onClick={cancelEditing}>
                     Cancel
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-                  >
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={saving}>
                     {saving ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Save className="h-3.5 w-3.5" />
+                      <Save className="mr-1.5 h-3.5 w-3.5" />
                     )}
                     Save
-                  </button>
+                  </Button>
                 </>
               )}
               <button
@@ -822,83 +813,6 @@ function GuidePanel({
         </div>
       </m.div>
     </>
-  );
-}
-
-// Guide card for the listing
-function GuideCard({
-  guide,
-  colors,
-  onClick,
-  index,
-}: {
-  guide: Guide;
-  colors: (typeof categoryColors)[string];
-  onClick: () => void;
-  index: number;
-}) {
-  const Icon = categoryIcons[guide.category];
-  const milestoneCount = guide.steps.filter((s) => s.isMilestone).length;
-  const commandCount = guide.steps.reduce((sum, s) => sum + (s.commands?.length || 0), 0);
-  const exampleCount = guide.steps.filter((s) => s.example).length;
-
-  return (
-    <m.button
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04, duration: 0.3 }}
-      onClick={onClick}
-      className={cn(
-        'group relative flex flex-col rounded-xl border border-border bg-card p-5 text-left transition-all duration-200',
-        'hover:border-border/70 hover:shadow-lg hover:shadow-black/5',
-        'active:scale-[0.98]'
-      )}
-    >
-      <div className={cn('absolute left-0 top-4 h-8 w-[3px] rounded-r-full', colors.accent)} />
-
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <div
-              className={cn(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
-                colors.bg
-              )}
-            >
-              <Icon className={cn('h-3.5 w-3.5', colors.text)} />
-            </div>
-            <h3 className="text-[15px] font-semibold text-foreground">{guide.title}</h3>
-          </div>
-          <p className="mt-1.5 pl-9 text-[13px] leading-relaxed text-muted-foreground">
-            {guide.subtitle}
-          </p>
-        </div>
-        <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
-      </div>
-
-      <div className="mt-3.5 flex items-center gap-3 pl-9">
-        <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
-          <span className="font-medium text-muted-foreground">{guide.steps.length}</span> steps
-        </span>
-        {commandCount > 0 && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
-            <Terminal className="h-3 w-3" />
-            <span className="font-medium text-muted-foreground">{commandCount}</span> commands
-          </span>
-        )}
-        {exampleCount > 0 && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
-            <Code2 className="h-3 w-3" />
-            <span className="font-medium text-muted-foreground">{exampleCount}</span> examples
-          </span>
-        )}
-        {milestoneCount > 0 && (
-          <span className="flex items-center gap-1 text-xs text-amber-500/60">
-            <span className="font-medium text-amber-500">{milestoneCount}</span> milestones
-          </span>
-        )}
-      </div>
-    </m.button>
   );
 }
 
@@ -1007,7 +921,7 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
                   key={cat.key}
                   onClick={() => setSelectedCategory(cat.key)}
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all',
+                    'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150',
                     selectedCategory === cat.key
                       ? cat.key === 'all'
                         ? 'border-primary/30 bg-primary/10 text-primary dark:text-primary'
@@ -1034,30 +948,61 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
               const colors = categoryColors[category];
 
               return (
-                <div key={category}>
-                  <div className="mb-3 flex items-center gap-2">
-                    <div className={cn('h-px flex-1', colors.accent, 'opacity-15')} />
-                    <div className="flex flex-col items-center gap-0.5">
-                      <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                <div key={category} className="rounded-xl border border-border bg-card">
+                  <div className="border-b border-border px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn(
+                          'flex h-7 w-7 items-center justify-center rounded-lg',
+                          colors.bg
+                        )}
+                      >
                         <Icon className={cn('h-3.5 w-3.5', colors.text)} />
-                        {categoryLabels[category]}
-                      </h2>
-                      <span className="text-[10px] text-muted-foreground/40">
-                        {categoryDescriptions[category]}
-                      </span>
+                      </div>
+                      <div>
+                        <h2 className="text-[clamp(1.25rem,1.1rem+0.75vw,1.625rem)] font-semibold tracking-tight text-foreground">
+                          {categoryLabels[category]}
+                        </h2>
+                        <p className="text-xs text-muted-foreground">
+                          {categoryDescriptions[category]}
+                        </p>
+                      </div>
                     </div>
-                    <div className={cn('h-px flex-1', colors.accent, 'opacity-15')} />
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {categoryGuides.map((guide, index) => (
-                      <GuideCard
+                  <div className="divide-y divide-border">
+                    {categoryGuides.map((guide) => (
+                      <button
                         key={guide.slug}
-                        guide={guide}
-                        colors={colors}
                         onClick={() => setSelectedGuide(guide)}
-                        index={index}
-                      />
+                        className="group flex w-full cursor-pointer items-center gap-3 rounded-lg p-4 text-left transition-colors duration-150 hover:bg-muted/30"
+                      >
+                        <div
+                          className={cn(
+                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
+                            colors.bg
+                          )}
+                        >
+                          <Icon className={cn('h-3.5 w-3.5', colors.text)} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-[15px] font-semibold text-foreground">
+                            {guide.title}
+                          </h3>
+                          <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">
+                            {guide.subtitle}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground/60">
+                          <span className="flex items-center gap-1">
+                            <span className="font-medium text-muted-foreground">
+                              {guide.steps.length}
+                            </span>{' '}
+                            steps
+                          </span>
+                          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
+                        </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -1066,8 +1011,11 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
 
             {filteredGuides.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <Search className="mb-3 h-8 w-8 text-muted-foreground/20" />
-                <p className="text-sm text-muted-foreground/60">No guides match your search</p>
+                <Search className="mb-3 h-12 w-12 text-muted-foreground/30" />
+                <p className="text-base font-medium text-foreground">No guides found</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Try adjusting your search or filter
+                </p>
               </div>
             )}
           </div>

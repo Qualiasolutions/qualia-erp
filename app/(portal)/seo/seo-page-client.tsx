@@ -27,6 +27,8 @@ import {
   CheckCircle2,
   Circle,
   Clock,
+  FileText,
+  Send,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +57,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/page-header';
 import {
   type BlogPost,
   type BlogTask,
@@ -77,13 +80,16 @@ interface SeoPageClientProps {
 }
 
 const STATUS_CONFIG = {
-  draft: { label: 'Draft', color: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400' },
-  scheduled: { label: 'Scheduled', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+  draft: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
+  scheduled: {
+    label: 'Scheduled',
+    color: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
+  },
   published: {
     label: 'Published',
-    color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+    color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
   },
-  archived: { label: 'Archived', color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400' },
+  archived: { label: 'Archived', color: 'bg-muted text-muted-foreground' },
 };
 
 const TASK_STATUS_ICON: Record<string, typeof Circle> = {
@@ -215,20 +221,12 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
       {/* Header */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
-            <BarChart3 className="h-5 w-5 text-muted-foreground" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">SEO Blog Tracker</h1>
-            <p className="text-xs text-muted-foreground">
-              Internal tracking &middot; {overallStats.completed}/{overallStats.totalTasks} tasks
-              done &middot; {overallStats.totalPosts} posts published
-            </p>
-          </div>
-        </div>
-
+      <PageHeader
+        icon={<BarChart3 className="h-3.5 w-3.5 text-primary" />}
+        iconBg="bg-primary/10"
+        title="SEO Blog Tracker"
+        className="shrink-0"
+      >
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isPending}>
             <RefreshCw className={cn('h-4 w-4', isPending && 'animate-spin')} />
@@ -239,17 +237,55 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
               setIsModalOpen(true);
             }}
             size="sm"
-            variant="outline"
           >
             <Plus className="mr-1.5 h-4 w-4" />
             Log Post
           </Button>
         </div>
-      </header>
+      </PageHeader>
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-6 p-6">
+        <div className="space-y-6 p-6 lg:p-8">
+          {/* Stats Row */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="relative rounded-xl border border-border bg-card p-5">
+              <FileText className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Total Posts
+              </p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                {blogPosts.length}
+              </p>
+            </div>
+            <div className="relative rounded-xl border border-border bg-card p-5">
+              <Send className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Published
+              </p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                {overallStats.totalPosts}
+              </p>
+            </div>
+            <div className="relative rounded-xl border border-border bg-card p-5">
+              <PenLine className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Drafts
+              </p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                {blogPosts.filter((p) => p.status === 'draft').length}
+              </p>
+            </div>
+            <div className="relative rounded-xl border border-border bg-card p-5">
+              <CheckCircle2 className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Tasks
+              </p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                {overallStats.totalTasks}
+              </p>
+            </div>
+          </div>
           {/* Today's Task Banner */}
           {todaysTask && (
             <div
@@ -284,10 +320,10 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
 
           {/* Project Stats Grid */}
           <div>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            <h2 className="mb-3 text-[clamp(1.25rem,1.1rem+0.75vw,1.625rem)] font-semibold tracking-tight text-foreground">
               Per-Project Stats
             </h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {projectStats.map(
                 ({
                   project,
@@ -298,7 +334,7 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
                   publishedPosts,
                   completionRate,
                 }) => (
-                  <div key={project.id} className="rounded-lg border border-border bg-card p-4">
+                  <div key={project.id} className="rounded-xl border border-border bg-card p-5">
                     <div className="flex items-center justify-between">
                       <h3 className="truncate text-sm font-medium text-foreground">
                         {project.name}
@@ -341,10 +377,10 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
 
           {/* Day-by-Day Log */}
           <div>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            <h2 className="mb-3 text-[clamp(1.25rem,1.1rem+0.75vw,1.625rem)] font-semibold tracking-tight text-foreground">
               Daily Log (Last 30 Days)
             </h2>
-            <div className="rounded-lg border border-border">
+            <div className="rounded-xl border border-border bg-card">
               <div className="grid grid-cols-[100px_1fr_120px_80px] gap-4 border-b border-border bg-muted/30 px-4 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <span>Date</span>
                 <span>Task</span>
@@ -406,38 +442,37 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
           {/* Published Blog Posts */}
           {blogPosts.length > 0 && (
             <div>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              <h2 className="mb-3 text-[clamp(1.25rem,1.1rem+0.75vw,1.625rem)] font-semibold tracking-tight text-foreground">
                 Published Blog Posts ({blogPosts.length})
               </h2>
-              <div className="rounded-lg border border-border">
-                <div className="max-h-[400px] overflow-y-auto">
-                  {blogPosts.map((post) => (
-                    <div
-                      key={post.id}
-                      className="flex items-center justify-between border-b border-border px-4 py-3 last:border-b-0"
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {blogPosts.map((post) => (
+                  <div
+                    key={post.id}
+                    className="ease-[cubic-bezier(0.16,1,0.3,1)] relative rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/20 hover:shadow-md"
+                  >
+                    <Badge
+                      className={cn(
+                        'absolute right-4 top-4 text-[11px]',
+                        STATUS_CONFIG[post.status].color
+                      )}
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="truncate text-sm font-medium text-foreground">
-                            {post.title}
-                          </h4>
-                          <Badge
-                            className={cn('shrink-0 text-[11px]', STATUS_CONFIG[post.status].color)}
-                          >
-                            {STATUS_CONFIG[post.status].label}
-                          </Badge>
-                        </div>
-                        <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{post.project?.name}</span>
-                          {post.published_at && (
-                            <>
-                              <span>&middot;</span>
-                              <span>{format(parseISO(post.published_at), 'MMM d, yyyy')}</span>
-                            </>
-                          )}
-                        </div>
+                      {STATUS_CONFIG[post.status].label}
+                    </Badge>
+                    <div className="min-w-0 pr-20">
+                      <h4 className="truncate text-sm font-medium text-foreground">{post.title}</h4>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{post.project?.name}</span>
+                        {post.published_at && (
+                          <>
+                            <span>&middot;</span>
+                            <span>{format(parseISO(post.published_at), 'MMM d, yyyy')}</span>
+                          </>
+                        )}
                       </div>
+                    </div>
 
+                    <div className="mt-3 flex justify-end">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
@@ -472,8 +507,8 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -504,7 +539,12 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
 
           <form action={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="project_id">Project</Label>
+              <Label
+                htmlFor="project_id"
+                className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              >
+                Project
+              </Label>
               <Select name="project_id" defaultValue={editingPost?.project_id} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Select project" />
@@ -520,7 +560,12 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label
+                htmlFor="title"
+                className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              >
+                Title
+              </Label>
               <Input
                 id="title"
                 name="title"
@@ -531,7 +576,12 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="url">URL (optional)</Label>
+              <Label
+                htmlFor="url"
+                className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              >
+                URL (optional)
+              </Label>
               <Input
                 id="url"
                 name="url"
@@ -543,7 +593,12 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label
+                  htmlFor="status"
+                  className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                >
+                  Status
+                </Label>
                 <Select name="status" defaultValue={editingPost?.status || 'published'}>
                   <SelectTrigger>
                     <SelectValue />
@@ -558,7 +613,12 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="published_at">Publish Date</Label>
+                <Label
+                  htmlFor="published_at"
+                  className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                >
+                  Publish Date
+                </Label>
                 <Input
                   id="published_at"
                   name="published_at"
@@ -573,7 +633,12 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="keywords">Keywords (comma-separated)</Label>
+              <Label
+                htmlFor="keywords"
+                className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              >
+                Keywords (comma-separated)
+              </Label>
               <Input
                 id="keywords"
                 name="keywords"
@@ -583,7 +648,12 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+              <Label
+                htmlFor="notes"
+                className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              >
+                Notes
+              </Label>
               <Textarea
                 id="notes"
                 name="notes"

@@ -168,7 +168,7 @@ function ResearchCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="group relative overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-border/80 hover:shadow-md"
+      className="ease-[cubic-bezier(0.16,1,0.3,1)] group relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:border-primary/20 hover:shadow-md"
     >
       {/* Category accent line */}
       <div className={cn('h-0.5', accent)} />
@@ -282,7 +282,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-border/50 bg-muted/10 p-4">
+    <div className="rounded-xl border border-border bg-card p-5">
       <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
         <Icon className={cn('h-4 w-4', color)} />
         {title}
@@ -357,7 +357,7 @@ ${entry.raw_content ? `## Raw Research Content\n${entry.raw_content}` : ''}
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="flex max-h-[90vh] max-w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1100px]">
+      <DialogContent className="elevation-2 flex max-h-[90vh] max-w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden rounded-xl bg-card p-0 sm:max-w-[1100px]">
         <div className={cn('h-1 shrink-0', accent)} />
 
         {/* Sticky header */}
@@ -478,10 +478,10 @@ function RawContentSection({ content }: { content: string }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="rounded-lg border border-border/50 bg-muted/10 p-4">
+    <div className="rounded-xl border border-border bg-card p-5">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between text-sm font-semibold text-foreground"
+        className="flex w-full cursor-pointer items-center justify-between text-sm font-semibold text-foreground"
       >
         <span className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-muted-foreground" />
@@ -489,14 +489,14 @@ function RawContentSection({ content }: { content: string }) {
         </span>
         <ChevronDown
           className={cn(
-            'h-4 w-4 text-muted-foreground transition-transform',
+            'ease-[cubic-bezier(0.16,1,0.3,1)] h-4 w-4 text-muted-foreground transition-transform duration-200',
             expanded && 'rotate-180'
           )}
         />
       </button>
       {expanded && (
-        <div className="mt-3 max-h-64 overflow-y-auto rounded-lg bg-background/80 p-4">
-          <p className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-muted-foreground">
+        <div className="mt-3 max-h-64 overflow-y-auto rounded-lg bg-muted p-4">
+          <p className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-muted-foreground">
             {content}
           </p>
         </div>
@@ -583,7 +583,7 @@ function NewResearchModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="flex max-h-[90vh] max-w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[800px]">
+      <DialogContent className="flex max-h-[90vh] max-w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden rounded-xl bg-card p-0 sm:max-w-[800px]">
         {/* Sticky header */}
         <div className="shrink-0 border-b border-border bg-muted/30 px-6 py-4">
           <DialogHeader>
@@ -606,7 +606,10 @@ function NewResearchModal({
               <FormSection title="What did you research?">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label htmlFor="title" className="text-xs">
+                    <Label
+                      htmlFor="title"
+                      className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                    >
                       Title <span className="text-destructive">*</span>
                     </Label>
                     <Input
@@ -619,7 +622,10 @@ function NewResearchModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="topic" className="text-xs">
+                    <Label
+                      htmlFor="topic"
+                      className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                    >
                       Topic <span className="text-destructive">*</span>
                     </Label>
                     <Input
@@ -634,7 +640,10 @@ function NewResearchModal({
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label htmlFor="category" className="text-xs">
+                    <Label
+                      htmlFor="category"
+                      className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                    >
                       Category
                     </Label>
                     <Select
@@ -655,7 +664,10 @@ function NewResearchModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="research_date" className="text-xs">
+                    <Label
+                      htmlFor="research_date"
+                      className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                    >
                       Date
                     </Label>
                     <Input
@@ -684,7 +696,10 @@ function NewResearchModal({
               <FormSection title="Findings & Follow-up" description="Key takeaways and next steps.">
                 <div className="space-y-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="key_findings" className="flex items-center gap-1.5 text-xs">
+                    <Label
+                      htmlFor="key_findings"
+                      className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                    >
                       <Lightbulb className="h-3 w-3 text-amber-500" />
                       Key Findings
                     </Label>
@@ -699,7 +714,10 @@ function NewResearchModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="action_items" className="flex items-center gap-1.5 text-xs">
+                    <Label
+                      htmlFor="action_items"
+                      className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                    >
                       <CheckCircle2 className="h-3 w-3 text-green-500" />
                       Action Items
                     </Label>
@@ -722,7 +740,10 @@ function NewResearchModal({
               >
                 <div className="space-y-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="sources" className="flex items-center gap-1.5 text-xs">
+                    <Label
+                      htmlFor="sources"
+                      className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                    >
                       <Link2 className="h-3 w-3 text-purple-500" />
                       Source URLs
                     </Label>
@@ -737,10 +758,13 @@ function NewResearchModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="raw_content" className="flex items-center gap-1.5 text-xs">
+                    <Label
+                      htmlFor="raw_content"
+                      className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                    >
                       <FileText className="h-3 w-3 text-muted-foreground" />
                       Raw Output
-                      <span className="text-muted-foreground">
+                      <span className="normal-case tracking-normal text-muted-foreground">
                         (optional — paste full AI output)
                       </span>
                     </Label>
@@ -847,29 +871,42 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-5 p-4 sm:p-6 lg:p-8">
-          {/* Stats bar */}
+        <div className="space-y-6 p-6 lg:p-8">
+          {/* Stats row */}
           {entries.length > 0 && (
-            <div className="flex flex-wrap items-center gap-4 rounded-lg border border-border/50 bg-muted/20 px-4 py-2.5 text-sm">
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <FlaskConical className="h-3.5 w-3.5 text-primary" />
-                <span className="font-medium text-foreground">{stats.total}</span> entries
-              </span>
-              <span className="hidden h-3.5 w-px bg-border sm:block" />
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <Clock className="h-3.5 w-3.5" />
-                <span className="font-medium text-foreground">{stats.thisWeek}</span> this week
-              </span>
-              <span className="hidden h-3.5 w-px bg-border sm:block" />
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <Layers className="h-3.5 w-3.5" />
-                <span className="font-medium text-foreground">{stats.categories}</span> categories
-              </span>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="relative rounded-xl border border-border bg-card p-5">
+                <FlaskConical className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Total Entries
+                </p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                  {stats.total}
+                </p>
+              </div>
+              <div className="relative rounded-xl border border-border bg-card p-5">
+                <Clock className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  This Week
+                </p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                  {stats.thisWeek}
+                </p>
+              </div>
+              <div className="relative rounded-xl border border-border bg-card p-5">
+                <Layers className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Categories
+                </p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                  {stats.categories}
+                </p>
+              </div>
             </div>
           )}
 
           {/* Search and Filters */}
-          <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -899,7 +936,7 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
             <button
               onClick={() => setSelectedCategory('all')}
               className={cn(
-                'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150',
                 selectedCategory === 'all'
                   ? 'border-primary/30 bg-primary/15 text-primary dark:text-primary'
                   : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50'
@@ -917,7 +954,7 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
                   key={cat.value}
                   onClick={() => setSelectedCategory(cat.value)}
                   className={cn(
-                    'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                    'flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150',
                     selectedCategory === cat.value
                       ? `${colors.border} ${colors.bg} ${colors.text}`
                       : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50'
@@ -933,11 +970,9 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
           {/* Research Entries */}
           {filteredEntries.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5">
-                <FlaskConical className="h-8 w-8 text-muted-foreground/30" />
-              </div>
-              <h3 className="mb-2 font-medium text-foreground">No research entries yet</h3>
-              <p className="mb-4 max-w-sm text-center text-sm text-muted-foreground">
+              <FlaskConical className="mb-3 h-12 w-12 text-muted-foreground/30" />
+              <h3 className="text-base font-medium text-foreground">No research entries yet</h3>
+              <p className="mb-4 mt-1 text-center text-sm text-muted-foreground">
                 {searchQuery || selectedCategory !== 'all'
                   ? 'Try adjusting your filters or search terms'
                   : 'Log your first research findings from Deep Research, NotebookLM, or your own investigation'}
