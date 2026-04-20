@@ -465,6 +465,143 @@ export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> 
 }
 
 /**
+ * Get today's tasks for the team schedule.
+ * Server-side equivalent of getTasks + filterTodaysTasks:
+ *   - All In Progress tasks assigned to the user
+ *   - Todo tasks with due_date <= today assigned to the user
+ * Avoids fetching ALL active tasks and filtering client-side.
+ */
+export async function getTodaysTasks(): Promise<Task[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const today = new Date().toISOString().split('T')[0];
+
+  // Scope visibility — respects "View as" impersonation
+  const { effectiveUserId, shouldScope } = await getEffectiveUser(supabase, user.id);
+
+  let scopeFilter: string | null = null;
+  if (shouldScope) {
+    const projectIds = await getUserProjectIds(supabase, effectiveUserId);
+    scopeFilter =
+      projectIds.length > 0
+        ? `assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId},project_id.in.(${projectIds.join(',')})`
+        : `assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId}`;
+  }
+
+  // Two parallel queries:
+  // 1. All In Progress tasks (regardless of due_date)
+  // 2. Todo tasks with due_date <= today
+  let inProgressQuery = supabase
+    .from('tasks')
+    .select(
+      `
+      id,
+      workspace_id,
+      creator_id,
+      assignee_id,
+      project_id,
+      title,
+      description,
+      status,
+      priority,
+      item_type,
+      phase_name,
+      sort_order,
+      due_date,
+      completed_at,
+      scheduled_start_time,
+      scheduled_end_time,
+      show_in_inbox,
+      requires_attachment,
+      submission_text,
+      submitted_at,
+      created_at,
+      updated_at,
+      creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
+      assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
+      project:projects (id, name, project_type)
+    `
+    )
+    .eq('status', 'In Progress')
+    .order('due_date', { ascending: true, nullsFirst: false });
+
+  let todoDueQuery = supabase
+    .from('tasks')
+    .select(
+      `
+      id,
+      workspace_id,
+      creator_id,
+      assignee_id,
+      project_id,
+      title,
+      description,
+      status,
+      priority,
+      item_type,
+      phase_name,
+      sort_order,
+      due_date,
+      completed_at,
+      scheduled_start_time,
+      scheduled_end_time,
+      show_in_inbox,
+      requires_attachment,
+      submission_text,
+      submitted_at,
+      created_at,
+      updated_at,
+      creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
+      assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
+      project:projects (id, name, project_type)
+    `
+    )
+    .eq('status', 'Todo')
+    .lte('due_date', today)
+    .order('due_date', { ascending: true, nullsFirst: false });
+
+  if (scopeFilter) {
+    inProgressQuery = inProgressQuery.or(scopeFilter);
+    todoDueQuery = todoDueQuery.or(scopeFilter);
+  }
+
+  const [inProgressResult, todoDueResult] = await Promise.all([inProgressQuery, todoDueQuery]);
+
+  const normalize = (task: Record<string, unknown>) => {
+    const t = task as unknown as {
+      creator: Task['creator'] | Task['creator'][] | null;
+      assignee: Task['assignee'] | Task['assignee'][] | null;
+      project: Task['project'] | Task['project'][];
+    };
+    return {
+      ...task,
+      creator: Array.isArray(t.creator) ? t.creator[0] || null : t.creator,
+      assignee: Array.isArray(t.assignee) ? t.assignee[0] || null : t.assignee,
+      project: Array.isArray(t.project) ? t.project[0] : t.project,
+    } as Task;
+  };
+
+  const inProgressTasks = (inProgressResult.data || []).map(normalize);
+  const todoDueTasks = (todoDueResult.data || []).map(normalize);
+
+  // Dedupe by id (in case a task somehow matched both)
+  const seen = new Set<string>();
+  const result: Task[] = [];
+  for (const task of [...inProgressTasks, ...todoDueTasks]) {
+    if (!seen.has(task.id)) {
+      seen.add(task.id);
+      result.push(task);
+    }
+  }
+
+  return result;
+}
+
+/**
  * Get a single task by ID (for edit modal)
  */
 export async function getTaskById(taskId: string): Promise<ActionResult> {

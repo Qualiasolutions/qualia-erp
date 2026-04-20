@@ -25,7 +25,7 @@ import {
   getAssignmentHistory,
 } from '@/app/actions/project-assignments';
 import { getTaskAttachments } from '@/app/actions/task-attachments';
-import { filterTodaysTasks } from '@/lib/schedule-utils';
+
 import type { TeamMemberStatus } from '@/app/actions/work-sessions';
 
 export type { TeamMemberStatus };
@@ -642,8 +642,8 @@ export function useTodaysTasks() {
   } = useSWR(
     cacheKeys.todaysTasks,
     async () => {
-      const allTasks = await getTasks(null, { status: ['Todo', 'In Progress'] });
-      return filterTodaysTasks(allTasks);
+      const { getTodaysTasks } = await import('@/app/actions/inbox');
+      return getTodaysTasks();
     },
     autoRefreshConfig
   );
@@ -1356,17 +1356,17 @@ export function usePortalDashboard(clientId: string | null) {
     async () => {
       if (!clientId) return null;
 
-      const { getClientDashboardData, getClientDashboardProjects } =
-        await import('@/app/actions/client-portal');
+      const { getCachedClientDashboardData, getCachedClientDashboardProjects } =
+        await import('@/lib/cached-reads');
 
-      const [dashResult, projectsResult] = await Promise.all([
-        getClientDashboardData(clientId),
-        getClientDashboardProjects(clientId),
+      const [stats, projects] = await Promise.all([
+        getCachedClientDashboardData(clientId),
+        getCachedClientDashboardProjects(clientId),
       ]);
 
       return {
-        stats: dashResult.success ? dashResult.data : null,
-        projects: projectsResult.success ? projectsResult.data : [],
+        stats,
+        projects,
       };
     },
     {

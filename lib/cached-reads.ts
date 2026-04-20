@@ -80,6 +80,51 @@ export async function getCachedProjectById(id: string) {
 }
 
 /**
+ * Cached version of getProjectIntegrationStatus from lib/integration-utils.ts.
+ * Returns portal access and ERP client linkage status for a project.
+ *
+ * Tag: `project-integrations-{id}` — invalidated when project integration data changes.
+ * Life: 'minutes'.
+ */
+export async function getCachedProjectIntegrationStatus(projectId: string) {
+  'use cache';
+  cacheTag(`project-integrations-${projectId}`);
+  cacheLife('minutes');
+
+  const supabase = createAdminClient();
+
+  const [portalCountResult, projectResult] = await Promise.all([
+    supabase
+      .from('client_projects')
+      .select('id', { count: 'exact', head: true })
+      .eq('project_id', projectId),
+    supabase
+      .from('projects')
+      .select('client_id, client:clients(id, name, display_name)')
+      .eq('id', projectId)
+      .single(),
+  ]);
+
+  const { count: portalCount } = portalCountResult;
+  const { data: project } = projectResult;
+
+  const erpClient =
+    project?.client && !Array.isArray(project.client)
+      ? project.client
+      : Array.isArray(project?.client) && project.client.length > 0
+        ? project.client[0]
+        : null;
+
+  return {
+    hasPortalAccess: (portalCount ?? 0) > 0,
+    hasERPClient: !!erpClient,
+    portalClientCount: portalCount ?? 0,
+    erpClientName: erpClient?.name ?? null,
+    erpClientCompany: erpClient?.display_name ?? null,
+  };
+}
+
+/**
  * Cached version of getClientDashboardData from app/actions/client-portal/projects.ts.
  * Returns dashboard summary: project count, pending requests, unpaid invoices, recent activity.
  *

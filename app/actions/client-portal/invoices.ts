@@ -29,23 +29,23 @@ export async function getClientInvoices(): Promise<ActionResult> {
       // Scope invoices to the portal user's linked projects.
       // financial_invoices has no project_id column, so we resolve the CRM
       // client_ids indirectly: portal user -> client_projects -> projects.client_id.
-      // This constrains invoices to only the CRM clients whose projects the
-      // portal user has access to.
-      const { data: linkedProjects } = await supabase
+      // Single JOIN replaces the previous 3-query chain.
+      const { data: links } = await supabase
         .from('client_projects')
-        .select('project_id')
+        .select('project:projects!inner(client_id)')
         .eq('client_id', user.id);
 
-      const projectIds = (linkedProjects || []).map((lp) => lp.project_id);
-      if (projectIds.length === 0) return { success: true, data: [] };
+      const crmClientIds = [
+        ...new Set(
+          (links || [])
+            .map((l: { project: unknown }) => {
+              const proj = Array.isArray(l.project) ? l.project[0] : l.project;
+              return (proj as { client_id: string | null } | null)?.client_id;
+            })
+            .filter(Boolean)
+        ),
+      ];
 
-      const { data: projects } = await supabase
-        .from('projects')
-        .select('id, client_id')
-        .in('id', projectIds)
-        .not('client_id', 'is', null);
-
-      const crmClientIds = [...new Set((projects || []).map((p) => p.client_id).filter(Boolean))];
       if (crmClientIds.length === 0) return { success: true, data: [] };
 
       query = query.in('client_id', crmClientIds as string[]);
