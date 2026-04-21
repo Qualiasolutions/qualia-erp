@@ -1,5 +1,38 @@
 # Roadmap — Portal v2
 
+## Milestone: UI Remake ✅ (CLOSED 2026-04-20 — 8 phases shipped in one day)
+
+Portal v2 core work-surface redesign + design-system foundation. All shipped and verified in production on `307c183`.
+
+| Phase | Commit | Surface |
+|---|---|---|
+| 14 | `7e6a6b7` | Design System Foundation (tokens / motion / elevation) |
+| 15 | `57521e0` | Portal Shell — QualiaSidebar replaces PortalSidebarV2 |
+| 16.1 | `22ac5d3` | Today (admin + employee dashboards) |
+| 16.2 | `61f2029` | Tasks — single-column with inline composer |
+| 16.3 | `0be99ff` | Projects — editorial gallery + list toggle |
+| 16.4 | `e3415a8` | Roadmap — Gantt + phase breakdown (replaces redirect stub) |
+| 16.5 | `beae6d6` | Schedule — Mon–Sun week ribbon + Nicosia/Amman TZ bands |
+| 16.6 | `307c183` | Perf harden (virtualization · memo · skeleton · color helpers) |
+
+Archive: `.planning/archive/milestone-ui-remake/` (plans + verifications + CLOSE.md).
+
+---
+
+## Next Milestone: Remaining Surfaces 🟡 (ready to plan — `/qualia-plan 17`)
+
+Everything the UI Remake didn't touch — admin pages, portal client pages, secondary internal pages.
+
+- **Phase 17** — Admin (`/admin`, `/admin/assignments`, `/admin/attendance`, `/admin/reports`) + Control surface
+- **Phase 18** — Client portal (`/portal/*` hub, billing, requests, settings)
+- **Phase 19** — Secondary internal (`/clients`, `/team`, `/payments`, `/knowledge`, `/research`, `/seo`, `/status`, `/agent`, `/settings/*`)
+- **Phase 20** — Roadmap side rail (lead/team/resources/files/notes — deferred from 16.4)
+- **Phase 21** — Polish + launch (SEO meta, copy sweep, a11y pass)
+
+---
+
+## Prior work (historical, all shipped in earlier April sprints)
+
 ## Phase 1: Portal Shell & Foundation ✅ (shipped)
 - New portal layout with Assembly-style sidebar
 - Redesigned dashboard (Home) with stats, action items, projects

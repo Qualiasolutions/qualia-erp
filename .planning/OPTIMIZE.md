@@ -1,15 +1,76 @@
 ---
-date: 2026-04-17
-updated: 2026-04-18
-mode: full
-critical_original: 3
-high_original: 14
-medium_original: 17
-low_original: 12
-status: backlog_remaining_low_risk
+date: 2026-04-20 10:40
+updated: 2026-04-20
+mode: full (scoped to today's phase-16 deltas)
+phase_16_critical: 0
+phase_16_high: 0
+phase_16_medium: 3
+phase_16_low: 3
+status: needs_attention
+prior_date: 2026-04-17 (phase 6 pre-deploy)
 ---
 
-# Optimization Report — Portal v2 Pre-Deploy (Phase 6)
+# Optimization Report — Phase 16 UI Remake delta audit (2026-04-20)
+
+**Scope:** 8 files changed this session — 5 new `components/portal/qualia-*.tsx` (Tasks, Projects, Roadmap, Schedule, plus prior Today) and 3 callsite swaps (`tasks-view.tsx`, `projects-client.tsx`, `schedule/page.tsx`, `roadmap/page.tsx`). Audited against DESIGN.md, security rules, and React-19/Next.js-16 best practices. This was NOT a full codebase re-audit — see the Phase 6 audit below for the broader surface.
+
+## Summary
+
+**Zero critical or high-severity issues.** New code is type-clean, lint-clean, a11y-conscious, and uses server actions / RLS correctly. Three mediums are regressions from the old files that the redesign replaced; three lows are refinements.
+
+## Medium Priority
+
+| # | Dimension | Finding | Location | Fix |
+|---|-----------|---------|----------|-----|
+| Ph16-M1 | Perf / Regression | **Virtualization dropped.** Old `tasks-view.tsx` used `@tanstack/react-virtual` for admin `scope=all` (up to 500 rows). New `QualiaTasksList` renders flat. At 500 rich rows with avatars + status chips, scroll jank is plausible on lower-end devices. | `components/portal/qualia-tasks-list.tsx` list-render block (~line 870) | Wrap the row list in `useVirtualizer` from `@tanstack/react-virtual` (already a dependency). Empty state + filter logic unchanged. |
+| Ph16-M2 | Perf | **No `React.memo` on gallery / schedule rows.** `ProjectCardTile`, `ProjectListRow`, `EventBlock` re-render on every parent state change. `TaskRow` is correctly memoized — inconsistency. | `components/portal/qualia-projects-gallery.tsx:250,336`; `components/portal/qualia-schedule.tsx:164` | Wrap each in `React.memo(function …)`. Props are stable shape, no custom comparator needed. |
+| Ph16-M3 | UI quality | **No explicit loading state during SWR revalidation.** `QualiaTasksList` reads `useInboxTasks()` but never inspects `isValidating` / `error`. On first render with empty `initialTasks`, user sees "Nothing here. Nice." flash before real data arrives. | `components/portal/qualia-tasks-list.tsx:670` (`inboxLive` destructure) | Destructure `isValidating` from the hook. Show a 4-row skeleton when `initialTasks.length === 0 && inboxLive.tasks.length === 0 && inboxLive.isValidating`. |
+
+## Low Priority
+
+| # | Dimension | Finding | Location | Fix |
+|---|-----------|---------|----------|-----|
+| Ph16-L1 | UI / data hygiene | **`logo_url` fetched but never rendered.** `GalleryProject` type includes it and `page.tsx` maps it from the RPC, but `ProjectCardTile` only shows the italic watermark + hue tape. Either render or drop. | `components/portal/qualia-projects-gallery.tsx` (type at line 17) | Option A: `<Image>` overlay on the accent tape (`object-contain opacity-70 mix-blend-luminosity`) — recommend. Option B: drop `logo_url` from type + mapping. |
+| Ph16-L2 | Perf / Scalability | **Schedule fetches all meetings then filters client-side.** `getMeetings(undefined, scopeToUserId)` returns every meeting the user can see. Fine today; pathological at thousands. | `app/(portal)/schedule/page.tsx:41` | Add optional `dateRange: { start: Date; end: Date }` to `getMeetings`; pass `{ weekStart, weekStart + 7 days }`. Keep `undefined` fallback. |
+| Ph16-L3 | Design system | **Inline `oklch()` color math scattered across 14+ call sites.** DESIGN.md:197 forbids "hardcoded colors scattered in JSX." The single-function hue derivation is acceptable but `oklch(55% 0.15 ${hue})` is duplicated. | `components/portal/qualia-projects-gallery.tsx:62-63,315,363,399`; `components/portal/qualia-roadmap.tsx:165,210,226,268,286,298,303,363,386,527` | Extract `clientAccent(hue: number): string` into `lib/color-constants.ts` returning the canonical oklch triplet. Replace inline template-string usage. |
+
+## Planning-code alignment
+
+- Phase 16 (UI Remake milestone) is not explicitly in REQUIREMENTS.md (which predates the remake) but aligns with **FR-2 Portal Dashboard** and **FR-3 Projects**. The UI remake is a visual-layer reroll, not a functional expansion, so requirements continue to describe the surface accurately.
+- ROADMAP.md's "Phase 3: Project Boards ✅ (shipped, then REMOVED)" — accurate; no stale references in new phase-16 code.
+- Phase 4/5 list `/tasks` standalone + portal settings — both still present, routes unchanged.
+- **No orphan routes.** All phase-16 routes map to requirements.
+
+## Architecture
+
+1. **`tasks-view.tsx` shrank from 1034 → 30 LOC** via shim-to-new-component delegation. Net win — kept `page.tsx` untouched, cleared the test surface. Same pattern for `projects-client.tsx` (419 → 54 LOC). Worth formalizing as a convention for future phase swaps.
+2. **Color accent derivation duplicated across 3 components** (`qualia-today.tsx`, `qualia-projects-gallery.tsx`, `qualia-roadmap.tsx`). Extract once into `lib/color-utils.ts` (or `lib/color-constants.ts`). Tied to Ph16-L3.
+3. **`QualiaRoadmap` is a pure Server Component** — correct Next.js 16 default. No interactivity yet (no "Manage" / "+ Add" actions wired). Deferred in the task spec; track for Phase 17.
+
+## What's clean in new code
+
+- No `service_role` usage anywhere in `components/portal/`
+- No `dangerouslySetInnerHTML`, `eval()`, or `new Function()`
+- No `console.log`/`TODO`/`FIXME` leftover
+- Error handling on every server-action call via `toast.error()`
+- `useOptimistic` + `useTransition` for snappy UX in tasks list
+- Role-gated fetches enforce RLS at the data layer (`canAccessProject`, `client_projects` link check, `project_assignments` scope)
+- Tailwind-first; no raw `#rrggbb` or `rgba()` in new files
+- Accessibility: `aria-label`, `aria-hidden`, `aria-pressed`, focus rings, keyboard targets all present
+
+## Suggested close-out
+
+- **Phase 16.6 "tasks/gallery/schedule perf harden"** — bundle M1 + M2 + M3 — 30–60 minutes
+- **Separate small chore** for L3 (extract color-accent helper) before Phase 17 starts, so Phase 17 inherits the tokenised helper from day 1
+- L1 + L2 — optional, no urgency
+
+Run `/qualia-optimize --fix` to auto-apply L1/L2/L3 (MEDIUM findings require human review on virtualization + skeleton design choices).
+
+---
+
+# Optimization Report — Portal v2 Pre-Deploy (Phase 6) — PRIOR RUN
+
+> This is the prior full-codebase audit from 2026-04-17 / updated 2026-04-18. Preserved for history.
 
 ## Update — 2026-04-18 sweep
 
@@ -77,7 +138,7 @@ Three specialist agents (frontend + backend + performance) scanned the codebase 
 - **BL2** — `idempotency_keys` table has no purge cron
 - **PL1-3** — Minor: `getProjects` duplicates role check, large `console.error` payloads in board-canvas (moot), `getProjectById` `select('*')`
 
-## Verdict
+## Verdict (Phase 6)
 
 Phase 6 shipped. All 3 criticals closed, 9 of 14 highs closed, 1 of 17 mediums closed. Remaining:
 - **BH1, BH2, BH5** — three security-flavored items. None live-incident. Queue as follow-up sprint.

@@ -465,7 +465,7 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
       </div>
 
       {/* Content — fills remaining viewport */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 py-4 lg:px-6">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 py-3 lg:px-6">
         {filteredProjects.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center">
             <EmptyState
@@ -569,9 +569,9 @@ function StageColumn({ stage, projects }: { stage: StageKey; projects: GalleryPr
         </span>
       </header>
 
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-2">
+      <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto p-2">
         {projects.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center py-6 text-center">
+          <div className="col-span-2 flex flex-1 flex-col items-center justify-center py-6 text-center">
             <span className={cn('mb-2 rounded-lg p-2.5', config.bg)} aria-hidden>
               <Icon className={cn('h-4 w-4', config.accent)} />
             </span>
