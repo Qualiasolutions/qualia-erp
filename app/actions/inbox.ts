@@ -11,28 +11,6 @@ import { canModifyTask, isUserAdmin, isUserManagerOrAbove, type ActionResult } f
 import { canAccessProject } from '@/lib/portal-utils';
 
 /**
- * Get the project IDs a user is allowed to see tasks for.
- * Returns IDs from project_assignments (active, not removed) + projects they lead.
- */
-async function getUserProjectIds(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string
-): Promise<string[]> {
-  const [assignmentResult, leadResult] = await Promise.all([
-    supabase
-      .from('project_assignments')
-      .select('project_id')
-      .eq('employee_id', userId)
-      .is('removed_at', null),
-    supabase.from('projects').select('id').eq('lead_id', userId),
-  ]);
-
-  const ids = new Set<string>();
-  for (const row of assignmentResult.data || []) ids.add(row.project_id);
-  for (const row of leadResult.data || []) ids.add(row.id);
-  return Array.from(ids);
-}
-
 /**
  * When an admin uses "View as", we scope task queries to the impersonated user.
  * Returns { effectiveUserId, shouldScope } — shouldScope is true when we must
@@ -259,16 +237,13 @@ export async function getTasks(
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false });
 
-  // Scope visibility: filter to effective user's tasks/projects
+  // Scope visibility: strictly the user's own assigned tasks.
+  // Tasks they created for other people (delegations) belong to the assignee's
+  // queue, not the creator's. Tasks on projects they're assigned to but given
+  // to a teammate likewise belong to the teammate. Admins opt out via
+  // shouldScope=false and see the whole workspace.
   if (shouldScope) {
-    const projectIds = await getUserProjectIds(supabase, effectiveUserId);
-    if (projectIds.length > 0) {
-      query = query.or(
-        `assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId},project_id.in.(${projectIds.join(',')})`
-      );
-    } else {
-      query = query.or(`assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId}`);
-    }
+    query = query.eq('assignee_id', effectiveUserId);
   }
 
   // Filter for inbox-only tasks
@@ -376,16 +351,10 @@ export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> 
 
   const openStatuses = ['Todo', 'In Progress'];
 
-  // Scope visibility — respects "View as" impersonation
+  // Scope visibility — respects "View as" impersonation. Personal preview =
+  // only tasks assigned to the user; creator-of and project-member don't
+  // bring in someone else's workload.
   const { effectiveUserId, shouldScope } = await getEffectiveUser(supabase, user.id);
-  let scopeFilter: string | null = null;
-  if (shouldScope) {
-    const projectIds = await getUserProjectIds(supabase, effectiveUserId);
-    scopeFilter =
-      projectIds.length > 0
-        ? `assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId},project_id.in.(${projectIds.join(',')})`
-        : `assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId}`;
-  }
 
   // Exclude tasks from finished projects
   const finishedIds = await getFinishedProjectIds();
@@ -400,7 +369,7 @@ export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> 
     .neq('item_type', 'note')
     .in('status', openStatuses);
   if (finishedFilter) previewQuery = previewQuery.not('project_id', 'in', finishedFilter);
-  if (scopeFilter) previewQuery = previewQuery.or(scopeFilter);
+  if (shouldScope) previewQuery = previewQuery.eq('assignee_id', effectiveUserId);
   previewQuery = previewQuery
     .order('due_date', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
@@ -414,7 +383,7 @@ export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> 
     .neq('item_type', 'note')
     .in('status', openStatuses);
   if (finishedFilter) totalOpenQuery = totalOpenQuery.not('project_id', 'in', finishedFilter);
-  if (scopeFilter) totalOpenQuery = totalOpenQuery.or(scopeFilter);
+  if (shouldScope) totalOpenQuery = totalOpenQuery.eq('assignee_id', effectiveUserId);
 
   let overdueQuery = supabase
     .from('tasks')
@@ -425,7 +394,7 @@ export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> 
     .in('status', openStatuses)
     .lt('due_date', todayStartIso);
   if (finishedFilter) overdueQuery = overdueQuery.not('project_id', 'in', finishedFilter);
-  if (scopeFilter) overdueQuery = overdueQuery.or(scopeFilter);
+  if (shouldScope) overdueQuery = overdueQuery.eq('assignee_id', effectiveUserId);
 
   const [previewResult, totalOpenResult, overdueResult] = await Promise.all([
     previewQuery,
@@ -482,15 +451,6 @@ export async function getTodaysTasks(): Promise<Task[]> {
 
   // Scope visibility — respects "View as" impersonation
   const { effectiveUserId, shouldScope } = await getEffectiveUser(supabase, user.id);
-
-  let scopeFilter: string | null = null;
-  if (shouldScope) {
-    const projectIds = await getUserProjectIds(supabase, effectiveUserId);
-    scopeFilter =
-      projectIds.length > 0
-        ? `assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId},project_id.in.(${projectIds.join(',')})`
-        : `assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId}`;
-  }
 
   // Two parallel queries:
   // 1. All In Progress tasks (regardless of due_date)
@@ -564,9 +524,9 @@ export async function getTodaysTasks(): Promise<Task[]> {
     .lte('due_date', today)
     .order('due_date', { ascending: true, nullsFirst: false });
 
-  if (scopeFilter) {
-    inProgressQuery = inProgressQuery.or(scopeFilter);
-    todoDueQuery = todoDueQuery.or(scopeFilter);
+  if (shouldScope) {
+    inProgressQuery = inProgressQuery.eq('assignee_id', effectiveUserId);
+    todoDueQuery = todoDueQuery.eq('assignee_id', effectiveUserId);
   }
 
   const [inProgressResult, todoDueResult] = await Promise.all([inProgressQuery, todoDueQuery]);
@@ -1405,14 +1365,7 @@ export async function getScheduledTasks(workspaceId?: string | null): Promise<Ta
   // Scope visibility — respects "View as" impersonation
   const { effectiveUserId: euId, shouldScope: scope } = await getEffectiveUser(supabase, user.id);
   if (scope) {
-    const projectIds = await getUserProjectIds(supabase, euId);
-    if (projectIds.length > 0) {
-      query = query.or(
-        `assignee_id.eq.${euId},creator_id.eq.${euId},project_id.in.(${projectIds.join(',')})`
-      );
-    } else {
-      query = query.or(`assignee_id.eq.${euId},creator_id.eq.${euId}`);
-    }
+    query = query.eq('assignee_id', euId);
   }
 
   const { data: tasks, error } = await query;
@@ -1619,14 +1572,7 @@ export async function getBacklogTasks(workspaceId?: string | null): Promise<Task
   // Scope visibility — respects "View as" impersonation
   const { effectiveUserId: euId, shouldScope: scope } = await getEffectiveUser(supabase, user.id);
   if (scope) {
-    const projectIds = await getUserProjectIds(supabase, euId);
-    if (projectIds.length > 0) {
-      query = query.or(
-        `assignee_id.eq.${euId},creator_id.eq.${euId},project_id.in.(${projectIds.join(',')})`
-      );
-    } else {
-      query = query.or(`assignee_id.eq.${euId},creator_id.eq.${euId}`);
-    }
+    query = query.eq('assignee_id', euId);
   }
 
   const { data: tasks, error } = await query;
