@@ -1,14 +1,16 @@
 # [Project Name] - Website
 
 ## Overview
+
 Marketing website built for [Client Name].
 
 ## Stack
+
 - **Framework**: React 19 + TypeScript
 - **Build Tool**: Vite
 - **Routing**: React Router v7
 - **Styling**: Tailwind CSS
-- **Animations**: Framer Motion
+- **Animations**: Motion (motion/react)
 - **Deployment**: Vercel
 
 ## Quick Start
@@ -29,14 +31,14 @@ npm run preview
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start Vite dev server |
-| `npm run build` | Production build |
-| `npm run preview` | Preview production |
-| `npm run lint` | Run ESLint |
-| `npm test` | Run Vitest |
-| `npm run test:e2e` | Playwright E2E tests |
+| Command            | Description           |
+| ------------------ | --------------------- |
+| `npm run dev`      | Start Vite dev server |
+| `npm run build`    | Production build      |
+| `npm run preview`  | Preview production    |
+| `npm run lint`     | Run ESLint            |
+| `npm test`         | Run Vitest            |
+| `npm run test:e2e` | Playwright E2E tests  |
 
 ## Project Structure
 
@@ -66,9 +68,9 @@ Using React Router v7 with lazy loading:
 
 ```tsx
 // Always use navigate() from React Router
-import { useNavigate } from 'react-router-dom'
-const navigate = useNavigate()
-navigate('/about')
+import { useNavigate } from 'react-router-dom';
+const navigate = useNavigate();
+navigate('/about');
 
 // NEVER use setView() or similar patterns
 ```
@@ -96,6 +98,7 @@ VITE_APP_URL=http://localhost:5173
 3. Auto-deploys from main branch
 
 ## Client
+
 - **Name**: [Client Name]
 - **Brand Color**: [Color]
 - **Domain**: [Domain if applicable]

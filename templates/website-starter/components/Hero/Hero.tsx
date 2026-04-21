@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { motion } from 'motion/react';
+import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function Hero() {
   return (
@@ -11,12 +11,10 @@ export default function Hero() {
         transition={{ duration: 0.6 }}
         className="max-w-3xl"
       >
-        <h1 className="text-5xl font-bold tracking-tight md:text-6xl">
-          Your Headline Here
-        </h1>
+        <h1 className="text-5xl font-bold tracking-tight md:text-6xl">Your Headline Here</h1>
         <p className="mt-6 text-xl text-gray-600">
-          Your subheadline or description goes here. Make it compelling and
-          clear about what value you provide.
+          Your subheadline or description goes here. Make it compelling and clear about what value
+          you provide.
         </p>
         <div className="mt-10 flex gap-4">
           <Link
@@ -35,5 +33,5 @@ export default function Hero() {
         </div>
       </motion.div>
     </section>
-  )
+  );
 }
