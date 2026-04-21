@@ -140,7 +140,7 @@ const PAGES: PageDef[] = [
 ];
 
 /* ======================================================================
-   Props — matches PortalSidebarV2 for drop-in replacement
+   Props
    ====================================================================== */
 
 interface PortalBranding {
@@ -505,8 +505,8 @@ function SidebarBody({
   };
 
   const brandName = branding?.company_name ?? 'Qualia';
-  // Fall back to the project's ship logo when branding doesn't supply one —
-  // matches PortalSidebarV2 behaviour so admins never see a bare placeholder.
+  // Fall back to the project's ship logo when branding doesn't supply one so
+  // admins never see a bare placeholder.
   const brandLogoUrl = branding?.logo_url ?? '/logo.webp';
 
   const handleTweaksGear = () => {
@@ -617,7 +617,7 @@ function SidebarBody({
 }
 
 /* ======================================================================
-   QualiaSidebar — exported; drop-in replacement for PortalSidebarV2
+   QualiaSidebar — exported
    ====================================================================== */
 
 export function QualiaSidebar(props: QualiaSidebarProps) {

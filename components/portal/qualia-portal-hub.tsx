@@ -9,7 +9,7 @@ import { hueFromId, clientAccent, clientAccentGradient } from '@/lib/color-const
 import { formatEURCompact } from '@/lib/currency';
 
 /* ======================================================================
-   Types — match PortalDashboardV2Props shape so the wrapper stays thin
+   Types
    ====================================================================== */
 
 interface HubStats {

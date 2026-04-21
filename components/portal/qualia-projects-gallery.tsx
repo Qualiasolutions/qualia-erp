@@ -15,6 +15,7 @@ import {
   Rocket,
   FolderOpen,
   CheckCircle2,
+  Archive,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -113,6 +114,13 @@ function getStage(project: GalleryProject): StageKey | null {
     return project.is_pre_production ? 'preProduction' : 'building';
   }
   return null; // Done, Archived, Canceled
+}
+
+/** Archived + Canceled live in their own container — separated from the
+ *  Finished (Done) container so a healthy wrap-up doesn't mix with projects
+ *  we shelved or dropped. */
+function isArchived(project: GalleryProject): boolean {
+  return project.status === 'Archived' || project.status === 'Canceled';
 }
 
 interface QualiaProjectsGalleryProps {
@@ -403,18 +411,26 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
     return groups;
   }, [filteredProjects]);
 
-  // Done / Archived / Canceled — shown in a horizontal row below the columns.
-  // Sort most-recently-finished first (target_date desc, nulls last) as a proxy for
-  // "recently moved to finished" since the schema doesn't track a completed_at timestamp.
+  // Two separate archive containers under the pipeline columns:
+  // - "Finished"  → Done projects
+  // - "Archived"  → Archived + Canceled projects
+  // Both sorted most-recent-first (target_date desc, nulls last) since the
+  // schema doesn't track an explicit completed_at timestamp.
+  const sortRecent = (a: GalleryProject, b: GalleryProject) => {
+    const at = a.target_date ? new Date(a.target_date).getTime() : 0;
+    const bt = b.target_date ? new Date(b.target_date).getTime() : 0;
+    return bt - at;
+  };
+
   const finishedProjects = useMemo(() => {
     return filteredProjects
-      .filter((p) => !getStage(p))
+      .filter((p) => !getStage(p) && !isArchived(p))
       .slice()
-      .sort((a, b) => {
-        const at = a.target_date ? new Date(a.target_date).getTime() : 0;
-        const bt = b.target_date ? new Date(b.target_date).getTime() : 0;
-        return bt - at;
-      });
+      .sort(sortRecent);
+  }, [filteredProjects]);
+
+  const archivedProjects = useMemo(() => {
+    return filteredProjects.filter(isArchived).slice().sort(sortRecent);
   }, [filteredProjects]);
 
   const summary = useMemo(() => generateSummary(projects), [projects]);
@@ -488,6 +504,7 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
           <div className="flex min-h-0 flex-1 flex-col gap-3">
             <StageColumns stages={stages} />
             {finishedProjects.length > 0 && <FinishedRow projects={finishedProjects} />}
+            {archivedProjects.length > 0 && <ArchivedRow projects={archivedProjects} />}
           </div>
         ) : viewMode === 'gallery' ? (
           <div
@@ -595,7 +612,9 @@ function StageColumn({ stage, projects }: { stage: StageKey; projects: GalleryPr
 }
 
 /* ======================================================================
-   FinishedRow — Done / Archived / Canceled projects in a horizontal row
+   FinishedRow — Done projects (teal primary accent)
+   ArchivedRow — Archived / Canceled projects (muted/gray accent)
+   Both share the same compact item layout.
    ====================================================================== */
 
 function FinishedRow({ projects }: { projects: GalleryProject[] }) {
@@ -655,6 +674,69 @@ function FinishedRowItem({ project }: { project: GalleryProject }) {
           {project.name}
         </span>
         <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+          {typeLabel}
+        </span>
+      </Link>
+    </li>
+  );
+}
+
+function ArchivedRow({ projects }: { projects: GalleryProject[] }) {
+  return (
+    <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card">
+      <header className="flex items-center gap-2 border-b border-border bg-muted/30 px-3 py-1.5">
+        <span
+          className="flex h-5 w-5 items-center justify-center rounded-md bg-muted-foreground/10"
+          aria-hidden
+        >
+          <Archive className="h-3 w-3 text-muted-foreground" />
+        </span>
+        <h2 className="text-xs font-semibold tracking-tight text-muted-foreground">Archived</h2>
+        <span className="ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-muted-foreground/10 px-1.5 text-[10px] font-semibold text-muted-foreground">
+          {projects.length}
+        </span>
+      </header>
+      <ul className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+        {projects.map((p) => (
+          <ArchivedRowItem key={p.id} project={p} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function ArchivedRowItem({ project }: { project: GalleryProject }) {
+  const typeLabel = getTypeLabel(project.project_type);
+  return (
+    <li>
+      <Link
+        href={`/projects/${project.id}`}
+        className={cn(
+          'flex items-center gap-2 px-2.5 py-1.5 transition-colors duration-150',
+          'text-muted-foreground opacity-80 hover:opacity-100',
+          'hover:bg-muted/30 focus-visible:bg-muted/30',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0'
+        )}
+        title={`${project.name} · ${project.status}`}
+      >
+        {project.logo_url ? (
+          <Image
+            src={project.logo_url}
+            alt=""
+            aria-hidden
+            width={16}
+            height={16}
+            className="h-4 w-4 shrink-0 rounded-full object-cover opacity-70 ring-1 ring-border grayscale"
+            unoptimized
+          />
+        ) : (
+          <span
+            className="h-4 w-4 shrink-0 rounded-full bg-muted-foreground/15 ring-1 ring-border"
+            aria-hidden
+          />
+        )}
+        <span className="min-w-0 flex-1 truncate text-xs font-medium">{project.name}</span>
+        <span className="shrink-0 rounded bg-muted/60 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider">
           {typeLabel}
         </span>
       </Link>
