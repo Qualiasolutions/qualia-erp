@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState, useEffect, useMemo, useCallback } from 'react';
+import { memo, useState, useEffect, useMemo, useCallback, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   format,
@@ -12,10 +12,14 @@ import {
   isSameDay,
   isSameWeek,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Calendar, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useMeetings, type MeetingWithRelations } from '@/lib/swr';
+import { useMeetings, invalidateMeetings, type MeetingWithRelations } from '@/lib/swr';
+import { deleteMeeting } from '@/app/actions';
+import { useAdmin } from '@/lib/hooks/use-admin';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
+import { EditMeetingModal } from '@/components/edit-meeting-modal';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -90,6 +94,9 @@ const KIND_DOT_COLORS: Record<MeetingKind, string> = {
 };
 
 const DAY_LABELS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+/** Prefix used by public booking system — meetings with "Public: " prefix */
+const PUBLIC_BOOKING_PREFIX = 'Public: ';
 
 /* ======================================================================
    Helpers
@@ -168,17 +175,24 @@ const EventBlock = memo(function EventBlock({
   topPx,
   heightPx,
   profiles,
+  isAdmin,
+  onEdit,
+  onDelete,
 }: {
   meeting: MeetingWithRelations;
   kind: MeetingKind;
   topPx: number;
   heightPx: number;
   profiles: Profile[];
+  isAdmin: boolean;
+  onEdit: (meeting: MeetingWithRelations) => void;
+  onDelete: (meetingId: string) => void;
 }) {
   const colors = KIND_COLORS[kind];
   const startTime = parseISO(meeting.start_time);
   const endTime = parseISO(meeting.end_time);
   const timeLabel = `${format(startTime, 'HH:mm')}\u2013${format(endTime, 'HH:mm')}`;
+  const isPublic = (meeting.title || '').startsWith(PUBLIC_BOOKING_PREFIX);
 
   // Find creator profile
   const creator = Array.isArray(meeting.creator) ? meeting.creator[0] : meeting.creator;
@@ -207,6 +221,13 @@ const EventBlock = memo(function EventBlock({
           style={{ top: `${topPx}px`, height: `${heightPx}px` }}
           aria-label={`${meeting.title}, ${timeLabel}`}
         >
+          {/* Public booking dot indicator — top-right */}
+          {isPublic && (
+            <span
+              className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary"
+              aria-label="Public booking"
+            />
+          )}
           <span
             className={cn('block truncate text-[11.5px] font-semibold leading-tight', colors.text)}
           >
@@ -230,7 +251,14 @@ const EventBlock = memo(function EventBlock({
         side="right"
       >
         <div className="space-y-2">
-          <h4 className="text-sm font-semibold text-foreground">{meeting.title}</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="text-sm font-semibold text-foreground">{meeting.title}</h4>
+            {isPublic && (
+              <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                Public
+              </span>
+            )}
+          </div>
           <p className="font-mono text-xs text-muted-foreground">{timeLabel}</p>
           {meeting.description && (
             <p className="text-xs text-muted-foreground">{meeting.description}</p>
@@ -244,6 +272,28 @@ const EventBlock = memo(function EventBlock({
             >
               Join meeting
             </a>
+          )}
+          {isAdmin && (
+            <div className="flex items-center gap-2 border-t border-border pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 px-2 text-xs hover:bg-muted/50"
+                onClick={() => onEdit(meeting)}
+              >
+                <Pencil className="h-3 w-3" aria-hidden />
+                Edit
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 px-2 text-xs text-red-500 hover:bg-red-500/10 hover:text-red-500"
+                onClick={() => onDelete(meeting.id)}
+              >
+                <Trash2 className="h-3 w-3" aria-hidden />
+                Delete
+              </Button>
+            </div>
           )}
         </div>
       </PopoverContent>
@@ -302,6 +352,9 @@ export function QualiaSchedule({
 }: QualiaScheduleProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isAdmin } = useAdmin();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_isPending, startTransition] = useTransition();
 
   // Parse weekStart from prop (ISO string of Monday)
   const weekStart = useMemo(() => parseISO(weekStartISO), [weekStartISO]);
@@ -373,6 +426,61 @@ export function QualiaSchedule({
 
   // New meeting modal state
   const [meetingModalOpen, setMeetingModalOpen] = useState(false);
+
+  // Edit meeting modal state
+  const [editTarget, setEditTarget] = useState<MeetingWithRelations | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+
+  // Delete confirmation state
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  // Admin action handlers — stable references for memo'd EventBlock
+  const handleEdit = useCallback((meeting: MeetingWithRelations) => {
+    setEditTarget(meeting);
+    setEditModalOpen(true);
+  }, []);
+
+  const handleDeleteRequest = useCallback((meetingId: string) => {
+    setDeleteTargetId(meetingId);
+    setDeleteConfirmOpen(true);
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    if (!deleteTargetId) return;
+    setDeleteConfirmOpen(false);
+    startTransition(async () => {
+      const result = await deleteMeeting(deleteTargetId);
+      if (result.success) {
+        invalidateMeetings(true);
+      } else {
+        console.error('Failed to delete meeting:', result.error);
+      }
+      setDeleteTargetId(null);
+    });
+  }, [deleteTargetId]);
+
+  // Convert MeetingWithRelations to EditMeetingModal's Meeting shape
+  const editModalMeeting = useMemo(() => {
+    if (!editTarget) return null;
+    const project = Array.isArray(editTarget.project) ? editTarget.project[0] : editTarget.project;
+    const attendees = Array.isArray(editTarget.attendees)
+      ? editTarget.attendees.map((a) => ({
+          id: a.id,
+          profile: Array.isArray(a.profile) ? a.profile[0] : a.profile,
+        }))
+      : [];
+    return {
+      id: editTarget.id,
+      title: editTarget.title,
+      description: editTarget.description,
+      start_time: editTarget.start_time,
+      end_time: editTarget.end_time,
+      meeting_link: editTarget.meeting_link,
+      project: project ? { id: project.id, name: project.name } : null,
+      attendees,
+    };
+  }, [editTarget]);
 
   // Today index for highlighting
   const todayIndex = useMemo(() => {
@@ -557,6 +665,9 @@ export function QualiaSchedule({
                         topPx={topPx}
                         heightPx={heightPx}
                         profiles={profiles}
+                        isAdmin={isAdmin}
+                        onEdit={handleEdit}
+                        onDelete={handleDeleteRequest}
                       />
                     );
                   })}
@@ -569,6 +680,24 @@ export function QualiaSchedule({
 
       {/* Meeting Modal (controlled) */}
       <NewMeetingModal open={meetingModalOpen} onOpenChange={setMeetingModalOpen} />
+
+      {/* Edit Meeting Modal (admin) */}
+      <EditMeetingModal
+        meeting={editModalMeeting}
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+      />
+
+      {/* Delete Confirmation Dialog (admin) */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete meeting?"
+        description="This action cannot be undone. The meeting will be permanently removed."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
