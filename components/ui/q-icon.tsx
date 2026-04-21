@@ -30,7 +30,9 @@ export type QIconName =
   | 'drag'
   | 'globe'
   | 'clock'
-  | 'git';
+  | 'git'
+  | 'server'
+  | 'research';
 
 type QIconProps = Omit<SVGProps<SVGSVGElement>, 'name'> & {
   name: QIconName;
@@ -250,6 +252,25 @@ export function QIcon({ name, size = 16, className, ...rest }: QIconProps) {
           <circle cx="5" cy="15" r="2" />
           <circle cx="15" cy="10" r="2" />
           <path d="M5 7v6M7 5c4 0 6 2 6 4" />
+        </svg>
+      );
+    case 'server':
+      return (
+        <svg {...base}>
+          <rect x="3" y="3" width="14" height="5" rx="1.5" />
+          <rect x="3" y="12" width="14" height="5" rx="1.5" />
+          <circle cx="6" cy="5.5" r="0.7" fill="currentColor" />
+          <circle cx="6" cy="14.5" r="0.7" fill="currentColor" />
+          <path d="M12 5.5h2M12 14.5h2" />
+        </svg>
+      );
+    case 'research':
+      return (
+        <svg {...base}>
+          <path d="M8 3h4v4l3 7a2 2 0 0 1-2 3H7a2 2 0 0 1-2-3l3-7V3z" />
+          <path d="M8 3h4" />
+          <circle cx="9" cy="13" r="0.7" fill="currentColor" />
+          <circle cx="11" cy="15" r="0.7" fill="currentColor" />
         </svg>
       );
     default:

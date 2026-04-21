@@ -102,15 +102,15 @@ export async function middleware(request: NextRequest) {
     }
 
     // Internal-only routes — clients cannot access these (admin/employee only)
-    const internalOnlyRoutes = ['/schedule', '/agent'];
+    const internalOnlyRoutes = ['/schedule'];
     if (userRole === 'client' && internalOnlyRoutes.some((route) => pathname.startsWith(route))) {
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);
     }
 
-    // Admin-only routes — /admin, /clients, /workspace, /seo all require admin
-    const adminOnlyRoutes = ['/admin', '/clients', '/workspace', '/seo'];
+    // Admin-only routes — /admin, /clients, /workspace all require admin
+    const adminOnlyRoutes = ['/admin', '/clients', '/workspace'];
     if (userRole !== 'admin' && adminOnlyRoutes.some((route) => pathname.startsWith(route))) {
       const url = request.nextUrl.clone();
       url.pathname = '/';
