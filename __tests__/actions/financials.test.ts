@@ -232,22 +232,30 @@ describe('updateExpense', () => {
 });
 
 describe('deleteExpense', () => {
+  const validUUID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+
+  it('returns error for invalid UUID', async () => {
+    const result = await deleteExpense('exp-1');
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Invalid expense ID');
+  });
+
   it('returns error when not admin', async () => {
     mockAdmin(false);
-    const result = await deleteExpense('exp-1');
+    const result = await deleteExpense(validUUID);
     expect(result.success).toBe(false);
     expect(result.error).toBe('Unauthorized');
   });
 
   it('returns success on valid delete', async () => {
     supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
-    const result = await deleteExpense('exp-1');
+    const result = await deleteExpense(validUUID);
     expect(result.success).toBe(true);
   });
 
   it('returns error on DB delete failure', async () => {
     supabase.from.mockReturnValue(buildChain({ data: null, error: { message: 'Delete failed' } }));
-    const result = await deleteExpense('exp-1');
+    const result = await deleteExpense(validUUID);
     expect(result.success).toBe(false);
     expect(result.error).toBe('Delete failed');
   });

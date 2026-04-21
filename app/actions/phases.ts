@@ -24,9 +24,12 @@ export async function getProjectPhases(projectId: string) {
   const hasAccess = await canAccessProject(user.id, projectId);
   if (!hasAccess) return [];
 
+  // Item 16: Explicit column projection instead of select('*')
   const { data, error } = await supabase
     .from('project_phases')
-    .select('*')
+    .select(
+      'id, name, status, sort_order, description, completed_at, is_locked, phase_type, project_id, workspace_id, started_at, reviewed_at, created_at, updated_at, milestone_number, plan_count, plans_completed, github_synced_at, start_date, target_date'
+    )
     .eq('project_id', projectId)
     .order('sort_order', { ascending: true });
 

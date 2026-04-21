@@ -187,7 +187,7 @@ const RosterRow = memo(function RosterRow({
         onValueChange={(v) => onRoleChange(member, v as UserRole)}
         disabled={disabled}
       >
-        <SelectTrigger className="h-8 w-28 text-xs">
+        <SelectTrigger className="h-8 w-28 cursor-pointer text-xs">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -199,7 +199,7 @@ const RosterRow = memo(function RosterRow({
       <Button
         variant="ghost"
         size="sm"
-        className="h-8 text-xs text-muted-foreground hover:text-destructive"
+        className="h-8 cursor-pointer text-xs text-muted-foreground hover:text-destructive"
         onClick={onDelete}
         disabled={disabled}
       >
@@ -303,7 +303,7 @@ function TeamAssignmentsGrid({
         </span>
       </header>
       <div className="overflow-x-auto">
-        <table className="min-w-full border-separate border-spacing-0 text-xs">
+        <table className="min-w-[500px] border-separate border-spacing-0 text-xs">
           <thead>
             <tr>
               <th

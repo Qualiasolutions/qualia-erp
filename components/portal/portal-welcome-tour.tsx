@@ -360,7 +360,7 @@ function WelcomeModal({
           <div className="mt-8 flex flex-col items-center gap-3">
             <Button
               onClick={onStart}
-              className="h-10 w-full max-w-[200px] gap-2 rounded-xl bg-primary text-sm font-medium text-primary-foreground shadow-[0_4px_12px_rgba(0,164,172,0.25)] transition-all duration-150 hover:opacity-90"
+              className="h-10 w-full max-w-[200px] gap-2 rounded-xl bg-primary text-sm font-medium text-primary-foreground shadow-[0_4px_12px_hsl(var(--primary)/0.25)] transition-all duration-150 hover:opacity-90"
             >
               Show me around
               <ArrowRight className="size-3.5" />
@@ -550,7 +550,7 @@ function TooltipCard({
 
         <Button
           onClick={onNext}
-          className="h-9 min-w-[44px] gap-1.5 rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground shadow-[0_4px_12px_rgba(0,164,172,0.25)] transition-all duration-150 hover:opacity-90"
+          className="h-9 min-w-[44px] gap-1.5 rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground shadow-[0_4px_12px_hsl(var(--primary)/0.25)] transition-all duration-150 hover:opacity-90"
         >
           {isLast ? (
             'Got it'

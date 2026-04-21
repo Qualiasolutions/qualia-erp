@@ -142,13 +142,11 @@ export async function deleteProjectLogo(projectId: string): Promise<ActionResult
   // Use admin client for storage (bypasses storage RLS — auth already verified above)
   const adminClient = createAdminClient();
 
-  // Delete from storage (try common extensions)
+  // Item 20: Batch delete all possible extensions in one call
   const extensions = ['jpg', 'png', 'webp', 'gif', 'avif'];
-  for (const ext of extensions) {
-    await adminClient.storage
-      .from(STORAGE_BUCKET)
-      .remove([`logos/projects/${projectId}/logo.${ext}`]);
-  }
+  await adminClient.storage
+    .from(STORAGE_BUCKET)
+    .remove(extensions.map((ext) => `logos/projects/${projectId}/logo.${ext}`));
 
   // Clear logo URL in database
   const { error: updateError } = await supabase
@@ -293,13 +291,11 @@ export async function deleteClientLogo(clientId: string): Promise<ActionResult> 
   // Use admin client for storage (bypasses storage RLS — auth already verified above)
   const adminClient = createAdminClient();
 
-  // Delete from storage (try common extensions)
+  // Item 20: Batch delete all possible extensions in one call
   const extensions = ['jpg', 'png', 'webp', 'gif', 'avif'];
-  for (const ext of extensions) {
-    await adminClient.storage
-      .from(STORAGE_BUCKET)
-      .remove([`logos/clients/${clientId}/logo.${ext}`]);
-  }
+  await adminClient.storage
+    .from(STORAGE_BUCKET)
+    .remove(extensions.map((ext) => `logos/clients/${clientId}/logo.${ext}`));
 
   // Clear logo URL in database
   const { error: updateError } = await supabase

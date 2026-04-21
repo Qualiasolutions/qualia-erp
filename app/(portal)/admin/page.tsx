@@ -29,7 +29,7 @@ function ControlSkeleton() {
   return (
     <div className="flex flex-col">
       <div className="border-b border-border bg-muted/30 px-6 pt-8 lg:px-8">
-        <div className="mx-auto max-w-[1400px]">
+        <div>
           <div className="h-3 w-28 animate-pulse rounded bg-muted" />
           <div className="mt-2 h-9 w-44 animate-pulse rounded bg-muted" />
           <div className="mt-6 flex gap-6">
@@ -40,7 +40,7 @@ function ControlSkeleton() {
           <div className="h-1" />
         </div>
       </div>
-      <div className="mx-auto w-full max-w-[1400px] p-6 lg:p-8">
+      <div className="w-full p-6 lg:p-8">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />

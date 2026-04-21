@@ -1,15 +1,13 @@
 'use client';
 
 import useSWR, { SWRConfiguration, mutate, type KeyedMutator } from 'swr';
-import {
-  getTeams,
-  getProjects,
-  getProfiles,
-  getCurrentWorkspaceId,
-  getMeetings,
-  getNotifications,
-  getUnreadNotificationCount,
-} from '@/app/actions';
+// PH-H4: Direct module imports instead of barrel re-export to reduce bundle size
+import { getTeams } from '@/app/actions/teams';
+import { getProjects } from '@/app/actions/projects';
+import { getProfiles } from '@/app/actions/auth';
+import { getCurrentWorkspaceId } from '@/app/actions/workspace';
+import { getMeetings } from '@/app/actions/meetings';
+import { getNotifications, getUnreadNotificationCount } from '@/app/actions/notifications';
 import {
   getTasks,
   getProjectTasks,

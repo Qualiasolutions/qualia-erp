@@ -62,3 +62,14 @@ export const apiRateLimiter = createRateLimiter({
   windowSeconds: 60,
   prefix: 'ratelimit:api',
 });
+// BH-C1/C2: Rate limiter for AI-adjacent endpoints (embeddings, TTS)
+export const aiRateLimiter = createRateLimiter({
+  limit: 20,
+  windowSeconds: 60,
+  prefix: 'ratelimit:ai',
+});
+export const ttsRateLimiter = createRateLimiter({
+  limit: 10,
+  windowSeconds: 60,
+  prefix: 'ratelimit:tts',
+});

@@ -361,11 +361,15 @@ export async function getProjectById(id: string) {
 
   // Parallelize project + issues queries — they're independent
   const [projectResult, issuesResult] = await Promise.all([
+    // Item 16: Explicit column projection instead of select('*')
     supabase
       .from('projects')
       .select(
         `
-            *,
+            id, name, description, status, project_type, deployment_platform,
+            project_group, start_date, target_date, client_id, lead_id, team_id,
+            workspace_id, is_pre_production, logo_url, created_at, updated_at,
+            sort_order, metadata,
             lead:profiles!projects_lead_id_fkey (id, full_name, email, avatar_url),
             team:teams (id, name, key),
             client:clients (id, name)
@@ -1101,16 +1105,17 @@ export async function reorderProject(
   const current = projects.find((p) => p.id === projectId)!;
   const target = projects.find((p) => p.id === targetId)!;
 
-  // Swap sort_orders
-  const { error: e1 } = await supabase
-    .from('projects')
-    .update({ sort_order: target.sort_order ?? 0 })
-    .eq('id', projectId);
-
-  const { error: e2 } = await supabase
-    .from('projects')
-    .update({ sort_order: current.sort_order ?? 0 })
-    .eq('id', targetId);
+  // Item 19: Parallelize two independent UPDATEs
+  const [{ error: e1 }, { error: e2 }] = await Promise.all([
+    supabase
+      .from('projects')
+      .update({ sort_order: target.sort_order ?? 0 })
+      .eq('id', projectId),
+    supabase
+      .from('projects')
+      .update({ sort_order: current.sort_order ?? 0 })
+      .eq('id', targetId),
+  ]);
 
   if (e1 || e2) {
     return { success: false, error: 'Failed to reorder' };

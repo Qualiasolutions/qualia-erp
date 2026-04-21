@@ -38,8 +38,14 @@ const updateGuideSchema = z.object({
 
 // ============ READ ============
 
+// Item 13: Added auth check — returns defaults gracefully for unauthenticated users
 export async function getKnowledgeGuides(): Promise<Guide[]> {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return defaultGuides;
 
   const { data, error } = await supabase
     .from('knowledge_guides')

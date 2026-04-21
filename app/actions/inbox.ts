@@ -1358,6 +1358,11 @@ export async function getScheduledTasks(workspaceId?: string | null): Promise<Ta
     .not('scheduled_end_time', 'is', null)
     .order('scheduled_start_time', { ascending: true });
 
+  // Item 18: Default date range filter (last 30 days) + safety limit
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  query = query.gte('scheduled_start_time', thirtyDaysAgo.toISOString()).limit(500);
+
   if (wsId) {
     query = query.eq('workspace_id', wsId);
   }

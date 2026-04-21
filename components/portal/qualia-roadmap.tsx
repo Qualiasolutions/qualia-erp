@@ -460,79 +460,81 @@ function PhaseBreakdownTable({
     <section>
       <h2 className="mb-3 text-base font-semibold tracking-tight">Phase breakdown</h2>
       <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div
-          className="grid border-b border-border bg-muted/20 px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
-          style={{
-            gridTemplateColumns: '40px 1fr 120px 100px 100px 70px 110px',
-            columnGap: '12px',
-          }}
-        >
-          <span>#</span>
-          <span>Phase</span>
-          <span>Status</span>
-          <span>Start</span>
-          <span>End</span>
-          <span>Days</span>
-          <span className="text-right">Progress</span>
-        </div>
-        {phases.map((phase, i) => {
-          const start = safeParse(phase.start_date);
-          const end = safeParse(phase.target_date) ?? safeParse(phase.completed_at);
-          const status = resolvePhaseStatus(phase);
-          const styles = statusBarClasses(status);
-          const progress = phaseProgress(phase);
-          const days = start && end ? Math.max(1, differenceInDays(end, start)) : null;
+        <div className="overflow-x-auto">
+          <div
+            className="grid min-w-[640px] border-b border-border bg-muted/20 px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+            style={{
+              gridTemplateColumns: '40px 1fr 120px 100px 100px 70px 110px',
+              columnGap: '12px',
+            }}
+          >
+            <span>#</span>
+            <span>Phase</span>
+            <span>Status</span>
+            <span>Start</span>
+            <span>End</span>
+            <span>Days</span>
+            <span className="text-right">Progress</span>
+          </div>
+          {phases.map((phase, i) => {
+            const start = safeParse(phase.start_date);
+            const end = safeParse(phase.target_date) ?? safeParse(phase.completed_at);
+            const status = resolvePhaseStatus(phase);
+            const styles = statusBarClasses(status);
+            const progress = phaseProgress(phase);
+            const days = start && end ? Math.max(1, differenceInDays(end, start)) : null;
 
-          return (
-            <div
-              key={phase.id}
-              className={cn(
-                'grid items-center px-4 py-3 text-sm',
-                i < phases.length - 1 && 'border-b border-border',
-                status === 'upcoming' ? 'text-muted-foreground' : 'text-foreground'
-              )}
-              style={{
-                gridTemplateColumns: '40px 1fr 120px 100px 100px 70px 110px',
-                columnGap: '12px',
-              }}
-            >
-              <span className="font-mono text-[11px] text-muted-foreground">P{i + 1}</span>
-              <span className="truncate font-medium">{phase.name}</span>
-              <span className="inline-flex items-center gap-1.5 text-xs capitalize">
-                <span aria-hidden className={cn('size-1.5 rounded-full', styles.dot)} />
-                {status}
-              </span>
-              <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                {start ? format(start, 'dd MMM') : '—'}
-              </span>
-              <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                {end ? format(end, 'dd MMM') : '—'}
-              </span>
-              <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                {days ? `${days}d` : '—'}
-              </span>
-              <span className="flex items-center justify-end gap-2">
-                <span className="h-[3px] max-w-[60px] flex-1 overflow-hidden rounded-full bg-border/50">
-                  <span
-                    className="block h-full rounded-full"
-                    style={{
-                      width: `${progress * 100}%`,
-                      background:
-                        status === 'done'
-                          ? 'hsl(142 76% 36%)'
-                          : status === 'active'
-                            ? clientAccent(clientHue)
-                            : 'hsl(var(--muted-foreground) / 0.4)',
-                    }}
-                  />
+            return (
+              <div
+                key={phase.id}
+                className={cn(
+                  'grid min-w-[640px] items-center px-4 py-3 text-sm',
+                  i < phases.length - 1 && 'border-b border-border',
+                  status === 'upcoming' ? 'text-muted-foreground' : 'text-foreground'
+                )}
+                style={{
+                  gridTemplateColumns: '40px 1fr 120px 100px 100px 70px 110px',
+                  columnGap: '12px',
+                }}
+              >
+                <span className="font-mono text-[11px] text-muted-foreground">P{i + 1}</span>
+                <span className="truncate font-medium">{phase.name}</span>
+                <span className="inline-flex items-center gap-1.5 text-xs capitalize">
+                  <span aria-hidden className={cn('size-1.5 rounded-full', styles.dot)} />
+                  {status}
                 </span>
-                <span className="w-7 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
-                  {Math.round(progress * 100)}%
+                <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                  {start ? format(start, 'dd MMM') : '—'}
                 </span>
-              </span>
-            </div>
-          );
-        })}
+                <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                  {end ? format(end, 'dd MMM') : '—'}
+                </span>
+                <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                  {days ? `${days}d` : '—'}
+                </span>
+                <span className="flex items-center justify-end gap-2">
+                  <span className="h-[3px] max-w-[60px] flex-1 overflow-hidden rounded-full bg-border/50">
+                    <span
+                      className="block h-full rounded-full"
+                      style={{
+                        width: `${progress * 100}%`,
+                        background:
+                          status === 'done'
+                            ? 'hsl(var(--emerald-500, 142 76% 36%))'
+                            : status === 'active'
+                              ? clientAccent(clientHue)
+                              : 'hsl(var(--muted-foreground) / 0.4)',
+                      }}
+                    />
+                  </span>
+                  <span className="w-7 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+                    {Math.round(progress * 100)}%
+                  </span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

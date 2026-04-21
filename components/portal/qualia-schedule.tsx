@@ -23,6 +23,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { toast } from 'sonner';
 
 /* ======================================================================
    Types
@@ -454,7 +455,7 @@ export function QualiaSchedule({
       if (result.success) {
         invalidateMeetings(true);
       } else {
-        console.error('Failed to delete meeting:', result.error);
+        toast.error('Failed to delete meeting');
       }
       setDeleteTargetId(null);
     });
@@ -512,14 +513,14 @@ export function QualiaSchedule({
           <div className="flex items-center gap-1">
             <button
               onClick={() => navigateWeek('prev')}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex h-10 min-h-[44px] w-10 min-w-[44px] cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Previous week"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => navigateWeek('next')}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex h-10 min-h-[44px] w-10 min-w-[44px] cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Next week"
             >
               <ChevronRight className="h-4 w-4" />
@@ -563,117 +564,119 @@ export function QualiaSchedule({
 
       {/* ── Grid Card ── */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card">
-        {/* Day Header Row */}
-        <div
-          className="grid border-b border-border bg-muted/50"
-          style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}
-        >
-          {/* Empty cell for hour column */}
-          <div aria-hidden="true" />
-          {days.map((day, i) => {
-            const isToday = i === todayIndex;
-            return (
-              <div key={i} className="flex flex-col items-center py-2">
-                <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {DAY_LABELS[i]}
-                </span>
-                <span
-                  className={cn(
-                    'mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold',
-                    isToday ? 'bg-primary text-primary-foreground' : 'text-foreground'
-                  )}
-                >
-                  {format(day, 'd')}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Scrollable Body */}
-        <div className="flex-1 overflow-auto">
+        <div className="overflow-x-auto">
+          {/* Day Header Row */}
           <div
-            className="relative grid"
-            style={{
-              gridTemplateColumns: '60px repeat(7, 1fr)',
-              height: `${HOUR_COUNT * ROW_HEIGHT}px`,
-            }}
+            className="grid min-w-[640px] border-b border-border bg-muted/50"
+            style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}
           >
-            {/* Hour Column */}
-            <div className="relative border-r border-border" aria-hidden="true">
-              {HOURS.map((hour, i) => (
-                <div
-                  key={hour}
-                  className="absolute right-2 font-mono text-[11px] text-muted-foreground"
-                  style={{ top: `${i * ROW_HEIGHT + 2}px` }}
-                >
-                  {formatHour(hour)}
-                </div>
-              ))}
-            </div>
-
-            {/* Day Columns */}
-            {days.map((day, dayIdx) => {
-              const dayMeetings = meetingsByDay.get(dayIdx) || [];
-              const isToday = dayIdx === todayIndex;
-
+            {/* Empty cell for hour column */}
+            <div aria-hidden="true" />
+            {days.map((day, i) => {
+              const isToday = i === todayIndex;
               return (
-                <div
-                  key={dayIdx}
-                  className={cn(
-                    'relative border-r border-border last:border-r-0',
-                    isToday && 'bg-primary/[0.03]'
-                  )}
-                >
-                  {/* Hour grid lines */}
-                  {HOURS.map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute inset-x-0 border-b border-border/50"
-                      style={{ top: `${(i + 1) * ROW_HEIGHT}px` }}
-                    />
-                  ))}
-
-                  {/* Current time indicator — only in today's column for current week */}
-                  {isToday && isCurrentWeek && <CurrentTimeIndicator />}
-
-                  {/* Events */}
-                  {dayMeetings.map((meeting) => {
-                    const start = parseISO(meeting.start_time);
-                    const end = parseISO(meeting.end_time);
-                    const startHour = start.getHours() + start.getMinutes() / 60;
-                    const endHour = end.getHours() + end.getMinutes() / 60;
-
-                    // Clamp to visible range
-                    const clampedStart = Math.max(startHour, HOUR_START);
-                    const clampedEnd = Math.min(endHour, HOUR_END + 1);
-
-                    if (clampedEnd <= clampedStart) return null;
-
-                    const topPx = (clampedStart - HOUR_START) * ROW_HEIGHT;
-                    const heightPx = (clampedEnd - clampedStart) * ROW_HEIGHT - 4;
-
-                    if (heightPx <= 0) return null;
-
-                    const kind = inferMeetingKind(meeting);
-
-                    return (
-                      <EventBlock
-                        key={meeting.id}
-                        meeting={meeting}
-                        kind={kind}
-                        topPx={topPx}
-                        heightPx={heightPx}
-                        profiles={profiles}
-                        isAdmin={isAdmin}
-                        onEdit={handleEdit}
-                        onDelete={handleDeleteRequest}
-                      />
-                    );
-                  })}
+                <div key={i} className="flex flex-col items-center py-2">
+                  <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    {DAY_LABELS[i]}
+                  </span>
+                  <span
+                    className={cn(
+                      'mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold',
+                      isToday ? 'bg-primary text-primary-foreground' : 'text-foreground'
+                    )}
+                  >
+                    {format(day, 'd')}
+                  </span>
                 </div>
               );
             })}
+          </div>
+
+          {/* Scrollable Body */}
+          <div className="flex-1 overflow-auto">
+            <div
+              className="relative grid min-w-[640px]"
+              style={{
+                gridTemplateColumns: '60px repeat(7, 1fr)',
+                height: `${HOUR_COUNT * ROW_HEIGHT}px`,
+              }}
+            >
+              {/* Hour Column */}
+              <div className="relative border-r border-border" aria-hidden="true">
+                {HOURS.map((hour, i) => (
+                  <div
+                    key={hour}
+                    className="absolute right-2 font-mono text-[11px] text-muted-foreground"
+                    style={{ top: `${i * ROW_HEIGHT + 2}px` }}
+                  >
+                    {formatHour(hour)}
+                  </div>
+                ))}
+              </div>
+
+              {/* Day Columns */}
+              {days.map((day, dayIdx) => {
+                const dayMeetings = meetingsByDay.get(dayIdx) || [];
+                const isToday = dayIdx === todayIndex;
+
+                return (
+                  <div
+                    key={dayIdx}
+                    className={cn(
+                      'relative border-r border-border last:border-r-0',
+                      isToday && 'bg-primary/[0.03]'
+                    )}
+                  >
+                    {/* Hour grid lines */}
+                    {HOURS.map((_, i) => (
+                      <div
+                        key={i}
+                        className="absolute inset-x-0 border-b border-border/50"
+                        style={{ top: `${(i + 1) * ROW_HEIGHT}px` }}
+                      />
+                    ))}
+
+                    {/* Current time indicator — only in today's column for current week */}
+                    {isToday && isCurrentWeek && <CurrentTimeIndicator />}
+
+                    {/* Events */}
+                    {dayMeetings.map((meeting) => {
+                      const start = parseISO(meeting.start_time);
+                      const end = parseISO(meeting.end_time);
+                      const startHour = start.getHours() + start.getMinutes() / 60;
+                      const endHour = end.getHours() + end.getMinutes() / 60;
+
+                      // Clamp to visible range
+                      const clampedStart = Math.max(startHour, HOUR_START);
+                      const clampedEnd = Math.min(endHour, HOUR_END + 1);
+
+                      if (clampedEnd <= clampedStart) return null;
+
+                      const topPx = (clampedStart - HOUR_START) * ROW_HEIGHT;
+                      const heightPx = (clampedEnd - clampedStart) * ROW_HEIGHT - 4;
+
+                      if (heightPx <= 0) return null;
+
+                      const kind = inferMeetingKind(meeting);
+
+                      return (
+                        <EventBlock
+                          key={meeting.id}
+                          meeting={meeting}
+                          kind={kind}
+                          topPx={topPx}
+                          heightPx={heightPx}
+                          profiles={profiles}
+                          isAdmin={isAdmin}
+                          onEdit={handleEdit}
+                          onDelete={handleDeleteRequest}
+                        />
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Loader2, User, Bell, Save, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { updateClientProfile, updateNotificationPreferences } from '@/app/actions/client-portal';
-import { createClient } from '@/lib/supabase/client';
+import { changePassword } from './_actions';
 
 interface ProfileFormData {
   full_name: string;
@@ -63,9 +63,9 @@ const notificationItems = [
 function PasswordChangeSection() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
+  const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (newPassword.length < 8) {
@@ -77,23 +77,19 @@ function PasswordChangeSection() {
       return;
     }
 
-    setSaving(true);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
+    const formData = new FormData();
+    formData.set('newPassword', newPassword);
 
-      if (error) {
-        toast.error(error.message);
-      } else {
+    startTransition(async () => {
+      const result = await changePassword(formData);
+      if (result.success) {
         toast.success('Password updated successfully');
         setNewPassword('');
         setConfirmPassword('');
+      } else {
+        toast.error(result.error || 'Failed to update password');
       }
-    } catch {
-      toast.error('Failed to update password');
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   return (
@@ -145,10 +141,10 @@ function PasswordChangeSection() {
         <div className="pt-1">
           <Button
             type="submit"
-            disabled={saving || !newPassword || !confirmPassword}
+            disabled={isPending || !newPassword || !confirmPassword}
             className="min-h-[44px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
           >
-            {saving ? (
+            {isPending ? (
               <>
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                 Updating...

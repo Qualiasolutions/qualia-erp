@@ -94,8 +94,7 @@ export function MessageComposer({ projectId, userRole, onMessageSent }: MessageC
         textareaRef.current.style.height = 'auto';
       }
       onMessageSent();
-    } catch (error) {
-      console.error('[MessageComposer] Send error:', error);
+    } catch {
       toast.error('Failed to send message. Please try again.');
     } finally {
       setIsSending(false);

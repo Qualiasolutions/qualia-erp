@@ -441,7 +441,7 @@ const ProjectListRow = memo(function ProjectListRow({ project }: { project: Gall
     <Link
       href={`/projects/${project.id}`}
       className={cn(
-        'group grid items-center gap-3 rounded-lg px-4 py-3',
+        'group grid min-w-[600px] items-center gap-3 rounded-lg px-4 py-3',
         'border border-transparent transition-all duration-150',
         'hover:border-border hover:bg-muted/40',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
@@ -637,9 +637,9 @@ export function QualiaProjectsGallery({ projects, isAdmin }: QualiaProjectsGalle
             ))}
           </div>
         ) : (
-          <div className="overflow-auto rounded-xl border border-border bg-card">
+          <div className="overflow-x-auto rounded-xl border border-border bg-card">
             <div
-              className="sticky top-0 grid items-center gap-3 border-b border-border bg-card px-4 py-2.5"
+              className="sticky top-0 grid min-w-[600px] items-center gap-3 border-b border-border bg-card px-4 py-2.5"
               style={{ gridTemplateColumns: '24px 1.5fr 1fr 120px 100px 80px' }}
             >
               <span />

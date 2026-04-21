@@ -120,10 +120,24 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
 
   const supabase = await createClient();
 
+  // PH-H2: Explicit column projections instead of select('*')
   const [{ data: invoices }, { data: payments }, { data: expensesRaw }] = await Promise.all([
-    supabase.from('financial_invoices').select('*').order('date', { ascending: false }),
-    supabase.from('financial_payments').select('*').order('date', { ascending: false }),
-    supabase.from('expenses').select('*').order('date', { ascending: false }),
+    supabase
+      .from('financial_invoices')
+      .select(
+        'zoho_id, invoice_number, customer_name, status, date, due_date, total, balance, currency_code, last_payment_date, is_hidden, synced_at'
+      )
+      .order('date', { ascending: false }),
+    supabase
+      .from('financial_payments')
+      .select(
+        'zoho_id, payment_number, customer_name, customer_id, date, amount, currency_code, payment_mode, description, invoice_numbers, synced_at'
+      )
+      .order('date', { ascending: false }),
+    supabase
+      .from('expenses')
+      .select('id, amount, category, date, description, created_at')
+      .order('date', { ascending: false }),
   ]);
 
   if (!invoices || !payments) return null;
@@ -468,6 +482,11 @@ export async function unhideInvoice(zohoId: string): Promise<{ success: boolean;
 }
 
 export async function deleteInvoice(zohoId: string): Promise<{ success: boolean; error?: string }> {
+  // Item 14: Validate zohoId format
+  const { z } = await import('zod');
+  const idResult = z.string().min(1).max(128).safeParse(zohoId);
+  if (!idResult.success) return { success: false, error: 'Invalid invoice ID' };
+
   if (!(await checkAdmin())) return { success: false, error: 'Unauthorized' };
 
   const supabase = await createClient();
@@ -537,6 +556,11 @@ export async function updateExpense(data: unknown): Promise<{ success: boolean; 
 }
 
 export async function deleteExpense(id: string): Promise<{ success: boolean; error?: string }> {
+  // Item 15: UUID validation
+  const { z } = await import('zod');
+  const idResult = z.string().uuid().safeParse(id);
+  if (!idResult.success) return { success: false, error: 'Invalid expense ID' };
+
   if (!(await checkAdmin())) return { success: false, error: 'Unauthorized' };
 
   const supabase = await createClient();

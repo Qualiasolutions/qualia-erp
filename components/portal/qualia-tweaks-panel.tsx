@@ -85,7 +85,7 @@ export function QualiaTweaksPanel({
               onClose();
               onViewAs();
             }}
-            className="flex-1 rounded-md border border-[var(--line)] bg-[var(--bg-sub)] px-2.5 py-1.5 text-[11.5px] font-medium text-[var(--text-soft)] hover:bg-[var(--surface-hi)]"
+            className="flex-1 cursor-pointer rounded-md border border-[var(--line)] bg-[var(--bg-sub)] px-2.5 py-1.5 text-[11.5px] font-medium text-[var(--text-soft)] hover:bg-[var(--surface-hi)]"
           >
             {isImpersonating ? 'Switch view' : 'View as…'}
           </button>
@@ -94,7 +94,7 @@ export function QualiaTweaksPanel({
               type="button"
               onClick={handleClearImpersonation}
               disabled={isClearing}
-              className="rounded-md border border-[var(--line)] bg-[var(--bg-sub)] px-2.5 py-1.5 text-[11.5px] font-medium text-[var(--text-soft)] hover:bg-[var(--surface-hi)] disabled:opacity-50"
+              className="cursor-pointer rounded-md border border-[var(--line)] bg-[var(--bg-sub)] px-2.5 py-1.5 text-[11.5px] font-medium text-[var(--text-soft)] hover:bg-[var(--surface-hi)] disabled:opacity-50"
             >
               {isClearing ? '…' : 'Exit'}
             </button>
@@ -114,7 +114,7 @@ export function QualiaTweaksPanel({
                 type="button"
                 onClick={() => setTheme(t)}
                 className={cn(
-                  'flex items-center justify-center gap-1.5 rounded px-2 py-1.5 text-[11.5px] capitalize transition-colors duration-150',
+                  'flex cursor-pointer items-center justify-center gap-1.5 rounded px-2 py-1.5 text-[11.5px] capitalize transition-colors duration-150',
                   selected
                     ? 'bg-[var(--surface)] font-semibold text-[var(--text)] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
                     : 'font-medium text-[var(--text-mute)] hover:text-[var(--text-soft)]'
@@ -141,7 +141,7 @@ export function QualiaTweaksPanel({
                 type="button"
                 onClick={() => setDensity(d)}
                 className={cn(
-                  'rounded px-2 py-1.5 text-[11.5px] capitalize transition-colors duration-150',
+                  'cursor-pointer rounded px-2 py-1.5 text-[11.5px] capitalize transition-colors duration-150',
                   selected
                     ? 'bg-[var(--surface)] font-semibold text-[var(--text)] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
                     : 'font-medium text-[var(--text-mute)] hover:text-[var(--text-soft)]'

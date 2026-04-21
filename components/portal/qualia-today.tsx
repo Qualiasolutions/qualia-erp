@@ -709,10 +709,14 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
   }, [todayTasks]);
 
   // Open tasks count — inbox + today combined, unique
-  const openTaskIds = new Set([
-    ...(inboxTasks as Array<{ id: string }>).map((t) => t.id),
-    ...(todayTasks as Array<{ id: string }>).map((t) => t.id),
-  ]);
+  const openTaskIds = useMemo(
+    () =>
+      new Set([
+        ...(inboxTasks as Array<{ id: string }>).map((t) => t.id),
+        ...(todayTasks as Array<{ id: string }>).map((t) => t.id),
+      ]),
+    [inboxTasks, todayTasks]
+  );
 
   // Projects for admin: from workspaces prop (flattened). For employee: from useProjects.
   const tapeProjects = useMemo<TapeProject[]>(() => {
@@ -788,7 +792,7 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
   const leftPaneLoading = isAdminView ? teamLoading : tasksLoading;
 
   return (
-    <div className="mx-auto w-full" style={{ maxWidth: 1400, padding: 'var(--pad)' }}>
+    <div className="w-full px-6 lg:px-8 xl:px-12" style={{ padding: 'var(--pad)' }}>
       <TodayHero
         role={role}
         displayName={displayName}
@@ -797,10 +801,7 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
         onlineTeam={isAdminView ? onlineTeam : undefined}
       />
 
-      <div
-        className="grid gap-[var(--gap)]"
-        style={{ gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)' }}
-      >
+      <div className="grid grid-cols-1 gap-[var(--gap)] lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         {leftPaneLoading ? (
           <div
             className="card rounded-xl border p-7"

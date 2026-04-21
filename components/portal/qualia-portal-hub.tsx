@@ -119,7 +119,7 @@ export function QualiaPortalHub({
           }}
           aria-hidden
         />
-        <div className="relative mx-auto grid w-full max-w-[1400px] grid-cols-1 items-end gap-8 lg:grid-cols-[2fr_1fr]">
+        <div className="relative grid w-full grid-cols-1 items-end gap-8 lg:grid-cols-[2fr_1fr]">
           <div>
             <div className="mb-4 font-mono text-[11px] uppercase tracking-[0.12em] text-white/70">
               Welcome back, {firstName}
@@ -137,7 +137,7 @@ export function QualiaPortalHub({
 
       {/* Content panel */}
       <div className="relative -mt-6 min-h-[600px] rounded-t-[32px] bg-background px-6 pb-16 pt-12 md:px-10">
-        <div className="mx-auto w-full max-w-[1400px]">
+        <div className="w-full">
           {/* Pulse row */}
           <div className="mb-10 grid grid-cols-2 gap-6 border-b border-border pb-10 md:grid-cols-4">
             <PulseMetric

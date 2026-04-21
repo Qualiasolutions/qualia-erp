@@ -2,6 +2,7 @@ import { google } from '@ai-sdk/google';
 import { embedMany, embed } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { aiRateLimiter } from '@/lib/rate-limit';
 
 export const maxDuration = 30;
 
@@ -51,6 +52,22 @@ export async function POST(req: Request) {
         status: 403,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+
+    // BH-C1: Rate limiting — 20 requests/minute per user
+    const rateLimitResult = await aiRateLimiter(user.id);
+    if (!rateLimitResult.success) {
+      const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.', retryAfter }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': retryAfter.toString(),
+          },
+        }
+      );
     }
 
     // Get workspace

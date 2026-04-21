@@ -46,7 +46,22 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
 
   const workspaceId = await getCurrentWorkspaceId();
 
-  const [finSummary, activityDirect, projectsRes, tasksRes] = await Promise.all([
+  // PH-H1: Merged two sequential Promise.all batches into one
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - 7);
+
+  const now = new Date();
+
+  const [
+    finSummary,
+    activityDirect,
+    projectsRes,
+    openTasksRes,
+    overdueTasksRes,
+    deploymentsRes,
+    sessionsRes,
+    activityWeekRes,
+  ] = await Promise.all([
     getFinancialSummary(),
     supabase
       .from('activity_log')
@@ -66,23 +81,33 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
       .select('id, status', { count: 'exact', head: false })
       .in('status', ['Active', 'Delayed'])
       .eq('workspace_id', workspaceId ?? ''),
+    // Item 17: head-only count for open tasks (no row data needed)
     supabase
       .from('issues')
-      .select('id, status, due_date', { count: 'exact', head: false })
+      .select('id', { count: 'exact', head: true })
       .eq('workspace_id', workspaceId ?? '')
       .neq('status', 'Done'),
+    // Item 17: head-only count for overdue tasks
+    supabase
+      .from('issues')
+      .select('id', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceId ?? '')
+      .neq('status', 'Done')
+      .lt('due_date', now.toISOString()),
+    supabase.from('project_deployments').select('id').gte('created_at', weekStart.toISOString()),
+    supabase
+      .from('work_sessions')
+      .select('duration_seconds')
+      .gte('started_at', weekStart.toISOString()),
+    supabase.from('activity_log').select('action_type').gte('created_at', weekStart.toISOString()),
   ]);
 
   const activeProjectsCount = projectsRes.data?.length ?? 0;
   const attentionCount =
     projectsRes.data?.filter((p: { status: string }) => p.status === 'Delayed').length ?? 0;
 
-  const openTasks = tasksRes.data ?? [];
-  const now = new Date();
-  const overdue = openTasks.filter((t: { due_date: string | null }) => {
-    if (!t.due_date) return false;
-    return new Date(t.due_date) < now;
-  }).length;
+  const openTasksCount = openTasksRes.count ?? 0;
+  const overdue = overdueTasksRes.count ?? 0;
 
   const mrr = finSummary?.thisMonthCollected ?? 0;
   const mrrDelta = finSummary ? finSummary.thisMonthCollected - finSummary.lastMonthCollected : 0;
@@ -102,7 +127,7 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
     },
     {
       label: 'Open tasks',
-      value: String(openTasks.length),
+      value: String(openTasksCount),
       delta: overdue > 0 ? `${overdue} overdue` : null,
       positive: overdue === 0,
     },
@@ -113,18 +138,6 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
       positive: (finSummary?.overdueInvoices.length ?? 0) === 0,
     },
   ];
-
-  const weekStart = new Date();
-  weekStart.setDate(weekStart.getDate() - 7);
-
-  const [deploymentsRes, sessionsRes, activityWeekRes] = await Promise.all([
-    supabase.from('project_deployments').select('id').gte('created_at', weekStart.toISOString()),
-    supabase
-      .from('work_sessions')
-      .select('duration_seconds')
-      .gte('started_at', weekStart.toISOString()),
-    supabase.from('activity_log').select('action_type').gte('created_at', weekStart.toISOString()),
-  ]);
 
   const hoursLogged =
     (sessionsRes.data ?? []).reduce(

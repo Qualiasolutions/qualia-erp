@@ -38,9 +38,12 @@ export async function getProjectDeployments(projectId: string, limit = 10): Prom
   } = await supabase.auth.getUser();
   if (!user) return [];
 
+  // Item 16: Explicit column projection instead of select('*')
   const { data, error } = await supabase
     .from('project_deployments')
-    .select('*')
+    .select(
+      'id, project_id, environment, vercel_deployment_id, status, url, branch, commit_sha, commit_message, created_at, ready_at, error_message'
+    )
     .eq('project_id', projectId)
     .order('created_at', { ascending: false })
     .limit(limit);

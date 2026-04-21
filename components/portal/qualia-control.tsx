@@ -259,7 +259,7 @@ export function QualiaControl({ initialTab, data }: QualiaControlProps) {
   return (
     <div className="flex flex-col">
       <header className="border-b border-border bg-muted/30 px-6 pt-8 lg:px-8">
-        <div className="mx-auto max-w-[1400px]">
+        <div>
           <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             Admin console
           </div>
@@ -309,7 +309,7 @@ export function QualiaControl({ initialTab, data }: QualiaControlProps) {
         role="tabpanel"
         id={`tabpanel-${tab}`}
         aria-labelledby={`tab-${tab}`}
-        className="mx-auto w-full max-w-[1400px] p-6 lg:p-8"
+        className="w-full p-6 lg:p-8"
       >
         {tab === 'overview' && <ControlOverview data={data.overview} />}
         {tab === 'clients' && <ControlClients data={data.clients} />}

@@ -131,9 +131,12 @@ export async function getProjectIntegrations(projectId: string) {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
+  // Item 16: Explicit column projection instead of select('*')
   const { data, error } = await supabase
     .from('project_integrations')
-    .select('*')
+    .select(
+      'id, project_id, service_type, external_url, external_id, metadata, connected_at, workspace_id'
+    )
     .eq('project_id', projectId)
     .order('service_type', { ascending: true });
 

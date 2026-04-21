@@ -68,9 +68,10 @@ export async function getConversations(): Promise<Conversation[]> {
     return [];
   }
 
+  // Item 16: List query only needs id + title + timestamps
   const { data: conversations, error } = await supabase
     .from('ai_conversations')
-    .select('*')
+    .select('id, title, created_at, updated_at')
     .eq('workspace_id', workspaceId)
     .eq('user_id', user.id)
     .order('updated_at', { ascending: false })
@@ -116,7 +117,8 @@ export async function getConversation(id: string): Promise<Conversation | null> 
 
 /**
  * Create a new conversation
- * Auto-generates title as 'New Conversation' if not provided
+ * Auto-generates title as 'New Conversation' if not provided.
+ * Item 21: Title capped at 200 characters via Zod.
  */
 export async function createConversation(title?: string): Promise<ActionResult> {
   const supabase = await createClient();
@@ -127,6 +129,15 @@ export async function createConversation(title?: string): Promise<ActionResult> 
 
   if (!user) {
     return { success: false, error: 'Not authenticated' };
+  }
+
+  // Item 21: Validate title length
+  if (title !== undefined) {
+    const { z } = await import('zod');
+    const result = z.string().max(200).safeParse(title);
+    if (!result.success) {
+      return { success: false, error: 'Title must be 200 characters or less' };
+    }
   }
 
   const workspaceId = await getCurrentWorkspaceId();

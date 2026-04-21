@@ -1,9 +1,23 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { z } from 'zod';
 
 import { isUserAdmin } from './shared';
 import type { ActionResult } from './shared';
+
+// Item 22: Zod schema for check-in input validation
+const createCheckinInputSchema = z.object({
+  checkin_type: z.enum(['morning', 'evening']),
+  planned_tasks: z.array(z.string().max(500)).max(20).optional(),
+  energy_level: z.number().int().min(1).max(5).nullable().optional(),
+  blockers: z.string().max(2000).nullable().optional(),
+  planned_clock_out_time: z.string().max(50).nullable().optional(),
+  completed_tasks: z.array(z.string().max(500)).max(20).optional(),
+  wins: z.string().max(2000).nullable().optional(),
+  tomorrow_plan: z.string().max(2000).nullable().optional(),
+  mood: z.number().int().min(1).max(5).nullable().optional(),
+});
 
 // ============ TYPES ============
 
@@ -57,6 +71,7 @@ export interface CreateCheckinInput {
 /**
  * Create or update today's check-in (upsert on profile_id + checkin_date + checkin_type).
  * Each user can have one morning and one evening check-in per day.
+ * BH-V1: Derives workspace from membership instead of trusting client-supplied ID.
  */
 export async function createDailyCheckin(
   workspaceId: string,
@@ -71,10 +86,28 @@ export async function createDailyCheckin(
     return { success: false, error: 'Not authenticated' };
   }
 
+  // Item 22: Validate input
+  const inputResult = createCheckinInputSchema.safeParse(input);
+  if (!inputResult.success) {
+    return { success: false, error: inputResult.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  // BH-V1: Verify the user is actually a member of this workspace
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('workspace_id', workspaceId)
+    .eq('profile_id', user.id)
+    .maybeSingle();
+
+  if (!membership) {
+    return { success: false, error: 'Not a member of this workspace' };
+  }
+
   const today = new Date().toISOString().split('T')[0];
 
   const payload: Record<string, unknown> = {
-    workspace_id: workspaceId,
+    workspace_id: membership.workspace_id,
     profile_id: user.id,
     checkin_date: today,
     checkin_type: input.checkin_type,

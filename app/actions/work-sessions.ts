@@ -274,9 +274,12 @@ export async function getActiveSession(workspaceId: string): Promise<WorkSession
 
   const today = todayUTC();
 
+  // Item 24: Explicit column projection instead of select('*')
   const { data, error } = await supabase
     .from('work_sessions')
-    .select('*, project:projects!work_sessions_project_id_fkey (id, name)')
+    .select(
+      'id, workspace_id, profile_id, project_id, started_at, ended_at, clock_in_note, project_status, summary, duration_minutes, created_at, project:projects!work_sessions_project_id_fkey (id, name)'
+    )
     .eq('profile_id', user.id)
     .eq('workspace_id', workspaceId)
     .is('ended_at', null)
@@ -311,9 +314,12 @@ export async function getTodaysSessions(workspaceId: string): Promise<WorkSessio
 
   const today = new Date().toISOString().split('T')[0];
 
+  // Item 24: Explicit column projection instead of select('*')
   const { data, error } = await supabase
     .from('work_sessions')
-    .select('*, project:projects!work_sessions_project_id_fkey (id, name)')
+    .select(
+      'id, workspace_id, profile_id, project_id, started_at, ended_at, clock_in_note, project_status, summary, duration_minutes, created_at, project:projects!work_sessions_project_id_fkey (id, name)'
+    )
     .eq('profile_id', user.id)
     .eq('workspace_id', workspaceId)
     .gte('started_at', `${today}T00:00:00.000Z`)
@@ -553,13 +559,17 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
 
   const lastSessionMap = new Map<string, string | null>();
   if (offlineProfileIds.length > 0) {
+    // PH-H3: Safety cap on unbounded query — 5x offline profiles to account for
+    // multiple sessions per person. JS de-dup below picks one per profile.
+    // TODO: Long-term fix is an RPC with DISTINCT ON (profile_id) for O(1) per profile.
     const { data: recentSessions, error: recentError } = await supabase
       .from('work_sessions')
       .select('profile_id, ended_at')
       .eq('workspace_id', workspaceId)
       .in('profile_id', offlineProfileIds)
       .not('ended_at', 'is', null)
-      .order('ended_at', { ascending: false });
+      .order('ended_at', { ascending: false })
+      .limit(offlineProfileIds.length * 5);
 
     if (recentError) {
       console.error('[getTeamStatus] Recent sessions error:', recentError);
@@ -731,10 +741,12 @@ export async function hasStructuredReportForSession(
   const windowEnd = session.ended_at ?? new Date().toISOString();
 
   const admin = createAdminClient();
+  // Case-insensitive match: framework uses slug-style lowercase ("sakani"),
+  // projects.name is human-cased ("Sakani"). Exact-match drops the link.
   let reportQuery = admin
     .from('session_reports')
     .select('id, submitted_at')
-    .eq('project_name', projectName)
+    .ilike('project_name', projectName)
     .gte('submitted_at', session.started_at)
     .lte('submitted_at', windowEnd)
     .order('submitted_at', { ascending: false })
@@ -827,7 +839,7 @@ export async function getSessionReportsForProject(
     .select(
       'id, client_report_id, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, notes, commits'
     )
-    .eq('project_name', projectName)
+    .ilike('project_name', projectName)
     .order('submitted_at', { ascending: false, nullsFirst: false })
     .limit(limit);
 

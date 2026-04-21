@@ -40,15 +40,18 @@ export function ControlClients({ data }: { data: ClientsPayload | undefined }) {
             {clients.filter((c) => c.active_project_count > 0).length} with active projects
           </p>
         </div>
-        <label className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 focus-within:border-primary/40">
+        <label
+          htmlFor="client-search"
+          className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 focus-within:border-primary/40"
+        >
           <Search className="size-3.5 text-muted-foreground" aria-hidden />
           <input
+            id="client-search"
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search clients…"
             className="w-52 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
-            aria-label="Search clients"
           />
         </label>
       </div>
@@ -65,9 +68,9 @@ export function ControlClients({ data }: { data: ClientsPayload | undefined }) {
           compact
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card">
           <div
-            className="grid items-center gap-3 border-b border-border bg-muted/30 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+            className="grid min-w-[620px] items-center gap-3 border-b border-border bg-muted/30 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
             style={{ gridTemplateColumns: '16px 1.5fr 120px 80px 80px 120px' }}
           >
             <span aria-hidden />
@@ -109,7 +112,7 @@ const ClientRow = memo(function ClientRow({ row }: { row: ClientSummaryRow }) {
       <Link
         href={`/clients/${row.id}`}
         className={cn(
-          'grid cursor-pointer items-center gap-3 px-4 py-3 text-sm transition-colors duration-150',
+          'grid min-w-[620px] cursor-pointer items-center gap-3 px-4 py-3 text-sm transition-colors duration-150',
           'hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
         )}
         style={{ gridTemplateColumns: '16px 1.5fr 120px 80px 80px 120px' }}

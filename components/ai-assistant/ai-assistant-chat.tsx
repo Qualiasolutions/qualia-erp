@@ -273,7 +273,7 @@ export function AIAssistantChat() {
       color: #333;
     }
     h1, h2, h3 {
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: system-ui, sans-serif;
       color: #000;
     }
     h2 {

@@ -1,9 +1,22 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { z } from 'zod';
 import { type ActionResult } from '../shared';
 import { getCurrentWorkspaceId } from '../workspace';
 import { ClientProfileUpdateSchema } from '@/lib/validation';
+
+// Item 11: Strict schema for notification preferences — rejects unknown keys
+const NotificationPreferencesSchema = z
+  .object({
+    task_assigned: z.boolean().optional(),
+    task_due_soon: z.boolean().optional(),
+    project_update: z.boolean().optional(),
+    meeting_reminder: z.boolean().optional(),
+    client_activity: z.boolean().optional(),
+    delivery_method: z.enum(['email', 'in_app', 'both']).optional(),
+  })
+  .strict();
 
 /**
  * Update client profile (name, company)
@@ -104,7 +117,8 @@ export async function getNotificationPreferences(): Promise<ActionResult> {
 }
 
 /**
- * Update notification preferences for the current user
+ * Update notification preferences for the current user.
+ * Item 11: Validates preferences with strict Zod schema — rejects unknown keys.
  */
 export async function updateNotificationPreferences(preferences: {
   task_assigned?: boolean;
@@ -115,6 +129,16 @@ export async function updateNotificationPreferences(preferences: {
   delivery_method?: 'email' | 'in_app' | 'both';
 }): Promise<ActionResult> {
   try {
+    // Validate input — .strict() rejects unknown keys
+    const parsed = NotificationPreferencesSchema.safeParse(preferences);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: parsed.error.issues[0]?.message || 'Invalid notification preferences',
+      };
+    }
+    const safePreferences = parsed.data;
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -143,7 +167,7 @@ export async function updateNotificationPreferences(preferences: {
         {
           user_id: user.id,
           workspace_id: workspaceId,
-          ...preferences,
+          ...safePreferences,
         },
         {
           onConflict: 'user_id,workspace_id',

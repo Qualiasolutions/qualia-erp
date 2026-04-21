@@ -185,9 +185,22 @@ export async function shouldSendEmail(
   try {
     const supabase = await createClient();
 
+    // Item 16: Select only the specific notification column + delivery_method
+    // Whitelist check prevents SQL injection via dynamic column name
+    const allowedColumns = [
+      'task_assigned',
+      'task_due_soon',
+      'project_update',
+      'meeting_reminder',
+      'client_activity',
+    ] as const;
+    if (!allowedColumns.includes(notificationType)) {
+      return true; // Unknown type — default to sending
+    }
+
     const { data, error } = await supabase
       .from('notification_preferences')
-      .select('*')
+      .select(`${notificationType}, delivery_method`)
       .eq('user_id', userId)
       .eq('workspace_id', workspaceId)
       .single();
@@ -201,11 +214,15 @@ export async function shouldSendEmail(
     if (!data) return true;
 
     // Check if notification type is enabled
-    const typeEnabled = data[notificationType] as boolean;
+    // Cast needed: Supabase generates a union type from the dynamic column select
+    const typeEnabled = (data as Record<string, unknown>)[notificationType] as boolean;
     if (!typeEnabled) return false;
 
     // Check delivery method
-    const deliveryMethod = data.delivery_method as 'email' | 'in_app' | 'both';
+    const deliveryMethod = (data as Record<string, unknown>).delivery_method as
+      | 'email'
+      | 'in_app'
+      | 'both';
     return deliveryMethod === 'email' || deliveryMethod === 'both';
   } catch (error) {
     console.error('[shouldSendEmail] Error:', error);

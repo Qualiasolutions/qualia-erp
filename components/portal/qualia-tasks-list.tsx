@@ -1117,7 +1117,7 @@ export function QualiaTasksList({
   }, [isClient]);
 
   return (
-    <div className="mx-auto w-full max-w-[820px] p-6 lg:p-8">
+    <div className={cn('w-full p-6 lg:p-8', mode !== 'all-tasks' && 'mx-auto max-w-[820px]')}>
       {/* Scope toggle for admin */}
       {isAdmin && !isClient && (
         <div className="mb-4 flex w-fit items-center gap-0.5 self-start rounded-lg border border-border bg-muted/30 p-0.5">

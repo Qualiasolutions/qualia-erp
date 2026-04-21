@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { ttsRateLimiter } from '@/lib/rate-limit';
 
 export const maxDuration = 15;
 
@@ -29,6 +30,22 @@ export async function POST(req: Request) {
         status: 403,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+
+    // BH-C2: Rate limiting — 10 requests/minute per user
+    const rateLimitResult = await ttsRateLimiter(user.id);
+    if (!rateLimitResult.success) {
+      const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.', retryAfter }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': retryAfter.toString(),
+          },
+        }
+      );
     }
 
     const apiKey = process.env.ELEVENLABS_API_KEY;

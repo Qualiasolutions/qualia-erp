@@ -86,9 +86,16 @@ export async function getRecentActivities(
 }
 
 /**
- * Delete an activity (admin only)
+ * Delete an activity (admin only).
+ * Item 23: Added UUID validation.
  */
 export async function deleteActivity(activityId: string): Promise<ActionResult> {
+  // Item 23: UUID validation
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(activityId)) {
+    return { success: false, error: 'Invalid activity ID' };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

@@ -1,11 +1,31 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { z } from 'zod';
 
 import { type ActionResult, isUserAdmin } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { canAccessProject } from '@/lib/portal-utils';
 export type { ActivityLogEntry } from '@/lib/activity-utils';
+
+// BH-V3: Whitelist of valid action types (matches DB CHECK constraint)
+const actionTypeSchema = z.enum([
+  'phase_submitted',
+  'phase_approved',
+  'phase_changes_requested',
+  'phase_started',
+  'phase_completed',
+  'phase_review_requested',
+  'task_completed',
+  'comment_added',
+  'file_uploaded',
+  'status_changed',
+  'client_invited',
+  'code_push',
+  'deployment',
+  'feature_request',
+]);
+const actionDataSchema = z.record(z.string(), z.unknown()).optional();
 
 interface CreateActivityLogInput {
   projectId: string;
@@ -200,7 +220,8 @@ export async function getCrossProjectActivityFeed(
 }
 
 /**
- * Create a new activity log entry
+ * Create a new activity log entry.
+ * BH-V3: Validates actionType against the DB CHECK constraint whitelist.
  */
 export async function createActivityLogEntry(data: CreateActivityLogInput): Promise<ActionResult> {
   const supabase = await createClient();
@@ -214,6 +235,20 @@ export async function createActivityLogEntry(data: CreateActivityLogInput): Prom
   }
 
   const { projectId, actionType, actionData, isClientVisible } = data;
+
+  // BH-V3: Validate actionType against whitelist
+  const typeResult = actionTypeSchema.safeParse(actionType);
+  if (!typeResult.success) {
+    return { success: false, error: 'Invalid action type' };
+  }
+
+  // BH-V3: Validate actionData is an object if supplied
+  if (actionData !== undefined) {
+    const dataResult = actionDataSchema.safeParse(actionData);
+    if (!dataResult.success) {
+      return { success: false, error: 'Invalid action data' };
+    }
+  }
 
   // Always use the authenticated user — never trust caller-supplied actor IDs
   const finalActorId = user.id;

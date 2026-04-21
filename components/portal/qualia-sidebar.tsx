@@ -233,7 +233,7 @@ function NavItem({
       : 'font-medium text-[var(--text-soft)] hover:bg-[var(--surface-hi)] hover:text-[var(--text)]',
     isActive &&
       'bg-[var(--accent-soft)] shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--accent-teal),transparent_72%)]',
-    disabled && 'cursor-default opacity-40'
+    disabled ? 'cursor-default opacity-40' : 'cursor-pointer'
   );
 
   if (disabled) {

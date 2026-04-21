@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentWorkspaceId } from './index';
-import type { ActionResult } from './shared';
+import { type ActionResult, isUserAdmin } from './shared';
 
 export interface HealthMetrics {
   overall_health_score: number;
@@ -311,7 +311,7 @@ export async function resolveInsight(insightId: string): Promise<ActionResult> {
   }
 }
 
-// Dismiss an insight
+// Dismiss an insight (admin only — Item 12)
 export async function dismissInsight(insightId: string): Promise<ActionResult> {
   try {
     const supabase = await createClient();
@@ -321,6 +321,11 @@ export async function dismissInsight(insightId: string): Promise<ActionResult> {
 
     if (!user) {
       return { success: false, error: 'Unauthorized' };
+    }
+
+    // Item 12: Admin-only guard
+    if (!(await isUserAdmin(user.id))) {
+      return { success: false, error: 'Admin only' };
     }
 
     const { error } = await supabase

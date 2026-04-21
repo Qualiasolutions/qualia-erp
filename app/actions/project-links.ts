@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-import type { ActionResult } from './shared';
+import { type ActionResult, isUserAdmin, canAccessProject } from './shared';
 
 export type LinkServiceType = 'github' | 'vercel' | 'figma' | 'notion';
 
@@ -17,10 +17,19 @@ export interface ProjectLink {
 }
 
 /**
- * Get all link integrations for a project
+ * Get all link integrations for a project.
+ * BH-A1: Added auth + project access check.
  */
 export async function getProjectLinks(projectId: string): Promise<ProjectLink[]> {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const hasAccess = await canAccessProject(user.id, projectId);
+  if (!hasAccess) return [];
 
   const { data, error } = await supabase
     .from('project_integrations')
@@ -37,7 +46,8 @@ export async function getProjectLinks(projectId: string): Promise<ProjectLink[]>
 }
 
 /**
- * Save or update a project link
+ * Save or update a project link.
+ * BH-A2: Added admin-or-project-lead check.
  */
 export async function saveProjectLink(
   projectId: string,
@@ -50,6 +60,13 @@ export async function saveProjectLink(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
+
+  // Admins can always save; others must have project access
+  const admin = await isUserAdmin(user.id);
+  if (!admin) {
+    const hasAccess = await canAccessProject(user.id, projectId);
+    if (!hasAccess) return { success: false, error: 'Unauthorized' };
+  }
 
   const { error } = await supabase.from('project_integrations').upsert(
     {
@@ -70,14 +87,26 @@ export async function saveProjectLink(
 }
 
 /**
- * Remove a project link
+ * Remove a project link.
+ * BH-A3: Added admin-or-project-lead check.
  */
 export async function removeProjectLink(
   integrationId: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   projectId: string
 ): Promise<ActionResult> {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  // Admins can always remove; others must have project access
+  const admin = await isUserAdmin(user.id);
+  if (!admin) {
+    const hasAccess = await canAccessProject(user.id, projectId);
+    if (!hasAccess) return { success: false, error: 'Unauthorized' };
+  }
 
   const { error } = await supabase.from('project_integrations').delete().eq('id', integrationId);
 

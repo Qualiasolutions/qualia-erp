@@ -68,8 +68,7 @@ export function AdminActionItemsPanel({ clientId, projects }: AdminActionItemsPa
       } else {
         toast.error(result.error || 'Failed to create action item');
       }
-    } catch (err) {
-      console.error('[AdminActionItemsPanel] Submit error:', err);
+    } catch {
       toast.error('Failed to create action item');
     } finally {
       setIsSubmitting(false);

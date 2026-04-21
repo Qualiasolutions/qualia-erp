@@ -248,7 +248,7 @@ function SettingsShortcut() {
         </div>
         <Link
           href="/settings/integrations"
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors duration-150 hover:border-primary/40 hover:text-primary"
+          className="cursor-pointer rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors duration-150 hover:border-primary/40 hover:text-primary"
         >
           Open settings →
         </Link>

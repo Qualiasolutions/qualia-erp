@@ -143,7 +143,7 @@ export function TaskDetailDialog({
               size="sm"
               onClick={() => onToggleDone(task.id, true)}
               disabled={isPending}
-              className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
+              className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:text-emerald-50 dark:hover:bg-emerald-400"
             >
               <CheckCircle2 className="h-4 w-4" />
               Mark as done
