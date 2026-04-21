@@ -174,6 +174,7 @@ async function ProjectListLoader() {
       live={live}
       done={done}
       archived={archived}
+      isAdmin={isAdmin}
     />
   );
 }

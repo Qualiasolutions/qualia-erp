@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   Folder,
   Trash2,
-  User,
   Bot,
   Globe,
   Phone,
@@ -18,7 +17,6 @@ import {
   Building2,
   PanelRightOpen,
   Link as LinkIcon,
-  MessageSquare,
   Users,
   UserPlus,
   X,
@@ -54,14 +52,12 @@ import { getProjectById, updateProject, deleteProject } from '@/app/actions';
 import { assignEmployeeToProject, removeAssignment } from '@/app/actions/project-assignments';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { ProjectNotes } from '@/components/project-notes';
 import { ProjectReportsPanel } from '@/components/project-reports-panel';
 import { ProjectResources } from '@/components/project-resources';
 import { ProjectFilesPanel } from '@/components/project-files-panel';
 import { LogoUpload } from '@/components/logo-upload';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { ProjectIntegrationsDisplay } from '@/components/project-integrations-display';
-import { IntegrationStatusBadge } from '@/components/portal/integration-status-badge';
 import type { ProjectType, ProjectGroup } from '@/types/database';
 import type { IntegrationStatus } from '@/lib/integration-utils';
 
@@ -150,7 +146,6 @@ export function ProjectDetailView({
   profiles,
   clients,
   userRole = 'employee',
-  integrationStatus,
 }: ProjectDetailViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -296,38 +291,22 @@ export function ProjectDetailView({
                 >
                   {project.status}
                 </span>
-                {!isClient && integrationStatus && (
-                  <IntegrationStatusBadge
-                    hasPortalAccess={integrationStatus.hasPortalAccess}
-                    hasERPClient={integrationStatus.hasERPClient}
-                    variant="detailed"
-                  />
-                )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {selectedProjectType && (
+              {selectedProjectType && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <selectedProjectType.icon
                       className={cn('h-3 w-3', selectedProjectType.color.split(' ')[0])}
                     />
                     {selectedProjectType.label}
                   </span>
-                )}
-                {selectedProjectType && project.client && (
-                  <span className="h-0.5 w-0.5 rounded-full bg-muted-foreground/40" />
-                )}
-                {project.client && (
-                  <span className="flex items-center gap-1">
-                    <Building2 className="h-3 w-3" />
-                    {project.client.name}
-                  </span>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Integration links — admin tooling, hidden from clients */}
+            {/* Integration links — admin tooling, hidden from clients; only show when connected */}
             {!isClient && (
               <div className="hidden items-center gap-1.5 sm:flex">
                 <ProjectIntegrationsDisplay projectId={project.id} userRole={staffRole} />
@@ -344,7 +323,7 @@ export function ProjectDetailView({
               <PanelRightOpen className="h-4 w-4" />
             </Button>
 
-            {/* Settings gear — admin-only */}
+            {/* Settings gear — admin-only, opens full project settings dialog (distinct from inline edit) */}
             {!isClient && (
               <Button
                 variant="ghost"
@@ -376,23 +355,9 @@ export function ProjectDetailView({
 
           {/* Right Panel (xl+ only) */}
           <aside className="hidden w-80 flex-col border-l border-border bg-card/30 xl:flex">
-            {/* Personnel */}
-            <div className="shrink-0 space-y-3 border-b border-border p-4">
-              <div className="flex items-center gap-3">
-                <EntityAvatar
-                  src={project.lead?.avatar_url}
-                  fallbackIcon={<User className="h-3.5 w-3.5" />}
-                  size="sm"
-                  className="rounded-lg border border-border"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">
-                    {project.lead?.full_name || 'Unassigned'}
-                  </p>
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Lead</p>
-                </div>
-              </div>
-              {project.client && (
+            {/* Client */}
+            {project.client && (
+              <div className="shrink-0 space-y-3 border-b border-border p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-blue-500/10">
                     <Building2 className="h-3.5 w-3.5 text-blue-400" />
@@ -406,8 +371,8 @@ export function ProjectDetailView({
                     </p>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Assigned Employees — internal panel, hidden from clients */}
             {!isClient && (
@@ -437,25 +402,14 @@ export function ProjectDetailView({
               />
             </div>
 
-            {/* Files — project documents, column list */}
-            <div className="min-h-0 flex-1 border-b border-border">
+            {/* Files — inline project documents panel */}
+            <div className="min-h-0 flex-1">
               <ProjectFilesPanel
                 projectId={project.id}
                 isClient={isClient}
                 className="h-full rounded-none border-0"
               />
             </div>
-
-            {/* Notes — internal team notes, hidden from clients */}
-            {!isClient && (
-              <div className="min-h-0 flex-1">
-                <ProjectNotes
-                  projectId={project.id}
-                  workspaceId={project.workspace_id}
-                  className="h-full rounded-none border-0"
-                />
-              </div>
-            )}
           </aside>
         </div>
       </main>
@@ -658,7 +612,7 @@ export function ProjectDetailView({
                 saved && 'bg-emerald-600 hover:bg-emerald-700'
               )}
             >
-              {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save changes'}
+              {saving ? 'Saving...' : saved ? 'Saved' : 'Save changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -673,7 +627,7 @@ export function ProjectDetailView({
 
           <Tabs defaultValue="resources" className="flex min-h-0 flex-1 flex-col">
             <TabsList
-              className={cn('mx-4 mt-3 grid w-auto', isClient ? 'grid-cols-1' : 'grid-cols-3')}
+              className={cn('mx-4 mt-3 grid w-auto', isClient ? 'grid-cols-1' : 'grid-cols-2')}
             >
               <TabsTrigger value="resources" className="gap-1.5 text-xs">
                 <LinkIcon className="h-3.5 w-3.5" />
@@ -683,12 +637,6 @@ export function ProjectDetailView({
                 <TabsTrigger value="reports" className="gap-1.5 text-xs">
                   <LineChart className="h-3.5 w-3.5" />
                   Reports
-                </TabsTrigger>
-              )}
-              {!isClient && (
-                <TabsTrigger value="notes" className="gap-1.5 text-xs">
-                  <MessageSquare className="h-3.5 w-3.5" />
-                  Notes
                 </TabsTrigger>
               )}
             </TabsList>
@@ -702,15 +650,6 @@ export function ProjectDetailView({
             {!isClient && (
               <TabsContent value="reports" className="mt-0 min-h-0 flex-1">
                 <ProjectReportsPanel projectName={project.name} className="h-full" />
-              </TabsContent>
-            )}
-            {!isClient && (
-              <TabsContent value="notes" className="mt-0 min-h-0 flex-1">
-                <ProjectNotes
-                  projectId={project.id}
-                  workspaceId={project.workspace_id}
-                  className="h-full rounded-none border-0"
-                />
               </TabsContent>
             )}
           </Tabs>

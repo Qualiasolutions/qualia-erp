@@ -130,8 +130,8 @@ export function ProjectIntegrationsDisplay({
 
   return (
     <div className="flex items-center gap-2">
-      {/* GitHub Badge */}
-      {githubIntegration ? (
+      {/* GitHub Badge — only shown when connected */}
+      {githubIntegration && (
         <a
           href={githubIntegration.external_url}
           target="_blank"
@@ -147,18 +147,10 @@ export function ProjectIntegrationsDisplay({
             <ExternalLink className="h-3 w-3" />
           </Badge>
         </a>
-      ) : (
-        <Badge
-          variant="outline"
-          className="gap-1.5 bg-neutral-500/10 text-neutral-500 dark:text-neutral-400"
-        >
-          <Github className="h-4 w-4" />
-          Not connected
-        </Badge>
       )}
 
-      {/* Vercel Badge */}
-      {vercelIntegration ? (
+      {/* Vercel Badge — only shown when connected */}
+      {vercelIntegration && (
         <a
           href={vercelIntegration.external_url}
           target="_blank"
@@ -173,13 +165,6 @@ export function ProjectIntegrationsDisplay({
             <ExternalLink className="h-3 w-3" />
           </Badge>
         </a>
-      ) : (
-        <Badge variant="outline" className="gap-1.5 bg-muted text-muted-foreground">
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2L2 22h20L12 2z" />
-          </svg>
-          Not connected
-        </Badge>
       )}
 
       {/* Edit Button (all assigned users) */}

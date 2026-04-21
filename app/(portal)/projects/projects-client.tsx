@@ -13,6 +13,7 @@ interface ProjectsClientProps {
   live: ProjectData[];
   done: ProjectData[];
   archived: ProjectData[];
+  isAdmin?: boolean;
 }
 
 function toGalleryProject(p: ProjectData): GalleryProject {
@@ -40,6 +41,7 @@ export function ProjectsClient({
   live,
   done,
   archived,
+  isAdmin,
 }: ProjectsClientProps) {
   const all: GalleryProject[] = [
     ...demos,
@@ -50,5 +52,5 @@ export function ProjectsClient({
     ...archived,
   ].map(toGalleryProject);
 
-  return <QualiaProjectsGallery projects={all} />;
+  return <QualiaProjectsGallery projects={all} isAdmin={isAdmin} />;
 }

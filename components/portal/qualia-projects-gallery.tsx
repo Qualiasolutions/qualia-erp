@@ -1,9 +1,11 @@
 'use client';
 
-import { memo, useState, useMemo } from 'react';
+import { memo, useState, useMemo, useTransition } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import {
   LayoutGrid,
   List,
@@ -16,13 +18,24 @@ import {
   FolderOpen,
   CheckCircle2,
   Archive,
+  MoreHorizontal,
+  Check,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { PROJECT_TYPE_CONFIG } from '@/lib/project-type-config';
 import { AvatarStack, type AvatarStackPerson } from '@/components/ui/avatar-stack';
 import { EmptyState } from '@/components/ui/empty-state';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { hueFromId } from '@/lib/color-constants';
+import { setProjectPipelineStage } from '@/app/actions/projects';
 import type { ProjectType } from '@/types/database';
 
 /* ======================================================================
@@ -125,6 +138,30 @@ function isArchived(project: GalleryProject): boolean {
 
 interface QualiaProjectsGalleryProps {
   projects: GalleryProject[];
+  isAdmin?: boolean;
+}
+
+/* ======================================================================
+   Pipeline stage menu items — shared between card and list views
+   ====================================================================== */
+
+type PipelineStage = 'Demos' | 'Building' | 'Pre-Production' | 'Live';
+
+const PIPELINE_STAGES: { label: string; value: PipelineStage; icon: typeof Beaker }[] = [
+  { label: 'Demos', value: 'Demos', icon: Beaker },
+  { label: 'Building', value: 'Building', icon: Hammer },
+  { label: 'Pre-Production', value: 'Pre-Production', icon: ClipboardCheck },
+  { label: 'Live', value: 'Live', icon: Rocket },
+];
+
+/** Derive the current pipeline stage label from project data. */
+function getCurrentStage(project: GalleryProject): PipelineStage | null {
+  if (project.status === 'Demos') return 'Demos';
+  if (project.status === 'Launched') return 'Live';
+  if (project.status === 'Active' || project.status === 'Delayed') {
+    return project.is_pre_production ? 'Pre-Production' : 'Building';
+  }
+  return null;
 }
 
 /* ======================================================================
@@ -221,10 +258,91 @@ function generateSummary(projects: GalleryProject[]): string {
 }
 
 /* ======================================================================
+   Stage Dropdown (admin only)
+   ====================================================================== */
+
+function StageDropdown({ project }: { project: GalleryProject }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const currentStage = getCurrentStage(project);
+
+  function handleStageChange(stage: PipelineStage) {
+    if (stage === currentStage) return;
+    startTransition(async () => {
+      const result = await setProjectPipelineStage(project.id, stage);
+      if (result.success) {
+        toast.success(`Moved "${project.name}" to ${stage}`);
+        router.refresh();
+      } else {
+        toast.error(result.error || 'Failed to update stage');
+      }
+    });
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md',
+            'bg-card/80 text-muted-foreground opacity-0 backdrop-blur-sm transition-all duration-150',
+            'hover:bg-muted hover:text-foreground',
+            'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+            'group-hover:opacity-100',
+            'cursor-pointer',
+            isPending && 'pointer-events-none opacity-50'
+          )}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          aria-label={`Move ${project.name} to another stage`}
+        >
+          <MoreHorizontal className="h-3.5 w-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Move to stage
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {PIPELINE_STAGES.map((s) => {
+          const isCurrent = s.value === currentStage;
+          const Icon = s.icon;
+          return (
+            <DropdownMenuItem
+              key={s.value}
+              disabled={isCurrent}
+              className={cn('cursor-pointer gap-2 text-xs', isCurrent && 'opacity-50')}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleStageChange(s.value);
+              }}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {s.label}
+              {isCurrent && <Check className="ml-auto h-3 w-3 text-primary" />}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/* ======================================================================
    Gallery Card
    ====================================================================== */
 
-const ProjectCardTile = memo(function ProjectCardTile({ project }: { project: GalleryProject }) {
+const ProjectCardTile = memo(function ProjectCardTile({
+  project,
+  isAdmin,
+}: {
+  project: GalleryProject;
+  isAdmin?: boolean;
+}) {
   const { headerBg, progressBg } = getProjectStyle(project);
   const progress = getProgress(project);
   const typeLabel = getTypeLabel(project.project_type);
@@ -247,6 +365,9 @@ const ProjectCardTile = memo(function ProjectCardTile({ project }: { project: Ga
     >
       {/* Accent stripe — thin top bar, unified per column stage */}
       <div className={cn('h-1', headerBg)} aria-hidden />
+
+      {/* Admin stage dropdown */}
+      {isAdmin && <StageDropdown project={project} />}
 
       {/* Body */}
       <div className="px-3 pb-3 pt-3">
@@ -375,7 +496,7 @@ const ProjectListRow = memo(function ProjectListRow({ project }: { project: Gall
    Main Gallery Export
    ====================================================================== */
 
-export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) {
+export function QualiaProjectsGallery({ projects, isAdmin }: QualiaProjectsGalleryProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('columns');
   const [filter, setFilter] = useState<FilterMode>('all');
 
@@ -502,7 +623,7 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
           </div>
         ) : viewMode === 'columns' ? (
           <div className="flex min-h-0 flex-1 flex-col gap-3">
-            <StageColumns stages={stages} />
+            <StageColumns stages={stages} isAdmin={isAdmin} />
             {finishedProjects.length > 0 && <FinishedRow projects={finishedProjects} />}
             {archivedProjects.length > 0 && <ArchivedRow projects={archivedProjects} />}
           </div>
@@ -512,7 +633,7 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
             style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}
           >
             {filteredProjects.map((project) => (
-              <ProjectCardTile key={project.id} project={project} />
+              <ProjectCardTile key={project.id} project={project} isAdmin={isAdmin} />
             ))}
           </div>
         ) : (
@@ -554,18 +675,32 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
    StageColumns — 4-column pipeline
    ====================================================================== */
 
-function StageColumns({ stages }: { stages: Record<StageKey, GalleryProject[]> }) {
+function StageColumns({
+  stages,
+  isAdmin,
+}: {
+  stages: Record<StageKey, GalleryProject[]>;
+  isAdmin?: boolean;
+}) {
   const order: StageKey[] = ['demo', 'building', 'preProduction', 'live'];
   return (
     <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
       {order.map((key) => (
-        <StageColumn key={key} stage={key} projects={stages[key]} />
+        <StageColumn key={key} stage={key} projects={stages[key]} isAdmin={isAdmin} />
       ))}
     </div>
   );
 }
 
-function StageColumn({ stage, projects }: { stage: StageKey; projects: GalleryProject[] }) {
+function StageColumn({
+  stage,
+  projects,
+  isAdmin,
+}: {
+  stage: StageKey;
+  projects: GalleryProject[];
+  isAdmin?: boolean;
+}) {
   const config = STAGE_CONFIG[stage];
   const Icon = config.icon;
 
@@ -604,7 +739,9 @@ function StageColumn({ stage, projects }: { stage: StageKey; projects: GalleryPr
             <p className="text-[11px] text-muted-foreground">No {config.title.toLowerCase()}</p>
           </div>
         ) : (
-          projects.map((project) => <ProjectCardTile key={project.id} project={project} />)
+          projects.map((project) => (
+            <ProjectCardTile key={project.id} project={project} isAdmin={isAdmin} />
+          ))
         )}
       </div>
     </section>

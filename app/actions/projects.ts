@@ -730,6 +730,87 @@ export async function toggleProjectPreProduction(projectId: string): Promise<Act
 }
 
 /**
+ * Set project pipeline stage (Demos / Building / Pre-Production / Live).
+ * Unlike updateProjectStatus, this correctly handles is_pre_production.
+ */
+export async function setProjectPipelineStage(
+  projectId: string,
+  stage: 'Demos' | 'Building' | 'Pre-Production' | 'Live'
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  let status: string;
+  let isPreProduction: boolean;
+
+  switch (stage) {
+    case 'Demos':
+      status = 'Demos';
+      isPreProduction = false;
+      break;
+    case 'Building':
+      status = 'Active';
+      isPreProduction = false;
+      break;
+    case 'Pre-Production':
+      status = 'Active';
+      isPreProduction = true;
+      break;
+    case 'Live':
+      status = 'Launched';
+      isPreProduction = false;
+      break;
+  }
+
+  const { data: existingProject } = await supabase
+    .from('projects')
+    .select('status')
+    .eq('id', projectId)
+    .single();
+
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      status,
+      is_pre_production: isPreProduction,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', projectId);
+
+  if (error) {
+    console.error('Error setting project pipeline stage:', error);
+    return { success: false, error: error.message };
+  }
+
+  updateTag(`project-${projectId}`);
+
+  // Notify clients if status changed (fire-and-forget)
+  if (existingProject && existingProject.status !== status) {
+    const { data: employee } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    const { notifyClientOfProjectStatusChange } = await import('@/lib/email');
+    notifyClientOfProjectStatusChange(
+      projectId,
+      employee?.full_name || 'Team member',
+      existingProject.status,
+      status
+    ).catch((err) => console.error('[setProjectPipelineStage] Client notification error:', err));
+  }
+
+  return { success: true };
+}
+
+/**
  * Get board tasks (enhanced issue list)
  */
 export async function getBoardTasks(
