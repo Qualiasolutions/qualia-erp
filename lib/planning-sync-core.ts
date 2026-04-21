@@ -442,16 +442,19 @@ export async function syncPlanningFromGitHubWithServiceRole(
   // 10. Cleanup stale github-sourced rows.
   //
   // Rows whose github_synced_at is older than this sync's start time were
-  // imported from a previous ROADMAP.md structure (e.g. a milestone that
-  // no longer exists, or an old "Phase 0" fallback bucket). Delete them so
-  // the UI doesn't show ghost milestones alongside the current structure.
-  // Manually-added phases have github_synced_at = NULL and are untouched.
+  // imported from a previous ROADMAP.md structure. Delete ONLY rows that are
+  // both stale AND not completed. Completed milestones/phases stay forever —
+  // the qualia framework archives them out of ROADMAP.md on /qualia-milestone
+  // close, and the ERP must preserve that history (Sakani 2026-04-21 incident:
+  // 7 completed milestones got wiped when v7 ROADMAP dropped them).
+  // Manually-added rows have github_synced_at = NULL and are untouched.
   const { error: cleanupError } = await supabase
     .from('project_phases')
     .delete()
     .eq('project_id', projectId)
     .not('github_synced_at', 'is', null)
-    .lt('github_synced_at', syncStartedAt);
+    .lt('github_synced_at', syncStartedAt)
+    .neq('status', 'completed');
   if (cleanupError) {
     console.error('[sync] cleanup of stale phases failed', cleanupError);
   }
