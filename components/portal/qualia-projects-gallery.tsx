@@ -592,19 +592,22 @@ function StageColumn({ stage, projects }: { stage: StageKey; projects: GalleryPr
 function FinishedRow({ projects }: { projects: GalleryProject[] }) {
   return (
     <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card">
-      <header className="flex items-center gap-2 border-b border-border bg-muted/20 px-3 py-2">
+      <header className="flex items-center gap-2 border-b border-border bg-muted/20 px-3 py-1.5">
         <span
-          className="flex h-6 w-6 items-center justify-center rounded-md bg-muted-foreground/10"
+          className="flex h-5 w-5 items-center justify-center rounded-md bg-muted-foreground/10"
           aria-hidden
         >
-          <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
+          <CheckCircle2 className="h-3 w-3 text-muted-foreground" />
         </span>
         <h2 className="text-xs font-semibold tracking-tight text-foreground">Finished</h2>
         <span className="ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-muted-foreground/10 px-1.5 text-[10px] font-semibold text-muted-foreground">
           {projects.length}
         </span>
       </header>
-      <ul className="divide-y divide-border/50">
+      <ul
+        className="grid overflow-y-auto"
+        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', maxHeight: '5rem' }}
+      >
         {projects.map((p) => (
           <FinishedRowItem key={p.id} project={p} />
         ))}
@@ -620,20 +623,18 @@ function FinishedRowItem({ project }: { project: GalleryProject }) {
       <Link
         href={`/projects/${project.id}`}
         className={cn(
-          'flex items-center gap-3 px-3 py-2 transition-colors duration-150',
+          'flex items-center gap-2 px-2.5 py-1.5 transition-colors duration-150',
           'hover:bg-muted/30 focus-visible:bg-muted/30',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0'
         )}
+        title={`${project.name} · ${project.status}`}
       >
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden />
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+        <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
           {project.name}
         </span>
-        <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+        <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
           {typeLabel}
-        </span>
-        <span className="w-16 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
-          {project.status}
         </span>
       </Link>
     </li>
