@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
-import Link from 'next/link';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import {
   Download,
   File as FileIcon,
@@ -12,19 +11,26 @@ import {
   FileVideo,
   FolderOpen,
   Loader2,
+  Trash2,
+  Upload,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
+  deleteProjectFile,
   getFileDownloadUrl,
   getProjectFiles,
+  uploadProjectFile,
   type ProjectFileWithUploader,
 } from '@/app/actions/project-files';
 
 interface ProjectFilesPanelProps {
   projectId: string;
   isClient: boolean;
+  /** When true, show upload + delete controls. Wire this from the caller
+   *  based on the current user's role. Clients never get admin controls. */
+  isAdmin?: boolean;
   className?: string;
 }
 
@@ -48,10 +54,24 @@ function formatBytes(bytes: number | null): string {
   return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
 }
 
-export function ProjectFilesPanel({ projectId, isClient, className }: ProjectFilesPanelProps) {
+export function ProjectFilesPanel({
+  projectId,
+  isClient,
+  isAdmin = false,
+  className,
+}: ProjectFilesPanelProps) {
   const [files, setFiles] = useState<ProjectFileWithUploader[] | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const refresh = () => {
+    startTransition(() => {
+      getProjectFiles(projectId, isClient).then(setFiles);
+    });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +108,44 @@ export function ProjectFilesPanel({ projectId, isClient, className }: ProjectFil
     }
   };
 
+  const handleFilePicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Always reset the input so the same file can be re-uploaded if needed.
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.set('file', file);
+      fd.set('project_id', projectId);
+      const result = await uploadProjectFile(fd);
+      if (!result.success) {
+        toast.error(result.error || 'Upload failed');
+        return;
+      }
+      toast.success(`Uploaded ${file.name}`);
+      refresh();
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (fileId: string, originalName: string) => {
+    if (!window.confirm(`Delete ${originalName}? This can't be undone.`)) return;
+    setDeletingId(fileId);
+    try {
+      const result = await deleteProjectFile(fileId);
+      if (!result.success) {
+        toast.error(result.error || 'Delete failed');
+        return;
+      }
+      toast.success('File deleted');
+      refresh();
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const loading = files === null || isPending;
   const list = files || [];
 
@@ -99,10 +157,31 @@ export function ProjectFilesPanel({ projectId, isClient, className }: ProjectFil
           <h3 className="font-medium">Files</h3>
           {!loading && <span className="text-xs text-muted-foreground">({list.length})</span>}
         </div>
-        {!isClient && (
-          <Button asChild variant="ghost" size="sm" className="h-7 gap-1 text-xs">
-            <Link href={`/projects/${projectId}/files`}>Manage</Link>
-          </Button>
+        {isAdmin && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleFilePicked}
+              aria-hidden
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 text-xs"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {uploading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              Upload
+            </Button>
+          </>
         )}
       </div>
 
@@ -157,6 +236,22 @@ export function ProjectFilesPanel({ projectId, isClient, className }: ProjectFil
                     <Download className="h-3.5 w-3.5" />
                   )}
                 </Button>
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                    onClick={() => handleDelete(file.id, file.original_name)}
+                    disabled={deletingId === file.id}
+                    title="Delete"
+                  >
+                    {deletingId === file.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                )}
               </div>
             ))}
           </div>

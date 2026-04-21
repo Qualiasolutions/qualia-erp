@@ -153,6 +153,7 @@ export function ProjectDetailView({
   // Clients get a read-only view: no settings dialog, no integration admin UI,
   // no internal team panels (assigned employees, private notes).
   const isClient = userRole === 'client';
+  const isAdmin = userRole === 'admin';
 
   // Narrowed role for downstream components that don't model 'client'.
   // Clients are already gated out of this view.
@@ -407,6 +408,7 @@ export function ProjectDetailView({
               <ProjectFilesPanel
                 projectId={project.id}
                 isClient={isClient}
+                isAdmin={isAdmin}
                 className="h-full rounded-none border-0"
               />
             </div>
