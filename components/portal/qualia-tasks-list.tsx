@@ -31,6 +31,7 @@ import {
 } from '@/lib/swr';
 import { useRealtimeTasks } from '@/lib/hooks/use-realtime-tasks';
 import { EditTaskModal } from '@/components/edit-task-modal';
+import { TaskDetailDialog } from '@/components/portal/task-detail-dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -351,6 +352,7 @@ const TaskRow = React.memo(function TaskRow({
   onEdit,
   onDelete,
   onHide,
+  onOpenDetail,
   mode,
 }: {
   task: Task;
@@ -360,6 +362,7 @@ const TaskRow = React.memo(function TaskRow({
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onHide: (taskId: string) => void;
+  onOpenDetail: (task: Task) => void;
   mode: QualiaTasksMode;
 }) {
   const isCompleted = task.status === 'Done';
@@ -451,7 +454,7 @@ const TaskRow = React.memo(function TaskRow({
             className="w-full rounded border border-primary/30 bg-transparent px-1.5 py-0.5 text-sm font-medium text-foreground outline-none"
             aria-label="Edit task title"
           />
-        ) : (
+        ) : canManage ? (
           <div
             onDoubleClick={handleDoubleClick}
             className={cn(
@@ -462,6 +465,22 @@ const TaskRow = React.memo(function TaskRow({
           >
             {task.title}
           </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onOpenDetail(task)}
+            className={cn(
+              'w-full cursor-pointer truncate rounded text-left text-sm font-medium transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+              isCompleted
+                ? 'text-muted-foreground line-through'
+                : 'text-foreground hover:text-primary'
+            )}
+            title={task.title}
+            aria-label={`View details for "${task.title}"`}
+          >
+            {task.title}
+          </button>
         )}
         <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
           {clientName && (
@@ -662,6 +681,7 @@ type TaskListContainerProps = {
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onHide: (taskId: string) => void;
+  onOpenDetail: (task: Task) => void;
   isLoadingFirst: boolean;
 };
 
@@ -681,6 +701,7 @@ function TaskListContainer({
   onEdit,
   onDelete,
   onHide,
+  onOpenDetail,
   isLoadingFirst,
 }: TaskListContainerProps) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -762,6 +783,7 @@ function TaskListContainer({
           onEdit={onEdit}
           onDelete={onDelete}
           onHide={onHide}
+          onOpenDetail={onOpenDetail}
           mode={mode}
         />
       </div>
@@ -862,6 +884,7 @@ export function QualiaTasksList({
   const [search, setSearch] = useState('');
   const [composerOpen, setComposerOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [pendingBulkDelete, setPendingBulkDelete] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -1187,6 +1210,7 @@ export function QualiaTasksList({
         onEdit={setEditingTask}
         onDelete={handleDeleteTask}
         onHide={handleHideTask}
+        onOpenDetail={setDetailTask}
         isLoadingFirst={
           mode === 'inbox' &&
           initialTasks.length === 0 &&
@@ -1195,7 +1219,7 @@ export function QualiaTasksList({
         }
       />
 
-      {/* Edit modal */}
+      {/* Edit modal (admin only) */}
       {editingTask && canManage && (
         <EditTaskModal
           task={editingTask}
@@ -1203,6 +1227,18 @@ export function QualiaTasksList({
           onOpenChange={(open) => !open && setEditingTask(null)}
         />
       )}
+
+      {/* Employee task detail dialog (non-admin read-only view with done/undone toggle) */}
+      <TaskDetailDialog
+        task={detailTask}
+        open={!!detailTask}
+        onOpenChange={(open) => !open && setDetailTask(null)}
+        onToggleDone={(taskId, completed) => {
+          handleToggleTask(taskId, completed);
+          setDetailTask(null);
+        }}
+        isPending={isPending}
+      />
 
       {/* Delete confirmations */}
       <ConfirmDialog
