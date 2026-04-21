@@ -6,10 +6,14 @@ import { useMemo } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/ui/empty-state';
-import { useTodaysTasks, useInboxTasks, useEmployeeAssignments } from '@/lib/swr';
+import {
+  useTodaysTasks,
+  useInboxTasks,
+  useEmployeeAssignments,
+  useTodaysMeetings,
+} from '@/lib/swr';
 import { QIcon } from '@/components/ui/q-icon';
 import { ProgressRing } from '@/components/ui/progress-ring';
-import { Sparkline } from '@/components/ui/sparkline';
 import { AvatarStack, type AvatarStackPerson } from '@/components/ui/avatar-stack';
 import { PriorityBadge, type PriorityKey } from '@/components/ui/priority-badge';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
@@ -250,15 +254,22 @@ function TodayTimeline({ tasks }: { tasks: TimelineTask[] }) {
 }
 
 /* ======================================================================
-   Glance cards — Next ship + Inbox + Velocity
+   Glance cards — Next ship + Today's meetings timetable
    ====================================================================== */
+
+interface TimetableMeeting {
+  id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+}
 
 function GlanceStack({
   nextShip,
-  inboxCount,
+  meetings,
 }: {
   nextShip: { name: string; progress: number; daysLeft: number | null; href: string } | null;
-  inboxCount: number;
+  meetings: TimetableMeeting[];
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -294,47 +305,68 @@ function GlanceStack({
         </div>
       ) : null}
 
-      <div
-        className="card rounded-xl border p-5"
-        style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
-      >
-        <div className="q-eyebrow mb-3">Inbox</div>
-        <div
-          className="q-tabular font-mono text-[30px] font-medium leading-none tracking-[-0.01em]"
-          style={{ color: 'var(--text)' }}
-        >
-          {inboxCount.toString().padStart(2, '0')}
-        </div>
-        <div className="mt-1.5 text-[12px]" style={{ color: 'var(--text-mute)' }}>
-          unprocessed tasks ·{' '}
-          <Link href="/tasks" className="font-medium" style={{ color: 'var(--accent-teal)' }}>
-            triage →
-          </Link>
-        </div>
-      </div>
-
-      <div
-        className="card rounded-xl border p-5"
-        style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
-      >
-        <div className="mb-2.5 flex items-baseline justify-between">
-          <div className="q-eyebrow">Shipping velocity</div>
-          <div className="text-[11px] font-semibold" style={{ color: 'var(--q-moss)' }}>
-            wk/wk
-          </div>
-        </div>
-        {/* Sparkline data is indicative — replace with real deploy telemetry in a later pass. */}
-        <Sparkline points={[2, 3, 5, 3, 6, 7, 4, 8, 12]} width={260} height={48} />
-        <div
-          className="mt-1 flex justify-between font-mono text-[10px]"
-          style={{ color: 'var(--text-mute)' }}
-        >
-          <span>Last week</span>
-          <span>This week</span>
-        </div>
-      </div>
+      <MeetingsTimetable meetings={meetings} />
     </div>
   );
+}
+
+function MeetingsTimetable({ meetings }: { meetings: TimetableMeeting[] }) {
+  const sorted = [...meetings].sort(
+    (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+  );
+
+  return (
+    <div
+      className="card rounded-xl border p-5"
+      style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
+    >
+      <div className="mb-3 flex items-baseline justify-between">
+        <div className="q-eyebrow">Today&apos;s meetings</div>
+        <Link
+          href="/schedule"
+          className="rounded-md px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--text-mute)] hover:bg-[var(--surface-hi)] hover:text-[var(--text)]"
+        >
+          schedule →
+        </Link>
+      </div>
+
+      {sorted.length === 0 ? (
+        <div className="py-3 text-[12px]" style={{ color: 'var(--text-mute)' }}>
+          Nothing on the calendar today.
+        </div>
+      ) : (
+        <ol className="flex flex-col gap-2.5">
+          {sorted.map((m) => {
+            const start = new Date(m.start_time);
+            const end = new Date(m.end_time);
+            const isPast = end.getTime() < Date.now();
+            const timeLabel = `${formatHHMM(start)}–${formatHHMM(end)}`;
+            return (
+              <li key={m.id} className={cn('flex items-baseline gap-3', isPast && 'opacity-50')}>
+                <span
+                  className="q-tabular shrink-0 font-mono text-[11px] tabular-nums"
+                  style={{ color: 'var(--text-mute)' }}
+                >
+                  {timeLabel}
+                </span>
+                <span
+                  className="min-w-0 flex-1 truncate text-[13px] font-medium"
+                  style={{ color: 'var(--text)' }}
+                  title={m.title}
+                >
+                  {m.title}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+function formatHHMM(d: Date): string {
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 /* ======================================================================
@@ -428,6 +460,18 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
   const { tasks: todayTasks, isLoading: tasksLoading } = useTodaysTasks();
   const { tasks: inboxTasks } = useInboxTasks();
   const { data: assignments } = useEmployeeAssignments(role === 'employee' ? userId : undefined);
+  const { meetings: todayMeetings } = useTodaysMeetings();
+
+  const timetableMeetings = useMemo<TimetableMeeting[]>(() => {
+    return (
+      todayMeetings as Array<{ id: string; title: string; start_time: string; end_time: string }>
+    ).map((m) => ({
+      id: m.id,
+      title: m.title,
+      start_time: m.start_time,
+      end_time: m.end_time,
+    }));
+  }, [todayMeetings]);
 
   // Timeline tasks — cap at 5, map to TimelineTask shape
   const timelineTasks = useMemo<TimelineTask[]>(() => {
@@ -507,7 +551,6 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
   }, [role, workspaces, assignments]);
 
   const activeProjectsCount = tapeProjects.length;
-  const inboxCount = (inboxTasks as Array<{ id: string }>).length;
 
   // Next ship — pick project with the highest mock progress; for real data wire to project_phases
   const nextShip = tapeProjects[0]
@@ -546,7 +589,7 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
         ) : (
           <TodayTimeline tasks={timelineTasks} />
         )}
-        <GlanceStack nextShip={nextShip} inboxCount={inboxCount} />
+        <GlanceStack nextShip={nextShip} meetings={timetableMeetings} />
       </div>
 
       <ProjectsTape projects={tapeProjects} />

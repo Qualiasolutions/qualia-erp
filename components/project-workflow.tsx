@@ -1034,10 +1034,16 @@ export function ProjectWorkflow({
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-sm font-semibold text-foreground">{phaseName}</h2>
-            {phaseDesc && <p className="truncate text-xs text-muted-foreground">{phaseDesc}</p>}
+            <h2 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+              {phaseName}
+            </h2>
+            {phaseDesc && (
+              <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-muted-foreground">
+                {phaseDesc}
+              </p>
+            )}
           </div>
-          <span className="text-xs tabular-nums text-muted-foreground">
+          <span className="shrink-0 self-start text-xs tabular-nums text-muted-foreground">
             {doneCount}/{sortedTasks.length} done
           </span>
         </div>
