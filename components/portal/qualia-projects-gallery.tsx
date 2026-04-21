@@ -65,38 +65,38 @@ const STAGE_CONFIG: Record<StageKey, StageStyle> = {
   demo: {
     title: 'Demos',
     icon: Beaker,
-    accent: 'text-violet-600 dark:text-violet-400',
-    bg: 'bg-violet-500/10',
-    ring: 'ring-violet-500/20',
-    headerBg: 'bg-violet-500',
-    progressBg: 'bg-violet-500',
-  },
-  building: {
-    title: 'Building',
-    icon: Hammer,
-    accent: 'text-emerald-600 dark:text-emerald-400',
-    bg: 'bg-emerald-500/10',
-    ring: 'ring-emerald-500/20',
-    headerBg: 'bg-emerald-500',
-    progressBg: 'bg-emerald-500',
-  },
-  preProduction: {
-    title: 'Pre-Production',
-    icon: ClipboardCheck,
-    accent: 'text-amber-600 dark:text-amber-400',
-    bg: 'bg-amber-500/10',
-    ring: 'ring-amber-500/20',
-    headerBg: 'bg-amber-500',
-    progressBg: 'bg-amber-500',
-  },
-  live: {
-    title: 'Live',
-    icon: Rocket,
     accent: 'text-sky-600 dark:text-sky-400',
     bg: 'bg-sky-500/10',
     ring: 'ring-sky-500/20',
     headerBg: 'bg-sky-500',
     progressBg: 'bg-sky-500',
+  },
+  building: {
+    title: 'Building',
+    icon: Hammer,
+    accent: 'text-purple-600 dark:text-purple-400',
+    bg: 'bg-purple-500/10',
+    ring: 'ring-purple-500/20',
+    headerBg: 'bg-purple-500',
+    progressBg: 'bg-purple-500',
+  },
+  preProduction: {
+    title: 'Pre-Production',
+    icon: ClipboardCheck,
+    accent: 'text-yellow-600 dark:text-yellow-400',
+    bg: 'bg-yellow-500/10',
+    ring: 'ring-yellow-500/20',
+    headerBg: 'bg-yellow-500',
+    progressBg: 'bg-yellow-500',
+  },
+  live: {
+    title: 'Live',
+    icon: Rocket,
+    accent: 'text-green-600 dark:text-green-400',
+    bg: 'bg-green-500/10',
+    ring: 'ring-green-500/20',
+    headerBg: 'bg-green-500',
+    progressBg: 'bg-green-500',
   },
 };
 
@@ -403,9 +403,18 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
     return groups;
   }, [filteredProjects]);
 
-  // Done / Archived / Canceled — shown in a horizontal row below the columns
+  // Done / Archived / Canceled — shown in a horizontal row below the columns.
+  // Sort most-recently-finished first (target_date desc, nulls last) as a proxy for
+  // "recently moved to finished" since the schema doesn't track a completed_at timestamp.
   const finishedProjects = useMemo(() => {
-    return filteredProjects.filter((p) => !getStage(p));
+    return filteredProjects
+      .filter((p) => !getStage(p))
+      .slice()
+      .sort((a, b) => {
+        const at = a.target_date ? new Date(a.target_date).getTime() : 0;
+        const bt = b.target_date ? new Date(b.target_date).getTime() : 0;
+        return bt - at;
+      });
   }, [filteredProjects]);
 
   const summary = useMemo(() => generateSummary(projects), [projects]);
@@ -591,23 +600,20 @@ function StageColumn({ stage, projects }: { stage: StageKey; projects: GalleryPr
 
 function FinishedRow({ projects }: { projects: GalleryProject[] }) {
   return (
-    <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card">
-      <header className="flex items-center gap-2 border-b border-border bg-muted/20 px-3 py-1.5">
+    <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card ring-1 ring-inset ring-primary/20">
+      <header className="flex items-center gap-2 border-b border-border bg-primary/5 px-3 py-1.5">
         <span
-          className="flex h-5 w-5 items-center justify-center rounded-md bg-muted-foreground/10"
+          className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10"
           aria-hidden
         >
-          <CheckCircle2 className="h-3 w-3 text-muted-foreground" />
+          <CheckCircle2 className="h-3 w-3 text-primary" />
         </span>
         <h2 className="text-xs font-semibold tracking-tight text-foreground">Finished</h2>
-        <span className="ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-muted-foreground/10 px-1.5 text-[10px] font-semibold text-muted-foreground">
+        <span className="ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold text-primary">
           {projects.length}
         </span>
       </header>
-      <ul
-        className="grid overflow-y-auto"
-        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', maxHeight: '5rem' }}
-      >
+      <ul className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
         {projects.map((p) => (
           <FinishedRowItem key={p.id} project={p} />
         ))}
@@ -624,12 +630,27 @@ function FinishedRowItem({ project }: { project: GalleryProject }) {
         href={`/projects/${project.id}`}
         className={cn(
           'flex items-center gap-2 px-2.5 py-1.5 transition-colors duration-150',
-          'hover:bg-muted/30 focus-visible:bg-muted/30',
+          'hover:bg-primary/5 focus-visible:bg-primary/5',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0'
         )}
         title={`${project.name} · ${project.status}`}
       >
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden />
+        {project.logo_url ? (
+          <Image
+            src={project.logo_url}
+            alt=""
+            aria-hidden
+            width={16}
+            height={16}
+            className="h-4 w-4 shrink-0 rounded-full object-cover ring-1 ring-border"
+            unoptimized
+          />
+        ) : (
+          <span
+            className="h-4 w-4 shrink-0 rounded-full bg-muted-foreground/20 ring-1 ring-border"
+            aria-hidden
+          />
+        )}
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
           {project.name}
         </span>
