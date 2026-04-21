@@ -9,49 +9,6 @@ export const metadata = { title: 'System Status' };
 // Monitor names to hide from the status page
 const HIDDEN_MONITORS = ['faris', 'melon', 'qualia-erp', 'qualia erp'];
 
-async function getAssignedProjectUrls(userId: string): Promise<string[]> {
-  const supabase = await createClient();
-
-  const { data: assignments } = await supabase
-    .from('project_assignments')
-    .select('project:projects!project_assignments_project_id_fkey (vercel_project_url)')
-    .eq('employee_id', userId)
-    .is('removed_at', null);
-
-  if (!assignments) return [];
-
-  const urls: string[] = [];
-  for (const a of assignments) {
-    const project = Array.isArray(a.project) ? a.project[0] : a.project;
-    if (project?.vercel_project_url) {
-      urls.push(project.vercel_project_url);
-    }
-  }
-  return urls;
-}
-
-function monitorMatchesUrls(monitor: Monitor, urls: string[]): boolean {
-  if (!monitor.url) return false;
-  try {
-    const monitorHost = new URL(monitor.url).hostname.toLowerCase();
-    return urls.some((url) => {
-      try {
-        const projectHost = new URL(
-          url.startsWith('http') ? url : `https://${url}`
-        ).hostname.toLowerCase();
-        return (
-          monitorHost === projectHost ||
-          monitorHost.includes(projectHost.replace(/\.vercel\.app$/, ''))
-        );
-      } catch {
-        return url.toLowerCase().includes(monitorHost) || monitorHost.includes(url.toLowerCase());
-      }
-    });
-  } catch {
-    return false;
-  }
-}
-
 function matchMonitorToProject(
   monitor: Monitor,
   projects: Array<{
@@ -129,8 +86,6 @@ export default async function PortalStatusPage() {
   // Only admin, manager, employee can access status
   if (role === 'client') redirect('/');
 
-  const canSeeAllMonitors = role === 'admin';
-
   let monitors: Monitor[] = [];
   let error: string | null = null;
 
@@ -140,18 +95,11 @@ export default async function PortalStatusPage() {
     error = e instanceof Error ? e.message : 'Failed to fetch status';
   }
 
-  // Filter out hidden monitors
+  // Filter out hidden monitors. Both admins and employees see every remaining
+  // monitor — we used to scope employees to their assigned projects, but the
+  // whole-team visibility is more useful when someone needs to help debug
+  // another project on short notice.
   monitors = monitors.filter((m) => !shouldHideMonitor(m));
-
-  // Filter monitors for non-admins
-  if (!canSeeAllMonitors && monitors.length > 0) {
-    const assignedUrls = await getAssignedProjectUrls(user.id);
-    if (assignedUrls.length > 0) {
-      monitors = monitors.filter((m) => monitorMatchesUrls(m, assignedUrls));
-    } else {
-      monitors = [];
-    }
-  }
 
   // Fetch all projects with integrations for mapping
   const { data: projects } = await supabase
