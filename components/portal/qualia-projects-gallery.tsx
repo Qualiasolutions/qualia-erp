@@ -14,6 +14,7 @@ import {
   ClipboardCheck,
   Rocket,
   FolderOpen,
+  CheckCircle2,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -236,39 +237,38 @@ const ProjectCardTile = memo(function ProjectCardTile({ project }: { project: Ga
         'cursor-pointer'
       )}
     >
-      {/* Accent tape — unified per column stage */}
-      <div className={cn('relative h-[40px] overflow-hidden', headerBg)}>
-        {/* Logo overlay (when present) */}
-        {project.logo_url && (
-          <Image
-            src={project.logo_url}
-            alt=""
-            aria-hidden
-            width={32}
-            height={32}
-            className="absolute right-2 top-1.5 h-7 w-7 rounded object-contain opacity-90"
-            unoptimized
-          />
-        )}
-        {/* Bottom row: type + progress */}
-        <div className="absolute bottom-1.5 left-3 right-3 flex items-center justify-between">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-white/85">
-            {typeLabel}
-          </span>
-          <span className="font-mono text-[11px] font-semibold tabular-nums text-white">
-            {progress}%
-          </span>
-        </div>
-        {/* Attention indicator */}
-        {attention && (
-          <span className="absolute left-2 top-1.5 flex items-center gap-1 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-            <AlertTriangle className="h-3 w-3" />
-          </span>
-        )}
-      </div>
+      {/* Accent stripe — thin top bar, unified per column stage */}
+      <div className={cn('h-1', headerBg)} aria-hidden />
 
       {/* Body */}
-      <div className="px-3 pb-3 pt-2.5">
+      <div className="px-3 pb-3 pt-3">
+        {/* Top row: type label + logo + attention + percentage */}
+        <div className="mb-2 flex items-center gap-2">
+          <span className="font-mono text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+            {typeLabel}
+          </span>
+          {attention && (
+            <AlertTriangle
+              className="h-3 w-3 shrink-0 text-amber-500"
+              aria-label="Needs attention"
+            />
+          )}
+          <span className="ml-auto font-mono text-[10px] font-semibold tabular-nums text-muted-foreground">
+            {progress}%
+          </span>
+          {project.logo_url && (
+            <Image
+              src={project.logo_url}
+              alt=""
+              aria-hidden
+              width={20}
+              height={20}
+              className="h-5 w-5 shrink-0 rounded object-contain"
+              unoptimized
+            />
+          )}
+        </div>
+
         <h3 className="truncate text-sm font-semibold leading-tight text-foreground">
           {project.name}
         </h3>
@@ -403,6 +403,11 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
     return groups;
   }, [filteredProjects]);
 
+  // Done / Archived / Canceled — shown in a horizontal row below the columns
+  const finishedProjects = useMemo(() => {
+    return filteredProjects.filter((p) => !getStage(p));
+  }, [filteredProjects]);
+
   const summary = useMemo(() => generateSummary(projects), [projects]);
 
   return (
@@ -471,7 +476,10 @@ export function QualiaProjectsGallery({ projects }: QualiaProjectsGalleryProps) 
             />
           </div>
         ) : viewMode === 'columns' ? (
-          <StageColumns stages={stages} />
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
+            <StageColumns stages={stages} />
+            {finishedProjects.length > 0 && <FinishedRow projects={finishedProjects} />}
+          </div>
         ) : viewMode === 'gallery' ? (
           <div
             className="q-stagger grid gap-3 overflow-auto"
@@ -574,5 +582,60 @@ function StageColumn({ stage, projects }: { stage: StageKey; projects: GalleryPr
         )}
       </div>
     </section>
+  );
+}
+
+/* ======================================================================
+   FinishedRow — Done / Archived / Canceled projects in a horizontal row
+   ====================================================================== */
+
+function FinishedRow({ projects }: { projects: GalleryProject[] }) {
+  return (
+    <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card">
+      <header className="flex items-center gap-2 border-b border-border bg-muted/20 px-3 py-2">
+        <span
+          className="flex h-6 w-6 items-center justify-center rounded-md bg-muted-foreground/10"
+          aria-hidden
+        >
+          <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
+        </span>
+        <h2 className="text-xs font-semibold tracking-tight text-foreground">Finished</h2>
+        <span className="ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-muted-foreground/10 px-1.5 text-[10px] font-semibold text-muted-foreground">
+          {projects.length}
+        </span>
+      </header>
+      <ul className="divide-y divide-border/50">
+        {projects.map((p) => (
+          <FinishedRowItem key={p.id} project={p} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function FinishedRowItem({ project }: { project: GalleryProject }) {
+  const typeLabel = getTypeLabel(project.project_type);
+  return (
+    <li>
+      <Link
+        href={`/projects/${project.id}`}
+        className={cn(
+          'flex items-center gap-3 px-3 py-2 transition-colors duration-150',
+          'hover:bg-muted/30 focus-visible:bg-muted/30',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0'
+        )}
+      >
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden />
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+          {project.name}
+        </span>
+        <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+          {typeLabel}
+        </span>
+        <span className="w-16 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+          {project.status}
+        </span>
+      </Link>
+    </li>
   );
 }
