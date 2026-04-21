@@ -141,19 +141,18 @@ describe('auto-assign with external Supabase client', () => {
 
   describe('markMilestoneTasksDone with external client', () => {
     it('marks tasks done using the provided client', async () => {
-      mockTable('project_phases', [makePhase()]);
+      // Milestone-level completion now keys on source_milestone_key and
+      // updates the tasks table directly — no project_phases lookup needed.
       mockTable('tasks', [{ id: TASK_ID_1 }, { id: TASK_ID_2 }]);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await markMilestoneTasksDone(PROJECT_ID, 1, mockSupabase as any);
 
       expect(result).toBe(2);
-      expect(mockSupabase.from).toHaveBeenCalledWith('project_phases');
       expect(mockSupabase.from).toHaveBeenCalledWith('tasks');
     });
 
     it('is idempotent — already-done tasks are not affected', async () => {
-      mockTable('project_phases', [makePhase()]);
       // No tasks to update (all already done or none exist)
       mockTable('tasks', []);
 
