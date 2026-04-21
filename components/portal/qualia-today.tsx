@@ -11,7 +11,9 @@ import {
   useInboxTasks,
   useEmployeeAssignments,
   useTodaysMeetings,
+  useTeamTodaySnapshot,
 } from '@/lib/swr';
+import type { TeamMemberToday } from '@/app/actions/team-today';
 import { QIcon } from '@/components/ui/q-icon';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import { AvatarStack, type AvatarStackPerson } from '@/components/ui/avatar-stack';
@@ -73,11 +75,14 @@ function TodayHero({
   displayName,
   openTasks,
   activeProjects,
+  onlineTeam,
 }: {
   role: QualiaTodayRole;
   displayName: string;
   openTasks: number;
   activeProjects: number;
+  /** When present, renders a tiny avatar strip on the right labelled "Online now". */
+  onlineTeam?: { id: string; name: string | null; avatarUrl: string | null }[];
 }) {
   const now = new Date();
   const hour = now.getHours();
@@ -124,6 +129,7 @@ function TodayHero({
               : ''}
           </p>
         </div>
+        {onlineTeam && onlineTeam.length > 0 ? <OnlineNow people={onlineTeam} /> : null}
       </div>
 
       <div
@@ -142,6 +148,77 @@ function TodayHero({
   );
 }
 
+function OnlineNow({
+  people,
+}: {
+  people: { id: string; name: string | null; avatarUrl: string | null }[];
+}) {
+  const visible = people.slice(0, 5);
+  const overflow = people.length - visible.length;
+  return (
+    <div className="flex min-w-0 shrink-0 flex-col items-end gap-1.5">
+      <span
+        className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em]"
+        style={{ color: 'var(--text-mute)' }}
+      >
+        <span
+          className="inline-block h-1.5 w-1.5 rounded-full"
+          style={{ background: 'var(--accent-teal)', boxShadow: '0 0 6px var(--accent-teal)' }}
+          aria-hidden
+        />
+        Online now
+      </span>
+      <div className="flex -space-x-2">
+        {visible.map((p) => {
+          const initials =
+            (p.name ?? '??')
+              .split(/\s+/)
+              .map((s) => s.charAt(0).toUpperCase())
+              .slice(0, 2)
+              .join('') || '??';
+          return p.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={p.id}
+              src={p.avatarUrl}
+              alt={p.name ?? ''}
+              title={p.name ?? ''}
+              className="h-6 w-6 rounded-full object-cover ring-2"
+              style={{ borderColor: 'var(--surface)', boxShadow: '0 0 0 2px var(--surface)' }}
+            />
+          ) : (
+            <span
+              key={p.id}
+              title={p.name ?? ''}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold uppercase ring-2"
+              style={{
+                background: 'color-mix(in oklch, var(--accent-teal), transparent 82%)',
+                color: 'var(--accent-teal)',
+                borderColor: 'var(--surface)',
+                boxShadow: '0 0 0 2px var(--surface)',
+              }}
+              aria-label={p.name ?? ''}
+            >
+              {initials}
+            </span>
+          );
+        })}
+        {overflow > 0 ? (
+          <span
+            className="inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold"
+            style={{
+              background: 'var(--surface-hi)',
+              color: 'var(--text-mute)',
+            }}
+          >
+            +{overflow}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function PulseStat({ label, value, trend }: { label: string; value: string; trend?: string }) {
   return (
     <div className="flex flex-col gap-0.5">
@@ -155,6 +232,142 @@ function PulseStat({ label, value, trend }: { label: string; value: string; tren
             {trend}
           </span>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+/* ======================================================================
+   Team on deck — admin-only view of every teammate's open work
+   ====================================================================== */
+
+function TeamOnDeck({ members }: { members: TeamMemberToday[] }) {
+  return (
+    <div
+      className="card rounded-xl border p-7"
+      style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
+    >
+      <div className="mb-5 flex items-baseline justify-between">
+        <div>
+          <div className="q-eyebrow">Team on deck</div>
+          <h2 className="q-display mt-1 text-[16px] font-semibold">Who&apos;s doing what</h2>
+        </div>
+        <Link
+          href="/tasks?scope=all"
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--text-mute)] transition-colors hover:bg-[var(--surface-hi)] hover:text-[var(--text)]"
+        >
+          All tasks <QIcon name="arrow-right" size={12} />
+        </Link>
+      </div>
+
+      {members.length === 0 ? (
+        <EmptyState
+          icon={CheckCircle2}
+          title="No team members yet"
+          description="Add employees to the workspace to see their workload here."
+          compact
+          minimal
+        />
+      ) : (
+        <div className="flex flex-col gap-4">
+          {members.map((m) => (
+            <TeamMemberRow key={m.profileId} member={m} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TeamMemberRow({ member }: { member: TeamMemberToday }) {
+  const firstName = (member.fullName ?? '').split(/\s+/)[0] ?? '';
+  const initials =
+    (member.fullName ?? '??')
+      .split(/\s+/)
+      .map((s) => s.charAt(0).toUpperCase())
+      .slice(0, 2)
+      .join('') || '??';
+
+  return (
+    <div
+      className="grid gap-4 rounded-lg p-3 transition-colors hover:bg-[var(--surface-hi)]"
+      style={{ gridTemplateColumns: '36px minmax(0, 1fr)' }}
+    >
+      <div className="relative">
+        {member.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={member.avatarUrl}
+            alt={member.fullName ?? ''}
+            className="h-9 w-9 rounded-full object-cover"
+          />
+        ) : (
+          <span
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-semibold uppercase"
+            style={{
+              background: 'color-mix(in oklch, var(--accent-teal), transparent 85%)',
+              color: 'var(--accent-teal)',
+            }}
+            aria-hidden
+          >
+            {initials}
+          </span>
+        )}
+        <span
+          className="absolute -bottom-0 -right-0 h-2.5 w-2.5 rounded-full ring-2"
+          style={{
+            background: member.isOnline ? 'var(--accent-teal)' : 'var(--line)',
+            boxShadow: member.isOnline ? '0 0 6px var(--accent-teal)' : 'none',
+            borderColor: 'var(--surface)',
+          }}
+          aria-label={member.isOnline ? 'Online' : 'Offline'}
+        />
+      </div>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0">
+          <span className="truncate text-[13.5px] font-semibold" style={{ color: 'var(--text)' }}>
+            {firstName || 'Unknown'}
+          </span>
+          <span
+            className="font-mono text-[10.5px] uppercase tracking-[0.06em]"
+            style={{ color: 'var(--text-mute)' }}
+          >
+            {member.openTasksCount} open
+          </span>
+          {member.isOnline && member.onlineProjectName ? (
+            <span className="truncate text-[11px] italic" style={{ color: 'var(--text-mute)' }}>
+              · on {member.onlineProjectName}
+            </span>
+          ) : null}
+        </div>
+        {member.topTasks.length === 0 ? (
+          <div className="mt-1 text-[12px]" style={{ color: 'var(--text-mute)' }}>
+            Nothing open.
+          </div>
+        ) : (
+          <ul className="mt-1.5 flex flex-col gap-1">
+            {member.topTasks.map((t) => (
+              <li key={t.id} className="flex items-center gap-2 text-[12.5px]">
+                <span
+                  className="h-1 w-1 shrink-0 rounded-full"
+                  style={{ background: 'var(--text-mute)' }}
+                  aria-hidden
+                />
+                <span className="truncate" style={{ color: 'var(--text-soft)' }}>
+                  {t.title}
+                </span>
+                {t.projectName ? (
+                  <span
+                    className="shrink-0 font-mono text-[10px] uppercase tracking-[0.06em]"
+                    style={{ color: 'var(--text-mute)' }}
+                  >
+                    · {t.projectName}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
@@ -461,6 +674,7 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
   const { tasks: inboxTasks } = useInboxTasks();
   const { data: assignments } = useEmployeeAssignments(role === 'employee' ? userId : undefined);
   const { meetings: todayMeetings } = useTodaysMeetings();
+  const { members: teamMembers, isLoading: teamLoading } = useTeamTodaySnapshot();
 
   const timetableMeetings = useMemo<TimetableMeeting[]>(() => {
     return (
@@ -562,6 +776,17 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
       }
     : null;
 
+  const onlineTeam = useMemo(
+    () =>
+      teamMembers
+        .filter((m) => m.isOnline)
+        .map((m) => ({ id: m.profileId, name: m.fullName, avatarUrl: m.avatarUrl })),
+    [teamMembers]
+  );
+
+  const isAdminView = role === 'admin';
+  const leftPaneLoading = isAdminView ? teamLoading : tasksLoading;
+
   return (
     <div className="mx-auto w-full" style={{ maxWidth: 1400, padding: 'var(--pad)' }}>
       <TodayHero
@@ -569,23 +794,26 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
         displayName={displayName}
         openTasks={openTaskIds.size}
         activeProjects={activeProjectsCount}
+        onlineTeam={isAdminView ? onlineTeam : undefined}
       />
 
       <div
         className="grid gap-[var(--gap)]"
         style={{ gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)' }}
       >
-        {tasksLoading ? (
+        {leftPaneLoading ? (
           <div
             className="card rounded-xl border p-7"
             style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
           >
-            <div className="q-eyebrow mb-3">Your line today</div>
+            <div className="q-eyebrow mb-3">{isAdminView ? 'Team on deck' : 'Your line today'}</div>
             <div
               className="h-32 animate-pulse rounded-md"
               style={{ background: 'var(--bg-sub)' }}
             />
           </div>
+        ) : isAdminView ? (
+          <TeamOnDeck members={teamMembers} />
         ) : (
           <TodayTimeline tasks={timelineTasks} />
         )}

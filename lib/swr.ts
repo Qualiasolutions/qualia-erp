@@ -688,6 +688,36 @@ export function useTodaysMeetings() {
 }
 
 /**
+ * Admin-only hook — snapshot of team members with their open tasks + live
+ * clock-in status. Powers the Today page "team on deck" container.
+ */
+export function useTeamTodaySnapshot() {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    'team-today-snapshot',
+    async () => {
+      const { getTeamTodaySnapshot } = await import('@/app/actions/team-today');
+      return getTeamTodaySnapshot();
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    members: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
  * Invalidate today's schedule data
  */
 export function invalidateTodaysSchedule(immediate = true) {
