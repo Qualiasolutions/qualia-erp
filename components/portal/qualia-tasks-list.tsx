@@ -407,12 +407,20 @@ const TaskRow = React.memo(function TaskRow({
   return (
     <div
       className={cn(
-        'group flex items-center gap-3 border-b border-border px-4 py-3 transition-colors duration-150',
+        'group flex cursor-pointer items-center gap-3 border-b border-border px-4 py-3 transition-colors duration-150',
         'hover:bg-muted/50',
         isCompleted && 'opacity-55',
         'motion-reduce:transition-none'
       )}
       role="row"
+      onClick={(e) => {
+        // Ignore clicks that originated from interactive children (they stopPropagation)
+        // or from selected text — double-click on title is reserved for inline rename.
+        if ((e.target as HTMLElement).closest('button, input, a, [role="menu"], [role="dialog"]'))
+          return;
+        if (window.getSelection()?.toString()) return;
+        onOpenDetail(task);
+      }}
     >
       {/* Checkbox */}
       <button
