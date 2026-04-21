@@ -987,60 +987,6 @@ export async function notifyPhaseChangesRequested(
 }
 
 // ============================================================================
-// Daily Reminder Functions (stub implementations for cron job)
-// ============================================================================
-
-type TaskForReminder = {
-  id: string;
-  title: string;
-  due_date: string | null;
-  priority: string;
-  assignee: { email: string; name: string } | null;
-};
-
-type TasksByAssignee = Map<
-  string,
-  {
-    email: string;
-    name: string;
-    overdue: TaskForReminder[];
-    upcoming: TaskForReminder[];
-  }
->;
-
-/**
- * Get tasks for daily reminders (stub - returns empty map)
- * TODO: Implement actual task fetching logic
- */
-export async function getTasksForReminders(): Promise<{
-  tasksByAssignee: TasksByAssignee;
-}> {
-  // Stub implementation - returns empty map
-  // TODO: Implement actual logic to fetch tasks from database
-  return { tasksByAssignee: new Map() };
-}
-
-/**
- * Send daily digest email (stub - returns success)
- * TODO: Implement actual email sending logic
- */
-export async function sendDailyDigest(
-  email: string,
-  name: string,
-  overdue: TaskForReminder[],
-  upcoming: TaskForReminder[]
-): Promise<{ success: boolean; error?: string }> {
-  // Stub implementation - returns success without sending
-  // TODO: Implement actual email sending logic
-  void email;
-  void name;
-  void overdue;
-  void upcoming;
-  console.log('[sendDailyDigest] Stub implementation - email not sent');
-  return { success: true };
-}
-
-// ============================================================================
 // Employee Notification Functions (Phase 14-02)
 // ============================================================================
 
