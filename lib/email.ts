@@ -412,6 +412,109 @@ export async function sendClientInvitation(params: {
 }
 
 /**
+ * Notify an employee that they have been assigned to a project.
+ * Silent failure: never throws — caller is a server action and must not
+ * fail because of email issues.
+ */
+export async function sendProjectAssignmentNotification(params: {
+  email: string;
+  employeeName: string | null;
+  projectId: string;
+  projectName: string;
+  clientName: string | null;
+  leadName: string | null;
+  assignedByName: string | null;
+}): Promise<void> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[sendProjectAssignmentNotification] Resend not configured, skipping email');
+      return;
+    }
+
+    const { email, employeeName, projectId, projectName, clientName, leadName, assignedByName } =
+      params;
+    const projectUrl = `${APP_URL}/projects/${projectId}`;
+    const greeting = employeeName?.trim() ? employeeName.split(/\s+/)[0] : 'there';
+    const subject = `You've been assigned to ${projectName}`;
+
+    const metaRows: string[] = [];
+    if (clientName) metaRows.push(`<strong>Client</strong> · ${escapeHtml(clientName)}`);
+    if (leadName) metaRows.push(`<strong>Project lead</strong> · ${escapeHtml(leadName)}`);
+    if (assignedByName)
+      metaRows.push(`<strong>Assigned by</strong> · ${escapeHtml(assignedByName)}`);
+    const metaHtml = metaRows.length
+      ? `<p style="margin:0 0 24px;color:#55606b;font-size:14px;line-height:1.6;">${metaRows.join('<br/>')}</p>`
+      : '';
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background-color:#f5f5f5;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:40px 20px;">
+    <tr><td align="center">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+        <tr><td style="background:#00A4AC;padding:28px 32px;">
+          <div style="color:#ffffff;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;">Qualia Solutions</div>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <h1 style="margin:0 0 8px;font-size:20px;font-weight:600;color:#0f1a1d;">Hi ${escapeHtml(greeting)},</h1>
+          <p style="margin:0 0 20px;color:#2a343d;font-size:15px;line-height:1.6;">
+            You've just been assigned to <strong>${escapeHtml(projectName)}</strong>. Head over to the project to see its milestones and get going.
+          </p>
+          ${metaHtml}
+          <a href="${projectUrl}" style="display:inline-block;background:#00A4AC;color:#ffffff;padding:11px 20px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">Open project →</a>
+          <p style="margin:28px 0 0;color:#7a848c;font-size:12px;line-height:1.5;">
+            You'll also find the milestones as tasks in your inbox.
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+    const text = [
+      `Hi ${greeting},`,
+      '',
+      `You've been assigned to ${projectName}.`,
+      clientName ? `Client: ${clientName}` : null,
+      leadName ? `Project lead: ${leadName}` : null,
+      assignedByName ? `Assigned by: ${assignedByName}` : null,
+      '',
+      `Open: ${projectUrl}`,
+    ]
+      .filter((l) => l !== null)
+      .join('\n');
+
+    const { error } = await resendClient.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      console.error('[sendProjectAssignmentNotification] Failed to send:', error);
+      return;
+    }
+
+    console.log(`[sendProjectAssignmentNotification] Sent to ${email} for project ${projectName}`);
+  } catch (error) {
+    console.error('[sendProjectAssignmentNotification] Unexpected error:', error);
+  }
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Generate HTML email template for client invitation.
  * Matches Phase 14 notification pattern with Qualia teal branding.
  */

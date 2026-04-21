@@ -3776,6 +3776,7 @@ export type Database = {
           scheduled_start_time: string | null;
           show_in_inbox: boolean;
           sort_order: number;
+          source_milestone_key: string | null;
           source_phase_id: string | null;
           source_phase_item_id: string | null;
           status: Database['public']['Enums']['task_status'];
@@ -3809,6 +3810,7 @@ export type Database = {
           scheduled_start_time?: string | null;
           show_in_inbox?: boolean;
           sort_order?: number;
+          source_milestone_key?: string | null;
           source_phase_id?: string | null;
           source_phase_item_id?: string | null;
           status?: Database['public']['Enums']['task_status'];
@@ -3842,6 +3844,7 @@ export type Database = {
           scheduled_start_time?: string | null;
           show_in_inbox?: boolean;
           sort_order?: number;
+          source_milestone_key?: string | null;
           source_phase_id?: string | null;
           source_phase_item_id?: string | null;
           status?: Database['public']['Enums']['task_status'];

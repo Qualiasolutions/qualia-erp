@@ -12,6 +12,8 @@ import {
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { syncPlanningFromGitHubWithServiceRole } from '@/lib/planning-sync-core';
 import { assertNotImpersonating } from '@/lib/portal-utils';
+import { createTasksFromMilestones } from './auto-assign';
+import { sendProjectAssignmentNotification } from '@/lib/email';
 
 // Debounce window for auto-sync on assign: skip if a phase was synced within this many seconds.
 // Prevents spam when an admin assigns multiple people to the same project in quick succession.
@@ -106,7 +108,9 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
   // Get project and employee to verify workspace match
   const { data: project } = await supabase
     .from('projects')
-    .select('workspace_id, name, github_repo_url')
+    .select(
+      'workspace_id, name, github_repo_url, lead:profiles!projects_lead_id_fkey(full_name), client:clients(name)'
+    )
     .eq('id', project_id)
     .single();
 
@@ -116,7 +120,7 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
 
   const { data: employee } = await supabase
     .from('profiles')
-    .select('id, full_name')
+    .select('id, full_name, email')
     .eq('id', employee_id)
     .single();
 
@@ -193,6 +197,34 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
     'assignEmployeeToProject'
   );
 
+  // Create milestone-level inbox tasks for the new assignee (idempotent).
+  try {
+    await createTasksFromMilestones(project_id, employee_id, 'assignment');
+  } catch (err) {
+    console.error('[assignEmployeeToProject] createTasksFromMilestones failed:', err);
+  }
+
+  // Fire-and-forget assignment notification email.
+  if (employee.email) {
+    const projectLead = normalizeFKResponse(project.lead) as { full_name: string | null } | null;
+    const projectClient = normalizeFKResponse(project.client) as { name: string | null } | null;
+    const { data: assignedByProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    await sendProjectAssignmentNotification({
+      email: employee.email,
+      employeeName: employee.full_name,
+      projectId: project_id,
+      projectName: project.name,
+      clientName: projectClient?.name ?? null,
+      leadName: projectLead?.full_name ?? null,
+      assignedByName: assignedByProfile?.full_name ?? null,
+    });
+  }
+
   return { success: true, data: assignment };
 }
 
@@ -241,7 +273,9 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
   // Get new project to verify workspace
   const { data: newProject } = await supabase
     .from('projects')
-    .select('workspace_id, name, github_repo_url')
+    .select(
+      'workspace_id, name, github_repo_url, lead:profiles!projects_lead_id_fkey(full_name), client:clients(name)'
+    )
     .eq('id', new_project_id)
     .single();
 
@@ -338,6 +372,43 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
     newProject.github_repo_url,
     'reassignEmployee'
   );
+
+  // Create milestone-level tasks on the new project and notify the assignee.
+  try {
+    await createTasksFromMilestones(new_project_id, currentAssignment.employee_id, 'assignment');
+  } catch (err) {
+    console.error('[reassignEmployee] createTasksFromMilestones failed:', err);
+  }
+
+  const { data: employeeProfile } = await supabase
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', currentAssignment.employee_id)
+    .single();
+
+  if (employeeProfile?.email) {
+    const projectLead = normalizeFKResponse(newProject.lead) as {
+      full_name: string | null;
+    } | null;
+    const projectClient = normalizeFKResponse(newProject.client) as {
+      name: string | null;
+    } | null;
+    const { data: assignedByProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    await sendProjectAssignmentNotification({
+      email: employeeProfile.email,
+      employeeName: employeeProfile.full_name,
+      projectId: new_project_id,
+      projectName: newProject.name,
+      clientName: projectClient?.name ?? null,
+      leadName: projectLead?.full_name ?? null,
+      assignedByName: assignedByProfile?.full_name ?? null,
+    });
+  }
 
   return { success: true, data: newAssignment };
 }
