@@ -17,10 +17,10 @@ import {
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { PROJECT_TYPE_CONFIG, type ProjectTypeStyle } from '@/lib/project-type-config';
+import { PROJECT_TYPE_CONFIG } from '@/lib/project-type-config';
 import { AvatarStack, type AvatarStackPerson } from '@/components/ui/avatar-stack';
 import { EmptyState } from '@/components/ui/empty-state';
-import { hueFromId, clientAccent, clientAccentGradient } from '@/lib/color-constants';
+import { hueFromId } from '@/lib/color-constants';
 import type { ProjectType } from '@/types/database';
 
 /* ======================================================================
@@ -48,16 +48,27 @@ type FilterMode = 'all' | 'active' | 'attention' | 'launched';
 
 type StageKey = 'demo' | 'building' | 'preProduction' | 'live';
 
-const STAGE_CONFIG: Record<
-  StageKey,
-  { title: string; icon: typeof Beaker; accent: string; bg: string; ring: string }
-> = {
+interface StageStyle {
+  title: string;
+  icon: typeof Beaker;
+  accent: string;
+  bg: string;
+  ring: string;
+  /** Solid color for the card accent tape — one unified hue per column. */
+  headerBg: string;
+  /** Tailwind class for the progress bar fill — matches headerBg. */
+  progressBg: string;
+}
+
+const STAGE_CONFIG: Record<StageKey, StageStyle> = {
   demo: {
     title: 'Demos',
     icon: Beaker,
     accent: 'text-violet-600 dark:text-violet-400',
     bg: 'bg-violet-500/10',
     ring: 'ring-violet-500/20',
+    headerBg: 'bg-violet-500',
+    progressBg: 'bg-violet-500',
   },
   building: {
     title: 'Building',
@@ -65,6 +76,8 @@ const STAGE_CONFIG: Record<
     accent: 'text-emerald-600 dark:text-emerald-400',
     bg: 'bg-emerald-500/10',
     ring: 'ring-emerald-500/20',
+    headerBg: 'bg-emerald-500',
+    progressBg: 'bg-emerald-500',
   },
   preProduction: {
     title: 'Pre-Production',
@@ -72,6 +85,8 @@ const STAGE_CONFIG: Record<
     accent: 'text-amber-600 dark:text-amber-400',
     bg: 'bg-amber-500/10',
     ring: 'ring-amber-500/20',
+    headerBg: 'bg-amber-500',
+    progressBg: 'bg-amber-500',
   },
   live: {
     title: 'Live',
@@ -79,8 +94,16 @@ const STAGE_CONFIG: Record<
     accent: 'text-sky-600 dark:text-sky-400',
     bg: 'bg-sky-500/10',
     ring: 'ring-sky-500/20',
+    headerBg: 'bg-sky-500',
+    progressBg: 'bg-sky-500',
   },
 };
+
+/** Fallback style for projects with no active stage (Done / Archived / Canceled). */
+const FALLBACK_STAGE_STYLE = {
+  headerBg: 'bg-muted-foreground/40',
+  progressBg: 'bg-muted-foreground/50',
+} as const;
 
 function getStage(project: GalleryProject): StageKey | null {
   if (project.status === 'Demos') return 'demo';
@@ -99,21 +122,15 @@ interface QualiaProjectsGalleryProps {
    Helpers
    ====================================================================== */
 
-/** Get the accent color for a project (uses project_type config, fallback to client-id hue). */
-function getProjectAccent(project: GalleryProject): { hue: number; gradient: string } {
-  const typeConfig = project.project_type
-    ? (PROJECT_TYPE_CONFIG[project.project_type as ProjectType] as ProjectTypeStyle | undefined)
-    : null;
-
-  // Build a hue: prefer client-based deterministic hue for variety
-  const hue = project.client_id ? hueFromId(project.client_id) : hueFromId(project.id);
-
-  // Typed projects get a slightly higher-chroma gradient; untyped fall back to a softer one.
-  const gradient = typeConfig
-    ? clientAccentGradient(hue)
-    : `linear-gradient(135deg, oklch(55% 0.14 ${hue}) 0%, oklch(42% 0.11 ${hue}) 100%)`;
-
-  return { hue, gradient };
+/** Get the column-based style for a project — one unified accent per pipeline stage. */
+function getProjectStyle(project: GalleryProject): {
+  headerBg: string;
+  progressBg: string;
+} {
+  const stage = getStage(project);
+  if (!stage) return FALLBACK_STAGE_STYLE;
+  const config = STAGE_CONFIG[stage];
+  return { headerBg: config.headerBg, progressBg: config.progressBg };
 }
 
 /** Get type label from PROJECT_TYPE_CONFIG. */
@@ -199,11 +216,10 @@ function generateSummary(projects: GalleryProject[]): string {
    ====================================================================== */
 
 const ProjectCardTile = memo(function ProjectCardTile({ project }: { project: GalleryProject }) {
-  const { gradient, hue } = getProjectAccent(project);
+  const { headerBg, progressBg } = getProjectStyle(project);
   const progress = getProgress(project);
   const typeLabel = getTypeLabel(project.project_type);
   const avatars = useMemo(() => teamToAvatars(project.team), [project.team]);
-  const clientFirstWord = (project.client_name ?? 'Project').split(/\s+/)[0];
   const attention = needsAttention(project);
 
   const dueStr = project.target_date ? format(new Date(project.target_date), 'dd MMM') : null;
@@ -220,31 +236,23 @@ const ProjectCardTile = memo(function ProjectCardTile({ project }: { project: Ga
         'cursor-pointer'
       )}
     >
-      {/* Accent tape */}
-      <div className="relative h-[56px] overflow-hidden" style={{ background: gradient }}>
+      {/* Accent tape — unified per column stage */}
+      <div className={cn('relative h-[40px] overflow-hidden', headerBg)}>
         {/* Logo overlay (when present) */}
         {project.logo_url && (
           <Image
             src={project.logo_url}
             alt=""
             aria-hidden
-            width={40}
-            height={40}
-            className="absolute right-2 top-2 h-8 w-8 rounded object-contain opacity-80 mix-blend-luminosity"
+            width={32}
+            height={32}
+            className="absolute right-2 top-1.5 h-7 w-7 rounded object-contain opacity-90"
             unoptimized
           />
         )}
-        {/* Watermark — client first word */}
-        <span
-          className="absolute bottom-1 left-3 select-none text-[32px] font-semibold italic leading-none"
-          style={{ color: 'rgba(255,255,255,0.22)' }}
-          aria-hidden
-        >
-          {clientFirstWord}
-        </span>
-        {/* Bottom row: kind + progress */}
-        <div className="absolute bottom-1.5 right-3 flex items-center gap-2">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-white/80">
+        {/* Bottom row: type + progress */}
+        <div className="absolute bottom-1.5 left-3 right-3 flex items-center justify-between">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-white/85">
             {typeLabel}
           </span>
           <span className="font-mono text-[11px] font-semibold tabular-nums text-white">
@@ -253,30 +261,23 @@ const ProjectCardTile = memo(function ProjectCardTile({ project }: { project: Ga
         </div>
         {/* Attention indicator */}
         {attention && (
-          <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+          <span className="absolute left-2 top-1.5 flex items-center gap-1 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-semibold text-white">
             <AlertTriangle className="h-3 w-3" />
           </span>
         )}
       </div>
 
       {/* Body */}
-      <div className="px-3 pb-3 pt-2">
+      <div className="px-3 pb-3 pt-2.5">
         <h3 className="truncate text-sm font-semibold leading-tight text-foreground">
           {project.name}
         </h3>
-        <p className="mb-2 mt-0.5 truncate text-[11px] text-muted-foreground">
-          {project.client_name ?? 'No client'}
-          {project.is_pre_production ? ' \u00B7 Pre-Production' : ''}
-        </p>
 
-        {/* Progress bar */}
-        <div className="mb-2 h-[2px] overflow-hidden rounded-full bg-border/30">
+        {/* Progress bar — stage-tinted */}
+        <div className="mb-2 mt-2 h-[2px] overflow-hidden rounded-full bg-border/30">
           <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{
-              width: `${progress}%`,
-              background: clientAccent(hue, 52, 0.14),
-            }}
+            className={cn('h-full rounded-full transition-all duration-500', progressBg)}
+            style={{ width: `${progress}%` }}
           />
         </div>
 
@@ -299,7 +300,7 @@ const ProjectCardTile = memo(function ProjectCardTile({ project }: { project: Ga
    ====================================================================== */
 
 const ProjectListRow = memo(function ProjectListRow({ project }: { project: GalleryProject }) {
-  const { hue } = getProjectAccent(project);
+  const { headerBg } = getProjectStyle(project);
   const progress = getProgress(project);
   const typeLabel = getTypeLabel(project.project_type);
   const avatars = useMemo(() => teamToAvatars(project.team), [project.team]);
@@ -321,19 +322,14 @@ const ProjectListRow = memo(function ProjectListRow({ project }: { project: Gall
         gridTemplateColumns: '24px 1.5fr 1fr 120px 100px 80px',
       }}
     >
-      {/* Accent dot */}
-      <span
-        className="h-2.5 w-2.5 rounded-full"
-        aria-hidden
-        style={{ background: clientAccent(hue, 55, 0.14) }}
-      />
+      {/* Accent dot — stage color */}
+      <span className={cn('h-2.5 w-2.5 rounded-full', headerBg)} aria-hidden />
 
-      {/* Name + client + kind */}
+      {/* Name + kind */}
       <div className="flex min-w-0 items-center gap-2">
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium text-foreground">{project.name}</div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="truncate">{project.client_name ?? 'No client'}</span>
             <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider">
               {typeLabel}
             </span>
@@ -359,10 +355,7 @@ const ProjectListRow = memo(function ProjectListRow({ project }: { project: Gall
 
       {/* Percentage */}
       <div className="text-right">
-        <span
-          className="q-tabular font-mono text-[12px] font-medium"
-          style={{ color: clientAccent(hue, 45, 0.12) }}
-        >
+        <span className="q-tabular font-mono text-[12px] font-medium text-foreground">
           {progress}%
         </span>
       </div>
