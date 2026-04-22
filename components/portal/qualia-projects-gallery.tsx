@@ -35,7 +35,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { hueFromId } from '@/lib/color-constants';
-import { setProjectPipelineStage } from '@/app/actions/projects';
+import { setProjectPipelineStage, updateProjectStatus } from '@/app/actions/projects';
 import type { ProjectType } from '@/types/database';
 
 /* ======================================================================
@@ -261,10 +261,18 @@ function generateSummary(projects: GalleryProject[]): string {
    Stage Dropdown (admin only)
    ====================================================================== */
 
+type TerminalStatus = 'Done' | 'Archived';
+
+const TERMINAL_STATUSES: { label: string; value: TerminalStatus; icon: typeof Beaker }[] = [
+  { label: 'Finished', value: 'Done', icon: CheckCircle2 },
+  { label: 'Archived', value: 'Archived', icon: Archive },
+];
+
 function StageDropdown({ project }: { project: GalleryProject }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const currentStage = getCurrentStage(project);
+  const currentStatus = project.status;
 
   function handleStageChange(stage: PipelineStage) {
     if (stage === currentStage) return;
@@ -275,6 +283,19 @@ function StageDropdown({ project }: { project: GalleryProject }) {
         router.refresh();
       } else {
         toast.error(result.error || 'Failed to update stage');
+      }
+    });
+  }
+
+  function handleTerminalChange(status: TerminalStatus, label: string) {
+    if (status === currentStatus) return;
+    startTransition(async () => {
+      const result = await updateProjectStatus(project.id, status);
+      if (result.success) {
+        toast.success(`Moved "${project.name}" to ${label}`);
+        router.refresh();
+      } else {
+        toast.error(result.error || 'Failed to update status');
       }
     });
   }
@@ -319,6 +340,31 @@ function StageDropdown({ project }: { project: GalleryProject }) {
                 e.preventDefault();
                 e.stopPropagation();
                 handleStageChange(s.value);
+              }}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {s.label}
+              {isCurrent && <Check className="ml-auto h-3 w-3 text-primary" />}
+            </DropdownMenuItem>
+          );
+        })}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Close out
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {TERMINAL_STATUSES.map((s) => {
+          const isCurrent = s.value === currentStatus;
+          const Icon = s.icon;
+          return (
+            <DropdownMenuItem
+              key={s.value}
+              disabled={isCurrent}
+              className={cn('cursor-pointer gap-2 text-xs', isCurrent && 'opacity-50')}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleTerminalChange(s.value, s.label);
               }}
             >
               <Icon className="h-3.5 w-3.5" />
