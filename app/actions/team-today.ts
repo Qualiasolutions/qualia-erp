@@ -40,20 +40,21 @@ export async function getTeamTodaySnapshot(): Promise<TeamMemberToday[]> {
   const workspaceId = await getCurrentWorkspaceId();
   if (!workspaceId) return [];
 
-  const [employeesRes, liveStatuses] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url, role')
-      .in('role', ['employee', 'admin'])
-      .eq('is_active', true)
-      .order('full_name', { ascending: true }),
-    getTeamStatus(workspaceId),
-  ]);
+  // getTeamStatus already fetches workspace_members → profiles (id, full_name,
+  // avatar_url, role) plus open sessions. No need for a separate profiles query.
+  const liveStatuses = await getTeamStatus(workspaceId);
 
-  const employees = employeesRes.data ?? [];
-  if (employees.length === 0) return [];
+  if (liveStatuses.length === 0) return [];
 
   const statusById = new Map(liveStatuses.map((s) => [s.profileId, s]));
+
+  // Build the employees list from the status result — same shape the rest of
+  // this function expects.
+  const employees = liveStatuses.map((s) => ({
+    id: s.profileId,
+    full_name: s.fullName,
+    avatar_url: s.avatarUrl,
+  }));
 
   const profileIds = employees.map((e) => e.id);
 

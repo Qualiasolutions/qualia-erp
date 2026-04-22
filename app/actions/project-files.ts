@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 
 import type { Tables } from '@/types/database';
@@ -271,6 +272,8 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     }
   }
 
+  revalidatePath('/projects/[id]/files', 'page');
+
   return { success: true, data: fileRecord };
 }
 
@@ -399,6 +402,9 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
     file.name,
     description || undefined
   );
+
+  revalidatePath('/projects/[id]/files', 'page');
+  revalidatePath('/portal/[id]/files', 'page');
 
   return { success: true, data: fileRecord };
 }

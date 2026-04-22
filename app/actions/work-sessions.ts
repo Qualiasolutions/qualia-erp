@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import { isUserAdmin, isUserManagerOrAbove } from './shared';
@@ -135,6 +136,9 @@ export async function clockIn(
     return { success: false, error: error.message };
   }
 
+  revalidatePath('/');
+  revalidatePath('/tasks');
+
   return { success: true, data };
 }
 
@@ -200,6 +204,9 @@ export async function clockOut(
     console.error('[clockOut] Update error:', error);
     return { success: false, error: error.message };
   }
+
+  revalidatePath('/');
+  revalidatePath('/tasks');
 
   return { success: true, data };
 }

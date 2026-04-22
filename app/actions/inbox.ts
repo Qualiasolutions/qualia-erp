@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 
@@ -754,6 +755,8 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
   notifyTaskCreated(user.id, title.trim(), data.id, projectName, due_date || undefined).catch(
     (err) => console.error('[createTask] Failed to send email notification:', err)
   );
+
+  revalidatePath('/tasks');
 
   return { success: true, data };
 }

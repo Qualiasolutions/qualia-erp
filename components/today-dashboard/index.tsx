@@ -10,14 +10,12 @@ import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebar } from '@/components/sidebar-provider';
 import { NotificationPanel } from '@/components/notification-panel';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { MeetingsSidebar } from './meetings-sidebar';
 import { TeamTaskContainer } from './team-task-container';
 import { ClockInModal } from './clock-in-modal';
 import { useTransition, useState, useEffect } from 'react';
-import { type MeetingWithRelations, useMeetings, useActiveSession, useTeamStatus } from '@/lib/swr';
+import { type MeetingWithRelations, useMeetings, useActiveSession } from '@/lib/swr';
 import {
   Select,
   SelectContent,
@@ -30,93 +28,6 @@ import { useAdminContext } from '@/components/admin-provider';
 import type { PipelineProject } from './building-projects-row';
 
 import { PROJECT_TYPE_CONFIG } from '@/lib/project-type-config';
-
-// ─── Team Presence (Header) ─────────────────────────────────────────────────
-
-function TeamPresence({ workspaceId }: { workspaceId: string }) {
-  const { members, isLoading } = useTeamStatus(workspaceId);
-  const online = members.filter((m) => m.status === 'online');
-
-  if (isLoading) return <Skeleton className="h-7 w-24 rounded-full" />;
-  if (members.length === 0) return null;
-
-  return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex cursor-default items-center gap-2">
-            <div className="flex -space-x-1.5">
-              {members.slice(0, 6).map((m) => (
-                <div key={m.profileId} className="relative">
-                  <Avatar className="size-6 ring-2 ring-card transition-transform duration-150 hover:z-10 hover:scale-110">
-                    {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.fullName ?? ''} />}
-                    <AvatarFallback
-                      className={cn(
-                        'text-[9px] font-semibold',
-                        m.status === 'online'
-                          ? 'bg-primary/15 text-primary'
-                          : 'bg-muted/60 text-muted-foreground/50'
-                      )}
-                    >
-                      {(m.fullName ?? '?')
-                        .split(' ')
-                        .map((w) => w[0])
-                        .join('')
-                        .slice(0, 2)
-                        .toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span
-                    className={cn(
-                      'absolute -bottom-0.5 -right-0.5 block size-2 rounded-full ring-[1.5px] ring-card',
-                      m.status === 'online' ? 'bg-emerald-500' : 'bg-muted-foreground/25'
-                    )}
-                  />
-                </div>
-              ))}
-            </div>
-            {online.length > 0 && (
-              <span className="hidden text-[11px] font-medium tabular-nums text-emerald-600 dark:text-emerald-400 sm:inline">
-                {online.length} online
-              </span>
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" align="end" className="max-w-xs p-0">
-          <div className="space-y-0.5 px-1 py-1.5">
-            {online.length > 0 && (
-              <p className="px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-background/50">
-                Online
-              </p>
-            )}
-            {online.map((m) => (
-              <div key={m.profileId} className="flex items-center gap-2 rounded px-2 py-1">
-                <span className="size-1.5 shrink-0 rounded-full bg-emerald-400" />
-                <span className="font-medium">{m.fullName ?? 'Unknown'}</span>
-                {m.projectName && (
-                  <span className="truncate text-background/50">— {m.projectName}</span>
-                )}
-              </div>
-            ))}
-            {members.filter((m) => m.status !== 'online').length > 0 && (
-              <p className="px-2 pb-1 pt-1.5 text-[10px] font-medium uppercase tracking-wider text-background/50">
-                Offline
-              </p>
-            )}
-            {members
-              .filter((m) => m.status !== 'online')
-              .map((m) => (
-                <div key={m.profileId} className="flex items-center gap-2 rounded px-2 py-1">
-                  <span className="size-1.5 shrink-0 rounded-full bg-background/25" />
-                  <span className="text-background/60">{m.fullName ?? 'Unknown'}</span>
-                </div>
-              ))}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
 
 // ─── Active Projects List (Right Column) ────────────────────────────────────
 
@@ -346,14 +257,6 @@ export function TodayDashboard({
                     ))}
                 </SelectContent>
               </Select>
-              <span className="mx-0.5 hidden h-4 w-px bg-border/50 sm:inline-block" />
-            </>
-          )}
-
-          {/* Team presence — admin only */}
-          {isRealAdmin && (
-            <>
-              <TeamPresence workspaceId={workspaceId} />
               <span className="mx-0.5 hidden h-4 w-px bg-border/50 sm:inline-block" />
             </>
           )}

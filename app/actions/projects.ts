@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { updateTag } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { z } from 'zod';
 
 import {
@@ -498,6 +498,8 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
 
   // Invalidate cached project data
   updateTag(`project-${id}`);
+  revalidatePath('/projects');
+  revalidatePath('/projects/[id]', 'page');
 
   // Notify clients if status changed (fire-and-forget)
   if (status !== undefined && existingProject && existingProject.status !== status) {
