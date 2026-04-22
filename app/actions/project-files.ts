@@ -383,7 +383,7 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
   // Log activity
   await createActivityLogEntry({
     projectId,
-    actionType: 'client_file_uploaded',
+    actionType: 'file_uploaded',
     actionData: {
       file_name: file.name,
       description: description || undefined,

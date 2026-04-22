@@ -173,6 +173,7 @@ export function ProjectFilesPanel({
               className="h-7 gap-1 text-xs"
               disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
+              aria-label="Upload project file"
             >
               {uploading ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -225,7 +226,7 @@ export function ProjectFilesPanel({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                  className="h-7 min-h-[44px] w-7 min-w-[44px] shrink-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                   onClick={() => handleDownload(file.id, file.original_name)}
                   disabled={downloadingId === file.id}
                   title="Download"
@@ -240,7 +241,7 @@ export function ProjectFilesPanel({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                    className="h-7 min-h-[44px] w-7 min-w-[44px] shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                     onClick={() => handleDelete(file.id, file.original_name)}
                     disabled={deletingId === file.id}
                     title="Delete"
