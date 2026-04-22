@@ -181,23 +181,52 @@ export async function POST(request: NextRequest) {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // ── Match repo to ERP project ────────────────────────────────────────
-    // Look up project by matching GitHub URL in project_integrations
-    const { data: integration } = await supabase
+    // Match on the *exact* repo full_name (case-insensitive) rather than a
+    // substring. An earlier bug matched with `ilike '%…%'` + `limit(1)`, which
+    // would silently pick one row when two integrations differed only by the
+    // casing of the org segment — splitting syncs across duplicate projects
+    // in a non-deterministic way. If more than one row matches we bail and
+    // surface the conflict instead of guessing.
+    const { data: integrations, error: integrationError } = await supabase
       .from('project_integrations')
-      .select('project_id')
+      .select('project_id, external_url')
       .eq('service_type', 'github')
-      .ilike('external_url', `%${payload.repository.full_name}%`)
-      .limit(1)
-      .single();
+      .or(
+        `external_url.ilike.https://github.com/${payload.repository.full_name},` +
+          `external_url.ilike.http://github.com/${payload.repository.full_name},` +
+          `external_url.ilike.https://github.com/${payload.repository.full_name}/,` +
+          `external_url.ilike.http://github.com/${payload.repository.full_name}/`
+      );
 
-    if (!integration) {
+    if (integrationError) {
+      console.error('[GitHub webhook] Integration lookup error:', integrationError);
+      return NextResponse.json({ error: 'Integration lookup failed' }, { status: 500 });
+    }
+
+    if (!integrations || integrations.length === 0) {
       return NextResponse.json({
         ok: true,
         message: `No ERP project linked to ${payload.repository.html_url}`,
       });
     }
 
-    const projectId = integration.project_id;
+    if (integrations.length > 1) {
+      console.error(
+        '[GitHub webhook] Multiple ERP projects linked to',
+        payload.repository.html_url,
+        '→',
+        integrations.map((i) => i.project_id)
+      );
+      return NextResponse.json(
+        {
+          error: 'Multiple projects linked to this repository — resolve the duplicate in the ERP',
+          project_ids: integrations.map((i) => i.project_id),
+        },
+        { status: 409 }
+      );
+    }
+
+    const projectId = integrations[0].project_id;
 
     // Get the project's workspace_id for task creation
     const { data: project } = await supabase
