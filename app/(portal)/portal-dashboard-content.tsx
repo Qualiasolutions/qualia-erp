@@ -2,7 +2,14 @@
 
 import { usePortalDashboard } from '@/lib/swr';
 import { QualiaPortalHub } from '@/components/portal/qualia-portal-hub';
-import { PortalWelcomeTour } from '@/components/portal/portal-welcome-tour';
+import dynamic from 'next/dynamic';
+const PortalWelcomeTour = dynamic(
+  () =>
+    import('@/components/portal/portal-welcome-tour').then((m) => ({
+      default: m.PortalWelcomeTour,
+    })),
+  { ssr: false }
+);
 
 interface PortalDashboardContentProps {
   clientId: string;

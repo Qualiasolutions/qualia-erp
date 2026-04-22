@@ -24,7 +24,12 @@ import { cn, formatRelativeTime } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getFileDownloadUrl } from '@/app/actions/project-files';
 import { Button } from '@/components/ui/button';
-import { FilePreviewModal } from '@/components/portal/file-preview-modal';
+import dynamic from 'next/dynamic';
+const FilePreviewModal = dynamic(
+  () =>
+    import('@/components/portal/file-preview-modal').then((m) => ({ default: m.FilePreviewModal })),
+  { ssr: false }
+);
 import type { PortalFileWithProject } from './page';
 
 /* ------------------------------------------------------------------ */

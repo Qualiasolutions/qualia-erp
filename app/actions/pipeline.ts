@@ -676,25 +676,27 @@ export async function createPhase(
 export async function getProjectPhasesWithDetails(projectId: string): Promise<PhaseWithDetails[]> {
   const supabase = await createClient();
 
-  // Get phases
-  const { data: phases, error: phasesError } = await supabase
-    .from('project_phases')
-    .select('*')
-    .eq('project_id', projectId)
-    .order('sort_order', { ascending: true });
+  // Step 1: phases + tasks in parallel (both filter by project_id)
+  const [phasesResult, tasksResult] = await Promise.all([
+    supabase
+      .from('project_phases')
+      .select(
+        'id, project_id, name, description, status, sort_order, created_at, is_locked, helper_text, template_key'
+      )
+      .eq('project_id', projectId)
+      .order('sort_order', { ascending: true }),
+    supabase.from('tasks').select('phase_id, status').eq('project_id', projectId),
+  ]);
+
+  const { data: phases, error: phasesError } = phasesResult;
+  const { data: tasks } = tasksResult;
 
   if (phasesError || !phases) {
     console.error('[getProjectPhasesWithDetails] Error:', phasesError);
     return [];
   }
 
-  // Get task counts per phase
-  const { data: tasks } = await supabase
-    .from('tasks')
-    .select('phase_id, status')
-    .eq('project_id', projectId);
-
-  // Get resource counts per phase
+  // Step 2: resources needs phaseIds (phase_resources has no project_id column)
   const phaseIds = phases.map((p) => p.id);
   const { data: resources } = await supabase
     .from('phase_resources')

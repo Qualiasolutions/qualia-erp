@@ -11,7 +11,14 @@ import {
 import { useRealtimeMessages } from '@/lib/hooks/use-realtime-messages';
 import { markChannelRead } from '@/app/actions/portal-messages';
 import { ChannelList } from '@/components/portal/messaging/channel-list';
-import { MessageThread } from '@/components/portal/messaging/message-thread';
+import dynamic from 'next/dynamic';
+const MessageThread = dynamic(
+  () =>
+    import('@/components/portal/messaging/message-thread').then((m) => ({
+      default: m.MessageThread,
+    })),
+  { ssr: false }
+);
 import { ChannelDetails } from '@/components/portal/messaging/channel-details';
 import { NewConversationDialog } from '@/components/portal/messaging/new-conversation-dialog';
 import { cn } from '@/lib/utils';
