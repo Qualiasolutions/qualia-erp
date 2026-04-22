@@ -83,7 +83,9 @@ export async function getWorkspaceHealthDashboard(workspaceId?: string): Promise
     // Query materialized view for fast results
     const { data: projects, error } = await supabase
       .from('project_health_current')
-      .select('*')
+      .select(
+        'project_id, project_name, project_status, project_type, overall_health_score, schedule_health, velocity_health, quality_health, communication_health, metrics_data, last_measured_at, lead_name, client_name, active_insights_count, critical_insights_count, health_trend, workspace_id'
+      )
       .eq('workspace_id', wsId)
       .order('overall_health_score', { ascending: true, nullsFirst: false }); // Worst first
 
@@ -111,7 +113,9 @@ export async function getProjectHealthDetails(projectId: string): Promise<Action
       supabase.rpc('calculate_project_health', { p_project_id: projectId }),
       supabase
         .from('project_health_insights')
-        .select('*')
+        .select(
+          'id, project_id, insight_type, severity, title, description, recommendations, status, created_at'
+        )
         .eq('project_id', projectId)
         .eq('status', 'active')
         .order('severity', { ascending: false })
@@ -367,18 +371,20 @@ export async function getProjectHealth(projectId: string): Promise<ProjectHealth
     const [metricsResult, activeInsightsResult, criticalInsightsResult] = await Promise.all([
       supabase
         .from('project_health_metrics')
-        .select('*')
+        .select(
+          'measured_at, overall_health_score, schedule_health, velocity_health, quality_health, communication_health'
+        )
         .eq('project_id', projectId)
         .order('measured_at', { ascending: false })
         .limit(2),
       supabase
         .from('project_health_insights')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('project_id', projectId)
         .eq('status', 'active'),
       supabase
         .from('project_health_insights')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('project_id', projectId)
         .eq('status', 'active')
         .eq('severity', 'critical'),

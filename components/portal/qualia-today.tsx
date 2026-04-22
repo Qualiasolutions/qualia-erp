@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 
 import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -241,7 +241,7 @@ function PulseStat({ label, value, trend }: { label: string; value: string; tren
    Team on deck — admin-only view of every teammate's open work
    ====================================================================== */
 
-function TeamOnDeck({ members }: { members: TeamMemberToday[] }) {
+const TeamOnDeck = memo(function TeamOnDeck({ members }: { members: TeamMemberToday[] }) {
   return (
     <div
       className="card rounded-xl border p-7"
@@ -277,9 +277,9 @@ function TeamOnDeck({ members }: { members: TeamMemberToday[] }) {
       )}
     </div>
   );
-}
+});
 
-function TeamMemberRow({ member }: { member: TeamMemberToday }) {
+const TeamMemberRow = memo(function TeamMemberRow({ member }: { member: TeamMemberToday }) {
   const firstName = (member.fullName ?? '').split(/\s+/)[0] ?? '';
   const initials =
     (member.fullName ?? '??')
@@ -371,7 +371,7 @@ function TeamMemberRow({ member }: { member: TeamMemberToday }) {
       </div>
     </div>
   );
-}
+});
 
 /* ======================================================================
    Timeline — today's tasks vertical list

@@ -367,7 +367,7 @@ export async function getSessionsAdmin(
     .from('work_sessions')
     .select(
       `
-      *,
+      id, workspace_id, profile_id, project_id, started_at, ended_at, duration_minutes, summary, clock_in_note, created_at,
       profile:profiles!work_sessions_profile_id_fkey (id, full_name, avatar_url),
       project:projects!work_sessions_project_id_fkey (id, name)
     `
@@ -431,7 +431,7 @@ export async function getMySessions(
   const { data, error } = await supabase
     .from('work_sessions')
     .select(
-      `*,
+      `id, workspace_id, profile_id, project_id, started_at, ended_at, duration_minutes, summary, clock_in_note, created_at,
       project:projects!work_sessions_project_id_fkey (id, name)`
     )
     .eq('profile_id', user.id)

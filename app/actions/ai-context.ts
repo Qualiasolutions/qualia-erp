@@ -45,7 +45,7 @@ export async function getUserAIContext(targetUserId?: string): Promise<AIUserCon
 
   const { data } = await supabase
     .from('ai_user_context')
-    .select('*')
+    .select('id, user_id, workspace_id, admin_notes, recent_summaries, updated_at')
     .eq('user_id', userId)
     .single();
 
@@ -70,7 +70,7 @@ export async function getOrCreateUserAIContext(
   // Try to fetch existing
   const { data: existing } = await supabase
     .from('ai_user_context')
-    .select('*')
+    .select('id, user_id, workspace_id, admin_notes, recent_summaries, updated_at')
     .eq('user_id', userId)
     .eq('workspace_id', workspaceId)
     .single();

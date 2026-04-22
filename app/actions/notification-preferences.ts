@@ -29,7 +29,9 @@ export async function getNotificationPreferences(): Promise<ActionResult> {
 
     const { data, error } = await supabase
       .from('notification_preferences')
-      .select('*')
+      .select(
+        'id, user_id, workspace_id, task_assigned, task_due_soon, project_update, meeting_reminder, client_activity, delivery_method'
+      )
       .eq('user_id', user.id)
       .eq('workspace_id', workspaceId)
       .single();

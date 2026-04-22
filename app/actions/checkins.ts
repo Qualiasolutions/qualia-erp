@@ -218,7 +218,9 @@ export async function getTodaysCheckin(workspaceId: string): Promise<DailyChecki
 
   const { data, error } = await supabase
     .from('daily_checkins')
-    .select('*')
+    .select(
+      'id, workspace_id, profile_id, checkin_date, checkin_type, planned_tasks, energy_level, blockers, completed_tasks, wins, tomorrow_plan, mood, clock_in_time, planned_clock_out_time, actual_clock_out_time, created_at, updated_at'
+    )
     .eq('workspace_id', workspaceId)
     .eq('profile_id', user.id)
     .eq('checkin_date', today)

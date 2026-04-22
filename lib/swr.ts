@@ -702,7 +702,7 @@ export function useTeamTodaySnapshot() {
       const { getTeamTodaySnapshot } = await import('@/app/actions/team-today');
       return getTeamTodaySnapshot();
     },
-    autoRefreshConfig
+    slowRefreshConfig
   );
 
   return {

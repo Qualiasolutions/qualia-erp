@@ -80,9 +80,11 @@ export async function getPhaseResources(phaseId: string): Promise<PhaseResource[
 
   const { data, error } = await supabase
     .from('phase_resources')
-    .select('*')
+    .select(
+      'id, phase_id, title, url, description, resource_type, display_order, created_at, created_by'
+    )
     .eq('phase_id', phaseId)
-    .order('sort_order', { ascending: true });
+    .order('display_order', { ascending: true });
 
   if (error) {
     console.error('[getPhaseResources] Error:', error);

@@ -570,7 +570,7 @@ export function QualiaProjectsGallery({ projects, isAdmin }: QualiaProjectsGalle
               type="button"
               onClick={() => setFilter(f)}
               className={cn(
-                'h-7 cursor-pointer rounded-md px-2.5 text-[11px] font-medium capitalize transition-all duration-150',
+                'h-9 cursor-pointer rounded-md px-2.5 text-[11px] font-medium capitalize transition-all duration-150',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                 filter === f
                   ? 'bg-primary/10 text-primary'
@@ -594,7 +594,7 @@ export function QualiaProjectsGallery({ projects, isAdmin }: QualiaProjectsGalle
                 onClick={() => setViewMode(v)}
                 title={v === 'columns' ? 'Columns' : v === 'gallery' ? 'Gallery' : 'List'}
                 className={cn(
-                  'flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm transition-colors duration-150',
+                  'flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-sm transition-colors duration-150',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                   viewMode === v
                     ? 'bg-background text-foreground shadow-sm'
