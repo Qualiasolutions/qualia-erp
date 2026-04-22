@@ -59,7 +59,7 @@ export function QualiaTweaksPanel({
   return (
     <div
       ref={panelRef}
-      className="q-page-enter fixed bottom-5 right-5 z-50 w-[280px] rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[0_20px_48px_rgba(0,0,0,0.14),0_4px_12px_rgba(0,0,0,0.08)]"
+      className="q-page-enter fixed bottom-5 right-5 z-50 w-[280px] rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[var(--elevation-modal)]"
       role="dialog"
       aria-label="Admin tweaks"
     >
@@ -116,7 +116,7 @@ export function QualiaTweaksPanel({
                 className={cn(
                   'flex cursor-pointer items-center justify-center gap-1.5 rounded px-2 py-1.5 text-[11.5px] capitalize transition-colors duration-150',
                   selected
-                    ? 'bg-[var(--surface)] font-semibold text-[var(--text)] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                    ? 'bg-[var(--surface)] font-semibold text-[var(--text)] shadow-[var(--elevation-resting)]'
                     : 'font-medium text-[var(--text-mute)] hover:text-[var(--text-soft)]'
                 )}
                 aria-pressed={selected}
@@ -143,7 +143,7 @@ export function QualiaTweaksPanel({
                 className={cn(
                   'cursor-pointer rounded px-2 py-1.5 text-[11.5px] capitalize transition-colors duration-150',
                   selected
-                    ? 'bg-[var(--surface)] font-semibold text-[var(--text)] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                    ? 'bg-[var(--surface)] font-semibold text-[var(--text)] shadow-[var(--elevation-resting)]'
                     : 'font-medium text-[var(--text-mute)] hover:text-[var(--text-soft)]'
                 )}
                 aria-pressed={selected}

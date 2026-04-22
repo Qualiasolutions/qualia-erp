@@ -416,7 +416,7 @@ function TodayTimeline({ tasks }: { tasks: TimelineTask[] }) {
         <div className="relative">
           <div
             aria-hidden
-            className="absolute bottom-2 left-[60px] top-2 w-px"
+            className="absolute bottom-2 left-[11px] top-2 w-px"
             style={{ background: 'var(--line)' }}
           />
           {tasks.map((t, i) => (
@@ -424,16 +424,10 @@ function TodayTimeline({ tasks }: { tasks: TimelineTask[] }) {
               key={t.id}
               className="grid items-center gap-3.5 py-3.5"
               style={{
-                gridTemplateColumns: '50px 24px 1fr auto',
+                gridTemplateColumns: '24px 1fr auto',
                 borderBottom: i < tasks.length - 1 ? '1px dashed var(--line)' : 'none',
               }}
             >
-              <div
-                className="text-right font-mono text-[11px] tracking-[0.04em]"
-                style={{ color: 'var(--text-mute)' }}
-              >
-                {['09:30', '11:00', '13:15', '15:45', '16:30'][i] ?? '—'}
-              </div>
               <div
                 aria-hidden
                 className="mx-auto h-2.5 w-2.5 rounded-full border-2"
@@ -622,7 +616,7 @@ function ProjectsTape({ projects }: { projects: TapeProject[] }) {
             href={p.href}
             className={cn(
               'card group block rounded-xl border p-[18px] text-left transition-all duration-200 ease-out',
-              'hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]'
+              'hover:-translate-y-0.5 hover:shadow-[var(--elevation-floating)]'
             )}
             style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
           >

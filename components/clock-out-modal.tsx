@@ -91,16 +91,21 @@ export function ClockOutModal({
     return () => clearInterval(interval);
   }, [session.started_at]);
 
-  // Check for report when modal opens, and poll every 10s
+  // Check for report when modal opens. Poll every 10s only until one is
+  // detected — once attached, stop polling (previous behaviour kept hammering
+  // every 10s for as long as the modal stayed open).
+  const reportAttached = !!reportUrl || structuredReportAttached;
   useEffect(() => {
-    if (open) {
-      setSummary('');
-      setError(null);
-      checkForReport();
-      const interval = setInterval(checkForReport, 10_000);
-      return () => clearInterval(interval);
+    if (!open) return;
+    setSummary('');
+    setError(null);
+    if (reportAttached) {
+      return;
     }
-  }, [open, checkForReport]);
+    checkForReport();
+    const interval = setInterval(checkForReport, 10_000);
+    return () => clearInterval(interval);
+  }, [open, reportAttached, checkForReport]);
 
   const handleSubmit = () => {
     if (!summary.trim()) {
@@ -132,7 +137,6 @@ export function ClockOutModal({
   // without one if the upload fails or they generated the report outside
   // the normal flow. A warning is shown in the UI when the report is missing.
   const isOtherSession = !session.project;
-  const reportAttached = !!reportUrl || structuredReportAttached;
   const reportMissing = !isOtherSession && !reportAttached;
   const canSubmit = summary.trim() && !isPending;
 

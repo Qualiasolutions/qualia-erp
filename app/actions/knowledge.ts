@@ -49,7 +49,7 @@ export async function getKnowledgeGuides(): Promise<Guide[]> {
 
   const { data, error } = await supabase
     .from('knowledge_guides')
-    .select('*')
+    .select('slug, title, subtitle, category, project_type, steps, checklist, sort_order')
     .order('sort_order', { ascending: true });
 
   // If table is empty or error, return defaults

@@ -102,7 +102,7 @@ export async function getConversation(id: string): Promise<Conversation | null> 
 
   const { data: conversation, error } = await supabase
     .from('ai_conversations')
-    .select('*')
+    .select('id, workspace_id, user_id, title, created_at, updated_at')
     .eq('id', id)
     .eq('user_id', user.id)
     .single();
@@ -293,7 +293,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
 
   const { data: messages, error } = await supabase
     .from('ai_messages')
-    .select('*')
+    .select('id, conversation_id, role, content, tool_calls, tool_results, created_at')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true });
 

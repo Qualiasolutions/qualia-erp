@@ -38,17 +38,17 @@ export interface WorkSession {
 
 // ============ ACTIONS ============
 
-/**
- * Get today's date string in UTC (YYYY-MM-DD).
- */
-function todayUTC(): string {
-  return new Date().toISOString().split('T')[0];
-}
+// Sessions older than this without being clocked out are treated as "forgot
+// to clock out" — auto-closed with an 8h cap on the next clock-in. 16h covers
+// legitimate overnight shifts (crossing UTC midnight for eastern timezones)
+// without keeping orphaned sessions alive forever.
+const STALE_SESSION_MS = 16 * 60 * 60 * 1000;
+const STALE_CAP_MS = 8 * 60 * 60 * 1000;
 
 /**
  * Clock in: create a new work session.
- * Rejects if user already has an open session TODAY.
- * Stale sessions from previous days are auto-closed before creating a new one.
+ * Rejects if the user already has an open session (any age under STALE_SESSION_MS).
+ * Sessions older than STALE_SESSION_MS are auto-closed with an 8h cap first.
  */
 export async function clockIn(
   workspaceId: string,
@@ -66,42 +66,37 @@ export async function clockIn(
     return { success: false, error: 'Not authenticated' };
   }
 
-  // Auto-close any stale open sessions from previous days (cap at 8h from start)
-  const today = todayUTC();
-  const { data: staleSessions } = await supabase
+  // Date-agnostic: previously used UTC midnight as the stale boundary, which
+  // misfired for users whose evening shifts crossed 00:00 UTC.
+  const { data: openSessions } = await supabase
     .from('work_sessions')
     .select('id, started_at')
     .eq('profile_id', user.id)
     .eq('workspace_id', workspaceId)
-    .is('ended_at', null)
-    .lt('started_at', `${today}T00:00:00.000Z`);
+    .is('ended_at', null);
 
-  if (staleSessions && staleSessions.length > 0) {
+  const now = Date.now();
+  const stale = (openSessions ?? []).filter(
+    (s) => now - new Date(s.started_at).getTime() > STALE_SESSION_MS
+  );
+  const live = (openSessions ?? []).filter(
+    (s) => now - new Date(s.started_at).getTime() <= STALE_SESSION_MS
+  );
+
+  if (stale.length > 0) {
     await Promise.all(
-      staleSessions.map((stale) => {
-        const cappedEnd = new Date(
-          new Date(stale.started_at).getTime() + 8 * 60 * 60 * 1000
-        ).toISOString();
+      stale.map((s) => {
+        const cappedEnd = new Date(new Date(s.started_at).getTime() + STALE_CAP_MS).toISOString();
         return supabase
           .from('work_sessions')
           .update({ ended_at: cappedEnd, summary: '[Auto-closed: forgot to clock out]' })
-          .eq('id', stale.id)
+          .eq('id', s.id)
           .eq('profile_id', user.id);
       })
     );
   }
 
-  // Check for existing open session TODAY
-  const { data: existing } = await supabase
-    .from('work_sessions')
-    .select('id')
-    .eq('profile_id', user.id)
-    .eq('workspace_id', workspaceId)
-    .is('ended_at', null)
-    .gte('started_at', `${today}T00:00:00.000Z`)
-    .maybeSingle();
-
-  if (existing) {
+  if (live.length > 0) {
     return { success: false, error: 'You already have an active session. Clock out first.' };
   }
 
@@ -279,9 +274,8 @@ export async function getActiveSession(workspaceId: string): Promise<WorkSession
 
   if (!user) return null;
 
-  const today = todayUTC();
-
-  // Item 24: Explicit column projection instead of select('*')
+  // Date-agnostic: overnight shifts crossing UTC midnight must still appear
+  // as the active session for the user.
   const { data, error } = await supabase
     .from('work_sessions')
     .select(
@@ -290,7 +284,7 @@ export async function getActiveSession(workspaceId: string): Promise<WorkSession
     .eq('profile_id', user.id)
     .eq('workspace_id', workspaceId)
     .is('ended_at', null)
-    .gte('started_at', `${today}T00:00:00.000Z`)
+    .order('started_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 

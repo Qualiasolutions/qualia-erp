@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 import { safeCompare } from '@/lib/auth-utils';
+
+// M-B2: Length caps on string fields to prevent row-bloat via compromised key.
+const SessionLogSchema = z.object({
+  project: z.string().min(1).max(200),
+  summary: z.string().max(500).optional(),
+  working_directory: z.string().max(500).optional(),
+  git: z
+    .object({
+      branch: z.string().max(200).optional(),
+      files_changed: z.number().int().min(0).max(100000).optional(),
+    })
+    .optional(),
+});
 
 /**
  * POST /api/claude/session-log
@@ -27,25 +41,29 @@ export async function POST(request: NextRequest) {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-  let body: Record<string, unknown>;
+  let rawBody: unknown;
   try {
-    body = await request.json();
+    rawBody = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  if (!body.project || typeof body.project !== 'string') {
-    return NextResponse.json({ error: 'Missing or invalid "project" field' }, { status: 400 });
+  const parsed = SessionLogSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message || 'Invalid request body' },
+      { status: 400 }
+    );
   }
 
-  const git = (body.git as Record<string, unknown>) || {};
+  const body = parsed.data;
 
   const { error } = await supabase.from('claude_sessions').insert({
     project_name: body.project,
-    branch: typeof git.branch === 'string' ? git.branch : null,
-    files_changed: typeof git.files_changed === 'number' ? git.files_changed : 0,
-    summary: typeof body.summary === 'string' ? body.summary.slice(0, 500) : null,
-    working_directory: typeof body.working_directory === 'string' ? body.working_directory : null,
+    branch: body.git?.branch ?? null,
+    files_changed: body.git?.files_changed ?? 0,
+    summary: body.summary ?? null,
+    working_directory: body.working_directory ?? null,
   });
 
   if (error) {

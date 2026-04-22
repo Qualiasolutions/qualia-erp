@@ -33,7 +33,7 @@ export async function getProjectLinks(projectId: string): Promise<ProjectLink[]>
 
   const { data, error } = await supabase
     .from('project_integrations')
-    .select('*')
+    .select('id, project_id, service_type, external_url, external_id, metadata, connected_at')
     .eq('project_id', projectId)
     .order('connected_at', { ascending: true });
 

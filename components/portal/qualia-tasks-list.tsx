@@ -413,12 +413,20 @@ const TaskRow = React.memo(function TaskRow({
         'motion-reduce:transition-none'
       )}
       role="row"
+      tabIndex={0}
       onClick={(e) => {
         // Ignore clicks that originated from interactive children (they stopPropagation)
         // or from selected text — double-click on title is reserved for inline rename.
         if ((e.target as HTMLElement).closest('button, input, a, [role="menu"], [role="dialog"]'))
           return;
         if (window.getSelection()?.toString()) return;
+        onOpenDetail(task);
+      }}
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        if ((e.target as HTMLElement).closest('button, input, a, [role="menu"], [role="dialog"]'))
+          return;
+        e.preventDefault();
         onOpenDetail(task);
       }}
     >

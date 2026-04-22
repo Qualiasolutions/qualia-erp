@@ -32,8 +32,9 @@ export async function GET(request: NextRequest) {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const { searchParams } = new URL(request.url);
-  const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
-  const project = searchParams.get('project');
+  const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '20', 10), 1), 50);
+  const projectRaw = searchParams.get('project');
+  const project = projectRaw?.slice(0, 200) ?? null;
 
   let query = supabase
     .from('claude_sessions')

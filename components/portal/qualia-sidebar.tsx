@@ -255,26 +255,32 @@ function NavItem({
    Clock widget — matches design's restrained footer variant
    ====================================================================== */
 
+// Ticker isolated in its own component so the 1-second interval only
+// re-renders the time string, not the entire ClockBlock subtree (which
+// otherwise would re-run on every tick for every sidebar mount).
+function ClockTicker({ startedAt }: { startedAt: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const elapsed = Math.max(0, now - new Date(startedAt).getTime());
+  const hrs = Math.floor(elapsed / 3_600_000);
+  const mins = Math.floor((elapsed % 3_600_000) / 60_000);
+  const secs = Math.floor((elapsed % 60_000) / 1000);
+  return (
+    <>{`${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`}</>
+  );
+}
+
 function ClockBlock({ userId }: { userId: string | null }) {
   const [showIn, setShowIn] = useState(false);
   const [showOut, setShowOut] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
   const { session, isLoading, workspaceId } = useClockGate();
-
-  useEffect(() => {
-    if (!session) return;
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, [session]);
 
   if (!workspaceId || isLoading) return null;
 
   const clockedIn = !!session;
-  const elapsed = session ? now - new Date(session.started_at).getTime() : 0;
-  const hrs = Math.floor(elapsed / 3_600_000);
-  const mins = Math.floor((elapsed % 3_600_000) / 60_000);
-  const secs = Math.floor((elapsed % 60_000) / 1000);
-  const timeStr = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
   return (
     <>
@@ -301,7 +307,7 @@ function ClockBlock({ userId }: { userId: string | null }) {
             {clockedIn ? 'Clocked in' : 'Off the clock'}
           </div>
           <div className="q-tabular font-mono text-[13px] font-semibold tracking-[-0.01em] text-[var(--text)]">
-            {timeStr}
+            {session ? <ClockTicker startedAt={session.started_at} /> : '00:00:00'}
           </div>
         </div>
         <button

@@ -357,7 +357,7 @@ const ProjectCardTile = memo(function ProjectCardTile({
       className={cn(
         'group relative block overflow-hidden rounded-xl border border-border bg-card',
         'ease-[cubic-bezier(0.16,1,0.3,1)] transition-all duration-200',
-        'hover:border-primary/20 hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)]',
+        'hover:border-primary/20 hover:shadow-[var(--elevation-floating)]',
         'motion-safe:hover:-translate-y-[3px]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         'cursor-pointer'
@@ -705,7 +705,7 @@ function StageColumn({
   const Icon = config.icon;
 
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[var(--elevation-resting)]">
       <header
         className={cn(
           'flex shrink-0 items-center gap-2 border-b border-border bg-muted/20 px-3 py-2',

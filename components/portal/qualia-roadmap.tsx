@@ -520,7 +520,7 @@ function PhaseBreakdownTable({
                         width: `${progress * 100}%`,
                         background:
                           status === 'done'
-                            ? 'hsl(var(--emerald-500, 142 76% 36%))'
+                            ? 'hsl(var(--success))'
                             : status === 'active'
                               ? clientAccent(clientHue)
                               : 'hsl(var(--muted-foreground) / 0.4)',

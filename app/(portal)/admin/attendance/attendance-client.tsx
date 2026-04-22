@@ -50,18 +50,30 @@ function formatDateLabel(range: DateRange | undefined): string {
   return `${format(range.from, 'MMM d')} – ${format(range.to, 'MMM d, yyyy')}`;
 }
 
+// Prevent CSV formula injection in Excel / Sheets by prefixing cells that
+// start with a risky character and normalising line breaks inside quoted
+// fields. Without this, a session summary beginning with `=` or `@` would
+// be evaluated as a formula when the exported file is opened.
+function csvCell(value: string | number | null | undefined): string {
+  const raw = value == null ? '' : String(value);
+  const normalized = raw.replace(/\r\n|\r/g, '\n');
+  const needsEscape = /^[=+\-@\t\r]/.test(normalized);
+  const safe = needsEscape ? `'${normalized}` : normalized;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
 function downloadCsv(sessions: SessionEntry[]) {
   const header = 'Date,Employee,Project,Clock In,Clock Out,Duration (min),Summary';
   const rows = sessions.map((s) => {
     const dur = computeDuration(s);
     return [
-      format(parseISO(s.started_at), 'yyyy-MM-dd'),
-      `"${s.profile?.full_name ?? 'Unknown'}"`,
-      `"${s.project?.name ?? s.clock_in_note ?? ''}"`,
-      format(parseISO(s.started_at), 'HH:mm'),
-      s.ended_at ? format(parseISO(s.ended_at), 'HH:mm') : '',
-      dur ?? '',
-      `"${(s.summary ?? '').replace(/"/g, '""')}"`,
+      csvCell(format(parseISO(s.started_at), 'yyyy-MM-dd')),
+      csvCell(s.profile?.full_name ?? 'Unknown'),
+      csvCell(s.project?.name ?? s.clock_in_note ?? ''),
+      csvCell(format(parseISO(s.started_at), 'HH:mm')),
+      csvCell(s.ended_at ? format(parseISO(s.ended_at), 'HH:mm') : ''),
+      csvCell(dur ?? ''),
+      csvCell(s.summary ?? ''),
     ].join(',');
   });
   const csv = [header, ...rows].join('\n');
