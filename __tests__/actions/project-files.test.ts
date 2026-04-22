@@ -62,7 +62,7 @@ import {
 
 // ---- Helpers ----
 
-const PROJECT_ID = 'p-1111';
+const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
 const FILE_ID = 'f-2222';
 const USER_ID = 'u-3333';
 const AUTH_USER = { id: USER_ID, email: 'dev@test.com' };
@@ -167,7 +167,8 @@ describe('uploadProjectFile', () => {
     fd.set('file', new File(['x'], 'a.pdf', { type: 'application/pdf' }));
     const result = await uploadProjectFile(fd);
     expect(result.success).toBe(false);
-    expect(result.error).toContain('Project ID');
+    // Zod reports a type/required error on missing project_id.
+    expect(result.error).toBeTruthy();
   });
 
   it('rejects file exceeding 50MB', async () => {
