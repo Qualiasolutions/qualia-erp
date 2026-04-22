@@ -5,14 +5,7 @@ import { getClientInvoices } from '@/app/actions/client-portal';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { PortalInvoiceList } from '@/components/portal/portal-invoice-list';
-import dynamic from 'next/dynamic';
-const PortalInvoiceFormDialog = dynamic(
-  () =>
-    import('@/components/portal/portal-invoice-form-dialog').then((m) => ({
-      default: m.PortalInvoiceFormDialog,
-    })),
-  { ssr: false }
-);
+import { PortalInvoiceFormDialog } from '@/components/portal/portal-invoice-form-dialog';
 import { PortalBillingSummary } from '@/components/portal/portal-billing-summary';
 
 export const metadata: Metadata = { title: 'Billing' };
