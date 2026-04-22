@@ -15,7 +15,7 @@ import {
 import { ChevronLeft, ChevronRight, Plus, Calendar, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMeetings, invalidateMeetings, type MeetingWithRelations } from '@/lib/swr';
-import { deleteMeeting } from '@/app/actions';
+import { deleteMeeting } from '@/app/actions/meetings';
 import { useAdmin } from '@/lib/hooks/use-admin';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
 import { EditMeetingModal } from '@/components/edit-meeting-modal';

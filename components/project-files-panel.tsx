@@ -17,6 +17,7 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   deleteProjectFile,
   getFileDownloadUrl,
@@ -65,6 +66,7 @@ export function ProjectFilesPanel({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refresh = () => {
@@ -130,11 +132,16 @@ export function ProjectFilesPanel({
     }
   };
 
-  const handleDelete = async (fileId: string, originalName: string) => {
-    if (!window.confirm(`Delete ${originalName}? This can't be undone.`)) return;
-    setDeletingId(fileId);
+  const handleDelete = (fileId: string, originalName: string) => {
+    setPendingDelete({ id: fileId, name: originalName });
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const { id } = pendingDelete;
+    setDeletingId(id);
     try {
-      const result = await deleteProjectFile(fileId);
+      const result = await deleteProjectFile(id);
       if (!result.success) {
         toast.error(result.error || 'Delete failed');
         return;
@@ -143,6 +150,7 @@ export function ProjectFilesPanel({
       refresh();
     } finally {
       setDeletingId(null);
+      setPendingDelete(null);
     }
   };
 
@@ -258,6 +266,17 @@ export function ProjectFilesPanel({
           </div>
         )}
       </div>
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+        title="Delete file"
+        description={pendingDelete ? `Delete ${pendingDelete.name}? This can't be undone.` : ''}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

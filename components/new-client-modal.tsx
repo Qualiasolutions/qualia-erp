@@ -27,7 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { createClientRecord, type LeadStatus } from '@/app/actions';
+import { createClientRecord, type LeadStatus } from '@/app/actions/clients';
 import { useWorkspace } from '@/components/workspace-provider';
 import { useAIAssistant } from '@/components/ai-assistant';
 import { useRouter } from 'next/navigation';

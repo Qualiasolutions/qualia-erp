@@ -40,7 +40,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { deleteClientRecord, toggleClientStatus } from '@/app/actions';
+import { deleteClientRecord, toggleClientStatus } from '@/app/actions/clients';
 import { ClientDetailModal } from '@/components/client-detail-modal';
 import { EditClientModal } from '@/components/edit-client-modal';
 import { ClientCardView } from '@/components/client-card-view';

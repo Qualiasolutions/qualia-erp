@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { getCurrentWorkspaceId } from '@/app/actions';
+import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import {
   getReportData,
   getAssignedVsDone,

@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { updateClientRecord } from '@/app/actions';
+import { updateClientRecord } from '@/app/actions/clients';
 import { Loader2 } from 'lucide-react';
 
 type LeadStatus = 'dropped' | 'cold' | 'hot' | 'active_client' | 'inactive_client' | 'dead_lead';

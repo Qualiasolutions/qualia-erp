@@ -48,7 +48,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { getProjectById, updateProject, deleteProject } from '@/app/actions';
+import { getProjectById, updateProject, deleteProject } from '@/app/actions/projects';
 import { assignEmployeeToProject, removeAssignment } from '@/app/actions/project-assignments';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';

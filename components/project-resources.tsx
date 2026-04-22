@@ -28,7 +28,7 @@ import {
   Cloud,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { updateProject, getProjectById } from '@/app/actions';
+import { updateProject, getProjectById } from '@/app/actions/projects';
 
 // Resource types with icons
 const RESOURCE_TYPES = [

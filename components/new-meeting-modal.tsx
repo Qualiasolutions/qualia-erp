@@ -37,7 +37,9 @@ import { SelectWithOther } from '@/components/ui/select-with-other';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { createMeeting, getClients, getProfiles } from '@/app/actions';
+import { createMeeting } from '@/app/actions/meetings';
+import { getClients } from '@/app/actions/clients';
+import { getProfiles } from '@/app/actions/auth';
 import { invalidateMeetings } from '@/lib/swr';
 
 // Get the next available time slot (rounds up to next 30 min)

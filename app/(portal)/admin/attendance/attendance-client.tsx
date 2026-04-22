@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { getSessionsAdmin } from '@/app/actions/work-sessions';
 import { getTeamMembers, type AdminProfile } from '@/app/actions/admin';
-import { getCurrentWorkspaceId } from '@/app/actions';
+import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import type { DateRange } from 'react-day-picker';
 
 type SessionEntry = Awaited<ReturnType<typeof getSessionsAdmin>>[number];

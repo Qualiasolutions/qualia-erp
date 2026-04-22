@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useActionState, useEffect, useState } from 'react';
 import { Loader2, Eye, EyeOff, ArrowRight, Users, Briefcase } from 'lucide-react';
 import Link from 'next/link';
-import { loginAction } from '@/app/actions';
+import { loginAction } from '@/app/actions/auth';
 
 type LoginMode = 'team' | 'client';
 

@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { getClients } from '@/app/actions';
+import { getClients } from '@/app/actions/clients';
 import { useWorkspace } from '@/components/workspace-provider';
 import { useAIAssistant } from '@/components/ai-assistant';
 

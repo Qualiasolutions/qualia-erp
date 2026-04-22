@@ -22,7 +22,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { createProjectWithRoadmap } from '@/app/actions';
+import { createProjectWithRoadmap } from '@/app/actions/projects';
 import { checkIntegrationsConfigured } from '@/app/actions/integrations';
 import type { IntegrationSelections } from '@/lib/integrations/types';
 import { Checkbox } from '@/components/ui/checkbox';

@@ -1,9 +1,19 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 
 import type { Tables } from '@/types/database';
+
+// M-B1: Validate non-file FormData fields so we don't trust arbitrary strings
+// from the client. File itself is validated separately (size + MIME).
+const UploadFormSchema = z.object({
+  project_id: z.string().uuid(),
+  description: z.string().max(2000).nullable().optional(),
+  phase_id: z.string().uuid().nullable().optional(),
+  is_client_visible: z.enum(['true', 'false']).optional(),
+});
 
 type ProjectFile = Tables<'project_files'>;
 export type ProjectFileWithUploader = ProjectFile & {
@@ -157,18 +167,31 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
   }
 
   const file = formData.get('file') as File | null;
-  const projectId = formData.get('project_id') as string | null;
-  const description = formData.get('description') as string | null;
-  const phaseId = formData.get('phase_id') as string | null;
-  const isClientVisible = formData.get('is_client_visible') as string | null;
 
   if (!file) {
     return { success: false, error: 'No file provided' };
   }
 
-  if (!projectId) {
-    return { success: false, error: 'Project ID is required' };
+  const parsed = UploadFormSchema.safeParse({
+    project_id: formData.get('project_id') ?? undefined,
+    description: formData.get('description') ?? undefined,
+    phase_id: formData.get('phase_id') ?? undefined,
+    is_client_visible: formData.get('is_client_visible') ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || 'Invalid upload form',
+    };
   }
+
+  const {
+    project_id: projectId,
+    description,
+    phase_id: phaseId,
+    is_client_visible: isClientVisible,
+  } = parsed.data;
 
   // Validate file size
   if (file.size > MAX_FILE_SIZE) {
@@ -292,16 +315,24 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
   }
 
   const file = formData.get('file') as File | null;
-  const projectId = formData.get('project_id') as string | null;
-  const description = formData.get('description') as string | null;
 
   if (!file) {
     return { success: false, error: 'No file provided' };
   }
 
-  if (!projectId) {
-    return { success: false, error: 'Project ID is required' };
+  const parsed = UploadFormSchema.pick({ project_id: true, description: true }).safeParse({
+    project_id: formData.get('project_id') ?? undefined,
+    description: formData.get('description') ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || 'Invalid upload form',
+    };
   }
+
+  const { project_id: projectId, description } = parsed.data;
 
   // Validate file size
   if (file.size > MAX_FILE_SIZE) {

@@ -15,8 +15,12 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { updateMeeting, deleteMeeting } from '@/app/actions';
-import { addMeetingAttendee, removeMeetingAttendee } from '@/app/actions/meetings';
+import {
+  updateMeeting,
+  deleteMeeting,
+  addMeetingAttendee,
+  removeMeetingAttendee,
+} from '@/app/actions/meetings';
 import {
   invalidateMeetings,
   invalidateTodaysSchedule,

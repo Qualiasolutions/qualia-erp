@@ -21,7 +21,7 @@ import { LogoUpload } from '@/components/logo-upload';
 import { ClientProjectAccess } from '@/components/clients/client-project-access';
 import { AdminActionItemsPanel } from '@/components/portal/admin-action-items-panel';
 import { RichText } from '@/components/ui/rich-text';
-import { updateProject } from '@/app/actions';
+import { updateProject } from '@/app/actions/projects';
 import { toast } from 'sonner';
 
 const statusConfig = {
