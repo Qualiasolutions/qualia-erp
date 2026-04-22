@@ -279,7 +279,7 @@ export async function getActiveSession(workspaceId: string): Promise<WorkSession
   const { data, error } = await supabase
     .from('work_sessions')
     .select(
-      'id, workspace_id, profile_id, project_id, started_at, ended_at, clock_in_note, project_status, summary, duration_minutes, created_at, project:projects!work_sessions_project_id_fkey (id, name)'
+      'id, workspace_id, profile_id, project_id, started_at, ended_at, clock_in_note, summary, duration_minutes, created_at, project:projects!work_sessions_project_id_fkey (id, name)'
     )
     .eq('profile_id', user.id)
     .eq('workspace_id', workspaceId)
@@ -319,7 +319,7 @@ export async function getTodaysSessions(workspaceId: string): Promise<WorkSessio
   const { data, error } = await supabase
     .from('work_sessions')
     .select(
-      'id, workspace_id, profile_id, project_id, started_at, ended_at, clock_in_note, project_status, summary, duration_minutes, created_at, project:projects!work_sessions_project_id_fkey (id, name)'
+      'id, workspace_id, profile_id, project_id, started_at, ended_at, clock_in_note, summary, duration_minutes, created_at, project:projects!work_sessions_project_id_fkey (id, name)'
     )
     .eq('profile_id', user.id)
     .eq('workspace_id', workspaceId)
