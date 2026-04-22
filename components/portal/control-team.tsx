@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Crown, Shield, User, Users } from 'lucide-react';
@@ -79,6 +80,7 @@ export function ControlTeam({ data }: { data: TeamPayload | undefined }) {
 function TeamRoster({ members }: { members: AdminProfile[] }) {
   const [deleteTarget, setDeleteTarget] = useState<AdminProfile | null>(null);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const handleRoleChange = (member: AdminProfile, nextRole: UserRole) => {
     if (member.role === nextRole) return;
@@ -86,6 +88,7 @@ function TeamRoster({ members }: { members: AdminProfile[] }) {
       const res = await updateUserRole(member.id, nextRole);
       if (res.success) {
         toast.success(`${member.full_name ?? 'Member'} is now ${nextRole}`);
+        router.refresh();
       } else {
         toast.error(res.error ?? 'Failed to update role');
       }
@@ -101,6 +104,7 @@ function TeamRoster({ members }: { members: AdminProfile[] }) {
       const res = await removeTeamMember(id);
       if (res.success) {
         toast.success(`${name} removed`);
+        router.refresh();
       } else {
         toast.error(res.error ?? 'Failed to remove member');
       }

@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { isUserAdmin, isUserManagerOrAbove, type ActionResult } from './shared';
 import type { Database } from '@/types/database';
@@ -68,6 +69,9 @@ export async function updateUserRole(
     .eq('id', targetUserId);
 
   if (error) return { success: false, error: error.message };
+
+  revalidatePath('/admin');
+  revalidatePath('/team');
   return { success: true };
 }
 
@@ -111,6 +115,8 @@ export async function inviteTeamMember(
 
   if (profileError) return { success: false, error: profileError.message };
 
+  revalidatePath('/admin');
+  revalidatePath('/team');
   return { success: true, data: { id: newUser.user.id, email } };
 }
 
@@ -150,5 +156,7 @@ export async function removeTeamMember(targetUserId: string): Promise<ActionResu
   // 3. Remove team memberships (soft references — don't fail if none exist).
   await adminClient.from('team_members').delete().eq('profile_id', targetUserId);
 
+  revalidatePath('/admin');
+  revalidatePath('/team');
   return { success: true };
 }
