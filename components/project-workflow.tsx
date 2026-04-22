@@ -428,13 +428,14 @@ function PhaseRow({
         {total === 0 && <span className="text-[10px] text-muted-foreground/40">No tasks</span>}
 
         {/* Hover actions */}
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onEdit();
             }}
-            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            aria-label="Edit stage"
+            className="flex h-6 min-h-[44px] w-6 min-w-[44px] items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           >
             <Pencil className="h-3 w-3" />
           </button>
@@ -444,7 +445,8 @@ function PhaseRow({
               onDelete();
             }}
             disabled={isPending}
-            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
+            aria-label="Delete stage"
+            className="flex h-6 min-h-[44px] w-6 min-w-[44px] items-center justify-center rounded text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
           >
             <Trash2 className="h-3 w-3" />
           </button>
@@ -1138,12 +1140,13 @@ export function ProjectWorkflow({
                         </span>
                       )}
                     </div>
-                    <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
                       {task.description && (
                         <button
                           onClick={() => setViewingTask(task)}
-                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                          className="flex h-6 min-h-[44px] w-6 min-w-[44px] items-center justify-center rounded text-muted-foreground hover:bg-primary/10 hover:text-primary"
                           title="View details"
+                          aria-label="View task details"
                         >
                           <Eye className="h-3 w-3" />
                         </button>
@@ -1154,7 +1157,8 @@ export function ProjectWorkflow({
                             setEditingTaskId(task.id);
                             setEditingTaskTitle(task.title);
                           }}
-                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          aria-label="Edit task"
+                          className="flex h-6 min-h-[44px] w-6 min-w-[44px] items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                         >
                           <Pencil className="h-3 w-3" />
                         </button>
@@ -1162,7 +1166,8 @@ export function ProjectWorkflow({
                       <button
                         onClick={() => handleDeleteTask(task.id)}
                         disabled={isPending}
-                        className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
+                        aria-label="Delete task"
+                        className="flex h-6 min-h-[44px] w-6 min-w-[44px] items-center justify-center rounded text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>

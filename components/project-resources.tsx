@@ -235,17 +235,28 @@ export function ProjectResources({
                     <p className="truncate text-sm font-medium">{resource.label}</p>
                     <p className="truncate text-xs text-muted-foreground">{resource.url}</p>
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-                      <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 min-h-[44px] w-7 min-w-[44px]"
+                      asChild
+                    >
+                      <a
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Open resource in new tab"
+                      >
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-red-500 hover:text-red-500"
+                      className="h-7 min-h-[44px] w-7 min-w-[44px] text-red-500 hover:text-red-500"
                       onClick={() => handleDelete(resource.id)}
+                      aria-label="Delete resource"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>

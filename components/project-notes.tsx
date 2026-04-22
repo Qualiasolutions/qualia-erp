@@ -209,11 +209,11 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
 
                         {/* Actions */}
                         {isOwner && (
-                          <div className="mt-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <div className="mt-2 flex gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 gap-1 px-2 text-xs text-muted-foreground"
+                              className="h-6 min-h-[44px] gap-1 px-2 text-xs text-muted-foreground"
                               onClick={() => startEdit(note)}
                             >
                               <Edit2 className="h-3 w-3" />
@@ -222,7 +222,7 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 gap-1 px-2 text-xs text-red-500"
+                              className="h-6 min-h-[44px] gap-1 px-2 text-xs text-red-500"
                               onClick={() => handleDelete(note.id)}
                             >
                               <Trash2 className="h-3 w-3" />
