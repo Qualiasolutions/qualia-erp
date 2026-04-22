@@ -13,6 +13,10 @@ const UploadFormSchema = z.object({
   description: z.string().max(2000).nullable().optional(),
   phase_id: z.string().uuid().nullable().optional(),
   is_client_visible: z.enum(['true', 'false']).optional(),
+  // When uploading a folder, the browser gives us a relative path like
+  // "designs/v2/hero.png". We preserve it in storage so the folder
+  // structure is recoverable and show it in the description.
+  relative_path: z.string().max(1024).nullable().optional(),
 });
 
 type ProjectFile = Tables<'project_files'>;
@@ -177,6 +181,7 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     description: formData.get('description') ?? undefined,
     phase_id: formData.get('phase_id') ?? undefined,
     is_client_visible: formData.get('is_client_visible') ?? undefined,
+    relative_path: formData.get('relative_path') ?? undefined,
   });
 
   if (!parsed.success) {
@@ -191,6 +196,7 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     description,
     phase_id: phaseId,
     is_client_visible: isClientVisible,
+    relative_path: relativePath,
   } = parsed.data;
 
   // Validate file size
@@ -220,10 +226,23 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     return { success: false, error: 'You do not have permission to upload to this project' };
   }
 
-  // Generate unique filename
+  // Generate unique filename. For folder uploads, preserve the folder
+  // hierarchy inside a per-upload timestamp prefix so structure is recoverable
+  // and we avoid collisions across concurrent uploads.
   const timestamp = Date.now();
   const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-  const storagePath = `${projectId}/${timestamp}_${sanitizedName}`;
+  const sanitizedRelPath = relativePath
+    ? relativePath
+        .split('/')
+        .map((segment) => segment.replace(/[^a-zA-Z0-9.-]/g, '_'))
+        .filter(Boolean)
+        .join('/')
+    : null;
+  const storagePath = sanitizedRelPath
+    ? `${projectId}/${timestamp}/${sanitizedRelPath}`
+    : `${projectId}/${timestamp}_${sanitizedName}`;
+  const displayName = sanitizedRelPath ?? sanitizedName;
+  const displayOriginalName = relativePath ?? file.name;
 
   // Upload to storage
   const { error: uploadError } = await supabase.storage
@@ -244,8 +263,8 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     .insert({
       project_id: projectId,
       workspace_id: project.workspace_id,
-      name: sanitizedName,
-      original_name: file.name,
+      name: displayName,
+      original_name: displayOriginalName,
       storage_path: storagePath,
       file_size: file.size,
       mime_type: file.type,
@@ -269,7 +288,7 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     projectId,
     actionType: 'file_uploaded',
     actionData: {
-      file_name: file.name,
+      file_name: displayOriginalName,
       description: description || undefined,
       is_client_visible: isClientVisible === 'true',
     },

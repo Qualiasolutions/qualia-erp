@@ -22,6 +22,7 @@ import {
   FileImage,
   FileText,
   FileVideo,
+  FolderUp,
   Loader2,
   Upload,
   X,
@@ -49,6 +50,9 @@ type UploadState = 'queued' | 'uploading' | 'success' | 'error';
 interface UploadItem {
   id: string;
   file: File;
+  /** Folder-relative path when the item came from a folder picker or a
+   *  directory drag-drop (e.g. "designs/v2/hero.png"). Null for flat files. */
+  relativePath: string | null;
   state: UploadState;
   error?: string;
 }
@@ -100,6 +104,7 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
   const router = useRouter();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
   const [items, setItems] = useState<UploadItem[]>([]);
   const [isDragActive, setIsDragActive] = useState(false);
@@ -117,9 +122,15 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
     if (filesToAdd.length === 0) return;
     const next: UploadItem[] = filesToAdd.map((file) => {
       const overSized = file.size > MAX_FILE_SIZE;
+      // `webkitRelativePath` is populated for folder picks and directory
+      // drag-drops in Chromium/WebKit. When it contains a slash we treat
+      // the item as part of a folder upload.
+      const rel = (file as File & { webkitRelativePath?: string }).webkitRelativePath;
+      const relativePath = rel && rel.includes('/') ? rel : null;
       return {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
         file,
+        relativePath,
         state: overSized ? 'error' : 'queued',
         error: overSized
           ? `Too large (${(file.size / 1024 / 1024).toFixed(1)}MB > 50MB)`
@@ -176,6 +187,20 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
     if (inputRef.current) inputRef.current.value = '';
   };
 
+  const handleFolderPick = (e: ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []);
+    if (picked.length > 0) {
+      addFiles(picked);
+      const folderName = (
+        picked[0] as File & { webkitRelativePath?: string }
+      ).webkitRelativePath?.split('/')[0];
+      toast.info(
+        `${picked.length} file${picked.length > 1 ? 's' : ''} queued from ${folderName ?? 'folder'}`
+      );
+    }
+    if (folderInputRef.current) folderInputRef.current.value = '';
+  };
+
   const removeItem = (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
@@ -191,6 +216,7 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
     if (description) formData.append('description', description);
     if (selectedPhase && selectedPhase !== 'none') formData.append('phase_id', selectedPhase);
     formData.append('is_client_visible', String(isClientVisible));
+    if (item.relativePath) formData.append('relative_path', item.relativePath);
 
     const result = await uploadProjectFile(formData);
     if (result.success) {
@@ -287,6 +313,24 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
             </p>
           </div>
 
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              folderInputRef.current?.click();
+            }}
+            disabled={isUploading}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors',
+              'hover:border-primary/40 hover:bg-primary/[0.04]',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+              'disabled:opacity-50'
+            )}
+          >
+            <FolderUp className="h-3.5 w-3.5" />
+            Pick folder
+          </button>
+
           <input
             ref={inputRef}
             id={inputId}
@@ -295,6 +339,17 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
             className="hidden"
             onChange={handlePick}
             disabled={isUploading}
+          />
+          <input
+            ref={folderInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFolderPick}
+            disabled={isUploading}
+            // Non-standard but supported in Chromium + WebKit. Casting avoids
+            // a TS error since `webkitdirectory` isn't in React's type defs.
+            {...({ webkitdirectory: '', directory: '' } as Record<string, string>)}
           />
         </div>
       </div>
@@ -336,7 +391,9 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
                   <Icon className={cn('h-4 w-4 shrink-0', iconColor)} />
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">{item.file.name}</p>
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {item.relativePath ?? item.file.name}
+                    </p>
                     <p className="truncate text-[11px] text-muted-foreground">
                       {formatBytes(item.file.size)}
                       {item.error && (
