@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { Bell, Check, CheckCheck, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,7 +42,11 @@ export function NotificationPanel() {
   const handleMarkAsRead = async (notificationId: string) => {
     if (!workspaceId) return;
     startTransition(async () => {
-      await markNotificationAsRead(notificationId);
+      const res = await markNotificationAsRead(notificationId);
+      if (!res.success) {
+        toast.error(res.error || 'Failed to mark as read');
+        return;
+      }
       invalidateNotifications(workspaceId);
     });
   };
@@ -49,7 +54,11 @@ export function NotificationPanel() {
   const handleMarkAllAsRead = async () => {
     if (!workspaceId) return;
     startTransition(async () => {
-      await markAllNotificationsAsRead(workspaceId);
+      const res = await markAllNotificationsAsRead(workspaceId);
+      if (!res.success) {
+        toast.error(res.error || 'Failed to mark all as read');
+        return;
+      }
       invalidateNotifications(workspaceId);
     });
   };
@@ -57,7 +66,11 @@ export function NotificationPanel() {
   const handleDelete = async (notificationId: string) => {
     if (!workspaceId) return;
     startTransition(async () => {
-      await deleteNotification(notificationId);
+      const res = await deleteNotification(notificationId);
+      if (!res.success) {
+        toast.error(res.error || 'Failed to delete notification');
+        return;
+      }
       invalidateNotifications(workspaceId);
     });
   };

@@ -28,6 +28,7 @@ import {
   Cloud,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import { updateProject, getProjectById } from '@/app/actions/projects';
 
 // Resource types with icons
@@ -88,18 +89,21 @@ export function ProjectResources({
   const [newLabel, setNewLabel] = useState('');
   const [newUrl, setNewUrl] = useState('');
 
-  const saveResources = async (updatedResources: Resource[]) => {
+  // Roll back the optimistic setResources if the server rejects.
+  const saveResources = async (previousResources: Resource[], updatedResources: Resource[]) => {
     const formData = new FormData();
     formData.set('id', projectId);
     formData.set('metadata', JSON.stringify({ resources: updatedResources }));
 
     const result = await updateProject(formData);
     if (result.success) {
-      // Refresh to get latest
       const project = await getProjectById(projectId);
       if (project?.metadata?.resources) {
         setResources(project.metadata.resources as Resource[]);
       }
+    } else {
+      setResources(previousResources);
+      toast.error(result.error || 'Failed to save resources');
     }
   };
 
@@ -114,9 +118,10 @@ export function ProjectResources({
       url: newUrl.trim(),
     };
 
+    const previous = resources;
     const updated = [...resources, resource];
     setResources(updated);
-    startTransition(() => saveResources(updated));
+    startTransition(() => saveResources(previous, updated));
 
     // Reset form
     setNewType('github');
@@ -126,9 +131,10 @@ export function ProjectResources({
   };
 
   const handleDelete = (id: string) => {
+    const previous = resources;
     const updated = resources.filter((r) => r.id !== id);
     setResources(updated);
-    startTransition(() => saveResources(updated));
+    startTransition(() => saveResources(previous, updated));
   };
 
   const getTypeConfig = (type: ResourceType) => {

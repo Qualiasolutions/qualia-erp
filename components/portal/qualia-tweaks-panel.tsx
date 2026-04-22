@@ -3,6 +3,7 @@
 import { useEffect, useRef, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
+import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
 import { useDensity } from '@/components/density-provider';
@@ -27,7 +28,11 @@ export function QualiaTweaksPanel({
 
   const handleClearImpersonation = () => {
     startClear(async () => {
-      await clearViewAs();
+      const res = await clearViewAs();
+      if (!res.success) {
+        toast.error(res.error || 'Failed to exit view-as mode');
+        return;
+      }
       router.refresh();
       onClose();
     });

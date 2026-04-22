@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 
 import { parseFormData, createClientSchema, updateClientSchema } from '@/lib/validation';
@@ -90,6 +91,8 @@ export async function createClientRecord(formData: FormData): Promise<ActionResu
     (err) => console.error('[createClientRecord] Failed to send email notification:', err)
   );
 
+  revalidatePath('/clients');
+  revalidatePath('/admin');
   return { success: true, data };
 }
 
@@ -264,6 +267,8 @@ export async function updateClientRecord(formData: FormData): Promise<ActionResu
     });
   }
 
+  revalidatePath('/clients');
+  revalidatePath('/admin');
   return { success: true, data };
 }
 
@@ -293,6 +298,8 @@ export async function deleteClientRecord(id: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
+  revalidatePath('/clients');
+  revalidatePath('/admin');
   return { success: true };
 }
 
@@ -397,5 +404,7 @@ export async function toggleClientStatus(
     new_status: newStatus,
   });
 
+  revalidatePath('/clients');
+  revalidatePath('/admin');
   return { success: true };
 }

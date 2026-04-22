@@ -552,6 +552,8 @@ export async function deleteProject(id: string): Promise<ActionResult> {
 
   // Invalidate cached project data
   updateTag(`project-${id}`);
+  revalidatePath('/projects');
+  revalidatePath('/admin');
 
   return { success: true };
 }
@@ -628,6 +630,12 @@ export async function bulkDeleteProjects(projectIds: string[]): Promise<ActionRe
     console.error('Error bulk deleting projects:', error);
     return { success: false, error: error.message };
   }
+
+  for (const id of projectIds) {
+    updateTag(`project-${id}`);
+  }
+  revalidatePath('/projects');
+  revalidatePath('/admin');
 
   return { success: true };
 }
@@ -731,6 +739,7 @@ export async function toggleProjectPreProduction(projectId: string): Promise<Act
 
   // Invalidate cached project data
   updateTag(`project-${projectId}`);
+  revalidatePath('/projects');
 
   return { success: true };
 }

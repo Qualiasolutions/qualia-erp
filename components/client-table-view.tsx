@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   Search,
@@ -122,9 +123,10 @@ const ClientTableRow = React.memo(function ClientTableRow({
     startTransition(async () => {
       const result = await deleteClientRecord(client.id);
       if (result.success) {
+        toast.success('Client deleted');
         router.refresh();
       } else {
-        alert('Failed to delete client');
+        toast.error(result.error || 'Failed to delete client');
       }
     });
   };
@@ -134,7 +136,10 @@ const ClientTableRow = React.memo(function ClientTableRow({
     startTransition(async () => {
       const result = await toggleClientStatus(client.id, newStatus);
       if (result.success) {
+        toast.success('Client status updated');
         router.refresh();
+      } else {
+        toast.error(result.error || 'Failed to update client status');
       }
     });
   };

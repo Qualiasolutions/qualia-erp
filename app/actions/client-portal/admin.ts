@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/server';
-import { unstable_cache } from 'next/cache';
+import { revalidatePath, unstable_cache } from 'next/cache';
 import { type ActionResult, isUserManagerOrAbove } from '../shared';
 import { getCurrentWorkspaceId } from '../workspace';
 import { randomBytes } from 'node:crypto';
@@ -251,6 +251,8 @@ export async function inviteClientToProject(
 
     if (error) throw error;
 
+    revalidatePath('/clients/[id]', 'page');
+    revalidatePath('/projects/[id]', 'page');
     return { success: true, data };
   } catch (error) {
     console.error('Failed to invite client to project:', error);
@@ -294,6 +296,8 @@ export async function removeClientFromProject(
 
     if (error) throw error;
 
+    revalidatePath('/clients/[id]', 'page');
+    revalidatePath('/projects/[id]', 'page');
     return { success: true };
   } catch (error) {
     console.error('Failed to remove client from project:', error);

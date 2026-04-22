@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
+import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,8 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
       if (result.success) {
         setNewNote('');
         fetchNotes();
+      } else {
+        toast.error(result.error || 'Failed to save note');
       }
     });
   };
@@ -80,6 +83,8 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
         setEditingId(null);
         setEditContent('');
         fetchNotes();
+      } else {
+        toast.error(result.error || 'Failed to update note');
       }
     });
   };
@@ -96,6 +101,8 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
       const result = await deleteProjectNote(noteId);
       if (result.success) {
         fetchNotes();
+      } else {
+        toast.error(result.error || 'Failed to delete note');
       }
     });
   };
