@@ -6,6 +6,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { decryptToken } from '@/lib/token-encryption';
 
 const ZOHO_API_BASE = 'https://www.zohoapis.com';
 
@@ -54,6 +55,13 @@ type ActionResult = {
   data?: unknown;
 };
 
+type ZohoTokenConfig = {
+  access_token?: string;
+  token_expires_at?: string;
+  organization_id?: string;
+  refresh_token?: string;
+};
+
 // ============ TOKEN MANAGEMENT ============
 
 /**
@@ -64,25 +72,34 @@ async function getAccessToken(workspaceId: string): Promise<string | null> {
   const supabase = await createClient();
 
   const { data: integration } = await supabase
-    .from('integrations')
-    .select('*')
+    .from('workspace_integrations')
+    .select('encrypted_token, config')
     .eq('workspace_id', workspaceId)
     .eq('provider', 'zoho')
+    .eq('is_connected', true)
     .single();
 
-  if (!integration) return null;
+  if (!integration?.encrypted_token) return null;
 
-  // Check if token is expired (with 5 min buffer)
-  const expiresAt = new Date(integration.token_expires_at);
-  const now = new Date();
-  const bufferMs = 5 * 60 * 1000; // 5 minutes
+  const config = (integration.config || {}) as ZohoTokenConfig;
 
-  if (expiresAt.getTime() - now.getTime() > bufferMs) {
-    return integration.access_token;
+  if (config.access_token && config.token_expires_at) {
+    // Check if token is expired (with 5 min buffer)
+    const expiresAt = new Date(config.token_expires_at);
+    const now = new Date();
+    const bufferMs = 5 * 60 * 1000; // 5 minutes
+
+    if (Number.isFinite(expiresAt.getTime()) && expiresAt.getTime() - now.getTime() > bufferMs) {
+      return config.access_token;
+    }
   }
 
   // Token expired - refresh it
-  const refreshed = await refreshAccessToken(workspaceId, integration.refresh_token);
+  const refreshed = await refreshAccessToken(
+    workspaceId,
+    decryptToken(integration.encrypted_token),
+    config
+  );
   return refreshed;
 }
 
@@ -91,7 +108,8 @@ async function getAccessToken(workspaceId: string): Promise<string | null> {
  */
 async function refreshAccessToken(
   workspaceId: string,
-  refreshToken: string
+  refreshToken: string,
+  existingConfig: ZohoTokenConfig = {}
 ): Promise<string | null> {
   const supabase = await createClient();
 
@@ -122,12 +140,20 @@ async function refreshAccessToken(
 
     const data = await response.json();
 
-    // Update stored token
+    const tokenExpiresAt = new Date(Date.now() + data.expires_in * 1000).toISOString();
+
+    // Update stored access token metadata in config. The encrypted_token remains
+    // the long-lived refresh token saved through the integration settings flow.
     await supabase
-      .from('integrations')
+      .from('workspace_integrations')
       .update({
-        access_token: data.access_token,
-        token_expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+        config: {
+          ...existingConfig,
+          access_token: data.access_token,
+          token_expires_at: tokenExpiresAt,
+        },
+        is_connected: true,
+        last_verified_at: new Date().toISOString(),
       })
       .eq('workspace_id', workspaceId)
       .eq('provider', 'zoho');

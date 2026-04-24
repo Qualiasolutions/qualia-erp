@@ -217,7 +217,7 @@ export async function getProvisioningStatus(projectId: string): Promise<
 
   const { data, error } = await supabase
     .from('project_provisioning')
-    .select('*')
+    .select('status, github_repo_url, github_error, vercel_project_url, vercel_error')
     .eq('project_id', projectId)
     .single();
 
@@ -275,7 +275,7 @@ export async function retryProvisioningStep(
   // Get provisioning record
   const { data: provisioning } = await supabase
     .from('project_provisioning')
-    .select('*')
+    .select('retry_count, github_repo_url')
     .eq('project_id', projectId)
     .single();
 

@@ -17,6 +17,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { RequestCommentThread } from './request-comment-thread';
@@ -62,6 +63,7 @@ function AttachmentRow({
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [removed, setRemoved] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const router = useRouter();
   const Icon = attachment.type.startsWith('image/') ? ImageIcon : FileText;
 
@@ -78,7 +80,6 @@ function AttachmentRow({
   };
 
   const handleDelete = async () => {
-    if (!window.confirm(`Delete attachment "${attachment.name}"?`)) return;
     setDeleting(true);
     setRemoved(true);
     const res = await deleteRequestAttachment(requestId, attachment.path);
@@ -95,39 +96,50 @@ function AttachmentRow({
   if (removed) return null;
 
   return (
-    <li className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-2.5 py-1.5 text-xs">
-      <div className="flex min-w-0 items-center gap-2">
-        <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <span className="truncate" title={attachment.name}>
-          {attachment.name}
-        </span>
-        <span className="shrink-0 tabular-nums text-muted-foreground">
-          {formatBytes(attachment.size)}
-        </span>
-      </div>
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          onClick={handleDownload}
-          disabled={downloading}
-          aria-label={`Download ${attachment.name}`}
-          className="cursor-pointer rounded p-1 text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground disabled:cursor-wait disabled:opacity-50"
-        >
-          <Download className="h-3.5 w-3.5" />
-        </button>
-        {userRole === 'admin' && (
+    <>
+      <li className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-2.5 py-1.5 text-xs">
+        <div className="flex min-w-0 items-center gap-2">
+          <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <span className="truncate" title={attachment.name}>
+            {attachment.name}
+          </span>
+          <span className="shrink-0 tabular-nums text-muted-foreground">
+            {formatBytes(attachment.size)}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={handleDelete}
-            disabled={deleting}
-            aria-label={`Delete ${attachment.name}`}
-            className="cursor-pointer rounded p-1 text-muted-foreground transition-colors duration-150 hover:bg-red-100 hover:text-red-600 disabled:cursor-wait disabled:opacity-50 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+            onClick={handleDownload}
+            disabled={downloading}
+            aria-label={`Download ${attachment.name}`}
+            className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded p-1 text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground disabled:cursor-wait disabled:opacity-50"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Download className="h-3.5 w-3.5" />
           </button>
-        )}
-      </div>
-    </li>
+          {userRole === 'admin' && (
+            <button
+              type="button"
+              onClick={() => setConfirmOpen(true)}
+              disabled={deleting}
+              aria-label={`Delete ${attachment.name}`}
+              className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded p-1 text-muted-foreground transition-colors duration-150 hover:bg-red-100 hover:text-red-600 disabled:cursor-wait disabled:opacity-50 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </li>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete attachment?"
+        description={`This will permanently delete "${attachment.name}" from this request.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
+    </>
   );
 }
 

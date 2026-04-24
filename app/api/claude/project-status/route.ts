@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { safeCompare } from '@/lib/auth-utils';
+import { apiRateLimiter } from '@/lib/rate-limit';
 
 /**
  * GET /api/claude/project-status
@@ -16,6 +17,15 @@ export async function GET(request: NextRequest) {
 
   if (!expectedKey || !safeCompare(apiKey, expectedKey)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimitResult = await apiRateLimiter('claude:project-status');
+  if (!rateLimitResult.success) {
+    const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
+    return NextResponse.json(
+      { error: 'Rate limit exceeded', retryAfter },
+      { status: 429, headers: { 'Retry-After': retryAfter.toString() } }
+    );
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

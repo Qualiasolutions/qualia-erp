@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { safeCompare } from '@/lib/auth-utils';
+import { apiRateLimiter } from '@/lib/rate-limit';
 
 /**
  * GET /api/claude/session-feed
@@ -22,6 +23,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const rateLimitResult = await apiRateLimiter('claude:session-feed');
+  if (!rateLimitResult.success) {
+    const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
+    return NextResponse.json(
+      { error: 'Rate limit exceeded', retryAfter },
+      { status: 429, headers: { 'Retry-After': retryAfter.toString() } }
+    );
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -38,7 +48,9 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('claude_sessions')
-    .select('*')
+    .select(
+      'id, project_name, branch, files_changed, summary, working_directory, session_timestamp, created_at'
+    )
     .order('session_timestamp', { ascending: false })
     .limit(limit);
 

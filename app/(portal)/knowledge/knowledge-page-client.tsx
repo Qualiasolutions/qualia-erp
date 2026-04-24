@@ -31,10 +31,11 @@ import { PageHeader } from '@/components/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { m, AnimatePresence } from '@/lib/lazy-motion';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import type { Guide, GuideStep } from '@/lib/guides-data';
+import { guides as defaultGuides, type Guide, type GuideStep } from '@/lib/guides-data';
 import { updateKnowledgeGuide, seedKnowledgeGuides } from '@/app/actions/knowledge';
 
 interface KnowledgeData {
@@ -137,7 +138,7 @@ function LifecyclePipeline({ onStepClick }: { onStepClick?: (slug: string) => vo
           <div key={step.slug} className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={() => onStepClick?.(step.slug)}
-              className="ease-[cubic-bezier(0.16,1,0.3,1)] group flex flex-col items-center gap-1 transition-all duration-150 hover:scale-105"
+              className="group flex flex-col items-center gap-1 transition-all duration-150 ease-premium hover:scale-105"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-[11px] font-bold text-emerald-600 transition-colors duration-150 group-hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:group-hover:bg-emerald-500/20 sm:h-9 sm:w-9 sm:text-xs">
                 {step.icon}
@@ -823,6 +824,7 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [guides, setGuides] = useState(initialData.allGuides);
   const [seeding, setSeeding] = useState(false);
+  const [seedConfirmOpen, setSeedConfirmOpen] = useState(false);
 
   const filteredGuides = guides.filter((guide) => {
     const matchesSearch =
@@ -842,27 +844,27 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
     setSelectedGuide(updated);
   };
 
-  const handleSeed = async () => {
-    const hasExisting = guides.length > 0;
-    if (hasExisting) {
-      const confirmed = window.confirm(
-        `This will delete all ${guides.length} existing guides in the database and ` +
-          `re-seed them from the latest file (lib/guides-data.ts). ` +
-          `Use this after a framework release to refresh the knowledge base.\n\n` +
-          `Continue?`
-      );
-      if (!confirmed) return;
-    }
+  const seedGuides = async (force: boolean) => {
     setSeeding(true);
     try {
-      const result = await seedKnowledgeGuides({ force: hasExisting });
+      const result = await seedKnowledgeGuides({ force });
       if (result.success) {
-        // Reload page to fetch fresh data from DB
-        window.location.reload();
+        const nextGuides = force ? defaultGuides : guides;
+        setGuides(nextGuides);
+        setSelectedGuide(nextGuides[0] || null);
       }
     } finally {
       setSeeding(false);
     }
+  };
+
+  const handleSeed = async () => {
+    if (guides.length > 0) {
+      setSeedConfirmOpen(true);
+      return;
+    }
+
+    await seedGuides(false);
   };
 
   return (
@@ -1032,6 +1034,18 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
           />
         )}
       </AnimatePresence>
+      <ConfirmDialog
+        open={seedConfirmOpen}
+        onOpenChange={setSeedConfirmOpen}
+        title="Re-seed knowledge guides?"
+        description={`This will replace all ${guides.length} existing guides with the latest file-backed guide set.`}
+        confirmLabel="Re-seed"
+        variant="destructive"
+        onConfirm={() => {
+          setSeedConfirmOpen(false);
+          void seedGuides(true);
+        }}
+      />
     </div>
   );
 }

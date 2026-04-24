@@ -441,8 +441,7 @@ function TooltipCard({
       className={cn(
         'z-[71] rounded-xl border border-primary/[0.12] bg-background/95 p-[clamp(1rem,3vw,1.5rem)] shadow-2xl shadow-primary/[0.08] backdrop-blur-lg dark:border-primary/[0.16] dark:bg-background/90',
         visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-1 opacity-0',
-        !reducedMotion &&
-          'ease-[cubic-bezier(0.25,1,0.5,1)] transition-[opacity,transform] duration-200'
+        !reducedMotion && 'ease-out-quart transition-[opacity,transform] duration-200'
       )}
       style={tooltipStyle}
     >

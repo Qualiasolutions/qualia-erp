@@ -208,7 +208,7 @@ export async function markReminderDelivered(reminderId: string): Promise<void> {
   // Get the reminder first to check if recurring
   const { data: reminder } = await supabase
     .from('ai_reminders')
-    .select('*')
+    .select('user_id, workspace_id, content, due_at, is_recurring, recurrence_rule')
     .eq('id', reminderId)
     .single();
 

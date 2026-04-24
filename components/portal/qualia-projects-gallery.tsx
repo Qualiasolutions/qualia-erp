@@ -402,7 +402,7 @@ const ProjectCardTile = memo(function ProjectCardTile({
       href={`/projects/${project.id}`}
       className={cn(
         'group relative block overflow-hidden rounded-xl border border-border bg-card',
-        'ease-[cubic-bezier(0.16,1,0.3,1)] transition-all duration-200',
+        'transition-all duration-200 ease-premium',
         'hover:border-primary/20 hover:shadow-[var(--elevation-floating)]',
         'motion-safe:hover:-translate-y-[3px]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',

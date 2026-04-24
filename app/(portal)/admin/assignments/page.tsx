@@ -1,5 +1,4 @@
-import { redirect } from 'next/navigation';
-
 export default function AdminAssignmentsPage() {
-  redirect('/admin?tab=team');
+  // Redirect is handled in next.config.ts so this segment stays static-buildable.
+  return null;
 }

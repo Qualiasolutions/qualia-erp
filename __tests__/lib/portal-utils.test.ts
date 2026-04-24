@@ -107,9 +107,16 @@ describe('assertAppEnabledForClient', () => {
     expect(mockGetEnabledAppsForClient).not.toHaveBeenCalled();
   });
 
-  it('fails open for a client with no linked client_projects (no workspace)', async () => {
+  it('fails closed for client app routes with no linked client_projects (no workspace)', async () => {
     mockClientWorkspace(null);
     const result = await assertAppEnabledForClient('u1', 'messages', 'client');
+    expect(result).toBe(false);
+    expect(mockGetEnabledAppsForClient).not.toHaveBeenCalled();
+  });
+
+  it('allows the home app for a client with no linked client_projects', async () => {
+    mockClientWorkspace(null);
+    const result = await assertAppEnabledForClient('u1', 'home', 'client');
     expect(result).toBe(true);
     expect(mockGetEnabledAppsForClient).not.toHaveBeenCalled();
   });

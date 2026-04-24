@@ -152,7 +152,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
       <tr
         onClick={handleRowClick}
         className={cn(
-          'ease-[premium] group cursor-pointer border-b border-border transition-colors duration-150',
+          'group cursor-pointer border-b border-border transition-colors duration-150 ease-premium',
           'hover:bg-muted/30',
           isPending && 'pointer-events-none opacity-50'
         )}
@@ -283,7 +283,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-all duration-150 hover:bg-muted/50 hover:text-foreground md:h-7 md:w-7 md:opacity-0 md:group-hover:opacity-100"
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-all duration-150 hover:bg-muted/50 hover:text-foreground md:min-h-[44px] md:min-w-[44px] md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100 md:[@media(hover:none)]:opacity-100"
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Client actions"
               >
@@ -499,11 +499,12 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
             type="button"
             onClick={() => setViewMode('table')}
             className={cn(
-              'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+              'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md transition-colors',
               viewMode === 'table'
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             )}
+            aria-label="Table view"
           >
             <List className="h-3.5 w-3.5" />
           </button>
@@ -511,11 +512,12 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
             type="button"
             onClick={() => setViewMode('cards')}
             className={cn(
-              'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+              'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md transition-colors',
               viewMode === 'cards'
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             )}
+            aria-label="Card view"
           >
             <LayoutGrid className="h-3.5 w-3.5" />
           </button>

@@ -324,7 +324,7 @@ const EngagementRow = memo(function EngagementRow({
         </div>
         <div className="mt-4 h-0.5 overflow-hidden rounded-full bg-border/30">
           <div
-            className="ease-[cubic-bezier(0.16,1,0.3,1)] h-full rounded-full transition-[width] duration-700"
+            className="h-full rounded-full transition-[width] duration-700 ease-premium"
             style={{
               width: `${pct}%`,
               background: accentColor,

@@ -53,8 +53,9 @@ function TemplateCard({ template }: { template: (typeof templates)[0] }) {
       <a
         href={template.file}
         download
+        aria-label={`Download ${template.title}`}
         className={cn(
-          'flex h-7 w-7 items-center justify-center rounded-md',
+          'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md',
           'text-muted-foreground hover:bg-muted hover:text-foreground',
           'transition-colors'
         )}
@@ -78,7 +79,8 @@ export function AIAssistantTemplates() {
         </div>
         <button
           onClick={toggleTemplates}
-          className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          aria-label="Close templates"
         >
           <X className="h-3.5 w-3.5" />
         </button>

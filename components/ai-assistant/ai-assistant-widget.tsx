@@ -86,7 +86,7 @@ export function AIAssistantWidget() {
               <button
                 onClick={() => setShowHistory((prev) => !prev)}
                 className={cn(
-                  'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+                  'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md transition-colors',
                   showHistory
                     ? 'bg-primary/10 text-primary'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -99,7 +99,7 @@ export function AIAssistantWidget() {
               <button
                 onClick={toggleTemplates}
                 className={cn(
-                  'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+                  'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md transition-colors',
                   showTemplates
                     ? 'bg-primary/10 text-primary'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -111,7 +111,7 @@ export function AIAssistantWidget() {
               {/* Minimize (desktop only) */}
               <button
                 onClick={minimize}
-                className="hidden h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:flex"
+                className="hidden min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:flex"
                 aria-label="Minimize"
               >
                 <Minus className="h-4 w-4" />
@@ -119,7 +119,7 @@ export function AIAssistantWidget() {
               {/* Close */}
               <button
                 onClick={close}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label="Close"
               >
                 <X className="h-4 w-4" />

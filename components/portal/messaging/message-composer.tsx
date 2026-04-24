@@ -154,7 +154,7 @@ export function MessageComposer({ projectId, userRole, onMessageSent }: MessageC
               <button
                 type="button"
                 onClick={handleBold}
-                className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
                 title="Bold (Ctrl+B)"
                 aria-label="Bold"
               >
@@ -163,7 +163,7 @@ export function MessageComposer({ projectId, userRole, onMessageSent }: MessageC
               <button
                 type="button"
                 onClick={handleItalic}
-                className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
                 title="Italic (Ctrl+I)"
                 aria-label="Italic"
               >
@@ -172,7 +172,7 @@ export function MessageComposer({ projectId, userRole, onMessageSent }: MessageC
               <button
                 type="button"
                 onClick={handleLink}
-                className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
                 title="Link (Ctrl+K)"
                 aria-label="Insert link"
               >

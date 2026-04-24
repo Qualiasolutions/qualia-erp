@@ -1,7 +1,8 @@
 /**
  * Distributed rate limiter backed by Upstash Redis.
- * Uses sliding-window algorithm. Env vars KV_REST_API_URL + KV_REST_API_TOKEN
- * are provisioned by the Vercel Marketplace Upstash integration.
+ * Uses sliding-window algorithm. Env vars UPSTASH_REDIS_REST_URL +
+ * UPSTASH_REDIS_REST_TOKEN (provisioned by the Vercel Marketplace Upstash
+ * Redis integration, or set manually per environment).
  */
 
 import { Ratelimit } from '@upstash/ratelimit';
@@ -24,9 +25,15 @@ interface RateLimitResult {
   reset: number;
 }
 
-const redis = Redis.fromEnv();
+const hasRedisEnv = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+
+const redis = hasRedisEnv ? Redis.fromEnv() : null;
 
 function createRatelimit(options: RateLimitOptions): Ratelimit {
+  if (!redis) {
+    throw new Error('Upstash Redis rate limit env vars are not configured');
+  }
+
   return new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(options.limit, `${options.windowSeconds} s`),
@@ -39,14 +46,32 @@ export async function rateLimit(
   identifier: string,
   options: RateLimitOptions = { limit: 10, windowSeconds: 60 }
 ): Promise<RateLimitResult> {
+  if (!redis) {
+    return {
+      success: true,
+      limit: options.limit,
+      remaining: options.limit,
+      reset: Date.now() + options.windowSeconds * 1000,
+    };
+  }
+
   const limiter = createRatelimit(options);
   const { success, limit, remaining, reset } = await limiter.limit(identifier);
   return { success, limit, remaining, reset };
 }
 
 export function createRateLimiter(options: RateLimitOptions) {
-  const limiter = createRatelimit(options);
+  const limiter = redis ? createRatelimit(options) : null;
   return async (identifier: string): Promise<RateLimitResult> => {
+    if (!limiter) {
+      return {
+        success: true,
+        limit: options.limit,
+        remaining: options.limit,
+        reset: Date.now() + options.windowSeconds * 1000,
+      };
+    }
+
     const { success, limit, remaining, reset } = await limiter.limit(identifier);
     return { success, limit, remaining, reset };
   };

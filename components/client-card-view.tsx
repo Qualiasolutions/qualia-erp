@@ -21,7 +21,7 @@ const ClientCard = React.memo(function ClientCard({
     <button
       type="button"
       onClick={() => onOpenDetail(client)}
-      className="ease-[premium] flex w-full cursor-pointer flex-col gap-3 rounded-xl border border-border bg-card p-5 text-left transition-all duration-200 hover:border-primary/20 hover:shadow-md"
+      className="flex w-full cursor-pointer flex-col gap-3 rounded-xl border border-border bg-card p-5 text-left transition-all duration-200 ease-premium hover:border-primary/20 hover:shadow-md"
     >
       {/* Header: Avatar + Name + Status */}
       <div className="flex items-start gap-3">

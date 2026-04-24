@@ -38,28 +38,12 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
   // This closes the Phase 11 RSC leak at the query layer, not just the render layer.
   const userProfile = await getCurrentUserProfile();
   const isAdmin = userProfile?.role === 'admin';
-
-  const [project, profiles, integrationStatus, clientsRaw] = await Promise.all([
-    getCachedProjectById(id),
-    isAdmin ? getProfiles() : Promise.resolve([]),
-    getCachedProjectIntegrationStatus(id),
-    isAdmin ? getClients() : Promise.resolve([]),
-  ]);
-
-  const clients = (clientsRaw || []).map((c) => ({
-    id: c.id,
-    display_name: c.display_name,
-  }));
-
-  if (!project) {
-    notFound();
-  }
-
   const isClient = userProfile?.role === 'client';
+  const supabase = await createClient();
 
-  // Clients can only view projects they have explicit access to via client_projects
+  // Authorize before any service-role cached reads. `lib/cached-reads.ts`
+  // intentionally bypasses RLS, so route-level access checks must happen first.
   if (isClient) {
-    const supabase = await createClient();
     const { data: link } = await supabase
       .from('client_projects')
       .select('project_id')
@@ -71,7 +55,6 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
 
   // Employees can only view projects they're assigned to
   if (userProfile && userProfile.role !== 'admin' && userProfile.role !== 'client') {
-    const supabase = await createClient();
     const { data: assignment } = await supabase
       .from('project_assignments')
       .select('id')
@@ -82,6 +65,22 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
     if (!assignment) {
       notFound();
     }
+  }
+
+  const [project, profiles, integrationStatus, clientsRaw] = await Promise.all([
+    getCachedProjectById(id),
+    isAdmin ? getProfiles() : Promise.resolve([]),
+    isClient ? Promise.resolve(undefined) : getCachedProjectIntegrationStatus(id),
+    isAdmin ? getClients() : Promise.resolve([]),
+  ]);
+
+  const clients = (clientsRaw || []).map((c) => ({
+    id: c.id,
+    display_name: c.display_name,
+  }));
+
+  if (!project) {
+    notFound();
   }
 
   // Demos don't have a detail page - redirect back to projects list

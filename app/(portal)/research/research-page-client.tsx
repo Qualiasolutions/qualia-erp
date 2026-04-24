@@ -168,7 +168,7 @@ function ResearchCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="ease-[cubic-bezier(0.16,1,0.3,1)] group relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:border-primary/20 hover:shadow-md"
+      className="group relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 ease-premium hover:border-primary/20 hover:shadow-md"
     >
       {/* Category accent line */}
       <div className={cn('h-0.5', accent)} />
@@ -489,7 +489,7 @@ function RawContentSection({ content }: { content: string }) {
         </span>
         <ChevronDown
           className={cn(
-            'ease-[cubic-bezier(0.16,1,0.3,1)] h-4 w-4 text-muted-foreground transition-transform duration-200',
+            'h-4 w-4 text-muted-foreground transition-transform duration-200 ease-premium',
             expanded && 'rotate-180'
           )}
         />

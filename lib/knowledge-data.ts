@@ -30,7 +30,7 @@ export async function getData() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('table_name')
-    .select('*');
+    .select('id, name, created_at');
 
   if (error) throw new Error(error.message);
   return data;

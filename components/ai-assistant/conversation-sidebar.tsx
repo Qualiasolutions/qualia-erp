@@ -118,7 +118,7 @@ function ConversationItem({
       {!isDeleting && (
         <button
           onClick={handleDelete}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity duration-150 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+          className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity duration-150 hover:bg-destructive/10 hover:text-destructive group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
           aria-label="Delete conversation"
         >
           <Trash2 className="h-3 w-3" />
@@ -167,14 +167,14 @@ export function ConversationSidebar({
         <div className="flex items-center gap-1">
           <button
             onClick={onNewConversation}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted/30 hover:text-foreground"
+            className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted/30 hover:text-foreground"
             aria-label="New conversation"
           >
             <Plus className="h-4 w-4" />
           </button>
           <button
             onClick={onClose}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted/30 hover:text-foreground md:hidden"
+            className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted/30 hover:text-foreground md:hidden"
             aria-label="Close sidebar"
           >
             <X className="h-4 w-4" />

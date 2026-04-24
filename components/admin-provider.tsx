@@ -1,8 +1,13 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { getViewAsState, clearViewAs as clearViewAsAction } from '@/app/actions/view-as';
+import {
+  getViewAsState,
+  clearViewAs as clearViewAsAction,
+  setViewAsUser,
+} from '@/app/actions/view-as';
 
 // The super admin email address
 const SUPER_ADMIN_EMAIL = 'info@qualiasolutions.net';
@@ -54,6 +59,7 @@ interface AdminProviderProps {
 }
 
 export function AdminProvider({ children }: AdminProviderProps) {
+  const router = useRouter();
   const [realRole, setRealRole] = useState<string | null>(null);
   const [viewAsRole, setViewAsRole] = useState<string | null>(null);
   const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
@@ -75,20 +81,35 @@ export function AdminProvider({ children }: AdminProviderProps) {
     });
   }, []);
 
-  const startViewAs = useCallback((role: string, userId?: string) => {
-    // Cookie is set by the server action setViewAsUser() — just update local state + reload
-    setViewAsRole(role);
-    if (userId) setViewAsUserId(userId);
-    window.location.reload();
-  }, []);
+  const startViewAs = useCallback(
+    (role: string, userId?: string) => {
+      setViewAsRole(role);
+      if (userId) {
+        setViewAsUserId(userId);
+        setViewAsUser(userId).then((result) => {
+          if (!result.success) {
+            console.error('[AdminProvider] Failed to switch view-as user:', result.error);
+            setViewAsRole(null);
+            setViewAsUserId(null);
+            return;
+          }
+          router.refresh();
+        });
+        return;
+      }
+
+      router.refresh();
+    },
+    [router]
+  );
 
   const stopViewAs = useCallback(() => {
     clearViewAsAction().then(() => {
       setViewAsRole(null);
       setViewAsUserId(null);
-      window.location.reload();
+      router.refresh();
     });
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const checkAdminStatus = async () => {

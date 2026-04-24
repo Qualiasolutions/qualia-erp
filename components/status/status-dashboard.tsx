@@ -131,7 +131,7 @@ function MonitorCard({
   return (
     <div
       className={cn(
-        'ease-[premium] group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card p-5 transition-all duration-200',
+        'group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card p-5 transition-all duration-200 ease-premium',
         'hover:border-primary/20 hover:shadow-md',
         monitor.status === 8 && 'border-amber-500/30',
         monitor.status === 9 && 'border-red-500/40',
@@ -149,7 +149,7 @@ function MonitorCard({
         <div className="mb-4 flex items-start justify-between">
           <div
             className={cn(
-              'ease-[premium] flex size-14 items-center justify-center overflow-hidden rounded-xl border-2 transition-all duration-200',
+              'flex size-14 items-center justify-center overflow-hidden rounded-xl border-2 transition-all duration-200 ease-premium',
               'bg-gradient-to-br from-muted/40 to-muted/10',
               monitor.status === 2 && 'border-border group-hover:border-emerald-500/20',
               monitor.status === 8 && 'border-amber-500/20',
@@ -188,7 +188,7 @@ function MonitorCard({
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
-                  'ease-[premium] flex size-7 items-center justify-center rounded-lg border transition-all duration-200',
+                  'flex size-7 items-center justify-center rounded-lg border transition-all duration-200 ease-premium',
                   'border-transparent opacity-0 group-hover:border-border group-hover:opacity-100',
                   'hover:bg-muted/40'
                 )}

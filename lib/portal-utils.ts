@@ -183,10 +183,10 @@ export async function assertAppEnabledForClient(
   if (role !== 'client') return false;
 
   const workspaceId = await getClientWorkspaceId(userId);
-  // Fail-open when no workspace resolves: a client with zero linked projects
-  // still sees their pages (they'll hit empty states). This matches the
-  // sidebar fallback in app/(portal)/layout.tsx.
-  if (!workspaceId) return true;
+  // Fail closed for app-specific routes. A client without a project link can
+  // still land on the home shell, but disabled app routes should not bypass the
+  // App Library just because workspace resolution failed.
+  if (!workspaceId) return appKey === 'home';
 
   const { getEnabledAppsForClient } = await import('@/app/actions/portal-admin');
   const result = await getEnabledAppsForClient(workspaceId, userId);

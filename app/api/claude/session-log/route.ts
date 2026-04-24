@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { safeCompare } from '@/lib/auth-utils';
+import { apiRateLimiter } from '@/lib/rate-limit';
 
 // M-B2: Length caps on string fields to prevent row-bloat via compromised key.
 const SessionLogSchema = z.object({
@@ -30,6 +31,15 @@ export async function POST(request: NextRequest) {
 
   if (!expectedKey || !safeCompare(apiKey, expectedKey)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimitResult = await apiRateLimiter('claude:session-log');
+  if (!rateLimitResult.success) {
+    const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
+    return NextResponse.json(
+      { error: 'Rate limit exceeded', retryAfter },
+      { status: 429, headers: { 'Retry-After': retryAfter.toString() } }
+    );
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

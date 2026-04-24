@@ -2,14 +2,41 @@ import type { NextConfig } from 'next';
 import { withSentryConfig } from '@sentry/nextjs';
 import bundleAnalyzer from '@next/bundle-analyzer';
 
+const repoRoot = process.cwd();
+
 // Bundle analyzer for performance debugging (run with ANALYZE=true npm run build)
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 
 const nextConfig: NextConfig = {
+  // The machine has another lockfile above this repo. Pin tracing/Turbopack to
+  // the app root so builds do not infer /home/qualia as the workspace root.
+  outputFileTracingRoot: repoRoot,
+  turbopack: {
+    root: repoRoot,
+  },
   // Enable Cache Components ('use cache' directive) for opt-in request-level caching
   cacheComponents: true,
+  async redirects() {
+    return [
+      {
+        source: '/admin/assignments',
+        destination: '/admin?tab=team',
+        permanent: false,
+      },
+      {
+        source: '/admin/attendance',
+        destination: '/admin?tab=team',
+        permanent: false,
+      },
+      {
+        source: '/inbox',
+        destination: '/tasks',
+        permanent: false,
+      },
+    ];
+  },
   // Security headers
   async headers() {
     return [
