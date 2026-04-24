@@ -29,8 +29,7 @@ import {
   Globe,
   Layers,
   ChevronDown,
-  Sparkles,
-  Archive,
+  Clock,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -246,65 +245,6 @@ function ResearchCard({
         aria-label={`View ${entry.title}`}
       />
     </m.div>
-  );
-}
-
-/* ─── How to research — inviting 3-step guide ───────────────── */
-function HowToResearch({ onLog }: { onLog: () => void }) {
-  const steps = [
-    {
-      n: 1,
-      title: 'Research',
-      body: 'Use Gemini Deep Research, NotebookLM, or Context7 MCP for library docs.',
-    },
-    {
-      n: 2,
-      title: 'Capture',
-      body: 'Pull out the summary, key findings, action items, and source links.',
-    },
-    {
-      n: 3,
-      title: 'Log it here',
-      body: 'Save it so the team can find and act on it later.',
-    },
-  ];
-
-  return (
-    <div className="rounded-xl border border-border bg-gradient-to-br from-primary/5 via-card to-card p-5 sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Sparkles className="h-4 w-4 text-primary" />
-            How research works
-          </div>
-          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            Three steps. Don&apos;t let good findings die in a chat window — log them so the team
-            can use them.
-          </p>
-        </div>
-        <Button size="sm" onClick={onLog}>
-          <Plus className="mr-1.5 h-4 w-4" />
-          Log Research
-        </Button>
-      </div>
-
-      <ol className="mt-5 grid gap-3 sm:grid-cols-3">
-        {steps.map((s) => (
-          <li
-            key={s.n}
-            className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 p-3"
-          >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-              {s.n}
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">{s.title}</p>
-              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{s.body}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
-    </div>
   );
 }
 
@@ -911,102 +851,121 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-5xl space-y-6 p-6 lg:p-8">
-          {/* Inviting 3-step guide */}
-          <HowToResearch onLog={() => setShowNewModal(true)} />
-
-          {/* Subtle counters + search */}
+        <div className="space-y-6 p-6 lg:p-8">
+          {/* Stats row */}
           {entries.length > 0 && (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium tabular-nums text-foreground">{stats.total}</span>{' '}
-                {stats.total === 1 ? 'entry' : 'entries'}
-                {stats.thisWeek > 0 && (
-                  <>
-                    {' · '}
-                    <span className="font-medium tabular-nums text-foreground">
-                      {stats.thisWeek}
-                    </span>{' '}
-                    this week
-                  </>
-                )}
-                {' · '}
-                <span className="font-medium tabular-nums text-foreground">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="relative rounded-xl border border-border bg-card p-5">
+                <FlaskConical className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Total Entries
+                </p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                  {stats.total}
+                </p>
+              </div>
+              <div className="relative rounded-xl border border-border bg-card p-5">
+                <Clock className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  This Week
+                </p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                  {stats.thisWeek}
+                </p>
+              </div>
+              <div className="relative rounded-xl border border-border bg-card p-5">
+                <Layers className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Categories
+                </p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
                   {stats.categories}
-                </span>{' '}
-                {stats.categories === 1 ? 'category' : 'categories'}
-              </p>
-
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search research..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
+                </p>
               </div>
             </div>
           )}
 
-          {/* Category Pills */}
-          {entries.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedCategory('all')}
-                className={cn(
-                  'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-colors duration-150',
-                  selectedCategory === 'all'
-                    ? 'border-primary/30 bg-primary/10 text-primary'
-                    : 'border-border bg-transparent text-muted-foreground hover:bg-muted/40'
-                )}
-              >
-                All · {entries.length}
-              </button>
-              {RESEARCH_CATEGORIES.map((cat) => {
-                const count = entries.filter((e) => e.category === cat.value).length;
-                if (count === 0) return null;
-                const colors = CATEGORY_COLORS[cat.value] || CATEGORY_COLORS.general;
-                return (
-                  <button
-                    key={cat.value}
-                    onClick={() => setSelectedCategory(cat.value)}
-                    className={cn(
-                      'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-colors duration-150',
-                      selectedCategory === cat.value
-                        ? `${colors.border} ${colors.bg} ${colors.text}`
-                        : 'border-border bg-transparent text-muted-foreground hover:bg-muted/40'
-                    )}
-                  >
-                    {cat.label} · {count}
-                  </button>
-                );
-              })}
+          {/* Search and Filters */}
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search research..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
             </div>
-          )}
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="All categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {RESEARCH_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Category Pills */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={cn(
+                'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150',
+                selectedCategory === 'all'
+                  ? 'border-primary/30 bg-primary/15 text-primary dark:text-primary'
+                  : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50'
+              )}
+            >
+              All ({entries.length})
+            </button>
+            {RESEARCH_CATEGORIES.map((cat) => {
+              const count = entries.filter((e) => e.category === cat.value).length;
+              if (count === 0) return null;
+              const colors = CATEGORY_COLORS[cat.value] || CATEGORY_COLORS.general;
+              const CatIcon = CATEGORY_ICONS[cat.value] || FlaskConical;
+              return (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={cn(
+                    'flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150',
+                    selectedCategory === cat.value
+                      ? `${colors.border} ${colors.bg} ${colors.text}`
+                      : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                  )}
+                >
+                  <CatIcon className="h-3 w-3" />
+                  {cat.label} ({count})
+                </button>
+              );
+            })}
+          </div>
 
           {/* Research Entries */}
-          {entries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
-              <Archive className="mb-3 h-10 w-10 text-muted-foreground/30" />
-              <h3 className="text-base font-medium text-foreground">Nothing logged yet</h3>
-              <p className="mb-5 mt-1 max-w-sm px-6 text-sm text-muted-foreground">
-                Follow the three steps above, then drop your first finding here.
+          {filteredEntries.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
+              <FlaskConical className="mb-3 h-12 w-12 text-muted-foreground/30" />
+              <h3 className="text-base font-medium text-foreground">No research entries yet</h3>
+              <p className="mb-4 mt-1 text-center text-sm text-muted-foreground">
+                {searchQuery || selectedCategory !== 'all'
+                  ? 'Try adjusting your filters or search terms'
+                  : 'Log your first research findings from Deep Research, NotebookLM, or your own investigation'}
               </p>
-              <Button onClick={() => setShowNewModal(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Log Research
-              </Button>
-            </div>
-          ) : filteredEntries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-12 text-center">
-              <Search className="mb-3 h-8 w-8 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">
-                No matches. Try a different search or category.
-              </p>
+              {!searchQuery && selectedCategory === 'all' && (
+                <Button onClick={() => setShowNewModal(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Log Research
+                </Button>
+              )}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-4 md:grid-cols-2">
               <AnimatePresence mode="popLayout">
                 {filteredEntries.map((entry) => (
                   <ResearchCard
