@@ -27,9 +27,9 @@ import {
   DollarSign,
   ExternalLink,
   Globe,
-  Clock,
   Layers,
   ChevronDown,
+  Clock,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -157,106 +157,85 @@ function ResearchCard({
 }) {
   const colors = CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.general;
   const CategoryIcon = CATEGORY_ICONS[entry.category] || FlaskConical;
-  const accent = CATEGORY_ACCENT[entry.category] || 'bg-muted-foreground/30';
 
   const sourceCount = entry.sources ? (entry.sources.match(/https?:\/\//g) || []).length : 0;
-  const hasFindings = !!entry.key_findings;
   const hasActions = !!entry.action_items;
 
   return (
     <m.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="group relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 ease-premium hover:border-primary/20 hover:shadow-md"
+      exit={{ opacity: 0, y: -8 }}
+      className="group relative rounded-xl border border-border bg-card p-5 transition-colors duration-150 ease-premium hover:border-primary/30"
     >
-      {/* Category accent line */}
-      <div className={cn('h-0.5', accent)} />
+      <div className="flex items-start gap-4">
+        <div
+          className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', colors.bg)}
+        >
+          <CategoryIcon className={cn('h-4 w-4', colors.text)} />
+        </div>
 
-      <div className="p-5">
-        <div className="flex items-start gap-4">
-          {/* Category icon */}
-          <div
-            className={cn(
-              'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-              colors.bg
-            )}
-          >
-            <CategoryIcon className={cn('h-5 w-5', colors.text)} />
-          </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[15px] font-semibold leading-snug text-foreground">{entry.title}</h3>
+          <p className="mt-0.5 text-sm text-muted-foreground">{entry.topic}</p>
 
-          <div className="min-w-0 flex-1">
-            <div className="mb-1.5 flex flex-wrap items-center gap-2">
-              <span
-                className={cn(
-                  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                  colors.bg,
-                  colors.text,
-                  colors.border
-                )}
-              >
-                {getCategoryLabel(entry.category)}
-              </span>
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                {format(new Date(entry.research_date), 'MMM d, yyyy')}
-              </span>
-            </div>
+          {entry.summary && (
+            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground/80">
+              {entry.summary}
+            </p>
+          )}
 
-            <h3 className="mb-1 text-[15px] font-semibold leading-snug text-foreground">
-              {entry.title}
-            </h3>
-            <p className="text-sm text-muted-foreground">{entry.topic}</p>
-
-            {entry.summary && (
-              <p className="mt-2.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground/80">
-                {entry.summary}
-              </p>
-            )}
-
-            {/* Metadata indicators */}
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              {entry.author && (
-                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span className={cn('font-medium', colors.text)}>
+              {getCategoryLabel(entry.category)}
+            </span>
+            <span aria-hidden>·</span>
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {format(new Date(entry.research_date), 'MMM d')}
+            </span>
+            {entry.author && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="flex items-center gap-1">
                   <User className="h-3 w-3" />
                   {entry.author.full_name || entry.author.email}
                 </span>
-              )}
-              {sourceCount > 0 && (
-                <span className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400">
+              </>
+            )}
+            {sourceCount > 0 && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="flex items-center gap-1">
                   <Link2 className="h-3 w-3" />
-                  {sourceCount} source{sourceCount !== 1 ? 's' : ''}
+                  {sourceCount}
                 </span>
-              )}
-              {hasFindings && (
-                <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
-                  <Lightbulb className="h-3 w-3" />
-                  Findings
-                </span>
-              )}
-              {hasActions && (
-                <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+              </>
+            )}
+            {hasActions && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                   <CheckCircle2 className="h-3 w-3" />
                   Actions
                 </span>
-              )}
-            </div>
+              </>
+            )}
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="relative z-10 flex shrink-0 items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onView}>
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              onClick={onDelete}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+        <div className="relative z-10 flex shrink-0 items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onView}>
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive"
+            onClick={onDelete}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -594,7 +573,8 @@ function NewResearchModal({
               Log Research
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Record findings from Deep Research, NotebookLM, or your own investigation.
+              Capture findings from Gemini Deep Research, NotebookLM, Context7, or your own
+              investigation.
             </DialogDescription>
           </DialogHeader>
         </div>
