@@ -219,14 +219,14 @@ function NavItem({
       {isActive ? (
         <span
           aria-hidden
-          className="absolute bottom-[7px] left-0 top-[7px] w-[2px] rounded-r bg-[var(--accent-teal)]"
+          className="absolute bottom-1.5 left-0 top-1.5 w-[2px] rounded-r bg-[var(--accent-teal)]"
         />
       ) : null}
     </>
   );
 
   const classes = cn(
-    'relative mb-0.5 flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] transition-all duration-150 ease-out',
+    'relative mb-0.5 flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] transition-colors duration-150',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-teal)]/40 focus-visible:ring-offset-0',
     isActive
       ? 'font-semibold text-[var(--accent-teal)]'
@@ -245,7 +245,13 @@ function NavItem({
   }
 
   return (
-    <Link href={page.href} onClick={onClick} className={classes} data-nav-id={page.id}>
+    <Link
+      href={page.href}
+      onClick={onClick}
+      aria-current={isActive ? 'page' : undefined}
+      className={classes}
+      data-nav-id={page.id}
+    >
       {inner}
     </Link>
   );
@@ -294,7 +300,7 @@ function ClockBlock({ userId }: { userId: string | null }) {
       >
         <div className="min-w-0 flex-1">
           <div
-            className="flex items-center gap-1.5 font-mono text-[9.5px] font-medium uppercase tracking-[0.08em]"
+            className="flex items-center gap-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em]"
             style={{ color: clockedIn ? 'var(--q-moss)' : 'var(--text-mute)' }}
           >
             {clockedIn ? (
@@ -314,7 +320,7 @@ function ClockBlock({ userId }: { userId: string | null }) {
           type="button"
           onClick={() => (clockedIn ? setShowOut(true) : setShowIn(true))}
           className={cn(
-            'rounded-[5px] px-2.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.04em] transition-colors duration-150',
+            'cursor-pointer rounded-md px-2.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.04em] transition-colors duration-150',
             clockedIn
               ? 'border border-[var(--line)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-hi)]'
               : 'bg-[var(--accent-teal)] text-[var(--on-accent)] hover:opacity-90'
@@ -404,10 +410,10 @@ function IdentityFooter({
               )}
             </span>
             <span className="min-w-0 flex-1 text-left">
-              <span className="block truncate text-[12.5px] font-semibold text-[var(--text)]">
+              <span className="block truncate text-xs font-semibold text-[var(--text)]">
                 {displayName}
               </span>
-              <span className="block truncate font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--text-mute)]">
+              <span className="block truncate font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--text-mute)]">
                 {role}
               </span>
             </span>
@@ -452,7 +458,7 @@ function IdentityFooter({
       <button
         type="button"
         onClick={onOpenTweaks}
-        className="focus-visible:ring-[var(--accent-teal)]/40 rounded-md p-1.5 text-[var(--text-mute)] transition-colors duration-150 hover:bg-[var(--surface-hi)] hover:text-[var(--text)] focus:outline-none focus-visible:ring-2"
+        className="focus-visible:ring-[var(--accent-teal)]/40 cursor-pointer rounded-md p-1.5 text-[var(--text-mute)] transition-colors duration-150 hover:bg-[var(--surface-hi)] hover:text-[var(--text)] focus:outline-none focus-visible:ring-2"
         aria-label={isAdmin ? 'Tweaks' : 'Settings'}
       >
         <QIcon name="settings" size={14} />
@@ -481,7 +487,7 @@ function JumpTo() {
     <button
       type="button"
       onClick={handleClick}
-      className="focus-visible:ring-[var(--accent-teal)]/40 flex w-full items-center gap-2 rounded-md border border-[var(--line)] bg-[var(--surface)] px-2.5 py-2 text-[12.5px] text-[var(--text-mute)] transition-colors duration-150 hover:border-[var(--line-2)] hover:bg-[var(--surface-hi)] focus:outline-none focus-visible:ring-2"
+      className="focus-visible:ring-[var(--accent-teal)]/40 flex w-full cursor-pointer items-center gap-2 rounded-md border border-[var(--line)] bg-[var(--surface)] px-2.5 py-2 text-xs text-[var(--text-mute)] transition-colors duration-150 hover:border-[var(--line-2)] hover:bg-[var(--surface-hi)] focus:outline-none focus-visible:ring-2"
       aria-label="Jump to anywhere (command menu)"
     >
       <QIcon name="search" size={13} />
@@ -569,15 +575,15 @@ function SidebarBody({
           />
         </Link>
         <span className="flex min-w-0 flex-col leading-[1.1]">
-          <span className="q-display truncate text-[18px] text-[var(--text)]">{brandName}</span>
-          <span className="q-label-mono text-[9.5px] tracking-[0.12em]">OPERATIONS SUITE</span>
+          <span className="q-display truncate text-lg text-[var(--text)]">{brandName}</span>
+          <span className="q-label-mono text-[10px] tracking-[0.12em]">OPERATIONS SUITE</span>
         </span>
       </div>
 
       {/* Company name (clients only, admin viewing one) */}
       {companyName ? (
         <div className="px-5 pb-2">
-          <p className="truncate font-mono text-[10.5px] uppercase tracking-[0.08em] text-[var(--text-mute)]">
+          <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-mute)]">
             {companyName}
           </p>
         </div>
@@ -620,7 +626,7 @@ function SidebarBody({
           isImpersonating={isImpersonating}
         />
 
-        <div className="mt-2.5 flex items-center gap-1.5 font-mono text-[10.5px] text-[var(--text-mute)]">
+        <div className="mt-2.5 flex items-center gap-1.5 font-mono text-[10px] text-[var(--text-mute)]">
           <span className="q-live-dot" aria-hidden />
           <span>
             {formatDate(now, 'HH:mm')} · {branding?.accent_color ? brandName : 'Nicosia'}
@@ -665,7 +671,7 @@ export function QualiaSidebar(props: QualiaSidebarProps) {
           <SheetTrigger asChild>
             <button
               type="button"
-              className="focus-visible:ring-[var(--accent-teal)]/40 flex h-11 w-11 items-center justify-center rounded-md border border-[var(--line)] bg-[var(--surface)] text-[var(--text-soft)] shadow-sm hover:bg-[var(--surface-hi)] focus:outline-none focus-visible:ring-2"
+              className="focus-visible:ring-[var(--accent-teal)]/40 flex h-11 w-11 cursor-pointer items-center justify-center rounded-md border border-[var(--line)] bg-[var(--surface)] text-[var(--text-soft)] shadow-sm transition-colors duration-150 hover:bg-[var(--surface-hi)] focus:outline-none focus-visible:ring-2"
               aria-label="Open navigation"
             >
               <QIcon name="more" size={18} />

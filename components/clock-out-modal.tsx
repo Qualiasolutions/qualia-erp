@@ -144,23 +144,23 @@ export function ClockOutModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <LogOut className="size-4 text-primary" />
-            Clock Out
-          </DialogTitle>
+            <DialogTitle>Clock Out</DialogTitle>
+          </div>
           <DialogDescription>Summarize your session before clocking out.</DialogDescription>
         </DialogHeader>
 
         {/* Session info row */}
-        <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
-          <div className="mb-1 text-[12px] font-semibold text-qualia-700 dark:text-qualia-300">
+        <div className="rounded-lg border border-primary/15 bg-primary/[0.04] px-3 py-2.5">
+          <div className="mb-1 text-xs font-semibold text-qualia-700 dark:text-qualia-300">
             {session.project?.name ?? 'No project'}
           </div>
-          <div className="flex items-center gap-1.5 text-[12px] text-primary/80 dark:text-primary/80">
+          <div className="flex items-center gap-1.5 text-xs text-primary/80">
             <Clock className="size-3 shrink-0" />
             <span>Started at {startedAtFormatted}</span>
-            <span className="mx-1 opacity-40">·</span>
-            <span className="rounded-md bg-primary/15 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-primary dark:text-primary">
+            <span className="opacity-40">·</span>
+            <span className="rounded-md bg-primary/15 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-primary">
               {duration}
             </span>
           </div>
@@ -168,9 +168,9 @@ export function ClockOutModal({
 
         {/* Report status — auto-detected, not manually uploaded */}
         <div className="space-y-2">
-          <Label className="text-[13px] font-medium">
+          <Label className="text-sm font-medium">
             Session Report{' '}
-            <span className="text-[11px] font-normal text-muted-foreground">
+            <span className="text-xs font-normal text-muted-foreground">
               {isOtherSession ? (
                 '(optional)'
               ) : (
@@ -184,13 +184,13 @@ export function ClockOutModal({
           {checkingReport ? (
             <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
               <Loader2 className="size-4 animate-spin text-muted-foreground" />
-              <span className="text-[12px] text-muted-foreground">Checking for report…</span>
+              <span className="text-xs text-muted-foreground">Checking for report…</span>
             </div>
           ) : reportAttached ? (
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5">
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5">
               <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
               <div className="min-w-0 flex-1">
-                <span className="text-[12px] font-medium text-emerald-700 dark:text-emerald-400">
+                <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
                   Report{' '}
                   {reportUrl && structuredReportAttached
                     ? 'uploaded + recorded'
@@ -207,7 +207,7 @@ export function ClockOutModal({
                   href={reportUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 text-[11px] text-emerald-600 underline hover:text-emerald-700"
+                  className="shrink-0 cursor-pointer text-xs font-medium text-emerald-600 underline-offset-2 hover:underline"
                 >
                   View
                 </a>
@@ -218,7 +218,7 @@ export function ClockOutModal({
               className={cn(
                 'flex items-center gap-2 rounded-lg border px-3 py-2.5',
                 reportMissing
-                  ? 'border-destructive/30 bg-destructive/5'
+                  ? 'border-destructive/30 bg-destructive/[0.06]'
                   : 'border-border bg-muted/30'
               )}
             >
@@ -231,7 +231,7 @@ export function ClockOutModal({
               <div className="min-w-0 flex-1">
                 <span
                   className={cn(
-                    'text-[12px] font-medium',
+                    'text-xs font-medium',
                     reportMissing ? 'text-destructive' : 'text-muted-foreground'
                   )}
                 >
@@ -245,7 +245,7 @@ export function ClockOutModal({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 shrink-0 px-2 text-[10px] text-muted-foreground"
+                className="h-7 shrink-0 cursor-pointer px-2 text-xs text-muted-foreground"
                 onClick={checkForReport}
               >
                 Refresh
@@ -256,11 +256,8 @@ export function ClockOutModal({
 
         {/* Summary field */}
         <div className="space-y-2">
-          <Label htmlFor="clock-out-summary" className="text-[13px] font-medium">
-            What did you work on?{' '}
-            <span className="text-destructive" aria-hidden="true">
-              *
-            </span>
+          <Label htmlFor="clock-out-summary" className="text-sm font-medium">
+            What did you work on?
           </Label>
           <Textarea
             id="clock-out-summary"
@@ -271,6 +268,8 @@ export function ClockOutModal({
             }}
             placeholder="Describe what you completed during this session..."
             rows={4}
+            required
+            aria-required="true"
             className="resize-none"
             disabled={isPending}
           />
@@ -278,7 +277,11 @@ export function ClockOutModal({
 
         {/* Error display */}
         {error && (
-          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-[13px] text-destructive">
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-sm text-destructive"
+          >
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -288,6 +291,7 @@ export function ClockOutModal({
           <Button
             type="button"
             variant="outline"
+            className="cursor-pointer"
             onClick={() => onOpenChange(false)}
             disabled={isPending}
           >
@@ -295,9 +299,9 @@ export function ClockOutModal({
           </Button>
           <Button
             type="button"
+            className="cursor-pointer"
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {isPending ? (
               <>
