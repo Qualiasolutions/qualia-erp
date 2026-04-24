@@ -31,6 +31,7 @@ function DialogOverlay({
       data-slot="dialog-overlay"
       className={cn(
         'fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+        'dark:bg-black/70',
         className
       )}
       {...props}
@@ -54,6 +55,7 @@ function DialogContent({
         aria-describedby={undefined}
         className={cn(
           'ease-out-quart fixed left-[50%] top-[50%] z-50 grid max-h-[90vh] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-elevation-4 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-[0.97] data-[state=open]:zoom-in-[0.97] sm:max-w-lg',
+          'dark:border-[hsl(174_100%_42%/0.15)] dark:bg-[hsl(180_8%_3%/0.95)] dark:shadow-[var(--glow-teal-md)] dark:backdrop-blur-xl',
           className
         )}
         {...props}

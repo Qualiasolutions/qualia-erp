@@ -253,12 +253,12 @@ function NavItem({
   );
 
   const classes = cn(
-    'group relative flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] transition-all duration-150',
+    'group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition-all duration-200',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0',
     isActive
       ? // Active: solid teal pill with glow in dark mode
-        'bg-primary font-semibold text-primary-foreground shadow-[0_1px_0_0_hsl(0_0%_100%/0.08)_inset] dark:shadow-[0_1px_0_0_hsl(0_0%_100%/0.08)_inset,var(--glow-teal-sm)]'
-      : 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
+        'bg-primary font-semibold text-primary-foreground shadow-[0_1px_0_0_hsl(0_0%_100%/0.08)_inset] dark:shadow-[0_1px_0_0_hsl(0_0%_100%/0.08)_inset,var(--glow-teal-md)]'
+      : 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-[hsl(174_100%_42%/0.08)] dark:hover:text-foreground',
     disabled ? 'cursor-default opacity-40' : 'cursor-pointer'
   );
 
@@ -623,7 +623,7 @@ function SidebarBody({
 
   return (
     <aside
-      className="m-2 flex h-[calc(100%-1rem)] flex-col rounded-xl border border-border bg-card shadow-elevation-2"
+      className="m-2 flex h-[calc(100%-1rem)] flex-col rounded-xl border bg-card shadow-elevation-2 dark:border-[hsl(174_100%_42%/0.1)] dark:bg-[hsl(180_8%_3%/0.8)] dark:backdrop-blur-xl"
       aria-label="Primary navigation"
     >
       {/* Brand + ⌘K */}
@@ -723,13 +723,13 @@ export function QualiaSidebar(props: QualiaSidebarProps) {
 
   return (
     <>
-      {/* Mobile hamburger — pure-black-friendly floating launcher */}
+      {/* Mobile hamburger — pure-black-friendly floating launcher with glow */}
       <div className="fixed left-3 top-3 z-50 md:hidden">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <button
               type="button"
-              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-foreground shadow-elevation-2 transition-colors duration-150 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border bg-card text-foreground shadow-elevation-2 transition-all duration-200 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-[hsl(174_100%_42%/0.15)] dark:bg-[hsl(180_8%_3%/0.9)] dark:backdrop-blur-lg dark:hover:border-[hsl(174_100%_42%/0.3)] dark:hover:shadow-[var(--glow-teal-sm)]"
               aria-label="Open navigation"
               data-mobile-time={formatDate(now, 'HH:mm')}
             >
