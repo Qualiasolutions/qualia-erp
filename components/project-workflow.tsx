@@ -503,25 +503,19 @@ function MilestoneSection({
     <div className="mb-4 last:mb-0">
       {/* Milestone header */}
       <button
-        onClick={() => milestone.phases.length > 0 && setExpanded(!expanded)}
-        disabled={milestone.phases.length === 0}
+        onClick={() => setExpanded(!expanded)}
         className={cn(
-          'flex w-full items-center gap-3 rounded-lg border px-4 py-2.5 text-left transition-all',
+          'flex w-full items-center gap-3 rounded-lg border px-4 py-2.5 text-left transition-all hover:shadow-sm',
           msConfig.bg,
-          msConfig.border,
-          milestone.phases.length > 0 ? 'hover:shadow-sm' : 'cursor-default opacity-80'
+          msConfig.border
         )}
       >
-        {milestone.phases.length > 0 ? (
-          <ChevronDown
-            className={cn(
-              'size-4 shrink-0 text-muted-foreground transition-transform duration-200',
-              !expanded && '-rotate-90'
-            )}
-          />
-        ) : (
-          <span className="size-4 shrink-0" aria-hidden="true" />
-        )}
+        <ChevronDown
+          className={cn(
+            'size-4 shrink-0 text-muted-foreground transition-transform duration-200',
+            !expanded && '-rotate-90'
+          )}
+        />
         {milestone.status === 'completed' ? (
           <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
         ) : milestone.status === 'in_progress' ? (
@@ -542,6 +536,13 @@ function MilestoneSection({
       </button>
 
       {/* Phases inside milestone */}
+      {expanded && milestone.phases.length === 0 && (
+        <div className="mt-2 rounded-md border border-dashed border-border bg-muted/20 px-4 py-3 text-[12px] text-muted-foreground">
+          {milestone.status === 'completed'
+            ? 'Milestone closed — no per-phase breakdown synced. Run GitHub sync to pull phases from .planning/ROADMAP.md if available.'
+            : 'No phases synced yet. Run GitHub sync to pull phases from .planning/ROADMAP.md.'}
+        </div>
+      )}
       {expanded && milestone.phases.length > 0 && (
         <div className="mt-2 pl-4 sm:pl-6">
           {milestone.phases.map((phase, idx) => {

@@ -103,6 +103,32 @@ export function parseRoadmap(content: string): ParsedMilestone[] {
   const metaMsMatch = content.match(/\*\*Milestone:?\*\*:?\s*(.+)/);
   if (metaMsMatch) metadataMilestoneName = metaMsMatch[1].trim();
 
+  // Track journey-arc table parsing (e.g. JOURNEY.md's `| # | Name | Phases | Status | ... |`)
+  let inArcTable = false;
+
+  const stripMd = (s: string) => s.replace(/\*\*/g, '').replace(/`/g, '').trim();
+  const normalizeArcStatus = (raw: string): string => {
+    const s = raw.toLowerCase();
+    if (s.includes('complete') || s.includes('done') || s.includes('shipped')) return 'complete';
+    if (s.includes('current') || s.includes('in progress') || s.includes('active'))
+      return 'in_progress';
+    if (s.includes('planned') || s.includes('upcoming') || s.includes('pending')) return 'planned';
+    return 'pending';
+  };
+  const upsertMilestone = (m: ParsedMilestone) => {
+    const existing = milestones.find((x) => x.number === m.number);
+    if (existing) {
+      // Fill in missing fields without clobbering already-parsed phases
+      if (!existing.name || existing.name === `Milestone ${existing.number}`)
+        existing.name = m.name;
+      if (existing.status === 'pending' || existing.status === 'planned')
+        existing.status = m.status;
+      return existing;
+    }
+    milestones.push(m);
+    return m;
+  };
+
   for (const line of lines) {
     // ── Milestone headers ──
 
@@ -121,20 +147,71 @@ export function parseRoadmap(content: string): ParsedMilestone[] {
     }
 
     // "## Milestone 1: Core Identity & Auth — complete (2026-03-19 to 2026-03-23)"
+    // Also accepts "## M11 — SRS v1.14 Compliance Closure (CURRENT)" (M{N} alias).
     const milestoneMatch =
       line.match(
         /^## Milestone (\d+):\s*(.+?)(?:\s*[—–-]\s*(complete|in.progress|planned|pending))/i
-      ) || line.match(/^## Milestone (\d+):\s*(.+?)\s*$/i);
+      ) ||
+      line.match(/^## Milestone (\d+):\s*(.+?)\s*$/i) ||
+      line.match(/^## M(\d+)\s*[—–-]\s*(.+?)\s*$/i);
     if (milestoneMatch) {
-      currentMilestone = {
+      const rawName = milestoneMatch[2].trim().replace(/\s*\|.*$/, '');
+      // Strip trailing parenthetical status like "(CURRENT)" / "(FINAL)" for M{N} form.
+      const cleanName = rawName.replace(/\s*\((?:current|final|wip|in progress)\)\s*$/i, '').trim();
+      const parenStatus = rawName.match(/\((current|final|wip|in progress)\)\s*$/i)?.[1];
+      const parsedStatus = milestoneMatch[3]?.toLowerCase().replace(/\s+/g, '_');
+      const status =
+        parsedStatus ??
+        (parenStatus
+          ? parenStatus.toLowerCase() === 'final'
+            ? 'pending'
+            : 'in_progress'
+          : 'pending');
+      currentMilestone = upsertMilestone({
         number: parseInt(milestoneMatch[1]),
-        name: milestoneMatch[2].trim().replace(/\s*\|.*$/, ''),
-        status: milestoneMatch[3]?.toLowerCase().replace(/\s+/g, '_') || 'pending',
+        name: cleanName,
+        status,
         phases: [],
-      };
-      milestones.push(currentMilestone);
+      });
       currentPhase = null;
       continue;
+    }
+
+    // ── Journey-arc table ──
+    // Matches JOURNEY.md's milestone summary table:
+    //   | # | Name | Phases | Status | Archive |
+    //   |---|------|--------|--------|---------|
+    //   | 0 | Central Bank Demo | 9 (0.1–0.9) | Complete 2026-03-20 | v1-ARCHIVE.md |
+    //   | **12** | **Handoff** | **4 (...)** | **CURRENT — opened 2026-04-21** | — |
+    //
+    // This only creates milestone records (no phases). If a `## Milestone N:` /
+    // `## M{N} —` header appears later for the same number, phases parsed there
+    // are attached via `upsertMilestone`'s id-merge.
+    const arcHeaderMatch = line.match(
+      /^\|\s*#\s*\|\s*(?:name|milestone)\s*\|\s*(?:phases?|scope)\s*\|\s*status\s*\|/i
+    );
+    if (arcHeaderMatch) {
+      inArcTable = true;
+      continue;
+    }
+    if (inArcTable) {
+      // Alignment row or end of table
+      if (/^\|[\s\-:|]+\|\s*$/.test(line)) continue;
+      if (!line.trim().startsWith('|')) {
+        inArcTable = false;
+        // fall through to other matchers below
+      } else {
+        const cells = line.split('|').slice(1, -1).map(stripMd);
+        if (cells.length >= 4 && /^\d+$/.test(cells[0])) {
+          upsertMilestone({
+            number: parseInt(cells[0]),
+            name: cells[1],
+            status: normalizeArcStatus(cells[3]),
+            phases: [],
+          });
+        }
+        continue;
+      }
     }
 
     // "## Current Milestone — v1.6 Design Unification & Polish"
