@@ -9,7 +9,6 @@ import {
   FileText,
   ListChecks,
   Check,
-  Search,
   X,
   AlertTriangle,
   Lightbulb,
@@ -26,9 +25,13 @@ import {
   ChevronRight,
   Loader2,
   Database,
+  CheckCircle2,
+  Circle,
+  Sparkles,
+  Trophy,
+  RotateCcw,
 } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
-import { EmptyState } from '@/components/ui/empty-state';
 import { m, AnimatePresence } from '@/lib/lazy-motion';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -66,14 +69,6 @@ const categoryLabels: Record<string, string> = {
   operations: 'Daily Operations',
   reference: 'Reference',
   checklist: 'Shipping Checklists',
-};
-
-const categoryDescriptions: Record<string, string> = {
-  foundations: 'Understand the system before using it',
-  lifecycle: 'The full build cycle — step by step',
-  operations: 'Quick tasks, debugging, design polish',
-  reference: 'Commands, infrastructure, troubleshooting',
-  checklist: 'Verify before shipping',
 };
 
 const categoryColors: Record<
@@ -116,44 +111,6 @@ const categoryColors: Record<
     gradient: 'from-primary/10 via-transparent to-transparent',
   },
 };
-
-// Lifecycle pipeline visualization
-function LifecyclePipeline({ onStepClick }: { onStepClick?: (slug: string) => void }) {
-  const steps = [
-    { label: 'New', slug: 'new-project', icon: '1' },
-    { label: 'Discuss', slug: 'discuss-phase', icon: '2' },
-    { label: 'Plan', slug: 'plan-phase', icon: '3' },
-    { label: 'Execute', slug: 'execute-phase', icon: '4' },
-    { label: 'Verify', slug: 'verify-work', icon: '5' },
-    { label: 'Ship', slug: 'ship-project', icon: '6' },
-  ];
-
-  return (
-    <div className="mb-6 rounded-xl border border-border bg-card p-4">
-      <div className="mb-2.5 text-center text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-        Build Lifecycle
-      </div>
-      <div className="flex items-center justify-center gap-1 sm:gap-2">
-        {steps.map((step, i) => (
-          <div key={step.slug} className="flex items-center gap-1 sm:gap-2">
-            <button
-              onClick={() => onStepClick?.(step.slug)}
-              className="group flex flex-col items-center gap-1 transition-all duration-150 ease-premium hover:scale-105"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-[11px] font-bold text-emerald-600 transition-colors duration-150 group-hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:group-hover:bg-emerald-500/20 sm:h-9 sm:w-9 sm:text-xs">
-                {step.icon}
-              </div>
-              <span className="text-[10px] font-medium text-muted-foreground/70 transition-colors duration-150 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 sm:text-[11px]">
-                {step.label}
-              </span>
-            </button>
-            {i < steps.length - 1 && <div className="mt-[-14px] h-px w-3 bg-border sm:w-6" />}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // Copyable command block
 function CommandBlock({ command }: { command: string }) {
@@ -818,26 +775,230 @@ function GuidePanel({
   );
 }
 
+/* ─── Learning path curriculum ──────────────────────────────── */
+type CurriculumPart = {
+  title: string;
+  subtitle: string;
+  branching?: boolean;
+  lessons: string[]; // guide slugs
+};
+
+const CURRICULUM: CurriculumPart[] = [
+  {
+    title: 'Fundamentals',
+    subtitle: 'Understand the system before you use it.',
+    lessons: ['getting-started', 'how-projects-work', 'tools-and-services'],
+  },
+  {
+    title: 'Your first project',
+    subtitle: 'Pick one track. You can come back for the others.',
+    branching: true,
+    lessons: ['build-website', 'build-voice-agent', 'build-web-app'],
+  },
+  {
+    title: 'Daily craft',
+    subtitle: 'What every working day looks like.',
+    lessons: ['daily-routine', 'design-quality'],
+  },
+  {
+    title: 'Ship it',
+    subtitle: 'Before you deploy to production.',
+    lessons: ['shipping-checklist'],
+  },
+];
+
+const REFERENCE_SLUGS = ['commands-reference'];
+
+const PROGRESS_KEY = 'qualia-kb-progress-v1';
+
+function totalCorePartsDone(completed: Set<string>): number {
+  return CURRICULUM.reduce((acc, part) => {
+    if (part.branching) {
+      return acc + (part.lessons.some((s) => completed.has(s)) ? 1 : 0);
+    }
+    return acc + part.lessons.filter((s) => completed.has(s)).length;
+  }, 0);
+}
+
+function totalCoreSteps(): number {
+  return CURRICULUM.reduce((acc, part) => acc + (part.branching ? 1 : part.lessons.length), 0);
+}
+
+function findNextSlug(completed: Set<string>): string | null {
+  for (const part of CURRICULUM) {
+    if (part.branching) {
+      if (!part.lessons.some((s) => completed.has(s))) return part.lessons[0];
+      continue;
+    }
+    for (const slug of part.lessons) {
+      if (!completed.has(slug)) return slug;
+    }
+  }
+  return null;
+}
+
+/* ─── Lesson row ────────────────────────────────────────────── */
+function LessonRow({
+  guide,
+  state,
+  globalNumber,
+  onOpen,
+  onToggleComplete,
+}: {
+  guide: Guide;
+  state: 'done' | 'current' | 'upcoming';
+  globalNumber: number;
+  onOpen: () => void;
+  onToggleComplete: () => void;
+}) {
+  const Icon = categoryIcons[guide.category];
+  const colors = categoryColors[guide.category];
+
+  return (
+    <div
+      className={cn(
+        'group relative flex items-center gap-4 rounded-xl border bg-card p-4 transition-colors duration-150 ease-premium sm:p-5',
+        state === 'current' && 'border-primary/40 shadow-sm ring-1 ring-primary/10',
+        state === 'done' && 'border-border/60 bg-card/60',
+        state === 'upcoming' && 'border-border'
+      )}
+    >
+      {/* Checkbox-style completion toggle */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleComplete();
+        }}
+        className="relative z-10 shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
+        aria-label={state === 'done' ? 'Mark incomplete' : 'Mark complete'}
+      >
+        {state === 'done' ? (
+          <CheckCircle2 className="h-7 w-7 text-primary" />
+        ) : state === 'current' ? (
+          <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-primary/50 bg-primary/5 text-[11px] font-bold text-primary">
+            {globalNumber}
+          </div>
+        ) : (
+          <div className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-transparent text-[11px] font-semibold text-muted-foreground/60">
+            {globalNumber}
+          </div>
+        )}
+      </button>
+
+      {/* Body — clickable */}
+      <button onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+        <div
+          className={cn(
+            'hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:flex',
+            colors.bg,
+            state === 'done' && 'opacity-60'
+          )}
+        >
+          <Icon className={cn('h-4 w-4', colors.text)} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3
+            className={cn(
+              'text-[15px] font-semibold leading-snug text-foreground',
+              state === 'done' && 'text-muted-foreground'
+            )}
+          >
+            {guide.title}
+          </h3>
+          <p className="mt-0.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
+            {guide.subtitle}
+          </p>
+        </div>
+        <div className="hidden items-center gap-1 text-xs text-muted-foreground/60 sm:flex">
+          {guide.steps.length} steps
+          <ArrowRight className="ml-1 h-4 w-4 text-muted-foreground/40 transition-transform duration-150 group-hover:translate-x-0.5" />
+        </div>
+      </button>
+    </div>
+  );
+}
+
+/* ─── Main ──────────────────────────────────────────────────── */
 export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClientProps) {
   const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [guides, setGuides] = useState(initialData.allGuides);
   const [seeding, setSeeding] = useState(false);
   const [seedConfirmOpen, setSeedConfirmOpen] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [mounted, setMounted] = useState(false);
 
-  const filteredGuides = guides.filter((guide) => {
-    const matchesSearch =
-      guide.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      guide.subtitle.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || guide.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Load progress from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PROGRESS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed?.completed)) {
+          setCompleted(new Set(parsed.completed.filter((s: unknown) => typeof s === 'string')));
+        }
+      }
+    } catch {
+      // ignore
+    }
+    setMounted(true);
+  }, []);
 
-  const handleLifecycleStepClick = (slug: string) => {
-    const guide = guides.find((g) => g.slug === slug);
-    if (guide) setSelectedGuide(guide);
-  };
+  const persistCompleted = useCallback((next: Set<string>) => {
+    try {
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify({ completed: [...next] }));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const toggleComplete = useCallback(
+    (slug: string) => {
+      setCompleted((prev) => {
+        const next = new Set(prev);
+        if (next.has(slug)) next.delete(slug);
+        else next.add(slug);
+        persistCompleted(next);
+        return next;
+      });
+    },
+    [persistCompleted]
+  );
+
+  const resetProgress = useCallback(() => {
+    const empty = new Set<string>();
+    setCompleted(empty);
+    persistCompleted(empty);
+  }, [persistCompleted]);
+
+  const guideBySlug = useCallback((slug: string) => guides.find((g) => g.slug === slug), [guides]);
+
+  const totalDone = mounted ? totalCorePartsDone(completed) : 0;
+  const totalSteps = totalCoreSteps();
+  const progressPct = totalSteps > 0 ? Math.round((totalDone / totalSteps) * 100) : 0;
+  const allDone = totalDone === totalSteps && totalSteps > 0;
+  const nextSlug = mounted ? findNextSlug(completed) : null;
+  const nextGuide = nextSlug ? guideBySlug(nextSlug) : null;
+
+  // Number lessons globally (1..N) with the branching part counted as one number,
+  // but each track inside the branch still clickable.
+  const lessonNumberMap = new Map<string, number>();
+  {
+    let counter = 0;
+    for (const part of CURRICULUM) {
+      if (part.branching) {
+        counter += 1;
+        for (const s of part.lessons) lessonNumberMap.set(s, counter);
+      } else {
+        for (const s of part.lessons) {
+          counter += 1;
+          lessonNumberMap.set(s, counter);
+        }
+      }
+    }
+  }
+
+  const referenceGuides = guides.filter((g) => REFERENCE_SLUGS.includes(g.slug));
 
   const handleGuideUpdated = (updated: Guide) => {
     setGuides((prev) => prev.map((g) => (g.slug === updated.slug ? updated : g)));
@@ -851,7 +1012,6 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
       if (result.success) {
         const nextGuides = force ? defaultGuides : guides;
         setGuides(nextGuides);
-        setSelectedGuide(nextGuides[0] || null);
       }
     } finally {
       setSeeding(false);
@@ -863,8 +1023,13 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
       setSeedConfirmOpen(true);
       return;
     }
-
     await seedGuides(false);
+  };
+
+  const lessonStateFor = (slug: string): 'done' | 'current' | 'upcoming' => {
+    if (completed.has(slug)) return 'done';
+    if (slug === nextSlug) return 'current';
+    return 'upcoming';
   };
 
   return (
@@ -872,7 +1037,7 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
       <PageHeader
         icon={<BookOpen className="h-3.5 w-3.5 text-primary" />}
         iconBg="bg-primary/10"
-        title="Knowledge Base"
+        title="Learn Qualia"
         className="shrink-0"
       >
         <div className="flex items-center gap-2">
@@ -891,136 +1056,250 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
               Sync to DB
             </button>
           )}
-          <span className="text-xs text-muted-foreground/50">{guides.length} guides</span>
         </div>
       </PageHeader>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-6 p-4 sm:p-6 lg:p-8">
-          {/* Lifecycle Pipeline */}
-          <LifecyclePipeline onStepClick={handleLifecycleStepClick} />
-
-          {/* Search + Filters */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
-              <Input
-                placeholder="Search guides..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+        <div className="mx-auto w-full max-w-3xl space-y-8 p-4 sm:p-6 lg:p-8">
+          {/* Hero — Start where you are */}
+          <section
+            className={cn(
+              'relative overflow-hidden rounded-2xl border p-6 sm:p-7',
+              allDone
+                ? 'border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-card'
+                : 'border-border bg-gradient-to-br from-primary/5 via-card to-card'
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                {allDone ? (
+                  <Trophy className="h-5 w-5 text-primary" />
+                ) : (
+                  <Sparkles className="h-5 w-5 text-primary" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                  {allDone
+                    ? "You've covered the path"
+                    : totalDone === 0
+                      ? 'Start where you are'
+                      : 'Keep going'}
+                </h1>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                  {allDone
+                    ? 'Come back any time to review a lesson or unlock the other tracks.'
+                    : 'Work through the path in order. Each lesson builds on the last.'}
+                </p>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { key: 'all', label: 'All' },
-                { key: 'foundations', label: 'Foundations', icon: Layers },
-                { key: 'lifecycle', label: 'Lifecycle', icon: GitBranch },
-                { key: 'operations', label: 'Operations', icon: Wrench },
-                { key: 'reference', label: 'Reference', icon: FileText },
-                { key: 'checklist', label: 'Checklists', icon: ListChecks },
-              ].map((cat) => (
-                <button
-                  key={cat.key}
-                  onClick={() => setSelectedCategory(cat.key)}
-                  className={cn(
-                    'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150',
-                    selectedCategory === cat.key
-                      ? cat.key === 'all'
-                        ? 'border-primary/30 bg-primary/10 text-primary dark:text-primary'
-                        : `${categoryColors[cat.key].border} ${categoryColors[cat.key].bg} ${categoryColors[cat.key].text}`
-                      : 'border-border bg-transparent text-muted-foreground/60 hover:bg-muted/30 hover:text-muted-foreground'
-                  )}
-                >
-                  {cat.icon && <cat.icon className="h-3 w-3" />}
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-          </div>
 
-          {/* Guides by category */}
-          <div className="space-y-8">
-            {(selectedCategory === 'all'
-              ? ['foundations', 'lifecycle', 'operations', 'reference', 'checklist']
-              : [selectedCategory]
-            ).map((category) => {
-              const categoryGuides = filteredGuides.filter((g) => g.category === category);
-              if (categoryGuides.length === 0) return null;
-              const Icon = categoryIcons[category];
-              const colors = categoryColors[category];
+            {/* Progress bar */}
+            <div className="mt-5">
+              <div className="mb-2 flex items-center justify-between text-xs">
+                <span className="font-medium tabular-nums text-foreground">
+                  {mounted ? `${totalDone} of ${totalSteps} complete` : '—'}
+                </span>
+                <span className="tabular-nums text-muted-foreground">
+                  {mounted ? `${progressPct}%` : ''}
+                </span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+                  style={{ width: mounted ? `${progressPct}%` : '0%' }}
+                />
+              </div>
+            </div>
+
+            {/* Next lesson CTA */}
+            {nextGuide && (
+              <button
+                onClick={() => setSelectedGuide(nextGuide)}
+                className="mt-5 flex w-full items-center gap-3 rounded-xl border border-primary/20 bg-background/60 p-4 text-left transition-colors duration-150 hover:border-primary/40 hover:bg-background/80"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                    Up next
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">{nextGuide.title}</p>
+                  <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                    {nextGuide.subtitle}
+                  </p>
+                </div>
+              </button>
+            )}
+
+            {mounted && totalDone > 0 && (
+              <button
+                onClick={() => setResetConfirmOpen(true)}
+                className="mt-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Reset my progress
+              </button>
+            )}
+          </section>
+
+          {/* The path — parts + lessons */}
+          <div className="space-y-10">
+            {CURRICULUM.map((part, partIdx) => {
+              const partLessons = part.lessons
+                .map((s) => guideBySlug(s))
+                .filter((g): g is Guide => !!g);
+              if (partLessons.length === 0) return null;
+
+              const partDone = part.branching
+                ? part.lessons.some((s) => completed.has(s))
+                : part.lessons.every((s) => completed.has(s));
 
               return (
-                <div key={category} className="rounded-xl border border-border bg-card">
-                  <div className="border-b border-border px-5 py-4">
-                    <div className="flex items-center gap-2">
+                <section key={part.title} className="space-y-3">
+                  <header className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold',
+                        partDone
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-muted text-muted-foreground/70'
+                      )}
+                    >
+                      {partDone ? <Check className="h-3.5 w-3.5" /> : partIdx + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/80">
+                        Part {partIdx + 1}
+                      </h2>
+                      <p className="text-base font-semibold text-foreground sm:text-lg">
+                        {part.title}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{part.subtitle}</p>
+                    </div>
+                  </header>
+
+                  {part.branching ? (
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {partLessons.map((g) => {
+                        const isDone = completed.has(g.slug);
+                        return (
+                          <div
+                            key={g.slug}
+                            className={cn(
+                              'group relative flex flex-col rounded-xl border bg-card p-4 transition-colors duration-150',
+                              isDone && 'border-primary/40 bg-primary/[0.03]'
+                            )}
+                          >
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleComplete(g.slug);
+                              }}
+                              className="absolute right-3 top-3 shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
+                              aria-label={isDone ? 'Mark incomplete' : 'Mark complete'}
+                            >
+                              {isDone ? (
+                                <CheckCircle2 className="h-5 w-5 text-primary" />
+                              ) : (
+                                <Circle className="h-5 w-5 text-muted-foreground/40" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => setSelectedGuide(g)}
+                              className="flex flex-1 flex-col text-left"
+                            >
+                              <div
+                                className={cn(
+                                  'flex h-8 w-8 items-center justify-center rounded-lg',
+                                  categoryColors[g.category].bg
+                                )}
+                              >
+                                {(() => {
+                                  const I = categoryIcons[g.category];
+                                  return (
+                                    <I className={cn('h-4 w-4', categoryColors[g.category].text)} />
+                                  );
+                                })()}
+                              </div>
+                              <h3 className="mt-3 text-[14px] font-semibold leading-snug text-foreground">
+                                {g.title}
+                              </h3>
+                              <p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-muted-foreground">
+                                {g.subtitle}
+                              </p>
+                              <span className="mt-3 inline-flex items-center gap-1 text-xs text-primary">
+                                {isDone ? 'Review' : 'Open track'}
+                                <ArrowRight className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
+                              </span>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <ol className="space-y-3">
+                      {partLessons.map((g) => (
+                        <li key={g.slug}>
+                          <LessonRow
+                            guide={g}
+                            state={lessonStateFor(g.slug)}
+                            globalNumber={lessonNumberMap.get(g.slug) || 0}
+                            onOpen={() => setSelectedGuide(g)}
+                            onToggleComplete={() => toggleComplete(g.slug)}
+                          />
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+
+          {/* Reference — always available */}
+          {referenceGuides.length > 0 && (
+            <section className="space-y-3 border-t border-border pt-8">
+              <header>
+                <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/80">
+                  Reference
+                </h2>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  Open any time — not part of the path.
+                </p>
+              </header>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {referenceGuides.map((g) => {
+                  const Icon = categoryIcons[g.category];
+                  const colors = categoryColors[g.category];
+                  return (
+                    <button
+                      key={g.slug}
+                      onClick={() => setSelectedGuide(g)}
+                      className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors duration-150 hover:border-primary/20 hover:bg-muted/20"
+                    >
                       <div
                         className={cn(
-                          'flex h-7 w-7 items-center justify-center rounded-lg',
+                          'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
                           colors.bg
                         )}
                       >
-                        <Icon className={cn('h-3.5 w-3.5', colors.text)} />
+                        <Icon className={cn('h-4 w-4', colors.text)} />
                       </div>
-                      <div>
-                        <h2 className="text-[clamp(1.25rem,1.1rem+0.75vw,1.625rem)] font-semibold tracking-tight text-foreground">
-                          {categoryLabels[category]}
-                        </h2>
-                        <p className="text-xs text-muted-foreground">
-                          {categoryDescriptions[category]}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-semibold text-foreground">{g.title}</p>
+                        <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                          {g.subtitle}
                         </p>
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="divide-y divide-border">
-                    {categoryGuides.map((guide) => (
-                      <button
-                        key={guide.slug}
-                        onClick={() => setSelectedGuide(guide)}
-                        className="group flex w-full cursor-pointer items-center gap-3 rounded-lg p-4 text-left transition-colors duration-150 hover:bg-muted/30"
-                      >
-                        <div
-                          className={cn(
-                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
-                            colors.bg
-                          )}
-                        >
-                          <Icon className={cn('h-3.5 w-3.5', colors.text)} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-[15px] font-semibold text-foreground">
-                            {guide.title}
-                          </h3>
-                          <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">
-                            {guide.subtitle}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground/60">
-                          <span className="flex items-center gap-1">
-                            <span className="font-medium text-muted-foreground">
-                              {guide.steps.length}
-                            </span>{' '}
-                            steps
-                          </span>
-                          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-
-            {filteredGuides.length === 0 && (
-              <EmptyState
-                icon={BookOpen}
-                title="No guides found"
-                description="Try adjusting your search or filter."
-                minimal
-              />
-            )}
-          </div>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform duration-150 group-hover:translate-x-0.5" />
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
         </div>
       </div>
 
@@ -1044,6 +1323,18 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
         onConfirm={() => {
           setSeedConfirmOpen(false);
           void seedGuides(true);
+        }}
+      />
+      <ConfirmDialog
+        open={resetConfirmOpen}
+        onOpenChange={setResetConfirmOpen}
+        title="Reset learning progress?"
+        description="This clears the lessons you've marked complete. The guides stay — only your personal progress is cleared."
+        confirmLabel="Reset"
+        variant="destructive"
+        onConfirm={() => {
+          setResetConfirmOpen(false);
+          resetProgress();
         }}
       />
     </div>
