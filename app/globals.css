@@ -113,33 +113,32 @@
   }
 
   .dark {
-    /* Dark mode — V0 exact oklch colors converted to HSL via precise math.
-       Near-black background, blue-tinted darks, vivid teal primary, violet accent. */
-    --background: 240 13% 3%;
+    /* Dark mode — pure black bg with subtle teal-tinted depth steps + glowing teal primary. */
+    --background: 0 0% 0%; /* #000000 — pure black */
     --foreground: 185 8% 93%;
-    --card: 228 17% 6%;
+    --card: 220 10% 4%; /* near-black with faintest cool tint, just above pure black for depth */
     --card-foreground: 185 8% 93%;
-    --popover: 228 17% 6%;
+    --popover: 220 12% 5%;
     --popover-foreground: 185 8% 93%;
-    --primary: 175 100% 40%;
-    --primary-foreground: 240 13% 3%;
-    --secondary: 225 14% 11%;
+    --primary: 175 100% 45%; /* slightly brighter teal for glow against pure black */
+    --primary-foreground: 0 0% 0%;
+    --secondary: 220 10% 9%;
     --secondary-foreground: 185 8% 93%;
-    --muted: 225 14% 11%;
-    --muted-foreground: 185 5% 56%;
+    --muted: 220 10% 9%;
+    --muted-foreground: 185 5% 60%;
     --accent: 264 75% 68%;
     --accent-foreground: 185 8% 93%;
-    --destructive: 5 55% 40%;
-    --destructive-foreground: 15 65% 55%;
-    --border: 228 14% 14%;
-    --input: 225 14% 11%;
-    --ring: 175 100% 40%;
+    --destructive: 5 65% 48%;
+    --destructive-foreground: 15 65% 60%;
+    --border: 220 10% 13%;
+    --input: 220 10% 9%;
+    --ring: 175 100% 45%;
 
-    /* Surface layers — near-black depth steps */
-    --surface-1: 228 17% 6%;
-    --surface-2: 225 14% 11%;
-    --surface-3: 225 12% 15%;
-    --surface-hover: 228 15% 8%;
+    /* Surface layers — stepped from pure black with very subtle cool tint */
+    --surface-1: 220 10% 4%;
+    --surface-2: 220 10% 8%;
+    --surface-3: 220 10% 12%;
+    --surface-hover: 220 10% 6%;
 
     /* Status colors — brighter for dark bg */
     --success: 155 60% 48%;
@@ -151,18 +150,48 @@
     --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
     --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 
-    /* Elevation system — dark mode (stronger for depth) */
-    --elevation-resting: 0 1px 2px rgba(0, 0, 0, 0.12);
-    --elevation-raised: 0 2px 8px rgba(0, 0, 0, 0.16), 0 1px 2px rgba(0, 0, 0, 0.1);
-    --elevation-floating: 0 8px 24px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.12);
-    --elevation-modal: 0 16px 48px rgba(0, 0, 0, 0.28), 0 4px 16px rgba(0, 0, 0, 0.16);
-    --elevation-max: 0 24px 64px rgba(0, 0, 0, 0.36), 0 8px 24px rgba(0, 0, 0, 0.2);
+    /* Elevation system — dark mode (stronger for depth against pure black) */
+    --elevation-resting: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --elevation-raised: 0 2px 8px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.4);
+    --elevation-floating: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+    --elevation-modal: 0 16px 48px rgba(0, 0, 0, 0.7), 0 4px 16px rgba(0, 0, 0, 0.5);
+    --elevation-max: 0 24px 64px rgba(0, 0, 0, 0.8), 0 8px 24px rgba(0, 0, 0, 0.5);
 
-    /* === Design-handoff token overrides for dark ===
-       --accent-hi brighter in dark for better contrast against surface-1;
-       status colors inherit from the dark-mode semantic overrides above. */
-    --accent-hi: hsl(182 58% 62%); /* qualia-300 = #66D2D6 */
+    /* Teal glow — applied via box-shadow on active/focused/primary surfaces */
+    --glow-teal-sm: 0 0 8px hsl(175 100% 45% / 0.35);
+    --glow-teal-md: 0 0 16px hsl(175 100% 45% / 0.4), 0 0 4px hsl(175 100% 45% / 0.3);
+    --glow-teal-lg: 0 0 24px hsl(175 100% 45% / 0.5), 0 0 8px hsl(175 100% 45% / 0.4);
+
+    /* === Design-handoff token overrides for dark === */
+    --accent-hi: hsl(182 70% 65%); /* brighter teal-cyan for highlights */
     --accent-soft: hsl(var(--primary) / 0.14);
+  }
+
+  /* Light mode glow tokens — softer, no-op fallback so the .glow-* utilities
+     don't blow out the light theme but still match the same class API. */
+  :root {
+    --glow-teal-sm: 0 0 0 transparent;
+    --glow-teal-md: 0 0 0 transparent;
+    --glow-teal-lg: 0 0 0 transparent;
+  }
+}
+
+/* Glow utilities — opt-in via class. No effect in light mode (tokens above). */
+@layer utilities {
+  .glow-teal-sm {
+    box-shadow: var(--glow-teal-sm);
+  }
+  .glow-teal-md {
+    box-shadow: var(--glow-teal-md);
+  }
+  .glow-teal-lg {
+    box-shadow: var(--glow-teal-lg);
+  }
+  /* Combined: existing shadow + glow overlay */
+  .with-glow:hover,
+  .with-glow:focus-visible,
+  .with-glow[data-active='true'] {
+    box-shadow: var(--glow-teal-md);
   }
 }
 

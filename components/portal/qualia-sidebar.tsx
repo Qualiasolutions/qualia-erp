@@ -232,7 +232,7 @@ function NavItem({
       ? 'font-semibold text-[var(--accent-teal)]'
       : 'font-medium text-[var(--text-soft)] hover:bg-[var(--surface-hi)] hover:text-[var(--text)]',
     isActive &&
-      'bg-[var(--accent-soft)] shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--accent-teal),transparent_72%)]',
+      'bg-[var(--accent-soft)] shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--accent-teal),transparent_72%)] dark:shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--accent-teal),transparent_60%),var(--glow-teal-sm)]',
     disabled ? 'cursor-default opacity-40' : 'cursor-pointer'
   );
 
@@ -323,7 +323,7 @@ function ClockBlock({ userId }: { userId: string | null }) {
             'cursor-pointer rounded-md px-2.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.04em] transition-colors duration-150',
             clockedIn
               ? 'border border-[var(--line)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-hi)]'
-              : 'bg-[var(--accent-teal)] text-[var(--on-accent)] hover:opacity-90'
+              : 'bg-[var(--accent-teal)] text-[var(--on-accent)] hover:opacity-90 dark:shadow-[var(--glow-teal-sm)] dark:hover:shadow-[var(--glow-teal-md)]'
           )}
           aria-label={clockedIn ? 'Clock out' : 'Clock in'}
         >
