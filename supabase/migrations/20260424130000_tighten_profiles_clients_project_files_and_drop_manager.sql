@@ -10,42 +10,11 @@
 --       client_feature_requests RLS. Purge now that the role is removed.
 
 -- ============ profiles SELECT ============
-
-DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
-
-CREATE POLICY "profiles_select_scoped"
-ON public.profiles
-FOR SELECT TO authenticated
-USING (
-  id = (SELECT auth.uid())
-  OR is_admin()
-  OR EXISTS (
-    SELECT 1
-    FROM public.workspace_members wm_self
-    JOIN public.workspace_members wm_target
-      ON wm_self.workspace_id = wm_target.workspace_id
-    WHERE wm_self.profile_id = (SELECT auth.uid())
-      AND wm_target.profile_id = profiles.id
-  )
-  OR EXISTS (
-    -- Clients may see profiles of employees actively assigned to their projects
-    SELECT 1
-    FROM public.client_projects cp
-    JOIN public.project_assignments pa ON pa.project_id = cp.project_id
-    WHERE cp.client_id = (SELECT auth.uid())
-      AND pa.employee_id = profiles.id
-      AND pa.removed_at IS NULL
-  )
-  OR EXISTS (
-    -- Employees may see client profiles they actively serve
-    SELECT 1
-    FROM public.project_assignments pa
-    JOIN public.client_projects cp ON cp.project_id = pa.project_id
-    WHERE pa.employee_id = (SELECT auth.uid())
-      AND pa.removed_at IS NULL
-      AND cp.client_id = profiles.id
-  )
-);
+-- NOTE: the scoped profiles SELECT originally planned here caused infinite
+-- recursion in production (project_assignments RLS reads profiles, profiles
+-- policy read project_assignments). See 20260424140000 for the rollback.
+-- A recursion-safe version requires a SECURITY DEFINER helper and browser
+-- QA before re-introduction. Left as follow-up.
 
 -- ============ clients INSERT / UPDATE ============
 
