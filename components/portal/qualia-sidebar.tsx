@@ -18,6 +18,7 @@ import { ClockInModal } from '@/components/today-dashboard/clock-in-modal';
 import { ClockOutModal } from '@/components/clock-out-modal';
 import { ViewAsDialog } from '@/components/portal/view-as-dialog';
 import { QualiaTweaksPanel } from '@/components/portal/qualia-tweaks-panel';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { QIcon, type QIconName } from '@/components/ui/q-icon';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -29,12 +30,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 /* ======================================================================
-   Nav registry — derived from .planning/design-handoff/project/shell.jsx
-   Mapped to current ERP routes. "Control" temporarily points to /admin
-   until the consolidated /control surface lands in Phase 17.
+   Nav registry — grouped into sections
    ====================================================================== */
 
 type Role = 'admin' | 'employee' | 'client';
+type Section = 'workspace' | 'knowledge' | 'admin' | 'account';
 
 type PageDef = {
   id: string;
@@ -43,10 +43,12 @@ type PageDef = {
   href: string;
   roles: Role[];
   appKey: string;
+  section: Section;
   exact?: boolean;
 };
 
 const PAGES: PageDef[] = [
+  // Workspace
   {
     id: 'today',
     label: 'Home',
@@ -55,6 +57,7 @@ const PAGES: PageDef[] = [
     exact: true,
     roles: ['admin', 'employee'],
     appKey: 'home',
+    section: 'workspace',
   },
   {
     id: 'portal',
@@ -64,6 +67,7 @@ const PAGES: PageDef[] = [
     exact: true,
     roles: ['client'],
     appKey: 'home',
+    section: 'workspace',
   },
   {
     id: 'tasks',
@@ -72,6 +76,7 @@ const PAGES: PageDef[] = [
     href: '/tasks',
     roles: ['admin', 'employee'],
     appKey: 'tasks',
+    section: 'workspace',
   },
   {
     id: 'projects',
@@ -80,6 +85,7 @@ const PAGES: PageDef[] = [
     href: '/projects',
     roles: ['admin', 'employee', 'client'],
     appKey: 'projects',
+    section: 'workspace',
   },
   {
     id: 'schedule',
@@ -88,46 +94,7 @@ const PAGES: PageDef[] = [
     href: '/schedule',
     roles: ['admin', 'employee'],
     appKey: 'schedule',
-  },
-  {
-    id: 'knowledge',
-    label: 'Knowledge',
-    icon: 'knowledge',
-    href: '/knowledge',
-    roles: ['admin', 'employee'],
-    appKey: 'knowledge',
-  },
-  {
-    id: 'research',
-    label: 'Research',
-    icon: 'research',
-    href: '/research',
-    roles: ['admin', 'employee'],
-    appKey: 'research',
-  },
-  {
-    id: 'clients',
-    label: 'Clients',
-    icon: 'clients',
-    href: '/clients',
-    roles: ['admin'],
-    appKey: 'clients',
-  },
-  {
-    id: 'server',
-    label: 'Server',
-    icon: 'server',
-    href: '/status',
-    roles: ['admin', 'employee'],
-    appKey: 'status',
-  },
-  {
-    id: 'control',
-    label: 'Control',
-    icon: 'admin',
-    href: '/admin',
-    roles: ['admin'],
-    appKey: 'control',
+    section: 'workspace',
   },
   {
     id: 'requests',
@@ -136,6 +103,64 @@ const PAGES: PageDef[] = [
     href: '/requests',
     roles: ['client'],
     appKey: 'requests',
+    section: 'workspace',
+  },
+  // Knowledge
+  {
+    id: 'knowledge',
+    label: 'Knowledge',
+    icon: 'knowledge',
+    href: '/knowledge',
+    roles: ['admin', 'employee'],
+    appKey: 'knowledge',
+    section: 'knowledge',
+  },
+  {
+    id: 'research',
+    label: 'Research',
+    icon: 'research',
+    href: '/research',
+    roles: ['admin', 'employee'],
+    appKey: 'research',
+    section: 'knowledge',
+  },
+  // Admin
+  {
+    id: 'clients',
+    label: 'Clients',
+    icon: 'clients',
+    href: '/clients',
+    roles: ['admin'],
+    appKey: 'clients',
+    section: 'admin',
+  },
+  {
+    id: 'server',
+    label: 'Server',
+    icon: 'server',
+    href: '/status',
+    roles: ['admin', 'employee'],
+    appKey: 'status',
+    section: 'admin',
+  },
+  {
+    id: 'control',
+    label: 'Control',
+    icon: 'admin',
+    href: '/admin',
+    roles: ['admin'],
+    appKey: 'control',
+    section: 'admin',
+  },
+  // Account
+  {
+    id: 'chat',
+    label: 'Messages',
+    icon: 'agent',
+    href: '/messages',
+    roles: ['client'],
+    appKey: 'messages',
+    section: 'account',
   },
   {
     id: 'payments',
@@ -144,14 +169,7 @@ const PAGES: PageDef[] = [
     href: '/billing',
     roles: ['client'],
     appKey: 'billing',
-  },
-  {
-    id: 'chat',
-    label: 'Messages',
-    icon: 'agent',
-    href: '/messages',
-    roles: ['client'],
-    appKey: 'messages',
+    section: 'account',
   },
   {
     id: 'settings',
@@ -160,8 +178,18 @@ const PAGES: PageDef[] = [
     href: '/settings',
     roles: ['admin', 'employee', 'client'],
     appKey: 'settings',
+    section: 'account',
   },
 ];
+
+const SECTION_LABEL: Record<Section, string> = {
+  workspace: 'Workspace',
+  knowledge: 'Knowledge',
+  admin: 'Admin',
+  account: 'Account',
+};
+
+const SECTION_ORDER: Section[] = ['workspace', 'knowledge', 'admin', 'account'];
 
 /* ======================================================================
    Props
@@ -188,7 +216,7 @@ export interface QualiaSidebarProps {
 }
 
 /* ======================================================================
-   NavItem
+   NavItem — solid teal pill with glow when active
    ====================================================================== */
 
 function NavItem({
@@ -210,29 +238,27 @@ function NavItem({
       <span className="flex-1 truncate text-left">{page.label}</span>
       {badge && badge > 0 ? (
         <span
-          className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--accent-teal)] px-1 font-mono text-[10px] font-semibold text-[var(--on-accent)]"
+          className={cn(
+            'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 font-mono text-[10px] font-semibold',
+            isActive
+              ? 'bg-primary-foreground/20 text-primary-foreground'
+              : 'bg-primary text-primary-foreground'
+          )}
           aria-label={`${badge} unread`}
         >
           {badge > 99 ? '99+' : badge}
         </span>
       ) : null}
-      {isActive ? (
-        <span
-          aria-hidden
-          className="absolute bottom-1.5 left-0 top-1.5 w-[2px] rounded-r bg-[var(--accent-teal)]"
-        />
-      ) : null}
     </>
   );
 
   const classes = cn(
-    'relative mb-0.5 flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] transition-colors duration-150',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-teal)]/40 focus-visible:ring-offset-0',
+    'group relative flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] transition-all duration-150',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0',
     isActive
-      ? 'font-semibold text-[var(--accent-teal)]'
-      : 'font-medium text-[var(--text-soft)] hover:bg-[var(--surface-hi)] hover:text-[var(--text)]',
-    isActive &&
-      'bg-[var(--accent-soft)] shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--accent-teal),transparent_72%)] dark:shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--accent-teal),transparent_60%),var(--glow-teal-sm)]',
+      ? // Active: solid teal pill with glow in dark mode
+        'bg-primary font-semibold text-primary-foreground shadow-[0_1px_0_0_hsl(0_0%_100%/0.08)_inset] dark:shadow-[0_1px_0_0_hsl(0_0%_100%/0.08)_inset,var(--glow-teal-sm)]'
+      : 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
     disabled ? 'cursor-default opacity-40' : 'cursor-pointer'
   );
 
@@ -258,12 +284,9 @@ function NavItem({
 }
 
 /* ======================================================================
-   Clock widget — matches design's restrained footer variant
+   ClockTicker — isolates the 1s interval so only this re-renders
    ====================================================================== */
 
-// Ticker isolated in its own component so the 1-second interval only
-// re-renders the time string, not the entire ClockBlock subtree (which
-// otherwise would re-run on every tick for every sidebar mount).
 function ClockTicker({ startedAt }: { startedAt: string }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -279,7 +302,11 @@ function ClockTicker({ startedAt }: { startedAt: string }) {
   );
 }
 
-function ClockBlock({ userId }: { userId: string | null }) {
+/* ======================================================================
+   ClockPill — compact horizontal strip, glows when clocked in
+   ====================================================================== */
+
+function ClockPill({ userId }: { userId: string | null }) {
   const [showIn, setShowIn] = useState(false);
   const [showOut, setShowOut] = useState(false);
   const { session, isLoading, workspaceId } = useClockGate();
@@ -292,38 +319,40 @@ function ClockBlock({ userId }: { userId: string | null }) {
     <>
       <div
         className={cn(
-          'flex items-center gap-2.5 rounded-md border px-2.5 py-2 transition-colors duration-150',
+          'flex items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors duration-150',
           clockedIn
-            ? 'border-[color-mix(in_oklch,var(--q-moss),transparent_70%)] bg-[color-mix(in_oklch,var(--q-moss),transparent_90%)]'
-            : 'border-[var(--line)] bg-[var(--surface)]'
+            ? 'border-emerald-500/25 bg-emerald-500/[0.06] dark:shadow-[0_0_8px_-2px_hsl(155_60%_48%_/_0.4)]'
+            : 'border-border bg-muted/30'
         )}
       >
+        <span
+          aria-hidden
+          className={cn(
+            'h-1.5 w-1.5 shrink-0 rounded-full',
+            clockedIn
+              ? 'animate-pulse bg-emerald-500 shadow-[0_0_4px_hsl(155_60%_48%/0.8)]'
+              : 'bg-muted-foreground/40'
+          )}
+        />
         <div className="min-w-0 flex-1">
-          <div
-            className="flex items-center gap-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em]"
-            style={{ color: clockedIn ? 'var(--q-moss)' : 'var(--text-mute)' }}
-          >
-            {clockedIn ? (
-              <span
-                aria-hidden
-                className="h-1.5 w-1.5 animate-pulse rounded-full"
-                style={{ background: 'var(--q-moss)' }}
-              />
-            ) : null}
-            {clockedIn ? 'Clocked in' : 'Off the clock'}
-          </div>
-          <div className="q-tabular font-mono text-[13px] font-semibold tracking-[-0.01em] text-[var(--text)]">
-            {session ? <ClockTicker startedAt={session.started_at} /> : '00:00:00'}
-          </div>
+          {clockedIn ? (
+            <div className="font-mono text-[12px] font-semibold tabular-nums tracking-tight text-foreground">
+              {session ? <ClockTicker startedAt={session.started_at} /> : '00:00:00'}
+            </div>
+          ) : (
+            <div className="font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+              Off the clock
+            </div>
+          )}
         </div>
         <button
           type="button"
           onClick={() => (clockedIn ? setShowOut(true) : setShowIn(true))}
           className={cn(
-            'cursor-pointer rounded-md px-2.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.04em] transition-colors duration-150',
+            'shrink-0 cursor-pointer rounded-md px-2 py-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.05em] transition-colors duration-150',
             clockedIn
-              ? 'border border-[var(--line)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-hi)]'
-              : 'bg-[var(--accent-teal)] text-[var(--on-accent)] hover:opacity-90 dark:shadow-[var(--glow-teal-sm)] dark:hover:shadow-[var(--glow-teal-md)]'
+              ? 'border border-border bg-card text-foreground hover:bg-muted'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90 dark:shadow-[var(--glow-teal-sm)] dark:hover:shadow-[var(--glow-teal-md)]'
           )}
           aria-label={clockedIn ? 'Clock out' : 'Clock in'}
         >
@@ -360,10 +389,10 @@ function ClockBlock({ userId }: { userId: string | null }) {
 }
 
 /* ======================================================================
-   Identity footer — avatar + name + role + gear
+   IdentityStrip — avatar + name (dropdown trigger) + theme + tweaks
    ====================================================================== */
 
-function IdentityFooter({
+function IdentityStrip({
   displayName,
   role,
   isAdmin,
@@ -390,16 +419,16 @@ function IdentityFooter({
   };
 
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-1">
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="focus-visible:ring-[var(--accent-teal)]/40 group flex min-w-0 flex-1 items-center gap-2.5 rounded-md px-1 py-1 transition-colors duration-150 hover:bg-[var(--surface-hi)] focus:outline-none focus-visible:ring-2"
+            className="group flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1.5 transition-colors duration-150 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             aria-label="Account menu"
           >
             <span
-              className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-soft)] text-xs font-semibold text-[var(--accent-teal)] ring-1 ring-[color-mix(in_oklch,var(--accent-teal),transparent_80%)]"
+              className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/15"
               aria-hidden
             >
               {logoUrl ? (
@@ -410,11 +439,12 @@ function IdentityFooter({
               )}
             </span>
             <span className="min-w-0 flex-1 text-left">
-              <span className="block truncate text-xs font-semibold text-[var(--text)]">
+              <span className="block truncate text-xs font-semibold text-foreground">
                 {displayName}
               </span>
-              <span className="block truncate font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--text-mute)]">
+              <span className="block truncate font-mono text-[9.5px] uppercase tracking-[0.08em] text-muted-foreground">
                 {role}
+                {isImpersonating ? ' · viewing' : ''}
               </span>
             </span>
           </button>
@@ -455,45 +485,68 @@ function IdentityFooter({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <button
-        type="button"
-        onClick={onOpenTweaks}
-        className="focus-visible:ring-[var(--accent-teal)]/40 cursor-pointer rounded-md p-1.5 text-[var(--text-mute)] transition-colors duration-150 hover:bg-[var(--surface-hi)] hover:text-[var(--text)] focus:outline-none focus-visible:ring-2"
-        aria-label={isAdmin ? 'Tweaks' : 'Settings'}
-      >
-        <QIcon name="settings" size={14} />
-      </button>
+      <ThemeSwitcher />
+
+      {isAdmin ? (
+        <button
+          type="button"
+          onClick={onOpenTweaks}
+          className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          aria-label="Tweaks"
+        >
+          <QIcon name="settings" size={13} />
+        </button>
+      ) : null}
     </div>
   );
 }
 
 /* ======================================================================
-   Jump-to trigger — dispatches Cmd+K to the existing CommandMenu
+   BrandRow — logo + name + ⌘K chip in one tight row
    ====================================================================== */
 
-function JumpTo() {
-  const handleClick = () => {
-    // Dispatch a synthetic Cmd/Ctrl+K on document so CommandMenu's listener toggles
-    const evt = new KeyboardEvent('keydown', {
-      key: 'k',
-      metaKey: true,
-      ctrlKey: true,
-      bubbles: true,
-    });
-    document.dispatchEvent(evt);
-  };
-
+function BrandRow({
+  brandName,
+  brandLogoUrl,
+  onLinkClick,
+  onJump,
+}: {
+  brandName: string;
+  brandLogoUrl: string;
+  onLinkClick?: () => void;
+  onJump: () => void;
+}) {
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="focus-visible:ring-[var(--accent-teal)]/40 flex w-full cursor-pointer items-center gap-2 rounded-md border border-[var(--line)] bg-[var(--surface)] px-2.5 py-2 text-xs text-[var(--text-mute)] transition-colors duration-150 hover:border-[var(--line-2)] hover:bg-[var(--surface-hi)] focus:outline-none focus-visible:ring-2"
-      aria-label="Jump to anywhere (command menu)"
-    >
-      <QIcon name="search" size={13} />
-      <span className="flex-1 text-left">Jump to…</span>
-      <span className="font-mono text-[10px] opacity-60">⌘K</span>
-    </button>
+    <div className="flex items-center gap-2 px-3 pb-3 pt-3">
+      <Link
+        href="/"
+        onClick={onLinkClick}
+        className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md ring-1 ring-border transition-shadow duration-150 hover:dark:shadow-[var(--glow-teal-sm)]"
+        aria-label="Qualia home"
+      >
+        <Image
+          src={brandLogoUrl}
+          alt={brandName}
+          width={28}
+          height={28}
+          className="h-full w-full object-contain"
+          priority
+          unoptimized={brandLogoUrl !== '/logo.webp'}
+        />
+      </Link>
+      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold tracking-tight text-foreground">
+        {brandName}
+      </span>
+      <button
+        type="button"
+        onClick={onJump}
+        className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-1 font-mono text-[10px] font-medium text-muted-foreground transition-colors duration-150 hover:border-primary/30 hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        aria-label="Open command menu"
+      >
+        <QIcon name="search" size={11} />
+        <span>⌘K</span>
+      </button>
+    </div>
   );
 }
 
@@ -513,17 +566,11 @@ function SidebarBody({
   onLinkClick,
 }: QualiaSidebarProps & { onLinkClick?: () => void }) {
   const pathname = usePathname();
-  const [now, setNow] = useState(() => new Date());
   const [tweaksOpen, setTweaksOpen] = useState(false);
   const [viewAsOpen, setViewAsOpen] = useState(false);
 
   const { total: unread } = useUnreadMessageCount(userId ?? null);
   const { isGated } = useClockGate();
-
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 30_000);
-    return () => window.clearInterval(id);
-  }, []);
 
   const role = (userRole ?? 'client') as Role;
   const isAdmin = role === 'admin';
@@ -532,8 +579,23 @@ function SidebarBody({
   const visiblePages = useMemo(() => {
     const filtered = PAGES.filter((p) => p.roles.includes(role));
     if (!enabledApps || enabledApps.length === 0) return filtered;
-    return filtered.filter((p) => enabledApps.includes(p.appKey));
+    // Settings is always available; gate the rest by enabledApps
+    return filtered.filter((p) => p.id === 'settings' || enabledApps.includes(p.appKey));
   }, [role, enabledApps]);
+
+  const sectionedPages = useMemo(() => {
+    const map = new Map<Section, PageDef[]>();
+    for (const p of visiblePages) {
+      const arr = map.get(p.section) ?? [];
+      arr.push(p);
+      map.set(p.section, arr);
+    }
+    return SECTION_ORDER.filter((s) => (map.get(s)?.length ?? 0) > 0).map((s) => ({
+      id: s,
+      label: SECTION_LABEL[s],
+      items: map.get(s) ?? [],
+    }));
+  }, [visiblePages]);
 
   const isActivePage = (p: PageDef) => {
     if (p.exact) return pathname === p.href;
@@ -541,8 +603,6 @@ function SidebarBody({
   };
 
   const brandName = branding?.company_name ?? 'Qualia';
-  // Fall back to the project's ship logo when branding doesn't supply one so
-  // admins never see a bare placeholder.
   const brandLogoUrl = branding?.logo_url ?? '/logo.webp';
 
   const handleTweaksGear = () => {
@@ -550,73 +610,70 @@ function SidebarBody({
     else window.location.href = '/settings';
   };
 
+  const handleJump = () => {
+    // Dispatch ⌘/Ctrl+K to the existing CommandMenu listener
+    const evt = new KeyboardEvent('keydown', {
+      key: 'k',
+      metaKey: true,
+      ctrlKey: true,
+      bubbles: true,
+    });
+    document.dispatchEvent(evt);
+  };
+
   return (
     <aside
-      className="flex h-full flex-col border-r border-[var(--line)] bg-[var(--surface-hi)]"
-      style={{ width: 'var(--sidebar-w, 232px)' }}
+      className="m-2 flex h-[calc(100%-1rem)] flex-col rounded-xl border border-border bg-card shadow-elevation-2"
       aria-label="Primary navigation"
     >
-      {/* Brand */}
-      <div className="flex items-center gap-2.5 px-5 pb-3 pt-5">
-        <Link
-          href="/"
-          onClick={onLinkClick}
-          className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-[7px]"
-          aria-label="Qualia home"
-        >
-          <Image
-            src={brandLogoUrl}
-            alt={brandName}
-            width={26}
-            height={26}
-            className="h-full w-full object-contain"
-            priority
-            unoptimized={brandLogoUrl !== '/logo.webp'}
-          />
-        </Link>
-        <span className="flex min-w-0 flex-col leading-[1.1]">
-          <span className="q-display truncate text-lg text-[var(--text)]">{brandName}</span>
-          <span className="q-label-mono text-[10px] tracking-[0.12em]">OPERATIONS SUITE</span>
-        </span>
-      </div>
+      {/* Brand + ⌘K */}
+      <BrandRow
+        brandName={brandName}
+        brandLogoUrl={brandLogoUrl}
+        onLinkClick={onLinkClick}
+        onJump={handleJump}
+      />
 
-      {/* Company name (clients only, admin viewing one) */}
+      {/* Optional company hint (admin viewing a client's portal) */}
       {companyName ? (
-        <div className="px-5 pb-2">
-          <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-mute)]">
+        <div className="border-t border-border/60 px-3 py-2">
+          <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
             {companyName}
           </p>
         </div>
       ) : null}
 
-      {/* Jump to (search / command palette) */}
-      <div className="px-3 pb-3">
-        <JumpTo />
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-2.5 pb-2 pt-1" aria-label="Primary">
-        {visiblePages.map((p) => (
-          <NavItem
-            key={p.id}
-            page={p}
-            isActive={isActivePage(p)}
-            disabled={isGated && p.id !== 'today' && p.id !== 'portal'}
-            badge={p.id === 'chat' ? unread : undefined}
-            onClick={onLinkClick}
-          />
+      {/* Sectioned nav */}
+      <nav
+        className="flex-1 space-y-3 overflow-y-auto border-t border-border/60 px-2 pb-3 pt-3"
+        aria-label="Primary"
+      >
+        {sectionedPages.map((section) => (
+          <div key={section.id}>
+            <div className="mb-1 px-2.5 font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">
+              {section.label}
+            </div>
+            <div className="space-y-0.5">
+              {section.items.map((p) => (
+                <NavItem
+                  key={p.id}
+                  page={p}
+                  isActive={isActivePage(p)}
+                  disabled={isGated && p.id !== 'today' && p.id !== 'portal'}
+                  badge={p.id === 'chat' ? unread : undefined}
+                  onClick={onLinkClick}
+                />
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 
-      {/* Footer block */}
-      <div className="border-t border-[var(--line)] px-3.5 pb-3 pt-3">
-        {isInternal ? (
-          <div className="mb-2.5">
-            <ClockBlock userId={userId ?? null} />
-          </div>
-        ) : null}
+      {/* Footer — clock pill + identity strip */}
+      <div className="space-y-2 border-t border-border/60 p-2">
+        {isInternal ? <ClockPill userId={userId ?? null} /> : null}
 
-        <IdentityFooter
+        <IdentityStrip
           displayName={displayName}
           role={role}
           isAdmin={isAdmin}
@@ -625,13 +682,6 @@ function SidebarBody({
           onViewAs={() => setViewAsOpen(true)}
           isImpersonating={isImpersonating}
         />
-
-        <div className="mt-2.5 flex items-center gap-1.5 font-mono text-[10px] text-[var(--text-mute)]">
-          <span className="q-live-dot" aria-hidden />
-          <span>
-            {formatDate(now, 'HH:mm')} · {branding?.accent_color ? brandName : 'Nicosia'}
-          </span>
-        </div>
       </div>
 
       {/* Floating admin Tweaks panel */}
@@ -658,6 +708,14 @@ function SidebarBody({
 
 export function QualiaSidebar(props: QualiaSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+
+  // Mobile-only: subtle ticker so the mobile launcher could surface time later.
+  // Kept minimal to avoid wasting renders.
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const handleLinkClick = () => {
     if (mobileOpen) setMobileOpen(false);
@@ -665,26 +723,28 @@ export function QualiaSidebar(props: QualiaSidebarProps) {
 
   return (
     <>
-      {/* Mobile hamburger */}
-      <div className="fixed left-4 top-4 z-50 md:hidden">
+      {/* Mobile hamburger — pure-black-friendly floating launcher */}
+      <div className="fixed left-3 top-3 z-50 md:hidden">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <button
               type="button"
-              className="focus-visible:ring-[var(--accent-teal)]/40 flex h-11 w-11 cursor-pointer items-center justify-center rounded-md border border-[var(--line)] bg-[var(--surface)] text-[var(--text-soft)] shadow-sm transition-colors duration-150 hover:bg-[var(--surface-hi)] focus:outline-none focus-visible:ring-2"
+              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-foreground shadow-elevation-2 transition-colors duration-150 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               aria-label="Open navigation"
+              data-mobile-time={formatDate(now, 'HH:mm')}
             >
               <QIcon name="more" size={18} />
             </button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[88vw] max-w-[260px] p-0">
+          <SheetContent side="left" className="w-[88vw] max-w-[280px] p-0">
             <SheetTitle className="sr-only">Navigation</SheetTitle>
             <SidebarBody {...props} onLinkClick={handleLinkClick} />
           </SheetContent>
         </Sheet>
       </div>
 
-      {/* Desktop aside */}
+      {/* Desktop slot — outer width remains var(--sidebar-w) so layout geometry
+          is preserved; inner aside floats with m-2 + rounded-xl. */}
       <div className="hidden h-full shrink-0 md:block" style={{ width: 'var(--sidebar-w, 232px)' }}>
         <SidebarBody {...props} />
       </div>
