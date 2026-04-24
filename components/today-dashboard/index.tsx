@@ -206,11 +206,12 @@ export function TodayDashboard({
             size="icon"
             className="size-8 min-h-[44px] min-w-[44px] lg:hidden"
             onClick={toggleMobile}
+            aria-label="Open menu"
           >
             <Menu className="size-4" />
           </Button>
           <div className="flex items-baseline gap-2">
-            <h1 className="text-[14px] font-semibold tracking-tight text-foreground">{greeting}</h1>
+            <h1 className="text-base font-semibold tracking-tight text-foreground">{greeting}</h1>
             <span className="hidden text-[11px] tabular-nums text-muted-foreground/40 sm:inline">
               {format(now, 'EEE, MMM d')}
             </span>
@@ -306,7 +307,7 @@ export function TodayDashboard({
                   className="size-7 min-h-[44px] min-w-[44px]"
                   asChild
                 >
-                  <Link href="/settings">
+                  <Link href="/settings" aria-label="Settings">
                     <Settings className="size-3.5" />
                   </Link>
                 </Button>
@@ -333,7 +334,7 @@ export function TodayDashboard({
 
           {/* Mobile: meetings + projects inline (below tasks) */}
           <div className="mt-2 shrink-0 space-y-2 lg:hidden">
-            <div className="max-h-48 overflow-hidden overflow-y-auto rounded-xl border border-border bg-card shadow-sm">
+            <div className="max-h-48 overflow-hidden overflow-y-auto">
               <MeetingsSidebar meetings={meetings} />
             </div>
             <ActiveProjectsList projects={building} />

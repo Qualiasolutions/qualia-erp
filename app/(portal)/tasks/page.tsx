@@ -6,7 +6,9 @@ import { getTasks, getClientVisibleTasks, type Task } from '@/app/actions/inbox'
 import { isUserAdmin } from '@/app/actions/shared';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
-import { TasksView, type TasksMode } from './tasks-view';
+import { QualiaTasksList } from '@/components/portal/qualia-tasks-list';
+
+type TasksMode = 'inbox' | 'all-tasks' | 'client';
 
 export const metadata: Metadata = {
   title: 'Tasks | Qualia',
@@ -32,7 +34,12 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
     if (!allowed) redirect('/');
   }
 
-  const isAdmin = role !== 'client' && (await isUserAdmin(user.id));
+  // Resolve admin check + workspace in parallel — both depend only on user.id,
+  // not on each other. Skip isUserAdmin entirely for clients (caught above).
+  const [isAdmin, workspaceId] = await Promise.all([
+    role !== 'client' ? isUserAdmin(user.id) : Promise.resolve(false),
+    getCurrentWorkspaceId(),
+  ]);
 
   // Resolve mode from role + ?scope=
   let mode: TasksMode;
@@ -44,8 +51,6 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
   } else {
     mode = 'inbox';
   }
-
-  const workspaceId = await getCurrentWorkspaceId();
 
   const supabase = await createClient();
   let initialTasks: Task[] = [];
@@ -92,12 +97,12 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
     role === 'admin' ? 'admin' : role === 'client' ? 'client' : 'employee';
 
   return (
-    <TasksView
+    <QualiaTasksList
       mode={mode}
       initialTasks={initialTasks}
-      assignableMembers={assignableMembers}
       userRole={normalizedRole}
       isAdmin={isAdmin}
+      assignableMembers={assignableMembers}
     />
   );
 }

@@ -58,12 +58,12 @@ export const TeamTaskCard = memo(function TeamTaskCard({
         className={cn(
           'group relative flex items-center gap-3 px-4 py-2.5 transition-all duration-200',
           'hover:bg-muted/30',
-          task.status === 'In Progress' && 'bg-blue-500/[0.02]'
+          task.status === 'In Progress' && 'bg-primary/[0.04]'
         )}
       >
         {/* Active task left accent */}
         {task.status === 'In Progress' && (
-          <div className="absolute inset-y-0 left-0 w-[2px] rounded-r-full bg-blue-500/60" />
+          <div className="absolute inset-y-0 left-0 w-[2px] rounded-r-full bg-primary/60" />
         )}
 
         {/* Project color indicator — vertical bar */}
@@ -80,7 +80,7 @@ export const TeamTaskCard = memo(function TeamTaskCard({
         <span
           className={cn(
             'group-hover:ring-current/10 size-1.5 shrink-0 rounded-full ring-2 ring-transparent transition-all duration-200',
-            priorityColor ? priorityColor.icon.replace('text-', 'bg-') : 'bg-slate-300'
+            priorityColor ? priorityColor.icon.replace('text-', 'bg-') : 'bg-muted-foreground/30'
           )}
           title={task.priority}
         />
@@ -94,12 +94,12 @@ export const TeamTaskCard = memo(function TeamTaskCard({
               handleView();
             }}
             className={cn(
-              'flex size-3.5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200',
+              'flex size-3.5 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-all duration-200',
               statusColors
-                ? `${statusColors.border} ${task.status === 'In Progress' ? 'border-blue-500' : ''}`
+                ? `${statusColors.border} ${task.status === 'In Progress' ? 'border-primary' : ''}`
                 : 'border-muted-foreground/30',
               task.status === 'Done' && 'border-emerald-500 bg-emerald-500',
-              task.status === 'In Progress' && 'border-blue-500',
+              task.status === 'In Progress' && 'border-primary',
               task.status === 'Todo' &&
                 'border-muted-foreground/30 hover:border-emerald-500 hover:bg-emerald-500/10 group-hover:border-muted-foreground/50'
             )}
@@ -107,7 +107,7 @@ export const TeamTaskCard = memo(function TeamTaskCard({
           >
             {task.status === 'Done' && <Check className="size-2 text-white" />}
             {task.status === 'In Progress' && (
-              <span className="block size-full scale-[0.4] rounded-full bg-blue-500" />
+              <span className="block size-full scale-[0.4] rounded-full bg-primary" />
             )}
           </button>
         ) : (
@@ -115,13 +115,13 @@ export const TeamTaskCard = memo(function TeamTaskCard({
             className={cn(
               'flex size-3.5 shrink-0 items-center justify-center rounded-full border-2',
               task.status === 'Done' && 'border-emerald-500 bg-emerald-500',
-              task.status === 'In Progress' && 'border-blue-500',
+              task.status === 'In Progress' && 'border-primary',
               task.status === 'Todo' && 'border-muted-foreground/30'
             )}
           >
             {task.status === 'Done' && <Check className="size-2 text-white" />}
             {task.status === 'In Progress' && (
-              <span className="block size-full scale-[0.4] rounded-full bg-blue-500" />
+              <span className="block size-full scale-[0.4] rounded-full bg-primary" />
             )}
           </div>
         )}
@@ -178,7 +178,7 @@ export const TeamTaskCard = memo(function TeamTaskCard({
                 e.stopPropagation();
                 handleView();
               }}
-              className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary transition-all duration-200 hover:bg-primary/20 dark:text-primary"
+              className="flex cursor-pointer items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary transition-all duration-200 hover:bg-primary/20 dark:text-primary"
             >
               <Eye className="size-3" />
               View

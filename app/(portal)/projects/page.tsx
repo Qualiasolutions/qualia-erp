@@ -57,10 +57,21 @@ async function ProjectListLoader() {
     getCurrentUserProfile(),
   ]);
 
-  const { data: rawProjects, error } = await supabase.rpc('get_project_stats', {
-    p_workspace_id: workspaceId,
-  });
+  // Fan out all three workspace-scoped queries in parallel — they share only
+  // workspaceId as input, so there's no reason to chain them sequentially.
+  const [rpcResult, assignmentsResult, githubResult] = await Promise.all([
+    supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
+    supabase
+      .from('project_assignments')
+      .select(
+        'project_id, employee:profiles!project_assignments_employee_id_fkey (id, full_name, avatar_url)'
+      )
+      .eq('workspace_id', workspaceId)
+      .is('removed_at', null),
+    supabase.from('project_integrations').select('project_id').eq('service_type', 'github'),
+  ]);
 
+  const { data: rawProjects, error } = rpcResult;
   if (error) {
     console.error('Error fetching projects:', error);
     return (
@@ -75,20 +86,8 @@ async function ProjectListLoader() {
     );
   }
 
-  // Fetch all active project assignments with employee profiles
-  const { data: allAssignments } = await supabase
-    .from('project_assignments')
-    .select(
-      'project_id, employee:profiles!project_assignments_employee_id_fkey (id, full_name, avatar_url)'
-    )
-    .eq('workspace_id', workspaceId)
-    .is('removed_at', null);
-
-  // Fetch GitHub integrations to identify linked projects
-  const { data: githubIntegrations } = await supabase
-    .from('project_integrations')
-    .select('project_id')
-    .eq('service_type', 'github');
+  const allAssignments = assignmentsResult.data;
+  const githubIntegrations = githubResult.data;
 
   const githubProjectIds = new Set((githubIntegrations || []).map((i) => i.project_id));
 
@@ -181,7 +180,7 @@ async function ProjectListLoader() {
 
 function ProjectsSkeleton() {
   return (
-    <div className="flex h-full w-full flex-col gap-5 overflow-hidden p-5 md:p-6">
+    <div className="flex h-full w-full flex-col gap-6 overflow-hidden p-6">
       {/* Stats strip skeleton */}
       <div className="flex shrink-0 items-center gap-2">
         {[80, 72, 64, 56].map((w, i) => (
@@ -194,7 +193,7 @@ function ProjectsSkeleton() {
       </div>
 
       {/* Four-column pipeline skeleton */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-4">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-4">
         {[
           'border-violet-500/20',
           'border-emerald-500/20',

@@ -257,7 +257,7 @@ export function ProjectDetailView({
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Compact Header */}
-      <header className="relative shrink-0 border-b border-border bg-card/80 px-4 py-3 backdrop-blur-xl sm:px-6">
+      <header className="relative shrink-0 border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <MobileMenuButton />
@@ -281,7 +281,7 @@ export function ProjectDetailView({
 
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="truncate text-lg font-bold tracking-tight text-foreground sm:text-xl">
+                <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
                   {project.name}
                 </h1>
                 <span

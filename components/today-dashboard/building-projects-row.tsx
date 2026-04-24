@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { memo } from 'react';
 import { Folder, ChevronRight, Hammer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EntityAvatar } from '@/components/entity-avatar';
@@ -21,7 +22,9 @@ interface BuildingProjectsRowProps {
   building: PipelineProject[];
 }
 
-export function BuildingProjectsRow({ building }: BuildingProjectsRowProps) {
+export const BuildingProjectsRow = memo(function BuildingProjectsRow({
+  building,
+}: BuildingProjectsRowProps) {
   if (building.length === 0) return null;
 
   return (
@@ -60,9 +63,15 @@ export function BuildingProjectsRow({ building }: BuildingProjectsRowProps) {
       </div>
     </div>
   );
-}
+});
 
-function ProjectChip({ project, dotColor }: { project: PipelineProject; dotColor: string }) {
+const ProjectChip = memo(function ProjectChip({
+  project,
+  dotColor,
+}: {
+  project: PipelineProject;
+  dotColor: string;
+}) {
   const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
   const TypeIcon = typeConfig?.icon || Folder;
   const isDelayed = project.status === 'Delayed';
@@ -114,4 +123,4 @@ function ProjectChip({ project, dotColor }: { project: PipelineProject; dotColor
       </div>
     </Link>
   );
-}
+});

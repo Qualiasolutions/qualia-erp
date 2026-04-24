@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, memo } from 'react';
+import { useState, useCallback, useRef, useMemo, memo } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import {
@@ -210,24 +210,34 @@ const PersonTaskSection = memo(function PersonTaskSection({
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [showCompleted, setShowCompleted] = useState(false);
-  const PRIORITY_ORDER: Record<string, number> = {
-    Urgent: 0,
-    High: 1,
-    Medium: 2,
-    Low: 3,
-    'No Priority': 4,
-  };
   const { profile, tasks } = member;
-  const activeTasks = tasks
-    .filter((t) => t.status !== 'Done')
-    .sort(
-      (a, b) =>
-        (PRIORITY_ORDER[a.priority ?? 'No Priority'] ?? 4) -
-        (PRIORITY_ORDER[b.priority ?? 'No Priority'] ?? 4)
-    );
-  const completedTasks = tasks.filter((t) => t.status === 'Done');
-  const inProgress = activeTasks.filter((t) => t.status === 'In Progress').length;
-  const projects = getUniqueProjects(activeTasks);
+
+  // Memoize sort/filter — SWR revalidates every 45s and creates a new tasks
+  // array reference each cycle, so without memoization we'd re-sort every team
+  // member's task list on every revalidation tick.
+  const { activeTasks, completedTasks, inProgress, projects } = useMemo(() => {
+    const PRIORITY_ORDER: Record<string, number> = {
+      Urgent: 0,
+      High: 1,
+      Medium: 2,
+      Low: 3,
+      'No Priority': 4,
+    };
+    const active = tasks
+      .filter((t) => t.status !== 'Done')
+      .sort(
+        (a, b) =>
+          (PRIORITY_ORDER[a.priority ?? 'No Priority'] ?? 4) -
+          (PRIORITY_ORDER[b.priority ?? 'No Priority'] ?? 4)
+      );
+    const completed = tasks.filter((t) => t.status === 'Done');
+    return {
+      activeTasks: active,
+      completedTasks: completed,
+      inProgress: active.filter((t) => t.status === 'In Progress').length,
+      projects: getUniqueProjects(active),
+    };
+  }, [tasks]);
 
   return (
     <div
@@ -292,7 +302,7 @@ const PersonTaskSection = memo(function PersonTaskSection({
             {inProgress > 0 && (
               <>
                 <span className="text-[11px] text-muted-foreground/20">&middot;</span>
-                <span className="text-[11px] font-medium text-blue-500">{inProgress} active</span>
+                <span className="text-[11px] font-medium text-primary">{inProgress} active</span>
               </>
             )}
             {completedTasks.length > 0 && (
