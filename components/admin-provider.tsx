@@ -8,6 +8,7 @@ import {
   clearViewAs as clearViewAsAction,
   setViewAsUser,
 } from '@/app/actions/view-as';
+import { useAuthUser } from '@/components/providers/auth-provider';
 
 // The super admin email address
 const SUPER_ADMIN_EMAIL = 'info@qualiasolutions.net';
@@ -111,55 +112,43 @@ export function AdminProvider({ children }: AdminProviderProps) {
     });
   }, [router]);
 
+  const { user: authUser, isLoading: authLoading } = useAuthUser();
+
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    if (authLoading) return;
+
+    if (!authUser) {
+      setRealRole(null);
+      setBaseState({
+        isSuperAdmin: false,
+        userEmail: null,
+        userId: null,
+        loading: false,
+      });
+      return;
+    }
+
+    const fetchProfile = async () => {
       const supabase = createClient();
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setRealRole(null);
-        setBaseState({
-          isSuperAdmin: false,
-          userEmail: null,
-          userId: null,
-          loading: false,
-        });
-        return;
-      }
-
-      const isSuperAdmin = user.email === SUPER_ADMIN_EMAIL;
+      const isSuperAdmin = authUser.email === SUPER_ADMIN_EMAIL;
 
       const { data: profile } = await supabase
         .from('profiles')
         .select('role, email')
-        .eq('id', user.id)
+        .eq('id', authUser.id)
         .single();
 
       setRealRole(profile?.role || null);
       setBaseState({
         isSuperAdmin,
-        userEmail: user.email || null,
-        userId: user.id,
+        userEmail: authUser.email || null,
+        userId: authUser.id,
         loading: false,
       });
     };
 
-    checkAdminStatus();
-
-    const supabase = createClient();
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      checkAdminStatus();
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+    fetchProfile();
+  }, [authUser, authLoading]);
 
   // Only admins can use view-as; compute effective role
   const isRealAdmin = realRole === 'admin' || baseState.isSuperAdmin;

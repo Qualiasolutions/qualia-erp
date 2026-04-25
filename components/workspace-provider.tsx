@@ -4,6 +4,7 @@ import * as React from 'react';
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { setDefaultWorkspace } from '@/app/actions/workspace';
 import { createClient } from '@/lib/supabase/client';
+import { useAuthUser } from '@/components/providers/auth-provider';
 
 export interface Workspace {
   id: string;
@@ -32,18 +33,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [currentWorkspace, setCurrentWorkspaceState] = useState<WorkspaceWithAccess | null>(null);
   const [workspaces, setWorkspaces] = useState<WorkspaceWithAccess[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user: authUser, isLoading: authLoading } = useAuthUser();
 
-  const loadWorkspaces = useCallback(async () => {
+  const loadWorkspaces = useCallback(async (userId: string) => {
     const supabase = createClient();
-
-    // Get current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
 
     // Fetch all workspaces
     const { data: allWorkspaces } = await supabase
@@ -55,7 +48,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const { data: memberships } = await supabase
       .from('workspace_members')
       .select('workspace_id, role, is_default')
-      .eq('profile_id', user.id);
+      .eq('profile_id', userId);
 
     if (allWorkspaces) {
       const membershipMap = new Map(
@@ -100,8 +93,15 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    loadWorkspaces();
-  }, [loadWorkspaces]);
+    if (authLoading) return;
+
+    if (!authUser) {
+      setIsLoading(false);
+      return;
+    }
+
+    loadWorkspaces(authUser.id);
+  }, [authUser, authLoading, loadWorkspaces]);
 
   const setCurrentWorkspace = useCallback(
     async (workspace: WorkspaceWithAccess): Promise<boolean> => {
@@ -127,8 +127,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   );
 
   const refreshWorkspaces = useCallback(async () => {
-    await loadWorkspaces();
-  }, [loadWorkspaces]);
+    if (authUser) {
+      await loadWorkspaces(authUser.id);
+    }
+  }, [authUser, loadWorkspaces]);
 
   // Memoize context value to prevent unnecessary re-renders of all consumers
   // Only recreate when actual values change, not on every parent render

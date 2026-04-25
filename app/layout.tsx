@@ -10,6 +10,7 @@ import { WorkspaceProvider } from '@/components/workspace-provider';
 import { SidebarProvider } from '@/components/sidebar-provider';
 import { SWRProvider } from '@/components/swr-provider';
 import { AdminProvider } from '@/components/admin-provider';
+import { AuthProvider } from '@/components/providers/auth-provider';
 import { AIAssistantProvider, AIAssistantWidget } from '@/components/ai-assistant';
 import { SessionGuard } from '@/components/session-guard';
 import { PlannedLogoutBanner } from '@/components/planned-logout-banner';
@@ -111,27 +112,29 @@ export default function RootLayout({
             <DensityProvider>
               <SWRProvider>
                 <AccessibilityAnnouncer>
-                  <AdminProvider>
-                    <WorkspaceProvider>
-                      <SidebarProvider>
-                        <AIAssistantProvider>
-                          <Suspense fallback={null}>
-                            <CommandMenu />
-                          </Suspense>
-                          <Suspense fallback={null}>
-                            <AIAssistantWidget />
-                          </Suspense>
-                          <Suspense fallback={null}>
-                            <SessionGuard />
-                          </Suspense>
-                          <Suspense fallback={null}>
-                            <PlannedLogoutBanner />
-                          </Suspense>
-                          {children}
-                        </AIAssistantProvider>
-                      </SidebarProvider>
-                    </WorkspaceProvider>
-                  </AdminProvider>
+                  <AuthProvider>
+                    <AdminProvider>
+                      <WorkspaceProvider>
+                        <SidebarProvider>
+                          <AIAssistantProvider>
+                            <Suspense fallback={null}>
+                              <CommandMenu />
+                            </Suspense>
+                            <Suspense fallback={null}>
+                              <AIAssistantWidget />
+                            </Suspense>
+                            <Suspense fallback={null}>
+                              <SessionGuard />
+                            </Suspense>
+                            <Suspense fallback={null}>
+                              <PlannedLogoutBanner />
+                            </Suspense>
+                            {children}
+                          </AIAssistantProvider>
+                        </SidebarProvider>
+                      </WorkspaceProvider>
+                    </AdminProvider>
+                  </AuthProvider>
                 </AccessibilityAnnouncer>
               </SWRProvider>
             </DensityProvider>
