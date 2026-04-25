@@ -94,7 +94,9 @@ const ControlOverview = memo(function ControlOverview({
                 {k.delta}
               </div>
             ) : (
-              <div className="mt-1.5 h-[14px]" aria-hidden />
+              <div className="mt-1.5 font-mono text-[11px] tabular-nums text-muted-foreground/70">
+                no change
+              </div>
             )}
           </div>
         ))}

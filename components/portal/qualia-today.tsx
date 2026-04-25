@@ -385,7 +385,8 @@ type TimelineTask = {
   minutes: number | null;
 };
 
-function TodayTimeline({ tasks }: { tasks: TimelineTask[] }) {
+function TodayTimeline({ tasks, totalCount }: { tasks: TimelineTask[]; totalCount: number }) {
+  const remaining = Math.max(0, totalCount - tasks.length);
   return (
     <div
       className="card rounded-xl border p-7"
@@ -454,6 +455,15 @@ function TodayTimeline({ tasks }: { tasks: TimelineTask[] }) {
               <PriorityBadge priority={t.priority} />
             </div>
           ))}
+          {remaining > 0 ? (
+            <Link
+              href="/tasks"
+              className="mt-3 flex items-center justify-center gap-1.5 rounded-md py-2 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--text-mute)] transition-colors hover:bg-[var(--surface-hi)] hover:text-[var(--text)]"
+            >
+              +{remaining} more {remaining === 1 ? 'task' : 'tasks'}
+              <QIcon name="arrow-right" size={12} />
+            </Link>
+          ) : null}
         </div>
       )}
     </div>
@@ -820,7 +830,7 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
         ) : isAdminView ? (
           <TeamOnDeck members={teamMembers} />
         ) : (
-          <TodayTimeline tasks={timelineTasks} />
+          <TodayTimeline tasks={timelineTasks} totalCount={(todayTasks as unknown[]).length} />
         )}
         <GlanceStack nextShip={nextShip} meetings={timetableMeetings} />
       </div>

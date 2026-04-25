@@ -1189,6 +1189,15 @@ export function QualiaTasksList({
         isClient={isClient}
       />
 
+      {/* SR-only live region — announces filtered count to screen readers
+          when the user changes the filter tab or types in the search box.
+          Visual users see the count via the filter bar; this restores parity. */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {filteredTasks.length === 0
+          ? 'No tasks match the current filter.'
+          : `${filteredTasks.length} ${filteredTasks.length === 1 ? 'task matches' : 'tasks match'} the current filter.`}
+      </div>
+
       {/* Inline composer */}
       {!isClient && (
         <TaskInlineComposer

@@ -135,20 +135,24 @@ export function QualiaPortalHub({
             <PulseMetric
               label="Active projects"
               value={stats?.projectCount ?? (isLoading ? '—' : 0)}
+              hint={!isLoading && (stats?.projectCount ?? 0) === 0 ? 'no active work' : undefined}
             />
             <PulseMetric
               label="Open requests"
               value={stats?.pendingRequests ?? (isLoading ? '—' : 0)}
+              hint={!isLoading && (stats?.pendingRequests ?? 0) === 0 ? 'inbox zero' : undefined}
             />
             <PulseMetric
               label="Unpaid invoices"
               value={stats?.unpaidInvoiceCount ?? (isLoading ? '—' : 0)}
+              hint={!isLoading && (stats?.unpaidInvoiceCount ?? 0) === 0 ? 'all clear' : undefined}
             />
             <PulseMetric
               label="Outstanding"
               value={
                 isLoading ? '—' : stats?.unpaidTotal ? formatEURCompact(stats.unpaidTotal) : '€0'
               }
+              hint={!isLoading && !stats?.unpaidTotal ? 'nothing due' : undefined}
             />
           </div>
 
@@ -181,7 +185,15 @@ export function QualiaPortalHub({
    PulseMetric
    ====================================================================== */
 
-function PulseMetric({ label, value }: { label: string; value: string | number }) {
+function PulseMetric({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+}) {
   return (
     <div>
       <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
@@ -190,6 +202,11 @@ function PulseMetric({ label, value }: { label: string; value: string | number }
       <div className="mt-2 text-[28px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
         {value}
       </div>
+      {hint ? (
+        <div className="mt-1.5 font-mono text-[10.5px] tabular-nums text-muted-foreground/70">
+          {hint}
+        </div>
+      ) : null}
     </div>
   );
 }
