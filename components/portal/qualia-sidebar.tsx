@@ -310,7 +310,10 @@ function ClockTicker({ startedAt }: { startedAt: string }) {
 }
 
 /* ======================================================================
-   ClockPill — compact horizontal strip, glows when clocked in
+   ClockPill — modern terminal-style status panel
+   • OFF: muted compact card with a single teal "Clock in" CTA
+   • ON:  glowing teal-bordered card, big mono timer as the focal point,
+          subtle "Stop" pill aligned to the timer
    ====================================================================== */
 
 function ClockPill({ userId }: { userId: string | null }) {
@@ -324,48 +327,87 @@ function ClockPill({ userId }: { userId: string | null }) {
 
   return (
     <>
-      <div
-        className={cn(
-          'flex items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors duration-150',
-          clockedIn
-            ? 'border-emerald-500/25 bg-emerald-500/[0.06] dark:shadow-[0_0_8px_-2px_hsl(155_60%_48%_/_0.4)]'
-            : 'border-border bg-muted/30'
-        )}
-      >
-        <span
-          aria-hidden
+      {clockedIn ? (
+        // ── ON STATE — glowing teal card, timer is the hero
+        <div
           className={cn(
-            'h-1.5 w-1.5 shrink-0 rounded-full',
-            clockedIn
-              ? 'animate-pulse bg-emerald-500 shadow-[0_0_4px_hsl(155_60%_48%/0.8)]'
-              : 'bg-muted-foreground/40'
+            'group relative overflow-hidden rounded-xl border border-primary/30 bg-card/50 backdrop-blur',
+            'transition-all duration-200',
+            'dark:shadow-[0_0_0_1px_hsl(var(--primary)/0.25),0_0_22px_-4px_hsl(var(--primary)/0.35),inset_0_0_24px_-12px_hsl(var(--primary)/0.4)]'
           )}
-        />
-        <div className="min-w-0 flex-1">
-          {clockedIn ? (
-            <div className="font-mono text-[12px] font-semibold tabular-nums tracking-tight text-foreground">
-              {session ? <ClockTicker startedAt={session.started_at} /> : '00:00:00'}
+          aria-label="Clocked in — session active"
+        >
+          {/* Animated teal scanline accent (top edge) */}
+          <span
+            aria-hidden
+            className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent"
+          />
+
+          <div className="flex items-center gap-2.5 px-3 py-2.5">
+            <span aria-hidden className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />
+              <span className="relative h-2 w-2 rounded-full bg-primary shadow-[0_0_6px_hsl(var(--primary)/0.9)]" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="mb-0.5 font-mono text-[8.5px] font-semibold uppercase tracking-[0.16em] text-primary/80">
+                ● Live
+              </div>
+              <div className="font-mono text-[15px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
+                {session ? <ClockTicker startedAt={session.started_at} /> : '00:00:00'}
+              </div>
             </div>
-          ) : (
-            <div className="font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-              Off the clock
-            </div>
-          )}
+            <button
+              type="button"
+              onClick={() => setShowOut(true)}
+              className={cn(
+                'shrink-0 cursor-pointer rounded-md border border-border/60 bg-background/40 px-2.5 py-1.5',
+                'font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground',
+                'transition-all duration-150 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive'
+              )}
+              aria-label="Stop session"
+            >
+              Stop
+            </button>
+          </div>
         </div>
+      ) : (
+        // ── OFF STATE — quiet, single teal CTA
         <button
           type="button"
-          onClick={() => (clockedIn ? setShowOut(true) : setShowIn(true))}
+          onClick={() => setShowIn(true)}
           className={cn(
-            'shrink-0 cursor-pointer rounded-md px-2 py-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.05em] transition-colors duration-150',
-            clockedIn
-              ? 'border border-border bg-card text-foreground hover:bg-muted'
-              : 'bg-primary text-primary-foreground hover:bg-primary/90 dark:shadow-[var(--glow-teal-sm)] dark:hover:shadow-[var(--glow-teal-md)]'
+            'group flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5',
+            'transition-all duration-200',
+            'hover:border-primary/40 hover:bg-muted/40',
+            'dark:hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25),0_0_18px_-4px_hsl(var(--primary)/0.3)]',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
           )}
-          aria-label={clockedIn ? 'Clock out' : 'Clock in'}
+          aria-label="Clock in"
         >
-          {clockedIn ? 'Out' : 'In'}
+          <span
+            aria-hidden
+            className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/40 transition-colors duration-200 group-hover:bg-primary group-hover:shadow-[0_0_6px_hsl(var(--primary)/0.7)]"
+          />
+          <div className="min-w-0 flex-1 text-left">
+            <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-colors duration-200 group-hover:text-foreground">
+              Off the clock
+            </div>
+            <div className="mt-0.5 text-[10.5px] text-muted-foreground/60 transition-colors group-hover:text-muted-foreground">
+              Click to start session
+            </div>
+          </div>
+          <span
+            className={cn(
+              'shrink-0 rounded-md bg-primary px-2.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-primary-foreground',
+              'transition-all duration-200',
+              'dark:shadow-[0_0_12px_-2px_hsl(var(--primary)/0.6)] dark:group-hover:shadow-[0_0_20px_-2px_hsl(var(--primary)/0.85)]',
+              'group-hover:brightness-110'
+            )}
+          >
+            Start
+          </span>
         </button>
-      </div>
+      )}
 
       {workspaceId ? (
         <>
