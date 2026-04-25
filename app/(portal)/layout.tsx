@@ -12,6 +12,7 @@ import { QualiaSidebar } from '@/components/portal/qualia-sidebar';
 import { PageTransition } from '@/components/page-transition';
 import { ViewAsBanner } from '@/components/portal/view-as-banner';
 import { ClockGateProvider } from '@/components/clock-gate-provider';
+import { FrameworkUpdateNotice } from '@/components/notices/framework-update-notice';
 import { getEnabledAppsForClient, getPortalBranding } from '@/app/actions/portal-admin';
 
 export const metadata: Metadata = {
@@ -206,6 +207,8 @@ export default async function PortalLayout({ children }: { children: React.React
             <PageTransition>{children}</PageTransition>
           </main>
         </div>
+        {/* One-shot announcement for internal users — clients never see it */}
+        {effectiveIsInternal && <FrameworkUpdateNotice />}
       </div>
     </ClockGateProvider>
   );
