@@ -117,6 +117,39 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
+    // Clock gate — employees without an active work session can only access
+    // the home page (where the clock-in modal lives), auth, and api routes.
+    // This is the server-side enforcement; the sidebar already disables the
+    // links visually via useClockGate().
+    if (userRole === 'employee' && pathname !== '/' && !pathname.startsWith('/auth')) {
+      // Find the employee's workspace
+      const { data: wsRow } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('profile_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      const workspaceId = (wsRow as { workspace_id?: string } | null)?.workspace_id;
+      if (workspaceId) {
+        // Check for an active (un-ended) work session
+        const { data: activeSession } = await supabase
+          .from('work_sessions')
+          .select('id')
+          .eq('profile_id', user.id)
+          .eq('workspace_id', workspaceId)
+          .is('ended_at', null)
+          .limit(1)
+          .maybeSingle();
+
+        if (!activeSession) {
+          const url = request.nextUrl.clone();
+          url.pathname = '/';
+          return NextResponse.redirect(url);
+        }
+      }
+    }
+
     // Authenticated users hitting /auth/login or /auth/signup → home
     if (pathname === '/auth/login' || pathname === '/auth/signup') {
       const url = request.nextUrl.clone();

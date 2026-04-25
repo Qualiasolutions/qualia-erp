@@ -3,16 +3,10 @@
 import Link from 'next/link';
 import { memo, useMemo } from 'react';
 
-import {
-  CheckCircle2,
-  ArrowRight,
-  Calendar,
-  CheckSquare,
-  FolderKanban,
-  ExternalLink,
-} from 'lucide-react';
+import { CheckCircle2, ArrowRight, ExternalLink, FlaskConical, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useClockGate } from '@/components/clock-gate-provider';
 import {
   useTodaysTasks,
   useInboxTasks,
@@ -393,6 +387,12 @@ function RightColumnStack({
   nextShip: { name: string; progress: number; daysLeft: number | null; href: string } | null;
   meetings: TimetableMeeting[];
 }) {
+  // Hide Quick Actions section for employees who haven't clocked in.
+  // The gate ensures they don't navigate into research/knowledge until they
+  // start a session — matches the policy enforced in middleware + sidebar.
+  const { isGated } = useClockGate();
+  const showQuickActions = !isGated;
+
   return (
     <div className="stagger-3 animate-stagger-in space-y-6">
       {/* Next Ship */}
@@ -426,32 +426,28 @@ function RightColumnStack({
       {/* Today's Meetings */}
       <MeetingsTimetable meetings={meetings} />
 
-      {/* Quick Actions */}
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <p className="mb-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Quick Actions
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          <Link href="/tasks">
-            <Button variant="secondary" className="h-11 w-full justify-start gap-2">
-              <CheckSquare className="h-4 w-4" />
-              New Task
-            </Button>
-          </Link>
-          <Link href="/projects">
-            <Button variant="secondary" className="h-11 w-full justify-start gap-2">
-              <FolderKanban className="h-4 w-4" />
-              Projects
-            </Button>
-          </Link>
-          <Link href="/schedule">
-            <Button variant="secondary" className="h-11 w-full justify-start gap-2">
-              <Calendar className="h-4 w-4" />
-              Schedule
-            </Button>
-          </Link>
+      {/* Quick Actions — hidden when employee is off the clock */}
+      {showQuickActions && (
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <p className="mb-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Quick Actions
+          </p>
+          <div className="space-y-2">
+            <Link href="/research" className="block">
+              <Button variant="secondary" className="h-11 w-full justify-start gap-2">
+                <FlaskConical className="h-4 w-4" />
+                Submit a Research
+              </Button>
+            </Link>
+            <Link href="/knowledge" className="block">
+              <Button variant="secondary" className="h-11 w-full justify-start gap-2">
+                <BookOpen className="h-4 w-4" />
+                Learn Qualia Framework
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
