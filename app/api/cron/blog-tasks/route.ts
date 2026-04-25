@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { unstable_rethrow } from 'next/navigation';
 import { safeCompare } from '@/lib/auth-utils';
 import { createClient } from '@supabase/supabase-js';
 
@@ -192,6 +193,7 @@ export async function GET(request: Request) {
       results,
     });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('[cron/blog-tasks] Unexpected error:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }

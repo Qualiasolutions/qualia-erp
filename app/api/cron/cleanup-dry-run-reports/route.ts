@@ -11,6 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { unstable_rethrow } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/server';
 import { safeCompare } from '@/lib/auth-utils';
 
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest) {
     console.log('[cron/cleanup-dry-run-reports]', { deleted, cutoff });
     return NextResponse.json({ ok: true, deleted, cutoff });
   } catch (err) {
+    unstable_rethrow(err);
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[cron/cleanup-dry-run-reports] Error:', message);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
