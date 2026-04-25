@@ -83,11 +83,12 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       boxShadow: {
-        // Refined shadow system
-        'glow-sm': '0 0 12px -4px hsl(174 60% 38% / 0.12)',
-        glow: '0 0 20px -4px hsl(174 60% 38% / 0.15)',
-        'glow-lg': '0 0 32px -8px hsl(174 60% 38% / 0.18)',
-        'glow-xl': '0 0 48px -12px hsl(174 60% 38% / 0.2)',
+        // Teal glow system — qualiasolutions.net style
+        'glow-xs': '0 0 6px hsl(174 100% 42% / 0.3)',
+        'glow-sm': '0 0 12px hsl(174 100% 42% / 0.4), 0 0 4px hsl(174 100% 42% / 0.2)',
+        glow: '0 0 20px hsl(174 100% 42% / 0.45), 0 0 8px hsl(174 100% 42% / 0.3)',
+        'glow-lg': '0 0 32px hsl(174 100% 42% / 0.5), 0 0 12px hsl(174 100% 42% / 0.4)',
+        'glow-xl': '0 0 48px hsl(174 100% 42% / 0.55), 0 0 20px hsl(174 100% 42% / 0.45)',
         'inner-glow': 'inset 0 1px 0 0 hsl(0 0% 100% / 0.04)',
         // Depth system
         'depth-1': '0 1px 2px rgba(0,0,0,0.06), 0 1px 1px rgba(0,0,0,0.04)',

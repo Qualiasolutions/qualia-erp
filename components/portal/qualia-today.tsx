@@ -93,7 +93,7 @@ function TodayHero({
 
   return (
     <section
-      className="q-page-enter relative mb-5 overflow-hidden rounded-xl border p-7"
+      className="q-page-enter relative mb-5 overflow-hidden rounded-xl border p-7 dark:shadow-[var(--glow-teal-sm)]"
       style={{
         background:
           'linear-gradient(135deg, color-mix(in oklch, var(--accent-teal), transparent 92%) 0%, color-mix(in oklch, var(--accent-teal), transparent 98%) 50%, var(--surface) 100%)',

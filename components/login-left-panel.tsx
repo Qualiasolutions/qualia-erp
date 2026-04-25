@@ -5,7 +5,7 @@ import { m } from '@/lib/lazy-motion';
 
 export function LoginLeftPanel() {
   return (
-    <div className="relative hidden overflow-hidden bg-[#0a1a1f] lg:flex lg:w-1/2">
+    <div className="relative hidden overflow-hidden bg-black lg:flex lg:w-1/2">
       {/* Animated Gradient Mesh */}
       <div className="absolute inset-0">
         <m.div
@@ -108,10 +108,16 @@ export function LoginLeftPanel() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <h1 className="text-5xl font-bold leading-[1.1] tracking-tight text-white xl:text-6xl">
+            <h1
+              className="text-5xl font-bold leading-[1.1] tracking-tight text-white xl:text-6xl"
+              style={{ textShadow: '0 0 40px hsl(174 100% 42% / 0.4)' }}
+            >
               Qualia Portal
             </h1>
-            <div className="mx-auto mt-6 h-0.5 w-16 rounded-full bg-gradient-to-r from-qualia-400 to-cyan-400" />
+            <div
+              className="mx-auto mt-6 h-0.5 w-16 rounded-full bg-gradient-to-r from-qualia-400 to-cyan-400"
+              style={{ boxShadow: '0 0 20px hsl(174 100% 42% / 0.6)' }}
+            />
             <p className="mx-auto mt-6 max-w-xs text-lg leading-relaxed text-white/50">
               Track your projects and stay connected with your team.
             </p>

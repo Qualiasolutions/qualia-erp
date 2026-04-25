@@ -23,8 +23,8 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.qualiasoluti
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#EDF0F0' },
-    { media: '(prefers-color-scheme: dark)', color: '#121819' },
+    { media: '(prefers-color-scheme: light)', color: '#F5F7F7' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' }, // Pure black for dark mode
   ],
   width: 'device-width',
   initialScale: 1,
