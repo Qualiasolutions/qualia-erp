@@ -1,6 +1,6 @@
 'use client';
 
-import { User, Building2, Users, AlertCircle } from 'lucide-react';
+import { User, Users, AlertCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { ProjectResources } from '@/components/project-resources';
@@ -38,7 +38,7 @@ export interface RoadmapSideRailProps {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
       {children}
     </p>
   );
@@ -65,41 +65,52 @@ function SkeletonRow() {
    ====================================================================== */
 
 function PersonnelSection({ lead, client }: { lead: LeadInfo | null; client: ClientInfo | null }) {
+  // Build initials for the client avatar tile
+  const clientInitials = client
+    ? client.name
+        .split(/\s+/)
+        .map((w) => w.charAt(0).toUpperCase())
+        .slice(0, 2)
+        .join('')
+    : '';
+
   return (
     <div
-      className="shrink-0 space-y-3 border-b border-border p-4"
+      className="shrink-0 space-y-4 border-b border-border p-5"
       aria-label="Project lead and client"
       role="group"
     >
-      <SectionLabel>Lead</SectionLabel>
-      <div className="flex items-center gap-3">
-        <EntityAvatar
-          src={lead?.avatar_url}
-          fallbackIcon={<User className="h-3.5 w-3.5" />}
-          size="sm"
-          className="rounded-lg border border-border"
-        />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-foreground">
-            {lead?.full_name || 'Unassigned'}
-          </p>
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Lead</p>
+      {/* Client tile — v0 style: rounded-xl avatar + name + role */}
+      {client && (
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
+            {clientInitials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-foreground">{client.name}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Client</p>
+          </div>
+        </div>
+      )}
+
+      {/* Lead */}
+      <div>
+        <SectionLabel>Lead</SectionLabel>
+        <div className="mt-2 flex items-center gap-3">
+          <EntityAvatar
+            src={lead?.avatar_url}
+            fallbackIcon={<User className="h-3.5 w-3.5" />}
+            size="sm"
+            className="rounded-lg border border-border"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-foreground">
+              {lead?.full_name || 'Unassigned'}
+            </p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Lead</p>
+          </div>
         </div>
       </div>
-      {client && (
-        <>
-          <SectionLabel>Client</SectionLabel>
-          <div className="flex items-center gap-3">
-            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-blue-500/10">
-              <Building2 className="h-3.5 w-3.5 text-blue-400" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-foreground">{client.name}</p>
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Client</p>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }
@@ -117,14 +128,12 @@ function TeamSection({ projectId }: { projectId: string }) {
 
   return (
     <div
-      className="shrink-0 space-y-3 border-b border-border p-4"
+      className="shrink-0 space-y-3 border-b border-border p-5"
       aria-label="Assigned team"
       role="group"
     >
       <div className="flex items-center gap-2">
-        <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-purple-500/10">
-          <Users className="h-3.5 w-3.5 text-purple-400" />
-        </div>
+        <Users className="h-4 w-4 text-muted-foreground" />
         <SectionLabel>Assigned Team</SectionLabel>
       </div>
 
@@ -136,7 +145,7 @@ function TeamSection({ projectId }: { projectId: string }) {
         </div>
       )}
 
-      {/* Error state — DESIGN.md inline error pattern */}
+      {/* Error state */}
       {!isLoading && error && (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 dark:bg-red-500/10">
           <AlertCircle className="h-4 w-4 flex-shrink-0 text-destructive/70" />
@@ -144,7 +153,7 @@ function TeamSection({ projectId }: { projectId: string }) {
         </div>
       )}
 
-      {/* Empty state — DESIGN.md empty state pattern */}
+      {/* Empty state */}
       {!isLoading && !error && activeAssignments.length === 0 && (
         <div className="flex flex-col items-center justify-center py-4">
           <Users className="h-8 w-8 text-muted-foreground/30" />
@@ -152,12 +161,13 @@ function TeamSection({ projectId }: { projectId: string }) {
         </div>
       )}
 
-      {/* Team list */}
+      {/* Team list — v0 style: avatar + name + "Since {date}" */}
       {!isLoading && !error && activeAssignments.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {activeAssignments.map(
             (assignment: {
               id: string;
+              assigned_at?: string | null;
               employee?: {
                 id?: string;
                 full_name?: string | null;
@@ -165,17 +175,26 @@ function TeamSection({ projectId }: { projectId: string }) {
                 avatar_url?: string | null;
               } | null;
             }) => (
-              <div key={assignment.id} className="flex items-center gap-2">
-                <Avatar className="h-6 w-6">
+              <div key={assignment.id} className="flex items-center gap-3">
+                <Avatar className="h-8 w-8">
                   <AvatarImage src={assignment.employee?.avatar_url || ''} />
-                  <AvatarFallback className="text-[10px]">
+                  <AvatarFallback className="text-xs font-semibold">
                     {assignment.employee?.full_name?.[0] || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-foreground">
+                  <p className="truncate text-sm font-medium text-foreground">
                     {assignment.employee?.full_name || assignment.employee?.email || 'Unknown'}
                   </p>
+                  {assignment.assigned_at && (
+                    <p className="text-[10px] text-muted-foreground">
+                      Since{' '}
+                      {new Date(assignment.assigned_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </p>
+                  )}
                 </div>
               </div>
             )
@@ -214,7 +233,7 @@ export function RoadmapSideRail({
       {!isClient && <TeamSection projectId={projectId} />}
 
       {/* Resources */}
-      <section aria-label="Project resources" className="min-h-0 flex-1 border-b border-border">
+      <section aria-label="Project resources" className="min-h-0 flex-1 border-b border-border p-1">
         <ProjectResources
           projectId={projectId}
           initialResources={[]}
@@ -223,7 +242,7 @@ export function RoadmapSideRail({
       </section>
 
       {/* Files */}
-      <section aria-label="Project files" className="min-h-0 flex-1 border-b border-border">
+      <section aria-label="Project files" className="min-h-0 flex-1 border-b border-border p-1">
         <ProjectFilesPanel
           projectId={projectId}
           isClient={isClient}
@@ -233,7 +252,7 @@ export function RoadmapSideRail({
 
       {/* Notes — hidden from clients */}
       {!isClient && (
-        <section aria-label="Project notes" className="min-h-0 flex-1">
+        <section aria-label="Project notes" className="min-h-0 flex-1 p-1">
           <ProjectNotes
             projectId={projectId}
             workspaceId={workspaceId}

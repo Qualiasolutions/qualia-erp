@@ -111,12 +111,12 @@ export function PortalInvoiceFormDialog({ clients }: PortalInvoiceFormDialogProp
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="default" className="h-10 cursor-pointer gap-1.5 rounded-lg">
+        <Button size="default" className="h-11 cursor-pointer gap-2 rounded-xl px-5">
           <Plus className="h-4 w-4" />
           New invoice
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="rounded-2xl sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold tracking-tight">New invoice</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">

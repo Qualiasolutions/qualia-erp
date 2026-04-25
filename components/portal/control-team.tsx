@@ -112,10 +112,10 @@ function TeamRoster({ members }: { members: AdminProfile[] }) {
   };
 
   return (
-    <section className="rounded-xl border border-border bg-card">
-      <header className="flex items-baseline justify-between border-b border-border px-4 py-3">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+      <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <h3 className="text-sm font-semibold tracking-tight">Roster</h3>
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {members.length} members
         </span>
       </header>
@@ -159,7 +159,7 @@ const RosterRow = memo(function RosterRow({
   const hue = hueFromId(member.id);
 
   return (
-    <li className="flex items-center gap-3 px-4 py-3">
+    <li className="flex items-center gap-3 border-b border-border px-6 py-3 transition-colors last:border-b-0 hover:bg-muted/30">
       <span
         className="flex size-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
         style={{ background: clientAccent(hue, 50, 0.14) }}
@@ -222,24 +222,27 @@ function TeamLivePanel({ statuses }: { statuses: TeamPayload['liveStatus'] }) {
 
   return (
     <aside className="sticky top-4 flex flex-col gap-5 self-start">
-      <section className="rounded-xl border border-border bg-card p-4">
-        <header className="mb-3 flex items-center justify-between">
+      <section className="overflow-hidden rounded-2xl border border-border bg-card">
+        <header className="flex items-center justify-between border-b border-border px-6 py-4">
           <h3 className="inline-flex items-center gap-2 text-sm font-semibold tracking-tight">
             <span className="size-2 rounded-full bg-emerald-500" aria-hidden />
             Clocked in
           </h3>
-          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             {online.length} online
           </span>
         </header>
         {online.length === 0 ? (
-          <p className="py-4 text-center text-xs italic text-muted-foreground">
+          <p className="px-6 py-8 text-center text-xs italic text-muted-foreground">
             No one clocked in.
           </p>
         ) : (
-          <ul className="divide-y divide-dashed divide-border">
+          <ul>
             {online.map((s) => (
-              <li key={s.profileId} className="flex items-center gap-3 py-2">
+              <li
+                key={s.profileId}
+                className="flex items-center gap-3 border-b border-border px-6 py-3 transition-colors last:border-b-0 hover:bg-muted/30"
+              >
                 <span
                   className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400"
                   aria-hidden
@@ -291,7 +294,7 @@ function TeamAssignmentsGrid({
 
   if (employees.length === 0 || projects.length === 0) {
     return (
-      <section className="rounded-xl border border-border bg-card p-5">
+      <section className="rounded-2xl border border-border bg-card p-6">
         <h3 className="mb-1 text-sm font-semibold tracking-tight">Assignments</h3>
         <p className="text-xs text-muted-foreground">No active project assignments yet.</p>
       </section>
@@ -299,11 +302,11 @@ function TeamAssignmentsGrid({
   }
 
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card">
-      <header className="flex items-baseline justify-between border-b border-border px-4 py-3">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+      <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <h3 className="text-sm font-semibold tracking-tight">Assignments</h3>
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-          {employees.length} × {projects.length}
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {employees.length} x {projects.length}
         </span>
       </header>
       <div className="overflow-x-auto">

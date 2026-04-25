@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Loader2, ArrowLeft, Mail } from 'lucide-react';
 
 export default function ResetPasswordPage() {
@@ -43,19 +42,14 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-[420px]">
-        <div className="mb-8 flex items-center gap-3">
-          <Image
-            src="/logo.webp"
-            alt="Qualia Suite"
-            width={36}
-            height={36}
-            className="rounded-lg"
-          />
-          <span className="text-lg font-semibold tracking-tight text-foreground">Qualia Suite</span>
+        <div className="mb-8 flex justify-center">
+          <div className="glow-primary-sm flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
+            Q
+          </div>
         </div>
 
         {isSent ? (
-          <Card>
+          <Card className="rounded-2xl border border-border bg-card">
             <CardHeader>
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-qualia-100">
                 <Mail className="h-6 w-6 text-primary" />
@@ -83,7 +77,7 @@ export default function ResetPasswordPage() {
             </CardContent>
           </Card>
         ) : (
-          <Card>
+          <Card className="rounded-2xl border border-border bg-card">
             <CardHeader>
               <CardTitle className="text-2xl">Reset your password</CardTitle>
               <p className="text-sm text-muted-foreground">

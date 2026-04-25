@@ -57,27 +57,27 @@ const ROW_HEIGHT = 56; // px per hour row
 
 const HOURS = Array.from({ length: HOUR_COUNT }, (_, i) => i + HOUR_START);
 
-/** Color mapping for meeting kinds — Tailwind classes */
+/** Color mapping for meeting kinds — Tailwind classes (v0-aligned palette) */
 const KIND_COLORS: Record<MeetingKind, { bg: string; border: string; text: string }> = {
   standup: {
-    bg: 'bg-muted-foreground/10',
-    border: 'border-l-muted-foreground',
-    text: 'text-muted-foreground',
-  },
-  client: {
-    bg: 'bg-violet-500/10',
-    border: 'border-l-violet-500',
-    text: 'text-violet-700 dark:text-violet-400',
-  },
-  focus: {
     bg: 'bg-primary/10',
     border: 'border-l-primary',
     text: 'text-primary',
   },
-  internal: {
+  client: {
     bg: 'bg-emerald-500/10',
     border: 'border-l-emerald-500',
     text: 'text-emerald-700 dark:text-emerald-400',
+  },
+  focus: {
+    bg: 'bg-amber-500/10',
+    border: 'border-l-amber-500',
+    text: 'text-amber-700 dark:text-amber-400',
+  },
+  internal: {
+    bg: 'bg-sky-500/10',
+    border: 'border-l-sky-500',
+    text: 'text-sky-700 dark:text-sky-400',
   },
   launch: {
     bg: 'bg-red-500/10',
@@ -87,10 +87,10 @@ const KIND_COLORS: Record<MeetingKind, { bg: string; border: string; text: strin
 };
 
 const KIND_DOT_COLORS: Record<MeetingKind, string> = {
-  standup: 'bg-muted-foreground',
-  client: 'bg-violet-500',
-  focus: 'bg-primary',
-  internal: 'bg-emerald-500',
+  standup: 'bg-primary',
+  client: 'bg-emerald-500',
+  focus: 'bg-amber-500',
+  internal: 'bg-sky-500',
   launch: 'bg-red-500',
 };
 
@@ -135,7 +135,15 @@ function formatHour(hour: number): string {
    TzBand — live timezone clock
    ====================================================================== */
 
-const TzBand = memo(function TzBand({ label, timezone }: { label: string; timezone: string }) {
+const TzBand = memo(function TzBand({
+  label,
+  timezone,
+  highlight,
+}: {
+  label: string;
+  timezone: string;
+  highlight?: boolean;
+}) {
   const [time, setTime] = useState(() => formatTzTime(timezone));
 
   useEffect(() => {
@@ -146,11 +154,26 @@ const TzBand = memo(function TzBand({ label, timezone }: { label: string; timezo
   }, [timezone]);
 
   return (
-    <div className="flex flex-col items-center rounded-lg bg-muted px-3 py-1.5">
-      <span className="font-mono text-[9.5px] font-medium uppercase tracking-wider text-muted-foreground">
+    <div
+      className={cn(
+        'flex flex-col items-center rounded-xl px-3 py-1.5',
+        highlight ? 'bg-primary/10' : 'bg-muted'
+      )}
+    >
+      <span
+        className={cn(
+          'font-mono text-[10px] font-medium uppercase tracking-wider',
+          highlight ? 'text-primary' : 'text-muted-foreground'
+        )}
+      >
         {label}
       </span>
-      <span className="font-mono text-[13px] font-semibold tabular-nums text-foreground">
+      <span
+        className={cn(
+          'font-mono text-[13px] font-semibold tabular-nums',
+          highlight ? 'text-primary' : 'text-foreground'
+        )}
+      >
         {time}
       </span>
     </div>
@@ -212,9 +235,9 @@ const EventBlock = memo(function EventBlock({
       <PopoverTrigger asChild>
         <button
           className={cn(
-            'absolute inset-x-1 overflow-hidden rounded-md border-l-2 px-2 py-1 text-left',
-            'cursor-pointer transition-transform duration-150 ease-out',
-            'hover:scale-[1.02] motion-reduce:hover:scale-100',
+            'absolute inset-x-0.5 overflow-hidden rounded-lg border-l-2 px-2 py-1.5 text-left',
+            'cursor-pointer transition-all duration-200 ease-out',
+            'hover:scale-[1.02] hover:shadow-lg motion-reduce:hover:scale-100',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
             colors.bg,
             colors.border
@@ -229,19 +252,13 @@ const EventBlock = memo(function EventBlock({
               aria-label="Public booking"
             />
           )}
-          <span
-            className={cn('block truncate text-[11.5px] font-semibold leading-tight', colors.text)}
-          >
+          <span className={cn('block truncate text-[10px] font-medium leading-tight', colors.text)}>
             {meeting.title}
           </span>
-          {heightPx > 36 && (
+          {heightPx > 30 && (
             <span className="mt-0.5 flex items-center gap-1.5">
-              {initials && (
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-muted text-[8px] font-bold text-muted-foreground">
-                  {initials}
-                </span>
-              )}
-              <span className="font-mono text-[10px] text-muted-foreground">{timeLabel}</span>
+              {initials && <span className="text-[9px] font-medium opacity-70">{initials}</span>}
+              <span className="font-mono text-[9px] opacity-50">{timeLabel}</span>
             </span>
           )}
         </button>
@@ -492,35 +509,36 @@ export function QualiaSchedule({
   return (
     <div className="flex h-full flex-col">
       {/* ── Header ── */}
-      <header className="mb-4 flex flex-col gap-4 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {weekLabel}
-          </p>
-          <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight text-foreground">
-            Schedule
-          </h1>
+      <header className="mb-4 flex animate-fade-in flex-col gap-4 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+            <Calendar className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Schedule</h1>
+            <p className="text-sm uppercase tracking-wider text-muted-foreground">{weekLabel}</p>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 sm:gap-5">
-          {/* TZ Bands */}
-          <div className="flex gap-2">
+        <div className="stagger-1 flex animate-fade-in flex-wrap items-center gap-3 sm:gap-4">
+          {/* Dual TZ display */}
+          <div className="hidden items-center gap-2 lg:flex">
             <TzBand label="Nicosia" timezone="Europe/Nicosia" />
-            <TzBand label="Amman" timezone="Asia/Amman" />
+            <TzBand label="Amman" timezone="Asia/Amman" highlight />
           </div>
 
           {/* Week Navigation */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 rounded-xl bg-muted/30 p-1">
             <button
               onClick={() => navigateWeek('prev')}
-              className="flex h-10 min-h-[44px] w-10 min-w-[44px] cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex h-9 min-h-[44px] w-9 min-w-[44px] cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Previous week"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => navigateWeek('next')}
-              className="flex h-10 min-h-[44px] w-10 min-w-[44px] cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex h-9 min-h-[44px] w-9 min-w-[44px] cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Next week"
             >
               <ChevronRight className="h-4 w-4" />
@@ -530,8 +548,7 @@ export function QualiaSchedule({
           {/* + Event */}
           <Button
             onClick={() => setMeetingModalOpen(true)}
-            className="gap-2"
-            size="sm"
+            className="h-11 gap-2 rounded-xl px-5"
             aria-label="New event"
           >
             <Plus className="h-4 w-4" aria-hidden />
@@ -541,9 +558,9 @@ export function QualiaSchedule({
       </header>
 
       {/* ── Legend ── */}
-      <div className="mb-4 flex flex-wrap gap-4 text-xs">
+      <div className="stagger-2 mb-3 flex animate-fade-in flex-wrap items-center gap-6 text-xs">
         {(Object.keys(KIND_DOT_COLORS) as MeetingKind[]).map((kind) => (
-          <span key={kind} className="flex items-center gap-1.5 capitalize text-muted-foreground">
+          <span key={kind} className="flex items-center gap-2 capitalize text-muted-foreground">
             <span className={cn('inline-block h-2 w-2 rounded-full', KIND_DOT_COLORS[kind])} />
             {kind}
           </span>
@@ -563,20 +580,26 @@ export function QualiaSchedule({
       )}
 
       {/* ── Grid Card ── */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card">
+      <div className="stagger-3 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
         <div className="overflow-x-auto">
           {/* Day Header Row */}
           <div
-            className="grid min-w-[640px] border-b border-border bg-muted/50"
-            style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}
+            className="grid min-w-[640px] border-b border-border"
+            style={{ gridTemplateColumns: '50px repeat(7, 1fr)' }}
           >
             {/* Empty cell for hour column */}
-            <div aria-hidden="true" />
+            <div className="p-3" aria-hidden="true" />
             {days.map((day, i) => {
               const isToday = i === todayIndex;
               return (
-                <div key={i} className="flex flex-col items-center py-2">
-                  <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <div
+                  key={i}
+                  className={cn(
+                    'flex flex-col items-center border-l border-border py-2',
+                    isToday && 'bg-primary/5'
+                  )}
+                >
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {DAY_LABELS[i]}
                   </span>
                   <span
@@ -597,19 +620,21 @@ export function QualiaSchedule({
             <div
               className="relative grid min-w-[640px]"
               style={{
-                gridTemplateColumns: '60px repeat(7, 1fr)',
+                gridTemplateColumns: '50px repeat(7, 1fr)',
                 height: `${HOUR_COUNT * ROW_HEIGHT}px`,
               }}
             >
               {/* Hour Column */}
-              <div className="relative border-r border-border" aria-hidden="true">
-                {HOURS.map((hour, i) => (
+              <div className="relative divide-y divide-border/30" aria-hidden="true">
+                {HOURS.map((hour) => (
                   <div
                     key={hour}
-                    className="absolute right-2 font-mono text-[11px] text-muted-foreground"
-                    style={{ top: `${i * ROW_HEIGHT + 2}px` }}
+                    className="pr-2 pt-0.5 text-right"
+                    style={{ height: `${ROW_HEIGHT}px` }}
                   >
-                    {formatHour(hour)}
+                    <span className="font-mono text-[9px] text-muted-foreground/60">
+                      {formatHour(hour)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -622,16 +647,13 @@ export function QualiaSchedule({
                 return (
                   <div
                     key={dayIdx}
-                    className={cn(
-                      'relative border-r border-border last:border-r-0',
-                      isToday && 'bg-primary/[0.03]'
-                    )}
+                    className={cn('relative border-l border-border', isToday && 'bg-primary/5')}
                   >
                     {/* Hour grid lines */}
                     {HOURS.map((_, i) => (
                       <div
                         key={i}
-                        className="absolute inset-x-0 border-b border-border/50"
+                        className="absolute inset-x-0 border-b border-border/20"
                         style={{ top: `${(i + 1) * ROW_HEIGHT}px` }}
                       />
                     ))}

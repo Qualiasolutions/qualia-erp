@@ -32,34 +32,40 @@ export function ControlFinance({ data }: { data: FinancePayload | undefined }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-baseline justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Finance</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Pulse of MRR, invoices, and this month&apos;s expenses.
-          </p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Receipt className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Finance</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Pulse of MRR, invoices, and this month&apos;s expenses.
+            </p>
+          </div>
         </div>
         <Link
           href="/admin/reports"
-          className="font-mono text-[11px] text-primary underline-offset-4 hover:underline"
+          className="text-xs font-medium text-primary underline-offset-4 hover:underline"
         >
-          Full reports →
+          Full reports
         </Link>
       </div>
 
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {data.kpis.map((k) => (
-          <div key={k.label} className="rounded-xl border border-border bg-card p-5">
-            <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <div
+            key={k.label}
+            className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
+          >
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               {k.label}
             </div>
-            <div className="mt-2 text-[22px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
+            <div className="text-3xl font-bold tabular-nums leading-none tracking-tight text-foreground">
               {k.value}
             </div>
-            {k.sub ? (
-              <div className="mt-1.5 font-mono text-[11px] text-muted-foreground">{k.sub}</div>
-            ) : null}
+            {k.sub ? <div className="mt-1.5 text-[11px] text-muted-foreground">{k.sub}</div> : null}
           </div>
         ))}
       </div>
@@ -83,10 +89,10 @@ const RecentPaymentsTable = memo(function RecentPaymentsTable({
   rows: FinancePaymentRow[];
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card">
-      <header className="flex items-baseline justify-between border-b border-border px-4 py-3">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+      <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <h3 className="text-sm font-semibold tracking-tight">Recent payments</h3>
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Last {rows.length}
         </span>
       </header>
@@ -141,10 +147,10 @@ const STATUS_TONE: Record<string, string> = {
 
 const OpenInvoicesTable = memo(function OpenInvoicesTable({ rows }: { rows: FinanceInvoiceRow[] }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card">
-      <header className="flex items-baseline justify-between border-b border-border px-4 py-3">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+      <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <h3 className="text-sm font-semibold tracking-tight">Open invoices</h3>
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {rows.length}
         </span>
       </header>

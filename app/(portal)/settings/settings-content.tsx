@@ -94,20 +94,20 @@ function PasswordChangeSection() {
 
   return (
     <section
-      className="animate-fade-in rounded-xl border border-border bg-card p-6 fill-mode-both"
+      className="animate-fade-in overflow-hidden rounded-2xl border border-border bg-card fill-mode-both"
       style={{ animationDelay: '100ms' }}
     >
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
+      <div className="flex items-center gap-3 border-b border-border px-6 py-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
           <Lock className="h-4 w-4 text-primary" />
         </div>
         <div>
-          <h2 className="text-base font-semibold text-foreground">Change Password</h2>
+          <h2 className="text-sm font-semibold text-foreground">Change Password</h2>
           <p className="text-xs text-muted-foreground">Update your account password</p>
         </div>
       </div>
 
-      <form onSubmit={handlePasswordChange} className="space-y-4">
+      <form onSubmit={handlePasswordChange} className="space-y-4 p-6">
         <div className="space-y-1.5">
           <Label htmlFor="new_password" className="text-sm font-medium">
             New Password
@@ -226,28 +226,33 @@ export function SettingsContent({
 
   return (
     <div className="animate-fade-in-up space-y-6 p-6 lg:p-8">
-      <div className="mb-6 border-b border-border pb-4">
-        <h1 className="text-[clamp(1.25rem,1.1rem+0.75vw,1.625rem)] font-semibold tracking-tight text-foreground">
-          Settings
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your account and notification preferences
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <User className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage your account and notification preferences
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Profile Settings */}
-      <section className="animate-fade-in rounded-xl border border-border bg-card p-6 fill-mode-both">
-        <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
+      <section className="animate-fade-in overflow-hidden rounded-2xl border border-border bg-card fill-mode-both">
+        <div className="flex items-center gap-3 border-b border-border px-6 py-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
             <User className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-foreground">Profile Information</h2>
+            <h2 className="text-sm font-semibold text-foreground">Profile Information</h2>
             <p className="text-xs text-muted-foreground">Update your personal details</p>
           </div>
         </div>
 
-        <form onSubmit={handleProfileSubmit} className="space-y-4">
+        <form onSubmit={handleProfileSubmit} className="space-y-4 p-6">
           <div className="space-y-1.5">
             <Label htmlFor="full_name" className="text-sm font-medium">
               Display Name
@@ -319,20 +324,16 @@ export function SettingsContent({
 
       {/* Notification Preferences */}
       <section
-        className="animate-fade-in overflow-hidden rounded-xl border border-border bg-card fill-mode-both"
+        className="animate-fade-in overflow-hidden rounded-2xl border border-border bg-card fill-mode-both"
         style={{ animationDelay: '150ms' }}
       >
-        <div className="p-6 pb-0">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/[0.08] dark:bg-amber-500/15">
-              <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-foreground">Notification Preferences</h2>
-              <p className="text-xs text-muted-foreground">
-                Choose which notifications you receive
-              </p>
-            </div>
+        <div className="flex items-center gap-3 border-b border-border px-6 py-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10">
+            <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">Notification Preferences</h2>
+            <p className="text-xs text-muted-foreground">Choose which notifications you receive</p>
           </div>
         </div>
 

@@ -3,7 +3,14 @@
 import Link from 'next/link';
 import { memo, useMemo } from 'react';
 
-import { CheckCircle2 } from 'lucide-react';
+import {
+  CheckCircle2,
+  ArrowRight,
+  Calendar,
+  CheckSquare,
+  FolderKanban,
+  ExternalLink,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
@@ -14,10 +21,10 @@ import {
   useTeamTodaySnapshot,
 } from '@/lib/swr';
 import type { TeamMemberToday } from '@/app/actions/team-today';
-import { QIcon } from '@/components/ui/q-icon';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import { AvatarStack, type AvatarStackPerson } from '@/components/ui/avatar-stack';
 import { PriorityBadge, type PriorityKey } from '@/components/ui/priority-badge';
+import { Button } from '@/components/ui/button';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
 
 export type QualiaTodayRole = 'admin' | 'employee';
@@ -25,9 +32,9 @@ export type QualiaTodayRole = 'admin' | 'employee';
 type QualiaTodayProps = {
   role: QualiaTodayRole;
   displayName: string;
-  /** Admin only — used for the active-projects tape + stats row. */
+  /** Admin only -- used for the active-projects tape + stats row. */
   workspaces?: ClientWorkspace[];
-  /** Employee only — drives useEmployeeAssignments so the tape lists
+  /** Employee only -- drives useEmployeeAssignments so the tape lists
    *  the user's assigned active projects. */
   userId?: string;
 };
@@ -67,209 +74,148 @@ function personFromId(id: string, name: string | null | undefined): AvatarStackP
 }
 
 /* ======================================================================
-   Hero — greeting + pulse stats
+   Date Strip + Greeting Header (v0 flat layout)
    ====================================================================== */
 
-function TodayHero({
+function DashboardHeader({
   role,
   displayName,
   openTasks,
   activeProjects,
-  onlineTeam,
 }: {
   role: QualiaTodayRole;
   displayName: string;
   openTasks: number;
   activeProjects: number;
-  /** When present, renders a tiny avatar strip on the right labelled "Online now". */
-  onlineTeam?: { id: string; name: string | null; avatarUrl: string | null }[];
 }) {
   const now = new Date();
   const hour = now.getHours();
   const firstName = displayName.split(' ')[0] ?? displayName;
-  const dayName = now.toLocaleDateString('en-GB', { weekday: 'long' });
+  const dayName = now.toLocaleDateString('en-GB', { weekday: 'long' }).toUpperCase();
   const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
-  const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const timeStr = now.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  // Build subtitle
+  const taskPart =
+    openTasks === 0
+      ? 'No open tasks. Inbox zero -- enjoy the breathing room.'
+      : `${openTasks} open ${openTasks === 1 ? 'task' : 'tasks'} on your list.`;
+  const projectPart =
+    role === 'admin' && activeProjects > 0
+      ? ` ${activeProjects} active ${activeProjects === 1 ? 'project' : 'projects'} in flight.`
+      : '';
 
   return (
-    <section
-      className="q-page-enter relative mb-5 overflow-hidden rounded-xl border p-7"
-      style={{
-        background:
-          'linear-gradient(135deg, color-mix(in oklch, var(--accent-teal), transparent 92%) 0%, color-mix(in oklch, var(--accent-teal), transparent 98%) 50%, var(--surface) 100%)',
-        borderColor: 'color-mix(in oklch, var(--accent-teal), transparent 82%)',
-      }}
-    >
-      <span
-        aria-hidden
-        className="absolute bottom-0 left-0 top-0 w-[3px]"
-        style={{ background: 'var(--accent-teal)' }}
-      />
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div
-            className="mb-3 inline-flex items-center gap-2 font-mono text-[10.5px] uppercase"
-            style={{ color: 'var(--accent-teal)' }}
-          >
-            <span className="q-live-dot" aria-hidden />
-            {dayName} · {dateStr} · {timeStr}
-          </div>
-          <h1 className="q-display m-0 text-[28px] font-semibold leading-[1.15]">
-            {getGreeting(hour)}, <span style={{ color: 'var(--accent-teal)' }}>{firstName}</span>
-          </h1>
-          <p
-            className="mt-2 max-w-[560px] text-[13.5px] leading-[1.5]"
-            style={{ color: 'var(--text-soft)' }}
-          >
-            {openTasks === 0
-              ? 'No open tasks. Inbox zero — enjoy the breathing room.'
-              : `${openTasks} open ${openTasks === 1 ? 'task' : 'tasks'} on your list.`}
-            {role === 'admin' && activeProjects > 0
-              ? ` ${activeProjects} active projects in flight.`
-              : ''}
-          </p>
-        </div>
-        {onlineTeam && onlineTeam.length > 0 ? <OnlineNow people={onlineTeam} /> : null}
+    <div className="mb-6 flex-shrink-0 animate-stagger-in">
+      {/* Date strip */}
+      <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+        <span className="h-2 w-2 rounded-full bg-primary" aria-hidden />
+        <span className="font-medium tracking-wider">{dayName}</span>
+        <span aria-hidden>·</span>
+        <span>{dateStr}</span>
+        <span aria-hidden>·</span>
+        <span className="font-mono">{timeStr}</span>
       </div>
 
-      <div
-        className="mt-5 flex flex-wrap gap-x-12 gap-y-3 border-t pt-4"
-        style={{ borderColor: 'color-mix(in oklch, var(--accent-teal), transparent 82%)' }}
-      >
-        <PulseStat label="Open tasks" value={String(openTasks)} />
-        <PulseStat
-          label="Active"
-          value={String(activeProjects)}
-          trend={role === 'admin' ? 'projects' : 'assignments'}
-        />
-        <PulseStat label="Today" value={dateStr} />
-      </div>
-    </section>
-  );
-}
+      {/* Big greeting */}
+      <h1 className="text-3xl font-semibold tracking-tight lg:text-4xl">
+        {getGreeting(hour)}, <span className="text-primary">{firstName}</span>
+      </h1>
 
-function OnlineNow({
-  people,
-}: {
-  people: { id: string; name: string | null; avatarUrl: string | null }[];
-}) {
-  const visible = people.slice(0, 5);
-  const overflow = people.length - visible.length;
-  return (
-    <div className="flex min-w-0 shrink-0 flex-col items-end gap-1.5">
-      <span
-        className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em]"
-        style={{ color: 'var(--text-mute)' }}
-      >
-        <span
-          className="inline-block h-1.5 w-1.5 rounded-full"
-          style={{ background: 'var(--accent-teal)', boxShadow: '0 0 6px var(--accent-teal)' }}
-          aria-hidden
-        />
-        Online now
-      </span>
-      <div className="flex -space-x-2">
-        {visible.map((p) => {
-          const initials =
-            (p.name ?? '??')
-              .split(/\s+/)
-              .map((s) => s.charAt(0).toUpperCase())
-              .slice(0, 2)
-              .join('') || '??';
-          return p.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={p.id}
-              src={p.avatarUrl}
-              alt={p.name ?? ''}
-              title={p.name ?? ''}
-              className="h-6 w-6 rounded-full object-cover ring-2"
-              style={{ borderColor: 'var(--surface)', boxShadow: '0 0 0 2px var(--surface)' }}
-            />
-          ) : (
-            <span
-              key={p.id}
-              title={p.name ?? ''}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold uppercase ring-2"
-              style={{
-                background: 'color-mix(in oklch, var(--accent-teal), transparent 82%)',
-                color: 'var(--accent-teal)',
-                borderColor: 'var(--surface)',
-                boxShadow: '0 0 0 2px var(--surface)',
-              }}
-              aria-label={p.name ?? ''}
-            >
-              {initials}
-            </span>
-          );
-        })}
-        {overflow > 0 ? (
-          <span
-            className="inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold"
-            style={{
-              background: 'var(--surface-hi)',
-              color: 'var(--text-mute)',
-            }}
-          >
-            +{overflow}
-          </span>
-        ) : null}
-      </div>
+      {/* Subtitle */}
+      <p className="mt-2 text-muted-foreground">
+        {taskPart}
+        {projectPart}
+      </p>
     </div>
   );
 }
 
-function PulseStat({ label, value, trend }: { label: string; value: string; trend?: string }) {
+/* ======================================================================
+   Stat Cards Row (3 flat cards)
+   ====================================================================== */
+
+function StatCardsRow({
+  openTasks,
+  activeProjects,
+  role,
+}: {
+  openTasks: number;
+  activeProjects: number;
+  role: QualiaTodayRole;
+}) {
+  const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
   return (
-    <div className="flex flex-col gap-0.5">
-      <div className="q-label-mono uppercase">{label}</div>
-      <div className="flex items-baseline gap-2">
-        <span className="text-[18px] font-medium" style={{ color: 'var(--text)' }}>
-          {value}
-        </span>
-        {trend ? (
-          <span className="font-mono text-[11px] opacity-70" style={{ color: 'var(--text-mute)' }}>
-            {trend}
+    <div className="stagger-1 mb-6 grid flex-shrink-0 animate-stagger-in grid-cols-3 gap-4">
+      <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Open Tasks
+        </p>
+        <p className="text-3xl font-bold tabular-nums">{openTasks}</p>
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Active
+        </p>
+        <p className="text-3xl font-bold tabular-nums">
+          {activeProjects}{' '}
+          <span className="text-base font-normal text-muted-foreground">
+            {role === 'admin' ? 'projects' : 'assignments'}
           </span>
-        ) : null}
+        </p>
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Today
+        </p>
+        <p className="text-3xl font-bold tabular-nums">{dateStr}</p>
       </div>
     </div>
   );
 }
 
 /* ======================================================================
-   Team on deck — admin-only view of every teammate's open work
+   Team on deck -- admin view of every teammate's open work (v0 format)
    ====================================================================== */
 
 const TeamOnDeck = memo(function TeamOnDeck({ members }: { members: TeamMemberToday[] }) {
   return (
-    <div
-      className="card rounded-xl border p-7"
-      style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
-    >
-      <div className="mb-5 flex items-baseline justify-between">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border px-6 py-4">
         <div>
-          <div className="q-eyebrow">Team on deck</div>
-          <h2 className="q-display mt-1 text-[16px] font-semibold">Who&apos;s doing what</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Team on Deck
+          </p>
+          <h2 className="mt-0.5 text-lg font-semibold">Who&apos;s doing what</h2>
         </div>
-        <Link
-          href="/tasks?scope=all"
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--text-mute)] transition-colors hover:bg-[var(--surface-hi)] hover:text-[var(--text)]"
-        >
-          All tasks <QIcon name="arrow-right" size={12} />
+        <Link href="/tasks?scope=all">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-muted-foreground hover:text-primary"
+          >
+            All Tasks
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </Link>
       </div>
 
       {members.length === 0 ? (
-        <EmptyState
-          icon={CheckCircle2}
-          title="No team members yet"
-          description="Add employees to the workspace to see their workload here."
-          compact
-          minimal
-        />
+        <div className="p-6">
+          <EmptyState
+            icon={CheckCircle2}
+            title="No team members yet"
+            description="Add employees to the workspace to see their workload here."
+            compact
+            minimal
+          />
+        </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="divide-y divide-border">
           {members.map((m) => (
             <TeamMemberRow key={m.profileId} member={m} />
           ))}
@@ -289,92 +235,62 @@ const TeamMemberRow = memo(function TeamMemberRow({ member }: { member: TeamMemb
       .join('') || '??';
 
   return (
-    <div
-      className="grid gap-4 rounded-lg p-3 transition-colors hover:bg-[var(--surface-hi)]"
-      style={{ gridTemplateColumns: '36px minmax(0, 1fr)' }}
-    >
-      <div className="relative">
-        {member.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={member.avatarUrl}
-            alt={member.fullName ?? ''}
-            className="h-9 w-9 rounded-full object-cover"
-          />
-        ) : (
-          <span
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-semibold uppercase"
-            style={{
-              background: 'color-mix(in oklch, var(--accent-teal), transparent 85%)',
-              color: 'var(--accent-teal)',
-            }}
-            aria-hidden
-          >
-            {initials}
-          </span>
-        )}
-        <span
-          className="absolute -bottom-0 -right-0 h-2.5 w-2.5 rounded-full ring-2"
-          style={{
-            background: member.isOnline ? 'var(--accent-teal)' : 'var(--line)',
-            boxShadow: member.isOnline ? '0 0 6px var(--accent-teal)' : 'none',
-            borderColor: 'var(--surface)',
-          }}
-          aria-label={member.isOnline ? 'Online' : 'Offline'}
-        />
-      </div>
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0">
-          <span className="truncate text-[13.5px] font-semibold" style={{ color: 'var(--text)' }}>
-            {firstName || 'Unknown'}
-          </span>
-          <span
-            className="font-mono text-[10.5px] uppercase tracking-[0.06em]"
-            style={{ color: 'var(--text-mute)' }}
-          >
-            {member.openTasksCount} open
-          </span>
-          {member.isOnline && member.onlineProjectName ? (
-            <span className="truncate text-[11px] italic" style={{ color: 'var(--text-mute)' }}>
-              · on {member.onlineProjectName}
+    <div className="px-6 py-4 transition-colors hover:bg-muted/30">
+      <div className="flex items-start gap-4">
+        <div className="relative">
+          {member.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={member.avatarUrl}
+              alt={member.fullName ?? ''}
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            <span
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold uppercase text-primary"
+              aria-hidden
+            >
+              {initials}
             </span>
-          ) : null}
+          )}
+          {member.openTasksCount > 0 && (
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-amber-500 ring-2 ring-card" />
+          )}
         </div>
-        {member.topTasks.length === 0 ? (
-          <div className="mt-1 text-[12px]" style={{ color: 'var(--text-mute)' }}>
-            Nothing open.
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{firstName || 'Unknown'}</span>
+            <span className="inline-flex items-center rounded-md bg-secondary px-1.5 py-0 text-[10px] font-medium text-secondary-foreground">
+              {member.openTasksCount} open
+            </span>
           </div>
-        ) : (
-          <ul className="mt-1.5 flex flex-col gap-1">
-            {member.topTasks.map((t) => (
-              <li key={t.id} className="flex items-center gap-2 text-[12.5px]">
-                <span
-                  className="h-1 w-1 shrink-0 rounded-full"
-                  style={{ background: 'var(--text-mute)' }}
-                  aria-hidden
-                />
-                <span className="truncate" style={{ color: 'var(--text-soft)' }}>
-                  {t.title}
-                </span>
-                {t.projectName ? (
-                  <span
-                    className="shrink-0 font-mono text-[10px] uppercase tracking-[0.06em]"
-                    style={{ color: 'var(--text-mute)' }}
-                  >
-                    · {t.projectName}
+          {member.topTasks.length > 0 ? (
+            <div className="mt-2 space-y-1.5">
+              {member.topTasks.map((task) => (
+                <div key={task.id} className="flex items-center gap-2 text-sm">
+                  <span className="text-primary" aria-hidden>
+                    →
                   </span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
+                  <span className="truncate text-muted-foreground">{task.title}</span>
+                  {task.projectName ? (
+                    <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      {task.projectName}
+                    </span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1 text-sm text-muted-foreground">Nothing open.</p>
+          )}
+        </div>
       </div>
     </div>
   );
 });
 
 /* ======================================================================
-   Timeline — today's tasks vertical list
+   Timeline -- today's tasks vertical list (employee view)
    ====================================================================== */
 
 type TimelineTask = {
@@ -387,73 +303,72 @@ type TimelineTask = {
 
 function TodayTimeline({ tasks }: { tasks: TimelineTask[] }) {
   return (
-    <div
-      className="card rounded-xl border p-7"
-      style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
-    >
-      <div className="mb-5 flex items-baseline justify-between">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border px-6 py-4">
         <div>
-          <div className="q-eyebrow">Your line today</div>
-          <h2 className="q-display mt-1 text-[16px] font-semibold">What&apos;s on deck</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Your line today
+          </p>
+          <h2 className="mt-0.5 text-lg font-semibold">What&apos;s on deck</h2>
         </div>
-        <Link
-          href="/tasks"
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--text-mute)] transition-colors hover:bg-[var(--surface-hi)] hover:text-[var(--text)]"
-        >
-          All tasks <QIcon name="arrow-right" size={12} />
+        <Link href="/tasks">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-muted-foreground hover:text-primary"
+          >
+            All Tasks
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </Link>
       </div>
 
       {tasks.length === 0 ? (
-        <EmptyState
-          icon={CheckCircle2}
-          title="No tasks today"
-          description="Nothing scoped for today. Enjoy the breathing room."
-          compact
-          minimal
-        />
-      ) : (
-        <div className="relative">
-          <div
-            aria-hidden
-            className="absolute bottom-2 left-[11px] top-2 w-px"
-            style={{ background: 'var(--line)' }}
+        <div className="p-6">
+          <EmptyState
+            icon={CheckCircle2}
+            title="No tasks today"
+            description="Nothing scoped for today. Enjoy the breathing room."
+            compact
+            minimal
           />
-          {tasks.map((t, i) => (
-            <div
-              key={t.id}
-              className="grid items-center gap-3.5 py-3.5"
-              style={{
-                gridTemplateColumns: '24px 1fr auto',
-                borderBottom: i < tasks.length - 1 ? '1px dashed var(--line)' : 'none',
-              }}
-            >
+        </div>
+      ) : (
+        <div className="px-6 py-4">
+          <div className="relative">
+            <div aria-hidden className="absolute bottom-2 left-[11px] top-2 w-px bg-border" />
+            {tasks.map((t, i) => (
               <div
-                aria-hidden
-                className="mx-auto h-2.5 w-2.5 rounded-full border-2"
-                style={{
-                  background:
+                key={t.id}
+                className={cn(
+                  'grid items-center gap-3.5 py-3.5',
+                  i < tasks.length - 1 && 'border-b border-dashed border-border'
+                )}
+                style={{ gridTemplateColumns: '24px 1fr auto' }}
+              >
+                <div
+                  aria-hidden
+                  className={cn(
+                    'mx-auto h-2.5 w-2.5 rounded-full border-2 border-card',
                     t.priority === 'urgent'
-                      ? 'var(--q-rust)'
+                      ? 'bg-destructive'
                       : t.priority === 'high'
-                        ? 'var(--q-amber)'
-                        : 'var(--accent-hi)',
-                  borderColor: 'var(--surface)',
-                  boxShadow: '0 0 0 1px var(--line)',
-                }}
-              />
-              <div className="min-w-0">
-                <div className="truncate text-[14px] font-medium" style={{ color: 'var(--text)' }}>
-                  {t.title}
+                        ? 'bg-amber-500'
+                        : 'bg-primary/40'
+                  )}
+                  style={{ boxShadow: '0 0 0 1px hsl(var(--border))' }}
+                />
+                <div className="min-w-0">
+                  <div className="truncate text-[14px] font-medium">{t.title}</div>
+                  <div className="text-[11.5px] text-muted-foreground">
+                    {t.projectName ?? 'No project'}
+                    {t.minutes ? ` · ${t.minutes}m` : ''}
+                  </div>
                 </div>
-                <div className="text-[11.5px]" style={{ color: 'var(--text-mute)' }}>
-                  {t.projectName ?? 'No project'}
-                  {t.minutes ? ` · ${t.minutes}m` : ''}
-                </div>
+                <PriorityBadge priority={t.priority} />
               </div>
-              <PriorityBadge priority={t.priority} />
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -461,7 +376,7 @@ function TodayTimeline({ tasks }: { tasks: TimelineTask[] }) {
 }
 
 /* ======================================================================
-   Glance cards — Next ship + Today's meetings timetable
+   Right column stack: Next Ship + Meetings + Quick Actions
    ====================================================================== */
 
 interface TimetableMeeting {
@@ -471,7 +386,7 @@ interface TimetableMeeting {
   end_time: string;
 }
 
-function GlanceStack({
+function RightColumnStack({
   nextShip,
   meetings,
 }: {
@@ -479,13 +394,13 @@ function GlanceStack({
   meetings: TimetableMeeting[];
 }) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="stagger-3 animate-stagger-in space-y-6">
+      {/* Next Ship */}
       {nextShip ? (
-        <div
-          className="card rounded-xl border p-5"
-          style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
-        >
-          <div className="q-eyebrow mb-3">Next ship</div>
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <p className="mb-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Next Ship
+          </p>
           <div className="flex items-center gap-4">
             <ProgressRing
               value={nextShip.progress}
@@ -494,25 +409,49 @@ function GlanceStack({
               label={`${Math.round(nextShip.progress * 100)}%`}
             />
             <div className="min-w-0 flex-1">
-              <div className="q-display truncate text-[14px] font-semibold leading-[1.3]">
-                {nextShip.name}
-              </div>
-              <div className="mt-0.5 text-[12px]" style={{ color: 'var(--text-mute)' }}>
+              <p className="truncate font-semibold">{nextShip.name}</p>
+              <p className="text-sm text-muted-foreground">
                 {nextShip.daysLeft != null ? `${nextShip.daysLeft} days · in flight` : 'in flight'}
-              </div>
+              </p>
             </div>
-            <Link
-              href={nextShip.href}
-              className="rounded-md p-1.5 text-[var(--text-mute)] hover:bg-[var(--surface-hi)] hover:text-[var(--text)]"
-              aria-label={`Open ${nextShip.name} roadmap`}
-            >
-              <QIcon name="arrow-right" size={14} />
+            <Link href={nextShip.href}>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ArrowRight className="h-4 w-4" />
+              </Button>
             </Link>
           </div>
         </div>
       ) : null}
 
+      {/* Today's Meetings */}
       <MeetingsTimetable meetings={meetings} />
+
+      {/* Quick Actions */}
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <p className="mb-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Quick Actions
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <Link href="/tasks">
+            <Button variant="secondary" className="h-11 w-full justify-start gap-2">
+              <CheckSquare className="h-4 w-4" />
+              New Task
+            </Button>
+          </Link>
+          <Link href="/projects">
+            <Button variant="secondary" className="h-11 w-full justify-start gap-2">
+              <FolderKanban className="h-4 w-4" />
+              Projects
+            </Button>
+          </Link>
+          <Link href="/schedule">
+            <Button variant="secondary" className="h-11 w-full justify-start gap-2">
+              <Calendar className="h-4 w-4" />
+              Schedule
+            </Button>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
@@ -523,50 +462,48 @@ function MeetingsTimetable({ meetings }: { meetings: TimetableMeeting[] }) {
   );
 
   return (
-    <div
-      className="card rounded-xl border p-5"
-      style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
-    >
-      <div className="mb-3 flex items-baseline justify-between">
-        <div className="q-eyebrow">Today&apos;s meetings</div>
-        <Link
-          href="/schedule"
-          className="rounded-md px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--text-mute)] hover:bg-[var(--surface-hi)] hover:text-[var(--text)]"
-        >
-          schedule →
+    <div className="rounded-2xl border border-border bg-card p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Today&apos;s Meetings
+        </p>
+        <Link href="/schedule">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1 text-xs text-muted-foreground hover:text-primary"
+          >
+            Schedule
+            <ExternalLink className="h-3 w-3" />
+          </Button>
         </Link>
       </div>
 
       {sorted.length === 0 ? (
-        <div className="py-3 text-[12px]" style={{ color: 'var(--text-mute)' }}>
-          Nothing on the calendar today.
-        </div>
+        <div className="py-3 text-[12px] text-muted-foreground">Nothing on the calendar today.</div>
       ) : (
-        <ol className="flex flex-col gap-2.5">
+        <div className="space-y-3">
           {sorted.map((m) => {
             const start = new Date(m.start_time);
             const end = new Date(m.end_time);
             const isPast = end.getTime() < Date.now();
-            const timeLabel = `${formatHHMM(start)}–${formatHHMM(end)}`;
+            const timeLabel = `${formatHHMM(start)}-${formatHHMM(end)}`;
             return (
-              <li key={m.id} className={cn('flex items-baseline gap-3', isPast && 'opacity-50')}>
-                <span
-                  className="q-tabular shrink-0 font-mono text-[11px] tabular-nums"
-                  style={{ color: 'var(--text-mute)' }}
-                >
-                  {timeLabel}
-                </span>
-                <span
-                  className="min-w-0 flex-1 truncate text-[13px] font-medium"
-                  style={{ color: 'var(--text)' }}
-                  title={m.title}
-                >
+              <div
+                key={m.id}
+                className={cn(
+                  'group flex cursor-pointer items-center gap-3',
+                  isPast && 'opacity-50'
+                )}
+              >
+                <span className="w-20 font-mono text-xs text-muted-foreground">{timeLabel}</span>
+                <span className="truncate text-sm font-medium transition-colors group-hover:text-primary">
                   {m.title}
                 </span>
-              </li>
+              </div>
             );
           })}
-        </ol>
+        </div>
       )}
     </div>
   );
@@ -596,18 +533,24 @@ function ProjectsTape({ projects }: { projects: TapeProject[] }) {
     <section className="mt-7">
       <div className="mb-4 flex items-baseline justify-between">
         <div>
-          <div className="q-eyebrow">Active work</div>
-          <h2 className="q-display mt-1 text-[22px] font-semibold">Projects in flight</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Active work
+          </p>
+          <h2 className="mt-1 text-[22px] font-semibold tracking-tight">Projects in flight</h2>
         </div>
-        <Link
-          href="/projects"
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--text-mute)] hover:bg-[var(--surface-hi)] hover:text-[var(--text)]"
-        >
-          All projects <QIcon name="arrow-right" size={12} />
+        <Link href="/projects">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-muted-foreground hover:text-primary"
+          >
+            All projects
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </Link>
       </div>
       <div
-        className="q-stagger grid gap-3"
+        className="grid gap-3"
         style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}
       >
         {projects.slice(0, 8).map((p) => (
@@ -615,40 +558,26 @@ function ProjectsTape({ projects }: { projects: TapeProject[] }) {
             key={p.id}
             href={p.href}
             className={cn(
-              'card group block rounded-xl border p-[18px] text-left transition-all duration-200 ease-out',
-              'hover:-translate-y-0.5 hover:shadow-[var(--elevation-floating)]'
+              'group block rounded-2xl border border-border bg-card p-[18px] text-left transition-all duration-200 ease-out',
+              'hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md'
             )}
-            style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
           >
             <div className="mb-3.5 flex items-center gap-2">
-              <span
-                aria-hidden
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ background: p.clientAccent }}
-              />
-              <span className="q-label-mono truncate" style={{ fontSize: 10 }}>
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <span className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {p.clientName.toUpperCase()}
               </span>
             </div>
-            <div className="q-display mb-3.5 truncate text-[17px] leading-[1.25]">{p.name}</div>
-            <div
-              className="mb-2.5 h-1 overflow-hidden rounded"
-              style={{ background: 'var(--bg-sub)' }}
-            >
+            <div className="mb-3.5 truncate text-[17px] font-semibold leading-[1.25]">{p.name}</div>
+            <div className="mb-2.5 h-1 overflow-hidden rounded bg-muted">
               <div
-                className="h-full transition-[width] duration-500 ease-out"
-                style={{
-                  width: `${Math.round(p.progress * 100)}%`,
-                  background: 'var(--accent-hi)',
-                }}
+                className="h-full bg-primary/60 transition-[width] duration-500 ease-out"
+                style={{ width: `${Math.round(p.progress * 100)}%` }}
               />
             </div>
             <div className="flex items-center justify-between">
               <AvatarStack people={p.team} size={20} />
-              <span
-                className="q-tabular font-mono text-[11px]"
-                style={{ color: 'var(--text-mute)' }}
-              >
+              <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
                 {Math.round(p.progress * 100)}%
               </span>
             </div>
@@ -660,7 +589,7 @@ function ProjectsTape({ projects }: { projects: TapeProject[] }) {
 }
 
 /* ======================================================================
-   QualiaToday — exported
+   QualiaToday -- exported
    ====================================================================== */
 
 export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTodayProps) {
@@ -681,7 +610,7 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
     }));
   }, [todayMeetings]);
 
-  // Timeline tasks — cap at 5, map to TimelineTask shape
+  // Timeline tasks -- cap at 5, map to TimelineTask shape
   const timelineTasks = useMemo<TimelineTask[]>(() => {
     return (
       todayTasks as Array<{
@@ -702,7 +631,7 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
       }));
   }, [todayTasks]);
 
-  // Open tasks count — inbox + today combined, unique
+  // Open tasks count -- inbox + today combined, unique
   const openTaskIds = useMemo(
     () =>
       new Set([
@@ -764,7 +693,7 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
 
   const activeProjectsCount = tapeProjects.length;
 
-  // Next ship — pick project with the highest mock progress; for real data wire to project_phases
+  // Next ship -- pick project with the highest mock progress; for real data wire to project_phases
   const nextShip = tapeProjects[0]
     ? {
         name: tapeProjects[0].name,
@@ -774,47 +703,49 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
       }
     : null;
 
-  const onlineTeam = useMemo(
-    () =>
-      teamMembers
-        .filter((m) => m.isOnline)
-        .map((m) => ({ id: m.profileId, name: m.fullName, avatarUrl: m.avatarUrl })),
-    [teamMembers]
-  );
-
   const isAdminView = role === 'admin';
   const leftPaneLoading = isAdminView ? teamLoading : tasksLoading;
 
   return (
-    <div className="w-full px-6 lg:px-8 xl:px-12" style={{ padding: 'var(--pad)' }}>
-      <TodayHero
+    <div className="flex flex-1 flex-col overflow-hidden p-6 lg:p-8">
+      {/* Header: date strip + greeting + subtitle */}
+      <DashboardHeader
         role={role}
         displayName={displayName}
         openTasks={openTaskIds.size}
         activeProjects={activeProjectsCount}
-        onlineTeam={isAdminView ? onlineTeam : undefined}
       />
 
-      <div className="grid grid-cols-1 gap-[var(--gap)] lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        {leftPaneLoading ? (
-          <div
-            className="card rounded-xl border p-7"
-            style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
-          >
-            <div className="q-eyebrow mb-3">{isAdminView ? 'Team on deck' : 'Your line today'}</div>
-            <div
-              className="h-32 animate-pulse rounded-md"
-              style={{ background: 'var(--bg-sub)' }}
-            />
-          </div>
-        ) : isAdminView ? (
-          <TeamOnDeck members={teamMembers} />
-        ) : (
-          <TodayTimeline tasks={timelineTasks} />
-        )}
-        <GlanceStack nextShip={nextShip} meetings={timetableMeetings} />
+      {/* Stat cards row */}
+      <StatCardsRow openTasks={openTaskIds.size} activeProjects={activeProjectsCount} role={role} />
+
+      {/* Main 3-col grid */}
+      <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto lg:grid-cols-3">
+        {/* Left: col-span-2 */}
+        <div className="stagger-2 animate-stagger-in lg:col-span-2">
+          {leftPaneLoading ? (
+            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+              <div className="border-b border-border px-6 py-4">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {isAdminView ? 'Team on Deck' : 'Your line today'}
+                </p>
+              </div>
+              <div className="p-6">
+                <div className="h-32 animate-pulse rounded-md bg-muted" />
+              </div>
+            </div>
+          ) : isAdminView ? (
+            <TeamOnDeck members={teamMembers} />
+          ) : (
+            <TodayTimeline tasks={timelineTasks} />
+          )}
+        </div>
+
+        {/* Right column */}
+        <RightColumnStack nextShip={nextShip} meetings={timetableMeetings} />
       </div>
 
+      {/* Projects tape below */}
       <ProjectsTape projects={tapeProjects} />
     </div>
   );

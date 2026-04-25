@@ -66,16 +66,16 @@ export function PortalBillingSummary({ invoices }: PortalBillingSummaryProps) {
       {cards.map((card, index) => (
         <div
           key={card.label}
-          className="relative animate-fade-in rounded-xl border border-border bg-card p-5 fill-mode-both"
+          className="relative animate-fade-in rounded-2xl border border-border bg-card p-5 fill-mode-both"
           style={{ animationDelay: `${index * 50}ms` }}
         >
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               {card.label}
             </p>
-            <card.icon className={cn('h-4 w-4 text-muted-foreground/20', card.iconColor)} />
+            <card.icon className={cn('h-4 w-4', card.iconColor)} />
           </div>
-          <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">{card.value}</p>
+          <p className="mt-2 text-3xl font-bold tabular-nums text-foreground">{card.value}</p>
         </div>
       ))}
     </div>

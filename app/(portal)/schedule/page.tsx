@@ -121,8 +121,8 @@ export default async function PortalSchedulePage({
   return (
     <div className="flex h-full flex-col">
       <PageHeader
-        icon={<Calendar className="h-3.5 w-3.5 text-violet-500" />}
-        iconBg="bg-violet-500/10"
+        icon={<Calendar className="h-3.5 w-3.5 text-primary" />}
+        iconBg="bg-primary/10"
         title="Schedule"
       >
         <NewMeetingModal />

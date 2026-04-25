@@ -7,6 +7,7 @@ import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { PortalRequestList } from '@/components/portal/portal-request-list';
 import { PortalRequestDialog } from '@/components/portal/portal-request-dialog';
+import { Lightbulb } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Requests' };
 
@@ -80,15 +81,21 @@ export default async function PortalRequestsPage() {
   const projects = projectsData;
 
   return (
-    <div className="animate-fade-in-up space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
+    <div className="space-y-6 p-6 lg:p-8">
+      {/* Page header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Requests</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Track your feature requests and changes
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Lightbulb className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Requests</h1>
+            <p className="text-sm text-muted-foreground">Track your feature requests and changes</p>
+          </div>
         </div>
-        <PortalRequestDialog projects={projects} />
+        <div className="flex items-center gap-3">
+          <PortalRequestDialog projects={projects} />
+        </div>
       </div>
 
       <PortalRequestList

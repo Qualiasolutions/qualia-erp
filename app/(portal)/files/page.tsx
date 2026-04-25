@@ -6,6 +6,7 @@ import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { PortalFilesContent } from './files-content';
 import { fadeInClasses } from '@/lib/transitions';
+import { FolderOpen } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Files' };
 
@@ -81,12 +82,15 @@ export default async function PortalFilesPage() {
 
   if (projectIds.length === 0) {
     return (
-      <div className={`space-y-6 ${fadeInClasses}`}>
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Files</h1>
-          <p className="mt-1 text-[13px] text-muted-foreground/70">
-            All files across your projects
-          </p>
+      <div className={`space-y-6 p-6 lg:p-8 ${fadeInClasses}`}>
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <FolderOpen className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Files</h1>
+            <p className="text-sm text-muted-foreground">All files across your projects</p>
+          </div>
         </div>
         <PortalFilesContent files={[]} />
       </div>
@@ -156,12 +160,18 @@ export default async function PortalFilesPage() {
   });
 
   return (
-    <div
-      className={`space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)] ${fadeInClasses}`}
-    >
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Files</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground/70">All files across your projects</p>
+    <div className={`space-y-6 p-6 lg:p-8 ${fadeInClasses}`}>
+      {/* Page header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <FolderOpen className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Files</h1>
+            <p className="text-sm text-muted-foreground">All files across your projects</p>
+          </div>
+        </div>
       </div>
       <PortalFilesContent files={normalizedFiles} />
     </div>

@@ -242,19 +242,19 @@ export function ActivityContent({ projectIds }: ActivityContentProps) {
         <div key={dateGroup}>
           {/* Date header */}
           <div className="mb-3 flex items-center gap-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               {dateGroup}
-            </h3>
+            </span>
             <div className="h-px flex-1 bg-border/40" />
           </div>
-
           {/* Entries */}
-          <div className="space-y-0.5">
-            {dateEntries.map((entry) => {
+          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+            {dateEntries.map((entry, entryIdx) => {
               const content = (
                 <div
                   className={cn(
-                    'flex items-start gap-3 rounded-lg px-3 py-3 transition-colors duration-150',
+                    'flex items-start gap-3 px-4 py-3.5 transition-colors duration-150',
+                    entryIdx < dateEntries.length - 1 && 'border-b border-border',
                     entry.project ? 'cursor-pointer hover:bg-muted/30' : ''
                   )}
                 >
@@ -299,7 +299,8 @@ export function ActivityContent({ projectIds }: ActivityContentProps) {
 
               return <div key={entry.id}>{content}</div>;
             })}
-          </div>
+          </div>{' '}
+          {/* end rounded-2xl card */}
         </div>
       ))}
 

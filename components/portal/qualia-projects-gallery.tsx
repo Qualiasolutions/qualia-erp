@@ -379,7 +379,8 @@ function StageDropdown({ project }: { project: GalleryProject }) {
 }
 
 /* ======================================================================
-   Gallery Card
+   Gallery Card — v0 aligned: rounded-2xl, p-5, colored-dot client label,
+   1px progress bar, avatar stack + percent footer.
    ====================================================================== */
 
 const ProjectCardTile = memo(function ProjectCardTile({
@@ -389,7 +390,7 @@ const ProjectCardTile = memo(function ProjectCardTile({
   project: GalleryProject;
   isAdmin?: boolean;
 }) {
-  const { headerBg, progressBg } = getProjectStyle(project);
+  const { progressBg } = getProjectStyle(project);
   const progress = getProgress(project);
   const typeLabel = getTypeLabel(project.project_type);
   const avatars = useMemo(() => teamToAvatars(project.team), [project.team]);
@@ -401,69 +402,63 @@ const ProjectCardTile = memo(function ProjectCardTile({
     <Link
       href={`/projects/${project.id}`}
       className={cn(
-        'group relative block overflow-hidden rounded-xl border border-border bg-card',
+        'group relative block rounded-2xl border border-border bg-card p-5',
         'transition-all duration-200 ease-premium',
-        'hover:border-primary/20 hover:shadow-[var(--elevation-floating)]',
-        'motion-safe:hover:-translate-y-[3px]',
+        'hover:shadow-medium hover:border-primary/30',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         'cursor-pointer'
       )}
     >
-      {/* Accent stripe — thin top bar, unified per column stage */}
-      <div className={cn('h-1', headerBg)} aria-hidden />
-
       {/* Admin stage dropdown */}
       {isAdmin && <StageDropdown project={project} />}
 
-      {/* Body */}
-      <div className="px-3 pb-3 pt-3">
-        {/* Top row: type label + logo + attention + percentage */}
-        <div className="mb-2 flex items-center gap-2">
-          <span className="font-mono text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-            {typeLabel}
-          </span>
-          {attention && (
-            <AlertTriangle
-              className="h-3 w-3 shrink-0 text-amber-500"
-              aria-label="Needs attention"
-            />
-          )}
-          <span className="ml-auto font-mono text-[10px] font-semibold tabular-nums text-muted-foreground">
-            {progress}%
-          </span>
-          {project.logo_url && (
-            <Image
-              src={project.logo_url}
-              alt=""
-              aria-hidden
-              width={20}
-              height={20}
-              className="h-5 w-5 shrink-0 rounded object-contain"
-              unoptimized
-            />
-          )}
-        </div>
-
-        <h3 className="truncate text-sm font-semibold leading-tight text-foreground">
-          {project.name}
-        </h3>
-
-        {/* Progress bar — stage-tinted */}
-        <div className="mb-2 mt-2 h-[2px] overflow-hidden rounded-full bg-border/30">
-          <div
-            className={cn('h-full rounded-full transition-all duration-500', progressBg)}
-            style={{ width: `${progress}%` }}
+      {/* Client label row: colored dot + mono-caps type + attention + logo */}
+      <div className="mb-3 flex items-center gap-2">
+        <span className={cn('h-2 w-2 shrink-0 rounded-full', progressBg)} aria-hidden />
+        <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          {project.client_name || typeLabel}
+        </span>
+        {attention && (
+          <AlertTriangle className="h-3 w-3 shrink-0 text-amber-500" aria-label="Needs attention" />
+        )}
+        {project.logo_url && (
+          <Image
+            src={project.logo_url}
+            alt=""
+            aria-hidden
+            width={20}
+            height={20}
+            className="ml-auto h-5 w-5 shrink-0 rounded object-contain"
+            unoptimized
           />
-        </div>
+        )}
+      </div>
 
-        {/* Footer: avatars + due date */}
-        <div className="flex items-center justify-between">
-          <AvatarStack people={avatars} size={18} max={3} />
-          {dueStr ? (
+      {/* Project name — big */}
+      <h3 className="truncate text-sm font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
+        {project.name}
+      </h3>
+
+      {/* Progress bar — 1px tall */}
+      <div className="mb-3 mt-3 h-px overflow-hidden rounded-full bg-border/40">
+        <div
+          className={cn('h-full rounded-full transition-all duration-500', progressBg)}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      {/* Footer: avatar stack + percentage */}
+      <div className="flex items-center justify-between">
+        <AvatarStack people={avatars} size={18} max={3} />
+        <div className="flex items-center gap-2">
+          {dueStr && (
             <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
               {dueStr}
             </span>
-          ) : null}
+          )}
+          <span className="font-mono text-[10px] font-semibold tabular-nums text-muted-foreground">
+            {progress}%
+          </span>
         </div>
       </div>
     </Link>
@@ -604,23 +599,23 @@ export function QualiaProjectsGallery({ projects, isAdmin }: QualiaProjectsGalle
 
   return (
     <div className="q-page-enter flex h-full min-h-0 w-full flex-col">
-      {/* Compact toolbar — page title is already in PageHeader */}
-      <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border px-5 py-3 lg:px-6">
-        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{summary}</span>
+      {/* Filter + search row — matches v0 rounded-xl chips + view toggle */}
+      <div className="flex shrink-0 flex-wrap items-center gap-3 px-5 py-4 lg:px-6">
+        <p className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{summary}</p>
 
-        {/* Filter pills */}
-        <div className="flex flex-wrap items-center gap-1">
+        {/* Filter chips — rounded-xl, bg toggles */}
+        <div className="inline-flex items-center rounded-xl bg-muted/30 p-1">
           {(['all', 'active', 'attention', 'launched'] as const).map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setFilter(f)}
               className={cn(
-                'h-9 cursor-pointer rounded-md px-2.5 text-[11px] font-medium capitalize transition-all duration-150',
+                'cursor-pointer rounded-lg px-4 py-2 text-sm font-medium capitalize transition-all duration-200',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                 filter === f
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
               aria-pressed={filter === f}
             >
@@ -629,8 +624,8 @@ export function QualiaProjectsGallery({ projects, isAdmin }: QualiaProjectsGalle
           ))}
         </div>
 
-        {/* View toggle */}
-        <div className="flex items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5">
+        {/* View toggle — rounded-xl container */}
+        <div className="flex items-center gap-1 rounded-xl bg-muted/30 p-1">
           {(['columns', 'gallery', 'list'] as const).map((v) => {
             const Icon = v === 'columns' ? Columns3 : v === 'gallery' ? LayoutGrid : List;
             return (
@@ -640,16 +635,16 @@ export function QualiaProjectsGallery({ projects, isAdmin }: QualiaProjectsGalle
                 onClick={() => setViewMode(v)}
                 title={v === 'columns' ? 'Columns' : v === 'gallery' ? 'Gallery' : 'List'}
                 className={cn(
-                  'flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-sm transition-colors duration-150',
+                  'flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg transition-all duration-200',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                   viewMode === v
-                    ? 'bg-background text-foreground shadow-sm'
+                    ? 'bg-card text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
                 aria-pressed={viewMode === v}
                 aria-label={`${v} view`}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-4 w-4" />
               </button>
             );
           })}
@@ -676,32 +671,32 @@ export function QualiaProjectsGallery({ projects, isAdmin }: QualiaProjectsGalle
         ) : viewMode === 'gallery' ? (
           <div
             className="q-stagger grid gap-3 overflow-auto"
-            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}
+            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}
           >
             {filteredProjects.map((project) => (
               <ProjectCardTile key={project.id} project={project} isAdmin={isAdmin} />
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-border bg-card">
+          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
             <div
               className="sticky top-0 grid min-w-[600px] items-center gap-3 border-b border-border bg-card px-4 py-2.5"
               style={{ gridTemplateColumns: '24px 1.5fr 1fr 120px 100px 80px' }}
             >
               <span />
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Project
               </span>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Status
               </span>
-              <span className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Team
               </span>
-              <span className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Due
               </span>
-              <span className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Progress
               </span>
             </div>
@@ -730,7 +725,7 @@ function StageColumns({
 }) {
   const order: StageKey[] = ['demo', 'building', 'preProduction', 'live'];
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       {order.map((key) => (
         <StageColumn key={key} stage={key} projects={stages[key]} isAdmin={isAdmin} />
       ))}
@@ -751,34 +746,25 @@ function StageColumn({
   const Icon = config.icon;
 
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[var(--elevation-resting)]">
-      <header
-        className={cn(
-          'flex shrink-0 items-center gap-2 border-b border-border bg-muted/20 px-3 py-2',
-          `ring-1 ring-inset ${config.ring}`
-        )}
-      >
-        <span
-          className={cn('flex h-6 w-6 items-center justify-center rounded-md', config.bg)}
-          aria-hidden
-        >
-          <Icon className={cn('h-3.5 w-3.5', config.accent)} />
-        </span>
-        <h2 className="text-xs font-semibold tracking-tight text-foreground">{config.title}</h2>
+    <section className="flex min-h-0 flex-col overflow-hidden">
+      {/* Column header — v0 style: icon + title + count badge */}
+      <header className="mb-4 flex shrink-0 items-center gap-2 px-1">
+        <Icon className={cn('h-4 w-4', config.accent)} />
+        <h2 className="text-sm font-semibold tracking-tight text-foreground">{config.title}</h2>
         <span
           className={cn(
-            'ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold',
-            config.bg,
-            config.accent
+            'ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-md px-1.5 text-[10px] font-semibold',
+            'bg-muted/50 text-muted-foreground'
           )}
         >
           {projects.length}
         </span>
       </header>
 
-      <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto p-2">
+      {/* Column content — rounded-2xl muted background */}
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-2xl bg-muted/20 p-3">
         {projects.length === 0 ? (
-          <div className="col-span-2 flex flex-1 flex-col items-center justify-center py-6 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
             <span className={cn('mb-2 rounded-lg p-2.5', config.bg)} aria-hidden>
               <Icon className={cn('h-4 w-4', config.accent)} />
             </span>
@@ -802,24 +788,23 @@ function StageColumn({
 
 function FinishedRow({ projects }: { projects: GalleryProject[] }) {
   return (
-    <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card ring-1 ring-inset ring-primary/20">
-      <header className="flex items-center gap-2 border-b border-border bg-primary/5 px-3 py-1.5">
-        <span
-          className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10"
-          aria-hidden
-        >
-          <CheckCircle2 className="h-3 w-3 text-primary" />
-        </span>
-        <h2 className="text-xs font-semibold tracking-tight text-foreground">Finished</h2>
-        <span className="ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold text-primary">
+    <section className="shrink-0 animate-fade-in">
+      {/* Section header */}
+      <div className="mb-4 flex items-center gap-2 px-1">
+        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+        <span className="text-sm font-semibold">Finished</span>
+        <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-md bg-muted/50 px-1.5 text-[10px] font-semibold text-muted-foreground">
           {projects.length}
         </span>
-      </header>
-      <ul className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+      </div>
+      <div
+        className="grid gap-3"
+        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
+      >
         {projects.map((p) => (
           <FinishedRowItem key={p.id} project={p} />
         ))}
-      </ul>
+      </div>
     </section>
   );
 }
@@ -827,63 +812,57 @@ function FinishedRow({ projects }: { projects: GalleryProject[] }) {
 function FinishedRowItem({ project }: { project: GalleryProject }) {
   const typeLabel = getTypeLabel(project.project_type);
   return (
-    <li>
-      <Link
-        href={`/projects/${project.id}`}
-        className={cn(
-          'flex items-center gap-2 px-2.5 py-1.5 transition-colors duration-150',
-          'hover:bg-primary/5 focus-visible:bg-primary/5',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0'
-        )}
-        title={`${project.name} · ${project.status}`}
-      >
-        {project.logo_url ? (
-          <Image
-            src={project.logo_url}
-            alt=""
-            aria-hidden
-            width={16}
-            height={16}
-            className="h-4 w-4 shrink-0 rounded-full object-cover ring-1 ring-border"
-            unoptimized
-          />
-        ) : (
-          <span
-            className="h-4 w-4 shrink-0 rounded-full bg-muted-foreground/20 ring-1 ring-border"
-            aria-hidden
-          />
-        )}
-        <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-          {project.name}
-        </span>
-        <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-          {typeLabel}
-        </span>
-      </Link>
-    </li>
+    <Link
+      href={`/projects/${project.id}`}
+      className={cn(
+        'flex items-center gap-2 rounded-xl bg-muted/30 px-3 py-2 text-sm text-muted-foreground',
+        'cursor-pointer transition-colors hover:bg-muted/50',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+      )}
+      title={`${project.name} · ${project.status}`}
+    >
+      {project.logo_url ? (
+        <Image
+          src={project.logo_url}
+          alt=""
+          aria-hidden
+          width={16}
+          height={16}
+          className="h-4 w-4 shrink-0 rounded-full object-cover ring-1 ring-border"
+          unoptimized
+        />
+      ) : (
+        <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/30" aria-hidden />
+      )}
+      <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+        {project.name}
+      </span>
+      <span className="shrink-0 rounded bg-muted/50 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+        {typeLabel}
+      </span>
+    </Link>
   );
 }
 
 function ArchivedRow({ projects }: { projects: GalleryProject[] }) {
   return (
-    <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card">
-      <header className="flex items-center gap-2 border-b border-border bg-muted/30 px-3 py-1.5">
-        <span
-          className="flex h-5 w-5 items-center justify-center rounded-md bg-muted-foreground/10"
-          aria-hidden
-        >
-          <Archive className="h-3 w-3 text-muted-foreground" />
-        </span>
-        <h2 className="text-xs font-semibold tracking-tight text-muted-foreground">Archived</h2>
-        <span className="ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-muted-foreground/10 px-1.5 text-[10px] font-semibold text-muted-foreground">
+    <section className="shrink-0 animate-fade-in">
+      {/* Section header */}
+      <div className="mb-4 flex items-center gap-2 px-1">
+        <Archive className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-semibold text-muted-foreground">Archived</span>
+        <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-md bg-muted/50 px-1.5 text-[10px] font-semibold text-muted-foreground">
           {projects.length}
         </span>
-      </header>
-      <ul className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+      </div>
+      <div
+        className="grid gap-3"
+        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
+      >
         {projects.map((p) => (
           <ArchivedRowItem key={p.id} project={p} />
         ))}
-      </ul>
+      </div>
     </section>
   );
 }
@@ -891,38 +870,33 @@ function ArchivedRow({ projects }: { projects: GalleryProject[] }) {
 function ArchivedRowItem({ project }: { project: GalleryProject }) {
   const typeLabel = getTypeLabel(project.project_type);
   return (
-    <li>
-      <Link
-        href={`/projects/${project.id}`}
-        className={cn(
-          'flex items-center gap-2 px-2.5 py-1.5 transition-colors duration-150',
-          'text-muted-foreground opacity-80 hover:opacity-100',
-          'hover:bg-muted/30 focus-visible:bg-muted/30',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0'
-        )}
-        title={`${project.name} · ${project.status}`}
-      >
-        {project.logo_url ? (
-          <Image
-            src={project.logo_url}
-            alt=""
-            aria-hidden
-            width={16}
-            height={16}
-            className="h-4 w-4 shrink-0 rounded-full object-cover opacity-70 ring-1 ring-border grayscale"
-            unoptimized
-          />
-        ) : (
-          <span
-            className="h-4 w-4 shrink-0 rounded-full bg-muted-foreground/15 ring-1 ring-border"
-            aria-hidden
-          />
-        )}
-        <span className="min-w-0 flex-1 truncate text-xs font-medium">{project.name}</span>
-        <span className="shrink-0 rounded bg-muted/60 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider">
-          {typeLabel}
-        </span>
-      </Link>
-    </li>
+    <Link
+      href={`/projects/${project.id}`}
+      className={cn(
+        'flex items-center gap-2 rounded-xl bg-muted/20 px-3 py-2 text-sm',
+        'text-muted-foreground opacity-80 hover:opacity-100',
+        'cursor-pointer transition-colors hover:bg-muted/40',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+      )}
+      title={`${project.name} · ${project.status}`}
+    >
+      {project.logo_url ? (
+        <Image
+          src={project.logo_url}
+          alt=""
+          aria-hidden
+          width={16}
+          height={16}
+          className="h-4 w-4 shrink-0 rounded-full object-cover opacity-70 ring-1 ring-border grayscale"
+          unoptimized
+        />
+      ) : (
+        <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/20" aria-hidden />
+      )}
+      <span className="min-w-0 flex-1 truncate text-sm font-medium">{project.name}</span>
+      <span className="shrink-0 rounded bg-muted/50 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider">
+        {typeLabel}
+      </span>
+    </Link>
   );
 }

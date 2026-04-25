@@ -42,8 +42,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constants';
-import { Plus, Search, X, Check, UserPlus, Trash2, CheckCircle2 } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  X,
+  Check,
+  UserPlus,
+  Trash2,
+  CheckCircle2,
+  Target,
+  Zap,
+  Clock,
+  Flag,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 
 /* ======================================================================
@@ -124,8 +136,6 @@ const STATUS_CHIP_STYLES: Record<string, string> = {
 function TasksHeader({
   role,
   activeCount,
-  totalCount,
-  doneCount,
   blockedCount,
   onNewTask,
   isClient,
@@ -138,41 +148,39 @@ function TasksHeader({
   onNewTask: () => void;
   isClient: boolean;
 }) {
+  // Estimate ~1.5h per task for the subtitle
+  const estimatedHours = Math.max(1, Math.round(activeCount * 1.5));
+
   return (
-    <header className="mb-6">
-      <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-        Tasks{' '}
-        <span className="mx-1 text-border" aria-hidden>
-          /
-        </span>{' '}
-        {role === 'admin' ? 'workspace' : 'yours'}
-      </div>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <span className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight text-foreground">
-            {activeCount} open
-          </span>
-          <div className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
-            {totalCount} total{' '}
-            <span className="mx-1 opacity-40" aria-hidden>
-              /
-            </span>{' '}
-            <span className="text-emerald-600 dark:text-emerald-400">{doneCount} done</span>{' '}
-            <span className="mx-1 opacity-40" aria-hidden>
-              /
-            </span>{' '}
-            {blockedCount > 0 && (
-              <span className="text-red-600 dark:text-red-400">{blockedCount} blocked</span>
-            )}
-            {blockedCount === 0 && <span className="text-muted-foreground/60">0 blocked</span>}
+    <header className="mb-5 flex-shrink-0">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Target className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {role === 'admin' ? 'Workspace Tasks' : 'Today’s Focus'}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {activeCount} task{activeCount !== 1 ? 's' : ''} &middot; ~{estimatedHours}h estimated
+              {blockedCount > 0 && (
+                <span className="ml-2 text-red-600 dark:text-red-400">
+                  &middot; {blockedCount} blocked
+                </span>
+              )}
+            </p>
           </div>
         </div>
-        {!isClient && (
-          <Button onClick={onNewTask} size="sm" className="h-9 gap-1.5 rounded-lg">
-            <Plus className="size-4" />
-            New task
-          </Button>
-        )}
+
+        <div className="flex items-center gap-3">
+          {!isClient && (
+            <Button onClick={onNewTask} className="h-10 gap-2 rounded-xl px-4">
+              <Plus className="h-4 w-4" />
+              New Task
+            </Button>
+          )}
+        </div>
       </div>
     </header>
   );
@@ -211,14 +219,14 @@ function TasksFilterBar({
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-3">
-      <div className="flex items-center gap-0.5 rounded-lg border border-border bg-muted/30 p-0.5">
+      <div className="flex items-center gap-0.5 rounded-xl border border-border bg-muted/30 p-0.5">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => onFilterChange(tab.key)}
             className={cn(
-              'h-8 cursor-pointer rounded-md px-3 text-sm font-medium transition-all duration-200',
+              'h-8 cursor-pointer rounded-lg px-3 text-sm font-medium transition-all duration-200',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-1',
               filter === tab.key
                 ? 'bg-card text-foreground shadow-sm'
@@ -238,7 +246,7 @@ function TasksFilterBar({
           placeholder="Search tasks..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="h-9 pl-9 text-sm"
+          className="h-9 rounded-xl pl-9 text-sm"
           aria-label="Search tasks"
         />
       </div>
@@ -366,7 +374,6 @@ const TaskRow = React.memo(function TaskRow({
   mode: QualiaTasksMode;
 }) {
   const isCompleted = task.status === 'Done';
-  const priorityColors = TASK_PRIORITY_COLORS[task.priority as TaskPriorityKey];
   const statusStyle = STATUS_CHIP_STYLES[task.status] ?? STATUS_CHIP_STYLES['Todo'];
 
   const [editing, setEditing] = useState(false);
@@ -400,23 +407,30 @@ const TaskRow = React.memo(function TaskRow({
     }
   };
 
-  // Client dot — derive a hue from the project or assignee name
   const clientName = task.project?.name ?? null;
   const hasBlocker = task.status === 'In Progress' && task.priority === 'Urgent';
+
+  // Priority flag color mapping per v0 design
+  const priorityFlagColor =
+    task.priority === 'Urgent'
+      ? 'text-red-500'
+      : task.priority === 'High'
+        ? 'text-red-500'
+        : task.priority === 'Medium'
+          ? 'text-amber-500'
+          : 'text-muted-foreground/50';
 
   return (
     <div
       className={cn(
-        'group flex cursor-pointer items-center gap-3 border-b border-border px-4 py-3 transition-colors duration-150',
-        'hover:bg-muted/50',
-        isCompleted && 'opacity-55',
+        'group flex cursor-pointer items-center gap-4 rounded-xl border border-border bg-card p-4 transition-all duration-150',
+        'hover:border-primary/30',
+        isCompleted && 'opacity-50',
         'motion-reduce:transition-none'
       )}
       role="row"
       tabIndex={0}
       onClick={(e) => {
-        // Ignore clicks that originated from interactive children (they stopPropagation)
-        // or from selected text — double-click on title is reserved for inline rename.
         if ((e.target as HTMLElement).closest('button, input, a, [role="menu"], [role="dialog"]'))
           return;
         if (window.getSelection()?.toString()) return;
@@ -430,7 +444,7 @@ const TaskRow = React.memo(function TaskRow({
         onOpenDetail(task);
       }}
     >
-      {/* Checkbox */}
+      {/* Checkbox — rounded circle */}
       <button
         type="button"
         onClick={() => !isClient && onToggle(task.id, !isCompleted)}
@@ -449,16 +463,7 @@ const TaskRow = React.memo(function TaskRow({
         {isCompleted && <Check className="size-3" strokeWidth={3} />}
       </button>
 
-      {/* Priority dot */}
-      {task.priority !== 'No Priority' && (
-        <span
-          aria-label={`Priority: ${task.priority}`}
-          className={cn('size-2 shrink-0 rounded-full', priorityColors.text)}
-          style={{ backgroundColor: 'currentColor' }}
-        />
-      )}
-
-      {/* Title + subline */}
+      {/* Title + project subtitle */}
       <div className="min-w-0 flex-1" role="cell">
         {editing ? (
           <input
@@ -502,14 +507,16 @@ const TaskRow = React.memo(function TaskRow({
           {clientName && (
             <>
               <span className="inline-block size-1.5 rounded-full bg-primary/60" aria-hidden />
-              <span className="truncate">{clientName}</span>
+              <span className="truncate text-primary/70">{clientName}</span>
             </>
           )}
           {task.assignee?.full_name && (
             <>
-              <span className="opacity-40" aria-hidden>
-                /
-              </span>
+              {clientName && (
+                <span className="opacity-40" aria-hidden>
+                  /
+                </span>
+              )}
               <span className="truncate">{task.assignee.full_name}</span>
             </>
           )}
@@ -521,46 +528,45 @@ const TaskRow = React.memo(function TaskRow({
         </div>
       </div>
 
-      {/* Status chip */}
-      <span
-        className={cn(
-          'hidden shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium sm:inline-flex',
-          statusStyle
-        )}
-      >
-        {task.status}
-      </span>
+      {/* Right-side chips: status, time, priority flag, actions */}
+      <div className="flex shrink-0 items-center gap-2">
+        {/* Status chip */}
+        <span
+          className={cn(
+            'hidden shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium sm:inline-flex',
+            statusStyle
+          )}
+        >
+          {task.status}
+        </span>
 
-      {/* Actions — visible on hover/focus for non-readonly */}
-      {!isClient && canManage && (
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 motion-reduce:opacity-100">
-          <button
-            type="button"
-            onClick={() => onEdit(task)}
-            className="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-            aria-label={`Edit "${task.title}"`}
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-          </button>
-          {mode === 'inbox' && (
+        {/* Time chip with Clock icon (if due date is set) */}
+        {task.due_date && (
+          <span className="hidden items-center gap-1 text-xs text-muted-foreground sm:flex">
+            <Clock className="h-3 w-3" />
+            {new Date(task.due_date).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            })}
+          </span>
+        )}
+
+        {/* Priority flag */}
+        {task.priority !== 'No Priority' && (
+          <Flag
+            className={cn('h-3.5 w-3.5 shrink-0', priorityFlagColor)}
+            aria-label={`Priority: ${task.priority}`}
+          />
+        )}
+
+        {/* Actions — visible on hover/focus for non-readonly */}
+        {!isClient && canManage && (
+          <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 motion-reduce:opacity-100">
             <button
               type="button"
-              onClick={() => onHide(task.id)}
+              onClick={() => onEdit(task)}
               className="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-              aria-label={`Remove "${task.title}" from inbox`}
+              aria-label={`Edit "${task.title}"`}
             >
               <svg
                 width="14"
@@ -573,22 +579,45 @@ const TaskRow = React.memo(function TaskRow({
                 strokeLinejoin="round"
                 aria-hidden
               >
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                <line x1="1" y1="1" x2="23" y2="23" />
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => onDelete(task.id)}
-            className="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-            aria-label={`Delete "${task.title}"`}
-          >
-            <Trash2 className="size-3.5" />
-          </button>
-        </div>
-      )}
+            {mode === 'inbox' && (
+              <button
+                type="button"
+                onClick={() => onHide(task.id)}
+                className="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                aria-label={`Remove "${task.title}" from inbox`}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => onDelete(task.id)}
+              className="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              aria-label={`Delete "${task.title}"`}
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 });
@@ -734,36 +763,28 @@ function TaskListContainer({
   // Skeleton on first load
   if (isLoadingFirst) {
     return (
-      <div
-        className="overflow-hidden rounded-xl border border-border bg-card"
-        aria-live="polite"
-        aria-busy="true"
-      >
+      <div className="space-y-2" aria-live="polite" aria-busy="true">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="flex items-center gap-3 border-b border-border/60 px-4 py-3 last:border-b-0"
+            className="flex items-center gap-4 rounded-xl border border-border bg-card p-4"
           >
             <div className="size-5 shrink-0 animate-pulse rounded-full bg-muted" />
             <div className="flex-1 space-y-1.5">
-              <div className="h-3 w-2/5 animate-pulse rounded bg-muted" />
+              <div className="h-3.5 w-2/5 animate-pulse rounded bg-muted" />
               <div className="h-2.5 w-1/4 animate-pulse rounded bg-muted/70" />
             </div>
             <div className="h-5 w-12 shrink-0 animate-pulse rounded-full bg-muted" />
           </div>
         ))}
-        <span className="sr-only">Loading tasks…</span>
+        <span className="sr-only">Loading tasks...</span>
       </div>
     );
   }
 
   if (tasks.length === 0) {
     return (
-      <div
-        className="overflow-hidden rounded-xl border border-border bg-card"
-        role="table"
-        aria-label="Task list"
-      >
+      <div className="rounded-xl border border-border bg-card" role="table" aria-label="Task list">
         <EmptyState
           icon={CheckCircle2}
           title="All caught up"
@@ -778,7 +799,7 @@ function TaskListContainer({
   const renderRow = (task: Task) => (
     <div className="flex items-center">
       {isAdminAll && (
-        <div className="flex shrink-0 items-center pl-4">
+        <div className="mr-3 flex shrink-0 items-center">
           <input
             type="checkbox"
             checked={selectedIds.has(task.id)}
@@ -809,10 +830,7 @@ function TaskListContainer({
   if (!useVirtual) {
     return (
       <div
-        className={cn(
-          'overflow-hidden rounded-xl border border-border bg-card',
-          isPending && 'opacity-70 transition-opacity duration-200'
-        )}
+        className={cn('space-y-2', isPending && 'opacity-70 transition-opacity duration-200')}
         role="table"
         aria-label="Task list"
       >
@@ -831,10 +849,7 @@ function TaskListContainer({
   return (
     <div
       ref={listRef}
-      className={cn(
-        'overflow-hidden rounded-xl border border-border bg-card',
-        isPending && 'opacity-70 transition-opacity duration-200'
-      )}
+      className={cn('space-y-2', isPending && 'opacity-70 transition-opacity duration-200')}
       role="table"
       aria-label="Task list"
       aria-rowcount={tasks.length}
@@ -1132,16 +1147,51 @@ export function QualiaTasksList({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isClient]);
 
+  // Split tasks into active and completed for the v0 layout
+  const activeTasks = useMemo(
+    () => filteredTasks.filter((t) => t.status !== 'Done'),
+    [filteredTasks]
+  );
+  const completedTasks = useMemo(
+    () => filteredTasks.filter((t) => t.status === 'Done'),
+    [filteredTasks]
+  );
+
+  // Upcoming tasks: tasks with due dates in the future (for the right rail)
+  const upcomingTasks = useMemo(() => {
+    const now = new Date();
+    return optimisticTasks
+      .filter((t) => t.status !== 'Done' && t.due_date && new Date(t.due_date) > now)
+      .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
+      .slice(0, 5);
+  }, [optimisticTasks]);
+
+  // Quick-add input state
+  const [quickAddValue, setQuickAddValue] = useState('');
+  const handleQuickAdd = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key !== 'Enter') return;
+      const trimmed = quickAddValue.trim();
+      if (!trimmed) return;
+      handleCreateTask(trimmed, 'No Priority');
+      setQuickAddValue('');
+    },
+    [quickAddValue, handleCreateTask]
+  );
+
+  // Show the 3-col grid layout for inbox mode, flat list for admin-all/client
+  const showGridLayout = mode === 'inbox';
+
   return (
-    <div className={cn('w-full p-6 lg:p-8', mode !== 'all-tasks' && 'mx-auto max-w-[820px]')}>
+    <div className="flex w-full flex-1 flex-col overflow-hidden p-6 lg:p-8">
       {/* Scope toggle for admin */}
       {isAdmin && !isClient && (
-        <div className="mb-4 flex w-fit items-center gap-0.5 self-start rounded-lg border border-border bg-muted/30 p-0.5">
+        <div className="mb-4 flex w-fit items-center gap-0.5 self-start rounded-xl border border-border bg-muted/30 p-0.5">
           <button
             type="button"
             onClick={() => router.push('/tasks')}
             className={cn(
-              'h-8 cursor-pointer rounded-md px-3 text-sm font-medium transition-colors duration-150',
+              'h-8 cursor-pointer rounded-lg px-3 text-sm font-medium transition-colors duration-150',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
               mode !== 'all-tasks'
                 ? 'bg-primary/10 text-primary'
@@ -1155,7 +1205,7 @@ export function QualiaTasksList({
             type="button"
             onClick={() => router.push('/tasks?scope=all')}
             className={cn(
-              'h-8 cursor-pointer rounded-md px-3 text-sm font-medium transition-colors duration-150',
+              'h-8 cursor-pointer rounded-lg px-3 text-sm font-medium transition-colors duration-150',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
               mode === 'all-tasks'
                 ? 'bg-primary/10 text-primary'
@@ -1178,6 +1228,23 @@ export function QualiaTasksList({
         isClient={isClient}
       />
 
+      {/* Quick add bar — v0 style with Zap icon */}
+      {!isClient && (
+        <div className="mb-5 flex-shrink-0">
+          <div className="relative">
+            <Zap className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+            <Input
+              placeholder="Quick add task... press Enter"
+              value={quickAddValue}
+              onChange={(e) => setQuickAddValue(e.target.value)}
+              onKeyDown={handleQuickAdd}
+              className="h-11 rounded-xl border-border bg-card pl-11"
+              aria-label="Quick add task"
+            />
+          </div>
+        </div>
+      )}
+
       <TasksFilterBar
         filter={filter}
         onFilterChange={setFilter}
@@ -1189,7 +1256,7 @@ export function QualiaTasksList({
         isClient={isClient}
       />
 
-      {/* Inline composer */}
+      {/* Inline composer (expanded) */}
       {!isClient && (
         <TaskInlineComposer
           open={composerOpen}
@@ -1212,28 +1279,189 @@ export function QualiaTasksList({
         />
       )}
 
-      {/* Task list */}
-      <TaskListContainer
-        isPending={isPending}
-        tasks={filteredTasks}
-        isAdminAll={isAdminAll}
-        isClient={isClient}
-        canManage={canManage}
-        mode={mode}
-        selectedIds={selectedIds}
-        onToggleSelect={handleToggleSelect}
-        onToggle={handleToggleTask}
-        onEdit={setEditingTask}
-        onDelete={handleDeleteTask}
-        onHide={handleHideTask}
-        onOpenDetail={setDetailTask}
-        isLoadingFirst={
-          mode === 'inbox' &&
-          initialTasks.length === 0 &&
-          inboxLive.tasks.length === 0 &&
-          inboxLive.isValidating
-        }
-      />
+      {/* Main content — grid layout for inbox, flat for admin-all/client */}
+      {showGridLayout ? (
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 overflow-hidden lg:grid-cols-3">
+          {/* Left column — task list (2 cols wide) */}
+          <div className="flex min-h-0 flex-col overflow-hidden lg:col-span-2">
+            <div className="flex-1 overflow-y-auto pr-1">
+              {/* Active tasks */}
+              <TaskListContainer
+                isPending={isPending}
+                tasks={filter === 'done' ? filteredTasks : activeTasks}
+                isAdminAll={isAdminAll}
+                isClient={isClient}
+                canManage={canManage}
+                mode={mode}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                onToggle={handleToggleTask}
+                onEdit={setEditingTask}
+                onDelete={handleDeleteTask}
+                onHide={handleHideTask}
+                onOpenDetail={setDetailTask}
+                isLoadingFirst={
+                  mode === 'inbox' &&
+                  initialTasks.length === 0 &&
+                  inboxLive.tasks.length === 0 &&
+                  inboxLive.isValidating
+                }
+              />
+
+              {/* Completed section — only show in active/all filter when there are completed tasks */}
+              {filter !== 'done' && completedTasks.length > 0 && (
+                <div className="mt-4 border-t border-border pt-4">
+                  <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Completed ({completedTasks.length})
+                  </p>
+                  <div className="space-y-1">
+                    {completedTasks.slice(0, 5).map((task) => (
+                      <div
+                        key={task.id}
+                        className="flex cursor-pointer items-center gap-4 rounded-lg p-3 opacity-50 transition-colors hover:bg-muted/30"
+                        onClick={() => setDetailTask(task)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setDetailTask(task);
+                          }
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleTask(task.id, false);
+                          }}
+                          className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-emerald-500 bg-emerald-500 text-white transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                          aria-label={`Mark "${task.title}" as todo`}
+                        >
+                          <Check className="size-3" strokeWidth={3} />
+                        </button>
+                        <span className="flex-1 truncate text-sm text-muted-foreground line-through">
+                          {task.title}
+                        </span>
+                        {task.completed_at && (
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {new Date(task.completed_at).toLocaleTimeString('en-US', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right rail — stats + upcoming */}
+          <div className="hidden min-h-0 flex-col gap-4 overflow-hidden lg:flex">
+            {/* Stats cards */}
+            <div className="grid flex-shrink-0 grid-cols-2 gap-3">
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">Today</p>
+                <p className="text-2xl font-bold">{stats.active}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">Done</p>
+                <p className="text-2xl font-bold">{stats.done}</p>
+              </div>
+            </div>
+
+            {/* Coming Up */}
+            {upcomingTasks.length > 0 && (
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div className="mb-3 flex flex-shrink-0 items-center justify-between">
+                  <h3 className="text-sm font-semibold">Coming Up</h3>
+                </div>
+                <div className="flex-1 space-y-2 overflow-y-auto">
+                  {upcomingTasks.map((task) => {
+                    const dueDate = new Date(task.due_date!);
+                    const now = new Date();
+                    const diffDays = Math.ceil(
+                      (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+                    );
+                    const dueLabel =
+                      diffDays === 0
+                        ? 'Today'
+                        : diffDays === 1
+                          ? 'Tomorrow'
+                          : dueDate.toLocaleDateString('en-US', { weekday: 'short' });
+
+                    return (
+                      <div
+                        key={task.id}
+                        className="cursor-pointer rounded-lg bg-muted/30 p-3 transition-colors hover:bg-muted/50"
+                        onClick={() => setDetailTask(task)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setDetailTask(task);
+                          }
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="line-clamp-2 text-sm font-medium">{task.title}</p>
+                          <Badge variant="outline" className="shrink-0 text-xs">
+                            {dueLabel}
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Progress indicator */}
+            {stats.total > 0 && (
+              <div className="flex-shrink-0 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-4">
+                <p className="mb-2 text-sm font-medium">Completion Rate</p>
+                <div className="flex items-center gap-3">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-300"
+                      style={{
+                        width: `${Math.round((stats.done / stats.total) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm font-semibold tabular-nums">
+                    {Math.round((stats.done / stats.total) * 100)}%
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Flat layout for admin-all and client modes */
+        <div className={cn(mode !== 'all-tasks' && 'mx-auto max-w-[820px]', 'w-full')}>
+          <TaskListContainer
+            isPending={isPending}
+            tasks={filteredTasks}
+            isAdminAll={isAdminAll}
+            isClient={isClient}
+            canManage={canManage}
+            mode={mode}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+            onToggle={handleToggleTask}
+            onEdit={setEditingTask}
+            onDelete={handleDeleteTask}
+            onHide={handleHideTask}
+            onOpenDetail={setDetailTask}
+            isLoadingFirst={false}
+          />
+        </div>
+      )}
 
       {/* Edit modal (admin only) */}
       {editingTask && canManage && (

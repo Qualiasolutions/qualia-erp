@@ -33,16 +33,21 @@ export function ControlClients({ data }: { data: ClientsPayload | undefined }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Clients</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {clients.length} total &middot;{' '}
-            {clients.filter((c) => c.active_project_count > 0).length} with active projects
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Building2 className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Clients</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {clients.length} total &middot;{' '}
+              {clients.filter((c) => c.active_project_count > 0).length} with active projects
+            </p>
+          </div>
         </div>
         <label
           htmlFor="client-search"
-          className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 focus-within:border-primary/40"
+          className="flex items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2 transition-colors focus-within:border-primary/40"
         >
           <Search className="size-3.5 text-muted-foreground" aria-hidden />
           <input
@@ -68,9 +73,9 @@ export function ControlClients({ data }: { data: ClientsPayload | undefined }) {
           compact
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
+        <div className="overflow-hidden overflow-x-auto rounded-2xl border border-border bg-card">
           <div
-            className="grid min-w-[620px] items-center gap-3 border-b border-border bg-muted/30 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+            className="grid min-w-[620px] items-center gap-3 border-b border-border px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
             style={{ gridTemplateColumns: '16px 1.5fr 120px 80px 80px 120px' }}
           >
             <span aria-hidden />
@@ -113,7 +118,7 @@ const ClientRow = memo(function ClientRow({ row }: { row: ClientSummaryRow }) {
         href={`/clients/${row.id}`}
         className={cn(
           'grid min-w-[620px] cursor-pointer items-center gap-3 px-4 py-3 text-sm transition-colors duration-150',
-          'hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+          'border-b border-border last:border-b-0 hover:bg-muted/30 focus-visible:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
         )}
         style={{ gridTemplateColumns: '16px 1.5fr 120px 80px 80px 120px' }}
       >

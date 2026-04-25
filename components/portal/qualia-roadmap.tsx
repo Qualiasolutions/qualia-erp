@@ -107,45 +107,29 @@ function statusBarClasses(status: PhaseStatus): {
 }
 
 /* ======================================================================
-   Breadcrumb
+   Back link (v0: arrow + "Projects" text link)
    ====================================================================== */
 
-function Breadcrumb({ clientName, projectName }: { clientName: string; projectName: string }) {
+function BackLink() {
   return (
-    <nav
-      aria-label="Breadcrumb"
-      className="mb-5 flex items-center gap-2 text-xs text-muted-foreground"
+    <Link
+      href="/projects"
+      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
     >
-      <Link
-        href="/projects"
-        className="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-      >
-        <ChevronLeft className="size-3" aria-hidden />
-        Projects
-      </Link>
-      <span aria-hidden className="text-border">
-        /
-      </span>
-      <span className="text-muted-foreground">{clientName}</span>
-      <span aria-hidden className="text-border">
-        /
-      </span>
-      <span className="text-foreground">{projectName}</span>
-    </nav>
+      <ChevronLeft className="size-4" aria-hidden />
+      Projects
+    </Link>
   );
 }
 
 /* ======================================================================
-   Header
+   Header — v0 style: avatar tile + name + status/type badges
    ====================================================================== */
 
 function RoadmapHeader({
   project,
   phases,
-  start,
-  end,
   overallProgress,
-  clientHue,
 }: {
   project: RoadmapProjectRow;
   phases: ProjectPhaseRow[];
@@ -154,80 +138,101 @@ function RoadmapHeader({
   overallProgress: number;
   clientHue: number;
 }) {
-  const totalDays = start && end ? Math.max(1, differenceInDays(end, start)) : 0;
   const doneCount = phases.filter((p) => resolvePhaseStatus(p) === 'done').length;
+  const initials = project.name
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase())
+    .slice(0, 2)
+    .join('');
+  const pctNum = Math.round(overallProgress * 100);
+
+  const statusLabel = project.status.toLowerCase();
+  const isActive = statusLabel === 'active' || statusLabel === 'delayed';
+  const isDone = statusLabel === 'done' || statusLabel === 'launched';
+
+  // Determine status description for the third stat card
+  const statusDescription = isDone
+    ? 'All milestones complete'
+    : doneCount > 0
+      ? `${doneCount} of ${phases.length} phases done`
+      : phases.length > 0
+        ? 'In progress'
+        : 'No phases yet';
 
   return (
-    <header className="mb-8">
-      <div className="mb-2 flex items-center gap-2.5">
-        <span
-          className="size-2 rounded-[2px]"
-          style={{ background: clientAccent(clientHue) }}
-          aria-hidden
-        />
-        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          {project.client?.name ?? 'Internal'} / {project.status}
-        </span>
-      </div>
-      <div className="flex flex-wrap items-end justify-between gap-6">
-        <div>
-          <h1 className="text-[clamp(1.75rem,1.4rem+1.6vw,2.5rem)] font-semibold tracking-tight text-foreground">
-            {project.name}
-          </h1>
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 font-mono text-xs text-muted-foreground">
-            {start && end && (
-              <span className="tabular-nums">
-                {fmtDate(start)} → {fmtDate(end)}
+    <header className="mb-6">
+      {/* Top bar: back link + avatar tile + name + badges + action buttons */}
+      <div className="mb-5 flex items-center justify-between">
+        <div className="flex animate-fade-in items-center gap-4">
+          <BackLink />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-sm font-semibold text-primary">
+            {initials}
+          </div>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                {project.name}
+              </h1>
+              <span
+                className={cn(
+                  'rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
+                  isActive
+                    ? 'border-primary/20 bg-primary/10 text-primary'
+                    : isDone
+                      ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
+                      : 'border-border bg-muted/50 text-muted-foreground'
+                )}
+              >
+                {project.status}
               </span>
+            </div>
+            {project.project_type && (
+              <div className="mt-0.5 flex items-center gap-2">
+                <span className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  {project.project_type}
+                </span>
+              </div>
             )}
-            {totalDays > 0 && <span className="tabular-nums">{totalDays} days</span>}
-            <span className="tabular-nums">{phases.length} phases</span>
-            {project.project_type && <span>{project.project_type}</span>}
           </div>
         </div>
-        <dl className="flex gap-6">
-          <KPI label="Complete" value={`${doneCount}/${phases.length}`} />
-          <KPI
-            label="Progress"
-            value={`${Math.round(overallProgress * 100)}%`}
-            accentHue={clientHue}
-          />
-          <KPI
-            label="Due"
-            value={
-              project.target_date && safeParse(project.target_date)
-                ? format(safeParse(project.target_date)!, 'd MMM')
-                : '—'
-            }
-          />
-        </dl>
       </div>
-      <div className="mt-5 h-1 overflow-hidden rounded-full bg-border/40">
-        <div
-          className="h-full rounded-full transition-[width] duration-500"
-          style={{
-            width: `${overallProgress * 100}%`,
-            background: clientAccent(clientHue),
-          }}
-        />
+
+      {/* 3 stat cards — v0 style */}
+      <div className="stagger-1 grid animate-fade-in grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="mb-2 flex items-center gap-2">
+            <CalendarRange className="h-3.5 w-3.5 text-muted-foreground" />
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Overall
+            </p>
+          </div>
+          <p className="text-3xl font-bold tabular-nums">{pctNum}%</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="mb-2 flex items-center gap-2">
+            <CalendarRange className="h-3.5 w-3.5 text-muted-foreground" />
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Phases
+            </p>
+          </div>
+          <p className="text-3xl font-bold tabular-nums">
+            {doneCount}{' '}
+            <span className="text-base font-normal text-muted-foreground">/ {phases.length}</span>
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="mb-2 flex items-center gap-2">
+            <CalendarRange className="h-3.5 w-3.5 text-emerald-500" />
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Status
+            </p>
+          </div>
+          <p className={cn('text-sm font-medium', isDone ? 'text-emerald-500' : 'text-foreground')}>
+            {statusDescription}
+          </p>
+        </div>
       </div>
     </header>
-  );
-}
-
-function KPI({ label, value, accentHue }: { label: string; value: string; accentHue?: number }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <dt className="font-mono text-[9.5px] uppercase tracking-[0.08em] text-muted-foreground">
-        {label}
-      </dt>
-      <dd
-        className="text-lg font-semibold tabular-nums tracking-tight"
-        style={accentHue !== undefined ? { color: clientAccent(accentHue) } : undefined}
-      >
-        {value}
-      </dd>
-    </div>
   );
 }
 
@@ -270,7 +275,7 @@ function RoadmapSchedule({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
         {/* Month axis */}
         <div className="grid grid-cols-[220px_1fr] border-b border-border bg-muted/20 md:grid-cols-[280px_1fr]">
           <div className="border-r border-border px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
@@ -446,10 +451,10 @@ function LegendDot({
 }
 
 /* ======================================================================
-   Phase breakdown table
+   Phase breakdown — v0 style collapsible milestone rows
    ====================================================================== */
 
-function PhaseBreakdownTable({
+function PhaseBreakdownList({
   phases,
   clientHue,
 }: {
@@ -457,84 +462,93 @@ function PhaseBreakdownTable({
   clientHue: number;
 }) {
   return (
-    <section>
-      <h2 className="mb-3 text-base font-semibold tracking-tight">Phase breakdown</h2>
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="overflow-x-auto">
-          <div
-            className="grid min-w-[640px] border-b border-border bg-muted/20 px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
-            style={{
-              gridTemplateColumns: '40px 1fr 120px 100px 100px 70px 110px',
-              columnGap: '12px',
-            }}
-          >
-            <span>#</span>
-            <span>Phase</span>
-            <span>Status</span>
-            <span>Start</span>
-            <span>End</span>
-            <span>Days</span>
-            <span className="text-right">Progress</span>
-          </div>
-          {phases.map((phase, i) => {
-            const start = safeParse(phase.start_date);
-            const end = safeParse(phase.target_date) ?? safeParse(phase.completed_at);
-            const status = resolvePhaseStatus(phase);
-            const styles = statusBarClasses(status);
-            const progress = phaseProgress(phase);
-            const days = start && end ? Math.max(1, differenceInDays(end, start)) : null;
+    <section className="stagger-2 animate-fade-in">
+      <h2 className="mb-3 text-base font-semibold tracking-tight">Milestones</h2>
+      <div className="space-y-2 pb-4">
+        {phases.map((phase) => {
+          const status = resolvePhaseStatus(phase);
+          const progress = phaseProgress(phase);
+          const total = phase.plan_count ?? 0;
+          const done = phase.plans_completed ?? 0;
 
-            return (
-              <div
-                key={phase.id}
-                className={cn(
-                  'grid min-w-[640px] items-center px-4 py-3 text-sm',
-                  i < phases.length - 1 && 'border-b border-border',
-                  status === 'upcoming' ? 'text-muted-foreground' : 'text-foreground'
+          return (
+            <div
+              key={phase.id}
+              className="overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:border-primary/20"
+            >
+              <div className="flex items-center gap-4 px-6 py-4">
+                {/* Status icon */}
+                {status === 'done' ? (
+                  <span
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10"
+                    aria-hidden
+                  >
+                    <CalendarRange className="h-3 w-3 text-emerald-500" />
+                  </span>
+                ) : status === 'active' ? (
+                  <span
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10"
+                    aria-hidden
+                  >
+                    <CalendarRange className="h-3 w-3 text-primary" />
+                  </span>
+                ) : (
+                  <span
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-muted"
+                    aria-hidden
+                  >
+                    <CalendarRange className="h-3 w-3 text-muted-foreground" />
+                  </span>
                 )}
-                style={{
-                  gridTemplateColumns: '40px 1fr 120px 100px 100px 70px 110px',
-                  columnGap: '12px',
-                }}
-              >
-                <span className="font-mono text-[11px] text-muted-foreground">P{i + 1}</span>
-                <span className="truncate font-medium">{phase.name}</span>
-                <span className="inline-flex items-center gap-1.5 text-xs capitalize">
-                  <span aria-hidden className={cn('size-1.5 rounded-full', styles.dot)} />
-                  {status}
-                </span>
-                <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                  {start ? format(start, 'dd MMM') : '—'}
-                </span>
-                <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                  {end ? format(end, 'dd MMM') : '—'}
-                </span>
-                <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                  {days ? `${days}d` : '—'}
-                </span>
-                <span className="flex items-center justify-end gap-2">
-                  <span className="h-[3px] max-w-[60px] flex-1 overflow-hidden rounded-full bg-border/50">
+
+                {/* Phase name */}
+                <span className="flex-1 truncate text-sm font-medium">{phase.name}</span>
+
+                {/* Task count */}
+                {total > 0 && (
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {done}/{total} done
+                  </span>
+                )}
+
+                {/* Progress bar — inline small */}
+                <span className="hidden items-center gap-2 sm:flex">
+                  <span className="h-1.5 w-16 overflow-hidden rounded-full bg-border/50">
                     <span
                       className="block h-full rounded-full"
                       style={{
                         width: `${progress * 100}%`,
                         background:
                           status === 'done'
-                            ? 'hsl(var(--success))'
+                            ? 'hsl(142 72% 29%)'
                             : status === 'active'
                               ? clientAccent(clientHue)
-                              : 'hsl(var(--muted-foreground) / 0.4)',
+                              : 'hsl(var(--muted-foreground) / 0.3)',
                       }}
                     />
                   </span>
-                  <span className="w-7 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+                  <span className="w-8 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
                     {Math.round(progress * 100)}%
                   </span>
                 </span>
+
+                {/* Status badge */}
+                <span
+                  className={cn(
+                    'rounded-md px-2 py-0.5 text-[10px] font-semibold capitalize',
+                    status === 'done'
+                      ? 'bg-emerald-500/10 text-emerald-500'
+                      : status === 'active'
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted/50 text-muted-foreground'
+                  )}
+                >
+                  {status === 'done' ? 'closed' : status}
+                </span>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
@@ -577,10 +591,9 @@ export function QualiaRoadmap({
 
   return (
     <div className="flex w-full flex-col overflow-x-hidden lg:h-full lg:flex-row">
-      {/* Main content — Gantt + breakdown */}
-      <div className="min-w-0 flex-1">
+      {/* Main content */}
+      <div className="min-w-0 flex-1 overflow-y-auto">
         <div className="w-full p-6 lg:p-8">
-          <Breadcrumb clientName={project.client?.name ?? 'Internal'} projectName={project.name} />
           <RoadmapHeader
             project={project}
             phases={phases}
@@ -600,7 +613,7 @@ export function QualiaRoadmap({
               />
             </section>
           )}
-          {phases.length > 0 && <PhaseBreakdownTable phases={phases} clientHue={clientHue} />}
+          {phases.length > 0 && <PhaseBreakdownList phases={phases} clientHue={clientHue} />}
         </div>
       </div>
 

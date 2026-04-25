@@ -14,12 +14,14 @@ function ClientDetailSkeleton() {
   return (
     <div className="flex h-full flex-col">
       <header className="sticky top-0 z-sticky flex items-center gap-4 border-b border-border bg-card/80 px-6 py-3.5 backdrop-blur-xl sm:px-8">
-        <div className="h-6 w-32 animate-pulse rounded bg-muted" />
+        <div className="h-6 w-32 animate-pulse rounded-lg bg-muted" />
       </header>
       <div className="flex-1 p-6 lg:p-8">
         <div className="space-y-6">
-          <div className="h-8 w-1/2 animate-pulse rounded bg-muted" />
-          <div className="h-32 animate-pulse rounded bg-muted" />
+          <div className="h-10 w-1/3 animate-pulse rounded-lg bg-muted" />
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="h-32 animate-pulse rounded-lg bg-muted" />
+          </div>
         </div>
       </div>
     </div>

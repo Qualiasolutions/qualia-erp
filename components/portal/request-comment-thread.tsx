@@ -157,7 +157,7 @@ export function RequestCommentThread({
     <div className="mt-4 space-y-3">
       {/* Legacy admin_response pinned at top */}
       {hasLegacy && (
-        <div className="rounded-lg border border-primary/10 bg-primary/[0.04] p-3 dark:border-primary/20 dark:bg-primary/[0.06]">
+        <div className="rounded-xl border border-primary/10 bg-primary/[0.04] p-3 dark:border-primary/20 dark:bg-primary/[0.06]">
           <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-primary">
             <MessageSquare className="h-3 w-3" />
             Initial response from Qualia
@@ -182,7 +182,7 @@ export function RequestCommentThread({
               <div
                 key={comment.id}
                 className={cn(
-                  'rounded-lg border p-3 transition-colors duration-150',
+                  'rounded-xl border p-3 transition-colors duration-150',
                   'border-border bg-card'
                 )}
               >

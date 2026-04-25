@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
 interface FilePreviewModalProps {
@@ -29,17 +30,18 @@ export function FilePreviewModal({ open, onOpenChange, file }: FilePreviewModalP
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={
+        className={cn(
+          'rounded-2xl',
           isImage
             ? 'max-w-4xl gap-0 overflow-hidden p-0'
             : isPdf
               ? 'max-w-5xl gap-0 overflow-hidden p-0'
               : 'max-w-lg'
-        }
+        )}
         showCloseButton={false}
       >
         {/* Custom header */}
-        <DialogHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/30 px-5 py-3.5">
+        <DialogHeader className="flex flex-row items-center justify-between gap-4 border-b border-border px-5 py-3.5">
           <DialogTitle className="min-w-0 truncate text-sm font-semibold text-foreground">
             {file.original_name}
           </DialogTitle>

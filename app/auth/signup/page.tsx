@@ -23,17 +23,27 @@ export default async function Page({ searchParams }: PageProps) {
   if (!token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
-        <div className="w-full max-w-md text-center">
-          <h1 className="text-2xl font-bold text-foreground">Invalid Invitation Link</h1>
-          <p className="mt-4 text-sm text-muted-foreground">
-            The invitation link is missing or invalid. Please check your email for the correct link.
-          </p>
-          <Link
-            href="/auth/login"
-            className="mt-6 inline-block text-sm text-primary hover:text-qualia-700"
-          >
-            Go to Login
-          </Link>
+        <div className="w-full max-w-md">
+          <div className="mb-8 flex justify-center">
+            <div className="glow-primary-sm flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
+              Q
+            </div>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Invalid Invitation Link
+            </h1>
+            <p className="mt-4 text-sm text-muted-foreground">
+              The invitation link is missing or invalid. Please check your email for the correct
+              link.
+            </p>
+            <Link
+              href="/auth/login"
+              className="mt-6 inline-block text-sm text-primary hover:text-qualia-700"
+            >
+              Go to Login
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -45,15 +55,24 @@ export default async function Page({ searchParams }: PageProps) {
   if (invitationResult.error || !invitationResult.invitation) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
-        <div className="w-full max-w-md text-center">
-          <h1 className="text-2xl font-bold text-foreground">Invalid Invitation</h1>
-          <p className="mt-4 text-sm text-destructive">{invitationResult.error}</p>
-          <Link
-            href="/auth/login"
-            className="mt-6 inline-block text-sm text-primary hover:text-qualia-700"
-          >
-            Go to Login
-          </Link>
+        <div className="w-full max-w-md">
+          <div className="mb-8 flex justify-center">
+            <div className="glow-primary-sm flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
+              Q
+            </div>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Invalid Invitation
+            </h1>
+            <p className="mt-4 text-sm text-destructive">{invitationResult.error}</p>
+            <Link
+              href="/auth/login"
+              className="mt-6 inline-block text-sm text-primary hover:text-qualia-700"
+            >
+              Go to Login
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -165,34 +184,34 @@ export default async function Page({ searchParams }: PageProps) {
       <div className="relative flex flex-1 items-center justify-center bg-background px-6 py-12 sm:px-12">
         <div className="relative z-10 w-full max-w-[420px]">
           {/* Mobile logo */}
-          <div className="mb-10 flex items-center gap-3 lg:hidden">
-            <Image
-              src="/logo.webp"
-              alt="Qualia Suite"
-              width={36}
-              height={36}
-              className="rounded-lg"
+          <div className="mb-8 flex justify-center lg:hidden">
+            <div className="glow-primary-sm flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
+              Q
+            </div>
+          </div>
+
+          {/* Card wrapper */}
+          <div className="rounded-2xl border border-border bg-card p-8">
+            {/* Header */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                Create your account
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">Join your team on Qualia Suite</p>
+            </div>
+
+            <SignupForm
+              invitation={{
+                email: invitation.email,
+                projectName: invitation.project_name,
+                welcomeMessage: invitation.welcome_message,
+                invitationToken: token,
+              }}
             />
-            <span className="text-lg font-semibold text-foreground">Qualia Suite</span>
           </div>
-
-          {/* Header */}
-          <div className="mb-10">
-            <h2 className="text-[2rem] font-bold text-foreground">Create your account</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Join your team on Qualia Suite</p>
-          </div>
-
-          <SignupForm
-            invitation={{
-              email: invitation.email,
-              projectName: invitation.project_name,
-              welcomeMessage: invitation.welcome_message,
-              invitationToken: token,
-            }}
-          />
 
           {/* Footer */}
-          <p className="mt-8 text-center text-xs text-muted-foreground/60">
+          <p className="mt-6 text-center text-xs text-muted-foreground/60">
             Protected by enterprise-grade security
           </p>
         </div>

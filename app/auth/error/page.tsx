@@ -71,8 +71,13 @@ export default function Page({ searchParams }: { searchParams: Promise<{ error: 
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
+        <div className="mb-8 flex justify-center">
+          <div className="glow-primary-sm flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
+            Q
+          </div>
+        </div>
         <div className="flex flex-col gap-6">
-          <Card>
+          <Card className="rounded-2xl border border-border bg-card">
             <Suspense
               fallback={
                 <>

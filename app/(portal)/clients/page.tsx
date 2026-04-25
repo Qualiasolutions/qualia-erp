@@ -7,7 +7,6 @@ import { ClientTableView } from '@/components/client-table-view';
 import { NewClientModal } from '@/components/new-client-modal';
 import { Building2 } from 'lucide-react';
 import { type Client } from '@/lib/client-utils';
-import { PageHeader } from '@/components/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export const metadata = { title: 'Clients' };
@@ -91,15 +90,23 @@ export default async function PortalClientsPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <PageHeader
-        icon={<Building2 className="h-3.5 w-3.5 text-emerald-500" />}
-        iconBg="bg-emerald-500/10"
-        title="Clients"
-      >
-        <NewClientModal />
-      </PageHeader>
-
       <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+        {/* Page header */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <Building2 className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">Clients</h1>
+              <p className="text-sm text-muted-foreground">Manage your client relationships</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <NewClientModal />
+          </div>
+        </div>
+
         <Suspense fallback={<ClientTableSkeleton />}>
           <ClientListLoader />
         </Suspense>

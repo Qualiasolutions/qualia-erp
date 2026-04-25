@@ -16,13 +16,20 @@ export function AdminContent({ workspaceId }: AdminContentProps) {
   return (
     <div className="space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
       {/* Page header */}
-      <header>
-        <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight text-foreground">
-          Portal Administration
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage apps, branding, and client access
-        </p>
+      <header className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <LayoutGrid className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Portal Administration
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Manage apps, branding, and client access
+            </p>
+          </div>
+        </div>
       </header>
 
       {/* Tabbed sections */}

@@ -243,7 +243,7 @@ function ProjectSection({
     phaseGroups.length > 1 || (phaseGroups.length === 1 && phaseGroups[0].phaseName !== 'General');
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
       {/* Section header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}

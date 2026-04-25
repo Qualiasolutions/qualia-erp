@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { LoginForm } from '@/components/login-form';
 import { LoginLeftPanel } from '@/components/login-left-panel';
-import Image from 'next/image';
 
 export const metadata: Metadata = {
   title: 'Sign In',
@@ -19,7 +18,9 @@ export default function Page() {
         {/* Mobile Header */}
         <header className="w-full border-b border-border/10 px-6 py-5 lg:hidden">
           <div className="flex items-center gap-3">
-            <Image src="/logo.webp" alt="Qualia" width={32} height={32} className="rounded-lg" />
+            <div className="glow-primary-sm flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
+              Q
+            </div>
             <span className="text-sm font-semibold uppercase tracking-[0.15em] text-foreground">
               Qualia Suite
             </span>
@@ -29,34 +30,46 @@ export default function Page() {
         {/* Main Content */}
         <main className="flex flex-1 items-center justify-center px-6 py-12 lg:px-12">
           <div className="w-full max-w-sm">
-            {/* Welcome Text */}
-            <div className="mb-10">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground">
-                Welcome back
-              </h2>
-              <p className="mt-2 text-muted-foreground">Sign in to your workspace</p>
+            {/* Q Logo */}
+            <div className="mb-8 flex justify-center lg:hidden">
+              <div className="glow-primary-sm flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
+                Q
+              </div>
             </div>
 
-            <LoginForm />
+            {/* Card wrapper */}
+            <div className="rounded-2xl border border-border bg-card p-8">
+              {/* Welcome Text */}
+              <div className="mb-8">
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                  Welcome back
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">Sign in to your workspace</p>
+              </div>
 
-            {/* Divider */}
-            <div className="my-8 flex items-center gap-4">
-              <div className="h-px flex-1 bg-border/30" />
-              <span className="text-xs uppercase tracking-wider text-muted-foreground/30">or</span>
-              <div className="h-px flex-1 bg-border/30" />
-            </div>
+              <LoginForm />
 
-            {/* Contact Link */}
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground/50">
-                Not a client yet?{' '}
-                <a
-                  href="https://qualiasolutions.net"
-                  className="text-primary transition-colors hover:text-qualia-700 dark:hover:text-qualia-300"
-                >
-                  Get started
-                </a>
-              </p>
+              {/* Divider */}
+              <div className="my-6 flex items-center gap-4">
+                <div className="h-px flex-1 bg-border/30" />
+                <span className="text-xs uppercase tracking-wider text-muted-foreground/30">
+                  or
+                </span>
+                <div className="h-px flex-1 bg-border/30" />
+              </div>
+
+              {/* Contact Link */}
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground/50">
+                  Not a client yet?{' '}
+                  <a
+                    href="https://qualiasolutions.net"
+                    className="text-primary transition-colors hover:text-qualia-700 dark:hover:text-qualia-300"
+                  >
+                    Get started
+                  </a>
+                </p>
+              </div>
             </div>
           </div>
         </main>

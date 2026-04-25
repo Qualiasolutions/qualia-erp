@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
-import { format, isThisWeek } from 'date-fns';
+import { useState, useCallback } from 'react';
+import { format } from 'date-fns';
 import { m, AnimatePresence } from '@/lib/lazy-motion';
 import {
   FlaskConical,
@@ -30,6 +30,7 @@ import {
   Layers,
   ChevronDown,
   Clock,
+  Sparkles,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -156,92 +157,89 @@ function ResearchCard({
   onDelete: () => void;
 }) {
   const colors = CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.general;
-  const CategoryIcon = CATEGORY_ICONS[entry.category] || FlaskConical;
 
   const sourceCount = entry.sources ? (entry.sources.match(/https?:\/\//g) || []).length : 0;
-  const hasActions = !!entry.action_items;
+
+  // Estimate read time from summary length
+  const readTimeMin = entry.summary ? Math.max(1, Math.round(entry.summary.length / 800)) : 1;
 
   return (
     <m.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      className="group relative rounded-xl border border-border bg-card p-5 transition-colors duration-150 ease-premium hover:border-primary/30"
+      className="group relative rounded-2xl border border-border bg-card p-5 transition-colors duration-150 ease-premium hover:border-primary/30"
     >
-      <div className="flex items-start gap-4">
-        <div
-          className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', colors.bg)}
-        >
-          <CategoryIcon className={cn('h-4 w-4', colors.text)} />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <h3 className="text-[15px] font-semibold leading-snug text-foreground">{entry.title}</h3>
-          <p className="mt-0.5 text-sm text-muted-foreground">{entry.topic}</p>
-
-          {entry.summary && (
-            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground/80">
-              {entry.summary}
-            </p>
-          )}
-
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span className={cn('font-medium', colors.text)}>
-              {getCategoryLabel(entry.category)}
-            </span>
-            <span aria-hidden>·</span>
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {format(new Date(entry.research_date), 'MMM d')}
-            </span>
-            {entry.author && (
-              <>
-                <span aria-hidden>·</span>
-                <span className="flex items-center gap-1">
-                  <User className="h-3 w-3" />
-                  {entry.author.full_name || entry.author.email}
-                </span>
-              </>
+      {/* Category badges */}
+      <div className="mb-3 flex items-center gap-2">
+        {entry.category !== 'general' && (
+          <span
+            className={cn(
+              'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium',
+              colors.bg,
+              colors.text,
+              colors.border
             )}
-            {sourceCount > 0 && (
-              <>
-                <span aria-hidden>·</span>
-                <span className="flex items-center gap-1">
-                  <Link2 className="h-3 w-3" />
-                  {sourceCount}
-                </span>
-              </>
-            )}
-            {hasActions && (
-              <>
-                <span aria-hidden>·</span>
-                <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Actions
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="relative z-10 flex shrink-0 items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onView}>
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive"
-            onClick={onDelete}
           >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+            {getCategoryLabel(entry.category)}
+          </span>
+        )}
+        {entry.action_items && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="h-2.5 w-2.5" />
+            Actions
+          </span>
+        )}
+      </div>
+
+      {/* Title */}
+      <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+        {entry.title}
+      </h3>
+
+      {/* Summary excerpt */}
+      {entry.summary && (
+        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+          {entry.summary}
+        </p>
+      )}
+
+      {/* Footer row */}
+      <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <Calendar className="h-3 w-3" />
+          {format(new Date(entry.research_date), 'MMM d')}
+        </span>
+        <span className="flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          {readTimeMin} min
+        </span>
+        {sourceCount > 0 && (
+          <span className="flex items-center gap-1">
+            <Link2 className="h-3 w-3" />
+            {sourceCount} source{sourceCount !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+
+      {/* Action buttons — revealed on hover */}
+      <div className="absolute right-3 top-3 z-10 flex shrink-0 items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onView}>
+          <Eye className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-destructive hover:text-destructive"
+          onClick={onDelete}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
       </div>
 
       <button
         onClick={onView}
-        className="absolute inset-0 z-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+        className="absolute inset-0 z-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20"
         aria-label={`View ${entry.title}`}
       />
     </m.div>
@@ -792,31 +790,21 @@ function NewResearchModal({
 /* ─── Main Page ─────────────────────────────────────────────── */
 export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) {
   const [entries, setEntries] = useState<ResearchEntry[]>(initialEntries);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filterQuery, setFilterQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedEntry, setSelectedEntry] = useState<ResearchEntry | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [quickCapture, setQuickCapture] = useState('');
   const [confirmState, setConfirmState] = useState<{ action: () => void } | null>(null);
-
-  // Stats
-  const stats = useMemo(() => {
-    const thisWeek = entries.filter((e) => {
-      try {
-        return isThisWeek(new Date(e.research_date));
-      } catch {
-        return false;
-      }
-    });
-    const categories = new Set(entries.map((e) => e.category));
-    return { total: entries.length, thisWeek: thisWeek.length, categories: categories.size };
-  }, [entries]);
 
   // Filter entries
   const filteredEntries = entries.filter((entry) => {
+    const q = filterQuery.toLowerCase();
     const matchesSearch =
-      entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      entry.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      entry.summary?.toLowerCase().includes(searchQuery.toLowerCase());
+      !q ||
+      entry.title.toLowerCase().includes(q) ||
+      entry.topic.toLowerCase().includes(q) ||
+      entry.summary?.toLowerCase().includes(q);
     const matchesCategory = selectedCategory === 'all' || entry.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -839,80 +827,85 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
     });
   }, []);
 
+  const handleQuickSave = useCallback(async () => {
+    if (!quickCapture.trim()) return;
+    const input: CreateResearchInput = {
+      title: quickCapture.trim().slice(0, 120),
+      topic: quickCapture.trim().slice(0, 120),
+      category: 'general',
+      summary: quickCapture.trim(),
+      key_findings: '',
+      action_items: '',
+      sources: '',
+      raw_content: '',
+      research_date: new Date().toISOString().split('T')[0],
+    };
+    const result = await createResearchEntry(input);
+    if (result.success && result.data) {
+      toast.success('Quick capture saved');
+      setEntries((prev) => [result.data!, ...prev]);
+      setQuickCapture('');
+    } else {
+      toast.error(result.error || 'Failed to save');
+    }
+  }, [quickCapture]);
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
       {/* Header */}
       <PageHeader icon={<FlaskConical className="h-3.5 w-3.5 text-primary" />} title="Research">
-        <Button onClick={() => setShowNewModal(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Log Research
+        <Button onClick={() => setShowNewModal(true)} className="gap-2 rounded-xl">
+          <Plus className="h-4 w-4" />
+          New Entry
         </Button>
       </PageHeader>
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-6 p-6 lg:p-8">
-          {/* Stats row */}
-          {entries.length > 0 && (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="relative rounded-xl border border-border bg-card p-5">
-                <FlaskConical className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Total Entries
-                </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
-                  {stats.total}
-                </p>
+        <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+          {/* Hub Header */}
+          <div className="flex animate-fade-in items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <FlaskConical className="h-6 w-6 text-primary" />
               </div>
-              <div className="relative rounded-xl border border-border bg-card p-5">
-                <Clock className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  This Week
-                </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
-                  {stats.thisWeek}
-                </p>
-              </div>
-              <div className="relative rounded-xl border border-border bg-card p-5">
-                <Layers className="absolute right-4 top-4 h-5 w-5 text-muted-foreground/20" />
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Categories
-                </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
-                  {stats.categories}
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                  Research Hub
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Capture, organize, and connect insights
                 </p>
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Search and Filters */}
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {/* Quick Capture Bar */}
+          <div className="stagger-1 animate-fade-in">
+            <div className="relative">
+              <Sparkles className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
               <Input
-                placeholder="Search research..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                placeholder="Quick capture: paste a link, note, or idea..."
+                value={quickCapture}
+                onChange={(e) => setQuickCapture(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleQuickSave();
+                }}
+                className="h-12 rounded-xl border-border bg-card pl-11 pr-24 text-base"
               />
+              <Button
+                size="sm"
+                className="absolute right-2 top-1/2 h-8 -translate-y-1/2 rounded-lg"
+                onClick={handleQuickSave}
+                disabled={!quickCapture.trim()}
+              >
+                Save
+              </Button>
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="All categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {RESEARCH_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Category Pills */}
-          <div className="flex flex-wrap gap-2">
+          <div className="stagger-2 flex animate-fade-in flex-wrap gap-2">
             <button
               onClick={() => setSelectedCategory('all')}
               className={cn(
@@ -947,17 +940,36 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
             })}
           </div>
 
+          {/* Recent Research Header */}
+          <div className="stagger-3 flex animate-fade-in items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="text-sm font-semibold text-foreground">Recent Research</h2>
+              <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+                {filteredEntries.length}
+              </span>
+            </div>
+            <div className="relative w-48">
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Filter..."
+                value={filterQuery}
+                onChange={(e) => setFilterQuery(e.target.value)}
+                className="h-8 rounded-lg border-border bg-muted/40 pl-9 text-sm"
+              />
+            </div>
+          </div>
+
           {/* Research Entries */}
           {filteredEntries.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
               <FlaskConical className="mb-3 h-12 w-12 text-muted-foreground/30" />
               <h3 className="text-base font-medium text-foreground">No research entries yet</h3>
               <p className="mb-4 mt-1 text-center text-sm text-muted-foreground">
-                {searchQuery || selectedCategory !== 'all'
+                {filterQuery || selectedCategory !== 'all'
                   ? 'Try adjusting your filters or search terms'
                   : 'Log your first research findings from Deep Research, NotebookLM, or your own investigation'}
               </p>
-              {!searchQuery && selectedCategory === 'all' && (
+              {!filterQuery && selectedCategory === 'all' && (
                 <Button onClick={() => setShowNewModal(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Log Research
@@ -965,7 +977,7 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
               )}
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               <AnimatePresence mode="popLayout">
                 {filteredEntries.map((entry) => (
                   <ResearchCard

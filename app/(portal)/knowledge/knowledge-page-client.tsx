@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   BookOpen,
   Layers,
@@ -23,6 +23,8 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
+  Search,
+  Clock,
   Loader2,
   Database,
   CheckCircle2,
@@ -1032,12 +1034,65 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
     return 'upcoming';
   };
 
+  // Build "quick access" guides — first 3 from the curriculum (foundations)
+  const quickAccessGuides = useMemo(() => {
+    const slugs = CURRICULUM[0]?.lessons ?? [];
+    return slugs
+      .map((s) => guideBySlug(s))
+      .filter((g): g is Guide => !!g)
+      .slice(0, 3);
+  }, [guideBySlug]);
+
+  // Build "recently viewed" — last 2 completed, or next 2 upcoming if none completed
+  const recentlyViewedGuides = useMemo(() => {
+    const allSlugs = CURRICULUM.flatMap((p) => p.lessons);
+    const doneSlugs = allSlugs.filter((s) => completed.has(s));
+    const slugsToShow = doneSlugs.length > 0 ? doneSlugs.slice(-2) : allSlugs.slice(0, 2);
+    return slugsToShow.map((s) => guideBySlug(s)).filter((g): g is Guide => !!g);
+  }, [completed, guideBySlug]);
+
+  // Search filter
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+    const q = searchQuery.toLowerCase();
+    return guides.filter(
+      (g) =>
+        g.title.toLowerCase().includes(q) ||
+        g.subtitle.toLowerCase().includes(q) ||
+        (categoryLabels[g.category] || '').toLowerCase().includes(q)
+    );
+  }, [searchQuery, guides]);
+
+  // Category browse data
+  const categoryBrowse = useMemo(() => {
+    const cats = Object.keys(categoryLabels);
+    return cats
+      .map((cat) => ({
+        key: cat,
+        label: categoryLabels[cat],
+        icon: categoryIcons[cat],
+        colors: categoryColors[cat],
+        count: guides.filter((g) => g.category === cat).length,
+      }))
+      .filter((c) => c.count > 0);
+  }, [guides]);
+
+  // Category badge labels for quick access cards
+  const quickAccessBadges: Record<string, string> = {
+    foundations: 'Basics',
+    lifecycle: 'Workflow',
+    operations: 'Commands',
+    reference: 'Reference',
+    checklist: 'Checklist',
+  };
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
       <PageHeader
         icon={<BookOpen className="h-3.5 w-3.5 text-primary" />}
         iconBg="bg-primary/10"
-        title="Learn Qualia"
+        title="Knowledge Base"
         className="shrink-0"
       >
         <div className="flex items-center gap-2">
@@ -1060,245 +1115,441 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
       </PageHeader>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-3xl space-y-8 p-4 sm:p-6 lg:p-8">
-          {/* Hero — Start where you are */}
-          <section
-            className={cn(
-              'relative overflow-hidden rounded-2xl border p-6 sm:p-7',
-              allDone
-                ? 'border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-card'
-                : 'border-border bg-gradient-to-br from-primary/5 via-card to-card'
-            )}
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                {allDone ? (
-                  <Trophy className="h-5 w-5 text-primary" />
-                ) : (
-                  <Sparkles className="h-5 w-5 text-primary" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                  {allDone
-                    ? "You've covered the path"
-                    : totalDone === 0
-                      ? 'Start where you are'
-                      : 'Keep going'}
-                </h1>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  {allDone
-                    ? 'Come back any time to review a lesson or unlock the other tracks.'
-                    : 'Work through the path in order. Each lesson builds on the last.'}
+        <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+          {/* Hub Header */}
+          <div className="flex animate-fade-in items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <BookOpen className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                Knowledge Base
+              </h1>
+              <p className="text-sm text-muted-foreground">Search or browse documentation</p>
+            </div>
+          </div>
+
+          {/* Big Search Input */}
+          <div className="stagger-1 animate-fade-in">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search documentation..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-12 rounded-xl border-border bg-card pl-11 pr-14 text-base"
+              />
+              <kbd className="absolute right-4 top-1/2 hidden -translate-y-1/2 items-center rounded border border-border bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground sm:inline-flex">
+                /
+              </kbd>
+            </div>
+          </div>
+
+          {/* Search Results */}
+          {searchResults && (
+            <div className="space-y-2">
+              <h2 className="text-sm font-semibold text-foreground">
+                {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for &ldquo;
+                {searchQuery}&rdquo;
+              </h2>
+              {searchResults.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No guides match your search. Try different keywords.
                 </p>
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            <div className="mt-5">
-              <div className="mb-2 flex items-center justify-between text-xs">
-                <span className="font-medium tabular-nums text-foreground">
-                  {mounted ? `${totalDone} of ${totalSteps} complete` : '—'}
-                </span>
-                <span className="tabular-nums text-muted-foreground">
-                  {mounted ? `${progressPct}%` : ''}
-                </span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
-                  style={{ width: mounted ? `${progressPct}%` : '0%' }}
-                />
-              </div>
-            </div>
-
-            {/* Next lesson CTA */}
-            {nextGuide && (
-              <button
-                onClick={() => setSelectedGuide(nextGuide)}
-                className="mt-5 flex w-full items-center gap-3 rounded-xl border border-primary/20 bg-background/60 p-4 text-left transition-colors duration-150 hover:border-primary/40 hover:bg-background/80"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <ArrowRight className="h-4 w-4 text-primary" />
+              ) : (
+                <div className="space-y-2">
+                  {searchResults.map((g) => {
+                    const Icon = categoryIcons[g.category];
+                    const colors = categoryColors[g.category];
+                    return (
+                      <button
+                        key={g.slug}
+                        onClick={() => {
+                          setSelectedGuide(g);
+                          setSearchQuery('');
+                        }}
+                        className="group flex w-full items-center gap-4 rounded-xl border border-border bg-card p-4 text-left transition-colors duration-150 hover:border-primary/30"
+                      >
+                        <div
+                          className={cn(
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                            colors.bg
+                          )}
+                        >
+                          <Icon className={cn('h-4 w-4', colors.text)} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
+                            {g.title}
+                          </h3>
+                          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                            {g.subtitle}
+                          </p>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {g.steps.length} steps
+                        </span>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-                    Up next
-                  </p>
-                  <p className="mt-0.5 text-sm font-semibold text-foreground">{nextGuide.title}</p>
-                  <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                    {nextGuide.subtitle}
-                  </p>
+              )}
+            </div>
+          )}
+
+          {/* Main Grid — only show when not searching */}
+          {!searchResults && (
+            <div className="stagger-2 grid animate-fade-in grid-cols-1 gap-6 lg:grid-cols-3">
+              {/* Left Column — Quick Access + Recently Viewed + Path */}
+              <div className="space-y-6 lg:col-span-2">
+                {/* Quick Access */}
+                <div>
+                  <div className="mb-3 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    <h2 className="text-sm font-semibold text-foreground">Quick Access</h2>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    {quickAccessGuides.map((g) => {
+                      const colors = categoryColors[g.category];
+                      const Icon = categoryIcons[g.category];
+                      return (
+                        <button
+                          key={g.slug}
+                          onClick={() => setSelectedGuide(g)}
+                          className={cn(
+                            'group rounded-2xl border border-border bg-card p-4 text-left transition-all duration-200 hover:border-primary/30 hover:shadow-sm',
+                            selectedGuide?.slug === g.slug && 'border-primary bg-primary/5'
+                          )}
+                        >
+                          <div className="mb-2 flex items-center gap-2">
+                            <span className={cn('rounded-lg p-1.5', colors.bg)}>
+                              <Icon className={cn('h-3.5 w-3.5', colors.text)} />
+                            </span>
+                            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              {quickAccessBadges[g.category] || categoryLabels[g.category]}
+                            </span>
+                          </div>
+                          <h3 className="line-clamp-1 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                            {g.title}
+                          </h3>
+                          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                            {g.subtitle}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </button>
-            )}
 
-            {mounted && totalDone > 0 && (
-              <button
-                onClick={() => setResetConfirmOpen(true)}
-                className="mt-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-              >
-                <RotateCcw className="h-3 w-3" />
-                Reset my progress
-              </button>
-            )}
-          </section>
+                {/* Recently Viewed */}
+                <div>
+                  <div className="mb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <h2 className="text-sm font-semibold text-foreground">Recently Viewed</h2>
+                  </div>
+                  <div className="space-y-2">
+                    {recentlyViewedGuides.map((g) => {
+                      const Icon = categoryIcons[g.category];
+                      return (
+                        <button
+                          key={g.slug}
+                          onClick={() => setSelectedGuide(g)}
+                          className="group flex w-full items-center gap-4 rounded-lg p-3 text-left transition-colors hover:bg-muted/50"
+                        >
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                              {g.title}
+                            </h3>
+                            <p className="text-xs text-muted-foreground">{g.steps.length} steps</p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-          {/* The path — parts + lessons */}
-          <div className="space-y-10">
-            {CURRICULUM.map((part, partIdx) => {
-              const partLessons = part.lessons
-                .map((s) => guideBySlug(s))
-                .filter((g): g is Guide => !!g);
-              if (partLessons.length === 0) return null;
+                {/* The Learning Path */}
+                <div className="space-y-8 border-t border-border pt-6">
+                  {CURRICULUM.map((part, partIdx) => {
+                    const partLessons = part.lessons
+                      .map((s) => guideBySlug(s))
+                      .filter((g): g is Guide => !!g);
+                    if (partLessons.length === 0) return null;
 
-              const partDone = part.branching
-                ? part.lessons.some((s) => completed.has(s))
-                : part.lessons.every((s) => completed.has(s));
+                    const partDone = part.branching
+                      ? part.lessons.some((s) => completed.has(s))
+                      : part.lessons.every((s) => completed.has(s));
 
-              return (
-                <section key={part.title} className="space-y-3">
-                  <header className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold',
-                        partDone
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-muted text-muted-foreground/70'
-                      )}
-                    >
-                      {partDone ? <Check className="h-3.5 w-3.5" /> : partIdx + 1}
-                    </div>
-                    <div className="min-w-0">
-                      <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/80">
-                        Part {partIdx + 1}
-                      </h2>
-                      <p className="text-base font-semibold text-foreground sm:text-lg">
-                        {part.title}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{part.subtitle}</p>
-                    </div>
-                  </header>
-
-                  {part.branching ? (
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      {partLessons.map((g) => {
-                        const isDone = completed.has(g.slug);
-                        return (
+                    return (
+                      <section key={part.title} className="space-y-3">
+                        <header className="flex items-center gap-3">
                           <div
-                            key={g.slug}
                             className={cn(
-                              'group relative flex flex-col rounded-xl border bg-card p-4 transition-colors duration-150',
-                              isDone && 'border-primary/40 bg-primary/[0.03]'
+                              'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold',
+                              partDone
+                                ? 'bg-primary/10 text-primary'
+                                : 'bg-muted text-muted-foreground/70'
                             )}
                           >
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleComplete(g.slug);
-                              }}
-                              className="absolute right-3 top-3 shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
-                              aria-label={isDone ? 'Mark incomplete' : 'Mark complete'}
-                            >
-                              {isDone ? (
-                                <CheckCircle2 className="h-5 w-5 text-primary" />
-                              ) : (
-                                <Circle className="h-5 w-5 text-muted-foreground/40" />
+                            {partDone ? <Check className="h-3.5 w-3.5" /> : partIdx + 1}
+                          </div>
+                          <div className="min-w-0">
+                            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/80">
+                              Part {partIdx + 1}
+                            </h2>
+                            <p className="text-base font-semibold text-foreground sm:text-lg">
+                              {part.title}
+                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">{part.subtitle}</p>
+                          </div>
+                        </header>
+
+                        {part.branching ? (
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            {partLessons.map((g) => {
+                              const isDone = completed.has(g.slug);
+                              return (
+                                <div
+                                  key={g.slug}
+                                  className={cn(
+                                    'group relative flex flex-col rounded-xl border bg-card p-4 transition-colors duration-150',
+                                    isDone && 'border-primary/40 bg-primary/[0.03]'
+                                  )}
+                                >
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleComplete(g.slug);
+                                    }}
+                                    className="absolute right-3 top-3 shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    aria-label={isDone ? 'Mark incomplete' : 'Mark complete'}
+                                  >
+                                    {isDone ? (
+                                      <CheckCircle2 className="h-5 w-5 text-primary" />
+                                    ) : (
+                                      <Circle className="h-5 w-5 text-muted-foreground/40" />
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => setSelectedGuide(g)}
+                                    className="flex flex-1 flex-col text-left"
+                                  >
+                                    <div
+                                      className={cn(
+                                        'flex h-8 w-8 items-center justify-center rounded-lg',
+                                        categoryColors[g.category].bg
+                                      )}
+                                    >
+                                      {(() => {
+                                        const I = categoryIcons[g.category];
+                                        return (
+                                          <I
+                                            className={cn(
+                                              'h-4 w-4',
+                                              categoryColors[g.category].text
+                                            )}
+                                          />
+                                        );
+                                      })()}
+                                    </div>
+                                    <h3 className="mt-3 text-[14px] font-semibold leading-snug text-foreground">
+                                      {g.title}
+                                    </h3>
+                                    <p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-muted-foreground">
+                                      {g.subtitle}
+                                    </p>
+                                    <span className="mt-3 inline-flex items-center gap-1 text-xs text-primary">
+                                      {isDone ? 'Review' : 'Open track'}
+                                      <ArrowRight className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
+                                    </span>
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <ol className="space-y-3">
+                            {partLessons.map((g) => (
+                              <li key={g.slug}>
+                                <LessonRow
+                                  guide={g}
+                                  state={lessonStateFor(g.slug)}
+                                  globalNumber={lessonNumberMap.get(g.slug) || 0}
+                                  onOpen={() => setSelectedGuide(g)}
+                                  onToggleComplete={() => toggleComplete(g.slug)}
+                                />
+                              </li>
+                            ))}
+                          </ol>
+                        )}
+                      </section>
+                    );
+                  })}
+                </div>
+
+                {/* Reference — always available */}
+                {referenceGuides.length > 0 && (
+                  <section className="space-y-3 border-t border-border pt-6">
+                    <header>
+                      <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/80">
+                        Reference
+                      </h2>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        Open any time — not part of the path.
+                      </p>
+                    </header>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {referenceGuides.map((g) => {
+                        const Icon = categoryIcons[g.category];
+                        const colors = categoryColors[g.category];
+                        return (
+                          <button
+                            key={g.slug}
+                            onClick={() => setSelectedGuide(g)}
+                            className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors duration-150 hover:border-primary/20 hover:bg-muted/20"
+                          >
+                            <div
+                              className={cn(
+                                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                                colors.bg
                               )}
-                            </button>
-                            <button
-                              onClick={() => setSelectedGuide(g)}
-                              className="flex flex-1 flex-col text-left"
                             >
-                              <div
-                                className={cn(
-                                  'flex h-8 w-8 items-center justify-center rounded-lg',
-                                  categoryColors[g.category].bg
-                                )}
-                              >
-                                {(() => {
-                                  const I = categoryIcons[g.category];
-                                  return (
-                                    <I className={cn('h-4 w-4', categoryColors[g.category].text)} />
-                                  );
-                                })()}
-                              </div>
-                              <h3 className="mt-3 text-[14px] font-semibold leading-snug text-foreground">
-                                {g.title}
-                              </h3>
-                              <p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-muted-foreground">
+                              <Icon className={cn('h-4 w-4', colors.text)} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[14px] font-semibold text-foreground">{g.title}</p>
+                              <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
                                 {g.subtitle}
                               </p>
-                              <span className="mt-3 inline-flex items-center gap-1 text-xs text-primary">
-                                {isDone ? 'Review' : 'Open track'}
-                                <ArrowRight className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
-                              </span>
-                            </button>
-                          </div>
+                            </div>
+                            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform duration-150 group-hover:translate-x-0.5" />
+                          </button>
                         );
                       })}
                     </div>
-                  ) : (
-                    <ol className="space-y-3">
-                      {partLessons.map((g) => (
-                        <li key={g.slug}>
-                          <LessonRow
-                            guide={g}
-                            state={lessonStateFor(g.slug)}
-                            globalNumber={lessonNumberMap.get(g.slug) || 0}
-                            onOpen={() => setSelectedGuide(g)}
-                            onToggleComplete={() => toggleComplete(g.slug)}
-                          />
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                </section>
-              );
-            })}
-          </div>
-
-          {/* Reference — always available */}
-          {referenceGuides.length > 0 && (
-            <section className="space-y-3 border-t border-border pt-8">
-              <header>
-                <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/80">
-                  Reference
-                </h2>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  Open any time — not part of the path.
-                </p>
-              </header>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {referenceGuides.map((g) => {
-                  const Icon = categoryIcons[g.category];
-                  const colors = categoryColors[g.category];
-                  return (
-                    <button
-                      key={g.slug}
-                      onClick={() => setSelectedGuide(g)}
-                      className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors duration-150 hover:border-primary/20 hover:bg-muted/20"
-                    >
-                      <div
-                        className={cn(
-                          'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-                          colors.bg
-                        )}
-                      >
-                        <Icon className={cn('h-4 w-4', colors.text)} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[14px] font-semibold text-foreground">{g.title}</p>
-                        <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                          {g.subtitle}
-                        </p>
-                      </div>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform duration-150 group-hover:translate-x-0.5" />
-                    </button>
-                  );
-                })}
+                  </section>
+                )}
               </div>
-            </section>
+
+              {/* Right Rail */}
+              <div className="space-y-5">
+                {/* Your Progress */}
+                <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-5">
+                  <div className="mb-3 flex items-center gap-2">
+                    {allDone ? (
+                      <Trophy className="h-4 w-4 text-primary" />
+                    ) : (
+                      <BookOpen className="h-4 w-4 text-primary" />
+                    )}
+                    <span className="text-sm font-semibold text-foreground">Your Progress</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {/* Circular progress ring */}
+                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center">
+                      <svg className="h-14 w-14 -rotate-90" viewBox="0 0 56 56">
+                        <circle
+                          cx="28"
+                          cy="28"
+                          r="24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          className="text-muted/50"
+                        />
+                        <circle
+                          cx="28"
+                          cy="28"
+                          r="24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 24}`}
+                          strokeDashoffset={`${2 * Math.PI * 24 * (1 - (mounted ? progressPct / 100 : 0))}`}
+                          className="text-primary transition-all duration-500"
+                        />
+                      </svg>
+                      <span className="absolute text-sm font-bold tabular-nums text-foreground">
+                        {mounted ? totalDone : 0}
+                      </span>
+                      <span className="absolute -bottom-1 text-[8px] text-muted-foreground">
+                        /{totalSteps}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">
+                        {allDone ? 'All complete' : 'Fundamentals'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {allDone ? 'Review or explore more' : 'Continue where you left off'}
+                      </p>
+                    </div>
+                  </div>
+                  {nextGuide && (
+                    <Button
+                      size="sm"
+                      className="mt-4 w-full gap-1 rounded-lg"
+                      onClick={() => setSelectedGuide(nextGuide)}
+                    >
+                      <ArrowRight className="h-3 w-3" />
+                      Resume
+                    </Button>
+                  )}
+                  {mounted && totalDone > 0 && (
+                    <button
+                      onClick={() => setResetConfirmOpen(true)}
+                      className="mt-3 inline-flex w-full items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Reset progress
+                    </button>
+                  )}
+                </div>
+
+                {/* Browse by Category */}
+                <div>
+                  <h2 className="mb-3 text-sm font-semibold text-foreground">Browse by Category</h2>
+                  <div className="space-y-2">
+                    {categoryBrowse.map((cat) => {
+                      const CatIcon = cat.icon;
+                      return (
+                        <button
+                          key={cat.key}
+                          onClick={() => {
+                            const firstGuide = guides.find((g) => g.category === cat.key);
+                            if (firstGuide) setSelectedGuide(firstGuide);
+                          }}
+                          className="group flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-all duration-150 hover:border-primary/30"
+                        >
+                          <span
+                            className={cn(
+                              'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                              cat.colors.bg
+                            )}
+                          >
+                            <CatIcon className={cn('h-4 w-4', cat.colors.text)} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                              {cat.label}
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                              {cat.count} article{cat.count !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

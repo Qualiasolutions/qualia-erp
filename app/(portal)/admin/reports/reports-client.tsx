@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { format, subDays, startOfWeek, startOfMonth, subMonths } from 'date-fns';
+import { cn } from '@/lib/utils';
 import {
   CalendarIcon,
   Clock,
@@ -10,15 +11,10 @@ import {
   TrendingUp,
   Download,
   AlertTriangle,
-  Zap,
-  Heart,
-  CheckCircle2,
   AlertCircle,
-  ListTodo,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Table,
@@ -161,11 +157,16 @@ export function AdminReportsClient() {
     <div className="px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Reports</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Team hours, project breakdown, and assignment tracking
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Briefcase className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
+            <p className="text-sm text-muted-foreground">
+              Team hours, project breakdown, and assignment tracking
+            </p>
+          </div>
         </div>
         <Popover>
           <PopoverTrigger asChild>
@@ -220,48 +221,22 @@ export function AdminReportsClient() {
         <>
           {/* Summary Cards */}
           <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Hours
-                </CardTitle>
-                <Clock className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold tabular-nums">{report.totalHours}h</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Sessions
-                </CardTitle>
-                <Briefcase className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold tabular-nums">{report.totalSessions}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Team Members
-                </CardTitle>
-                <Users className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold tabular-nums">{report.activeMembers}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Avg/Day</CardTitle>
-                <TrendingUp className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold tabular-nums">{report.avgHoursPerDay}h</div>
-              </CardContent>
-            </Card>
+            {[
+              { label: 'Total Hours', value: `${report.totalHours}h`, icon: Clock },
+              { label: 'Sessions', value: String(report.totalSessions), icon: Briefcase },
+              { label: 'Team Members', value: String(report.activeMembers), icon: Users },
+              { label: 'Avg/Day', value: `${report.avgHoursPerDay}h`, icon: TrendingUp },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
+              >
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {stat.label}
+                </div>
+                <div className="text-3xl font-bold tabular-nums">{stat.value}</div>
+              </div>
+            ))}
           </div>
 
           {/* Tabs */}
@@ -298,19 +273,30 @@ export function AdminReportsClient() {
               {report.byEmployee.length === 0 ? (
                 <EmptyState message="No employee data for this period." />
               ) : (
-                <div className="rounded-xl border border-border bg-card">
+                <div className="overflow-hidden rounded-2xl border border-border bg-card">
                   <Table>
                     <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="w-[200px]">Employee</TableHead>
-                        <TableHead className="w-[100px]">Hours</TableHead>
-                        <TableHead className="w-[90px]">Sessions</TableHead>
-                        <TableHead>Projects</TableHead>
+                      <TableRow className="border-b border-border hover:bg-transparent">
+                        <TableHead className="w-[200px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Employee
+                        </TableHead>
+                        <TableHead className="w-[100px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Hours
+                        </TableHead>
+                        <TableHead className="w-[90px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Sessions
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Projects
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {report.byEmployee.map((emp) => (
-                        <TableRow key={emp.profileId}>
+                        <TableRow
+                          key={emp.profileId}
+                          className="border-b border-border transition-colors last:border-b-0 hover:bg-muted/30"
+                        >
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
@@ -361,19 +347,30 @@ export function AdminReportsClient() {
               {report.byProject.length === 0 ? (
                 <EmptyState message="No project data for this period." />
               ) : (
-                <div className="rounded-xl border border-border bg-card">
+                <div className="overflow-hidden rounded-2xl border border-border bg-card">
                   <Table>
                     <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="w-[240px]">Project</TableHead>
-                        <TableHead className="w-[100px]">Hours</TableHead>
-                        <TableHead className="w-[90px]">Sessions</TableHead>
-                        <TableHead>Contributors</TableHead>
+                      <TableRow className="border-b border-border hover:bg-transparent">
+                        <TableHead className="w-[240px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Project
+                        </TableHead>
+                        <TableHead className="w-[100px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Hours
+                        </TableHead>
+                        <TableHead className="w-[90px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Sessions
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Contributors
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {report.byProject.map((proj) => (
-                        <TableRow key={proj.projectId ?? proj.projectName}>
+                        <TableRow
+                          key={proj.projectId ?? proj.projectName}
+                          className="border-b border-border transition-colors last:border-b-0 hover:bg-muted/30"
+                        >
                           <TableCell>
                             <div className="flex items-center gap-1.5 text-sm font-medium">
                               <Briefcase className="size-3.5 shrink-0 text-muted-foreground" />
@@ -415,7 +412,7 @@ export function AdminReportsClient() {
                   {avd.map((entry) => (
                     <div
                       key={entry.profileId}
-                      className="rounded-xl border border-border bg-card p-4"
+                      className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
                     >
                       <div className="mb-3 flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
@@ -507,61 +504,55 @@ export function AdminReportsClient() {
                 <div className="space-y-6">
                   {/* Summary cards */}
                   <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                          Total Check-ins
-                        </CardTitle>
-                        <CheckCircle2 className="size-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold tabular-nums">
-                          {checkinData.totalCheckins}
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                          Avg Energy
-                        </CardTitle>
-                        <Zap className="size-4 text-amber-500" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold tabular-nums">
-                          {checkinData.avgEnergyOverall != null
+                    {[
+                      { label: 'Total Check-ins', value: String(checkinData.totalCheckins) },
+                      {
+                        label: 'Avg Energy',
+                        value:
+                          checkinData.avgEnergyOverall != null
                             ? `${checkinData.avgEnergyOverall}/5`
-                            : '—'}
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                          Avg Mood
-                        </CardTitle>
-                        <Heart className="size-4 text-rose-500" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold tabular-nums">
-                          {checkinData.avgMoodOverall != null
+                            : '—',
+                      },
+                      {
+                        label: 'Avg Mood',
+                        value:
+                          checkinData.avgMoodOverall != null
                             ? `${checkinData.avgMoodOverall}/5`
-                            : '—'}
+                            : '—',
+                      },
+                    ].map((stat) => (
+                      <div
+                        key={stat.label}
+                        className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
+                      >
+                        <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          {stat.label}
                         </div>
-                      </CardContent>
-                    </Card>
+                        <div className="text-3xl font-bold tabular-nums">{stat.value}</div>
+                      </div>
+                    ))}
                   </div>
 
                   {/* Per-employee table */}
-                  <div className="rounded-xl border border-border bg-card">
+                  <div className="overflow-hidden rounded-2xl border border-border bg-card">
                     <Table>
                       <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="w-[200px]">Employee</TableHead>
-                          <TableHead className="w-[90px]">Days</TableHead>
-                          <TableHead className="w-[100px]">Avg Energy</TableHead>
-                          <TableHead className="w-[100px]">Avg Mood</TableHead>
-                          <TableHead className="w-[90px]">Blockers</TableHead>
+                        <TableRow className="border-b border-border hover:bg-transparent">
+                          <TableHead className="w-[200px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Employee
+                          </TableHead>
+                          <TableHead className="w-[90px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Days
+                          </TableHead>
+                          <TableHead className="w-[100px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Avg Energy
+                          </TableHead>
+                          <TableHead className="w-[100px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Avg Mood
+                          </TableHead>
+                          <TableHead className="w-[90px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Blockers
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -655,71 +646,61 @@ export function AdminReportsClient() {
                 <div className="space-y-6">
                   {/* Summary cards */}
                   <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                          Created
-                        </CardTitle>
-                        <ListTodo className="size-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold tabular-nums">{taskData.created}</div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                          Completed
-                        </CardTitle>
-                        <CheckCircle2 className="size-4 text-green-600" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold tabular-nums">{taskData.completed}</div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                          Overdue
-                        </CardTitle>
-                        <AlertTriangle className="size-4 text-destructive" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold tabular-nums text-destructive">
-                          {taskData.overdue}
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                          Avg Completion
-                        </CardTitle>
-                        <TrendingUp className="size-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold tabular-nums">
-                          {taskData.avgCompletionDays != null
+                    {[
+                      { label: 'Created', value: String(taskData.created), destructive: false },
+                      { label: 'Completed', value: String(taskData.completed), destructive: false },
+                      { label: 'Overdue', value: String(taskData.overdue), destructive: true },
+                      {
+                        label: 'Avg Completion',
+                        value:
+                          taskData.avgCompletionDays != null
                             ? `${taskData.avgCompletionDays}d`
-                            : '—'}
+                            : '—',
+                        destructive: false,
+                      },
+                    ].map((stat) => (
+                      <div
+                        key={stat.label}
+                        className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
+                      >
+                        <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          {stat.label}
                         </div>
-                      </CardContent>
-                    </Card>
+                        <div
+                          className={cn(
+                            'text-3xl font-bold tabular-nums',
+                            stat.destructive && 'text-destructive'
+                          )}
+                        >
+                          {stat.value}
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
                   {/* Per-employee breakdown */}
                   {taskData.byEmployee.length === 0 ? (
                     <EmptyState message="No assigned tasks for this period." />
                   ) : (
-                    <div className="rounded-xl border border-border bg-card">
+                    <div className="overflow-hidden rounded-2xl border border-border bg-card">
                       <Table>
                         <TableHeader>
-                          <TableRow className="hover:bg-transparent">
-                            <TableHead className="w-[200px]">Employee</TableHead>
-                            <TableHead className="w-[100px]">Created</TableHead>
-                            <TableHead className="w-[100px]">Completed</TableHead>
-                            <TableHead className="w-[100px]">Overdue</TableHead>
-                            <TableHead className="w-[120px]">Completion %</TableHead>
+                          <TableRow className="border-b border-border hover:bg-transparent">
+                            <TableHead className="w-[200px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              Employee
+                            </TableHead>
+                            <TableHead className="w-[100px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              Created
+                            </TableHead>
+                            <TableHead className="w-[100px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              Completed
+                            </TableHead>
+                            <TableHead className="w-[100px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              Overdue
+                            </TableHead>
+                            <TableHead className="w-[120px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              Completion %
+                            </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>

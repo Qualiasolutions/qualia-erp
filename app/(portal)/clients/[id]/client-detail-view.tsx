@@ -186,10 +186,10 @@ export function ClientDetailView({
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 lg:p-8">
       <div className="space-y-8">
         {/* Header */}
-        <div className="space-y-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-5">
             <LogoUpload
               entityType="client"
@@ -204,31 +204,33 @@ export function ClientDetailView({
                 setClient((prev) => ({ ...prev, logo_url: newUrl }));
               }}
             />
-            <div className="flex-1">
-              <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                 {client.display_name}
               </h1>
-              <Badge
-                className={cn(status.bg, status.color, 'px-3 py-1 text-xs font-medium')}
-                variant="secondary"
-              >
-                {status.label}
-              </Badge>
+              <div className="mt-1.5 flex items-center gap-2">
+                <Badge
+                  className={cn(status.bg, status.color, 'px-3 py-1 text-xs font-medium')}
+                  variant="secondary"
+                >
+                  {status.label}
+                </Badge>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditModalOpen(true)}
-              className="gap-2"
-            >
-              <Pencil className="h-4 w-4" />
-              Edit
-            </Button>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setEditModalOpen(true)}
+            className="gap-2 rounded-xl"
+          >
+            <Pencil className="h-4 w-4" />
+            Edit
+          </Button>
         </div>
 
         {/* Client Details — structured finance-style layout */}
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <div className="grid divide-y divide-border lg:grid-cols-2 lg:divide-x lg:divide-y-0">
             {/* Contact Information */}
             <div>
@@ -355,7 +357,7 @@ export function ClientDetailView({
 
         {/* Notes */}
         {client.notes && (
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="border-b border-border bg-secondary/40 px-5 py-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Notes
@@ -370,7 +372,7 @@ export function ClientDetailView({
         )}
 
         {/* ERP Linked Projects */}
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border bg-secondary/40 px-5 py-3">
             <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <Folder className="h-3.5 w-3.5" />
@@ -474,7 +476,7 @@ export function ClientDetailView({
 
         {/* Work Showcase */}
         {workItems.length > 0 && (
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="p-5">
               <WorkShowcase clientName={client.display_name || 'Client'} workItems={workItems} />
             </div>

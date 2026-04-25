@@ -89,8 +89,8 @@ export default function IntegrationsPage() {
           </Suspense>
 
           {/* Help Section */}
-          <div className="rounded-xl border border-border bg-muted/30 p-5">
-            <h3 className="text-sm font-medium text-foreground">How it works</h3>
+          <div className="rounded-2xl border border-border bg-muted/30 p-6">
+            <h3 className="text-sm font-semibold text-foreground">How it works</h3>
             <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
               <li>
                 <strong>GitHub:</strong> Creates a new repository from your template when a project

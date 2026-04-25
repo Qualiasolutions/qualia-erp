@@ -97,7 +97,7 @@ export function NewConversationDialog({
         if (!next) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="rounded-2xl sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Start a conversation</DialogTitle>
           <DialogDescription>Pick a project to open its message channel.</DialogDescription>
@@ -113,7 +113,7 @@ export function NewConversationDialog({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search projects..."
-            className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-9 w-full rounded-xl border-transparent bg-muted/30 pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
             aria-label="Search projects"
             autoFocus
           />
@@ -154,8 +154,8 @@ export function NewConversationDialog({
                       onClick={() => handleStart(project.id)}
                       disabled={!!isStartingId}
                       className={cn(
-                        'flex w-full items-center gap-3 rounded-lg border border-border/50 px-3 py-2.5 text-left transition-colors duration-150',
-                        'hover:border-primary/30 hover:bg-primary/[0.04]',
+                        'flex w-full items-center gap-3 rounded-xl border border-border/50 px-3 py-2.5 text-left transition-colors duration-150',
+                        'hover:border-primary/30 hover:bg-muted/30',
                         'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                         'disabled:cursor-not-allowed disabled:opacity-50'
                       )}

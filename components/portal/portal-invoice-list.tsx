@@ -74,7 +74,7 @@ const InvoiceRow = React.memo(function InvoiceRow({
       role="listitem"
       aria-label={`Invoice ${invoice.invoice_number}, ${formatCurrency(invoice.amount, invoice.currency)}, ${invoice.status}`}
       className={cn(
-        'border-b border-border/50 px-5 py-4 transition-colors last:border-b-0 hover:bg-muted/20',
+        'border-b border-border px-5 py-4 transition-colors last:border-b-0 hover:bg-muted/30',
         'animate-fade-in fill-mode-both'
       )}
       style={index < 10 ? { animationDelay: `${index * 30}ms` } : undefined}
@@ -220,28 +220,28 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
 
   return (
     <div
-      className="animate-fade-in overflow-hidden rounded-xl border border-border"
+      className="animate-fade-in overflow-hidden rounded-2xl border border-border bg-card"
       role="list"
       aria-label="Invoices"
     >
       {/* Table header */}
       <div
         role="presentation"
-        className="hidden gap-4 bg-muted/30 px-5 py-3 sm:grid sm:grid-cols-[1fr_120px_120px_100px_80px]"
+        className="hidden gap-4 border-b border-border px-5 py-3.5 sm:grid sm:grid-cols-[1fr_120px_120px_100px_80px]"
       >
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Invoice
         </span>
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Date
         </span>
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Due
         </span>
-        <span className="text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Amount
         </span>
-        <span className="text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Status
         </span>
       </div>

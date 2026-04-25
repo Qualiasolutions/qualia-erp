@@ -62,13 +62,13 @@ export function TaskDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl gap-0 p-0">
+      <DialogContent className="max-w-xl gap-0 rounded-2xl border border-border bg-card p-0">
         {/* Header — title + status chip */}
-        <DialogHeader className="space-y-3 border-b border-border p-6 pb-5">
-          <div className="flex items-start gap-3">
+        <DialogHeader className="space-y-3 border-b border-border px-6 pb-5 pt-6">
+          <div className="flex items-start gap-2">
             <span
               className={cn(
-                'mt-1 inline-flex shrink-0 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
+                'mt-0.5 inline-flex shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider',
                 statusStyle
               )}
             >
@@ -77,7 +77,7 @@ export function TaskDetailDialog({
             {task.priority !== 'No Priority' && (
               <span
                 className={cn(
-                  'mt-1 inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
+                  'mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider',
                   priorityColors.bg,
                   priorityColors.text
                 )}
@@ -102,28 +102,29 @@ export function TaskDetailDialog({
         </DialogHeader>
 
         {/* Metadata grid */}
-        <div className="grid grid-cols-1 gap-3 border-b border-border p-6 sm:grid-cols-2">
-          <DetailField icon={FolderOpen} label="Project" value={task.project?.name ?? '—'} />
+        <div className="grid grid-cols-1 gap-4 border-b border-border px-6 py-5 sm:grid-cols-2">
+          <DetailField icon={FolderOpen} label="Project" value={task.project?.name ?? '---'} />
           <DetailField
             icon={User}
             label="Assignee"
-            value={task.assignee?.full_name ?? task.assignee?.email ?? '—'}
+            value={task.assignee?.full_name ?? task.assignee?.email ?? '---'}
           />
-          <DetailField icon={Calendar} label="Due" value={dueStr ?? '—'} />
+          <DetailField icon={Calendar} label="Due" value={dueStr ?? '---'} />
           <DetailField
             icon={Clock}
             label={isDone ? 'Completed' : 'Created'}
-            value={isDone ? (completedStr ?? '—') : (createdStr ?? '—')}
+            value={isDone ? (completedStr ?? '---') : (createdStr ?? '---')}
           />
         </div>
 
         {/* Footer — single toggle action */}
-        <div className="flex items-center justify-end gap-2 p-4">
+        <div className="flex items-center justify-end gap-2 px-6 py-4">
           <Button
             variant="outline"
             size="sm"
             onClick={() => onOpenChange(false)}
             disabled={isPending}
+            className="rounded-xl"
           >
             Close
           </Button>
@@ -133,7 +134,7 @@ export function TaskDetailDialog({
               variant="outline"
               onClick={() => onToggleDone(task.id, false)}
               disabled={isPending}
-              className="gap-1.5"
+              className="gap-1.5 rounded-xl"
             >
               <Circle className="h-4 w-4" />
               Mark as to do
@@ -143,7 +144,7 @@ export function TaskDetailDialog({
               size="sm"
               onClick={() => onToggleDone(task.id, true)}
               disabled={isPending}
-              className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:text-emerald-50 dark:hover:bg-emerald-400"
+              className="hover:glow-primary-sm gap-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:text-emerald-50 dark:hover:bg-emerald-400"
             >
               <CheckCircle2 className="h-4 w-4" />
               Mark as done
@@ -165,10 +166,12 @@ function DetailField({
   value: string;
 }) {
   return (
-    <div className="flex items-start gap-2.5">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/70" aria-hidden />
+    <div className="flex items-start gap-3">
+      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted/50">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+      </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {label}
         </div>
         <div className="mt-0.5 truncate text-sm font-medium text-foreground">{value}</div>

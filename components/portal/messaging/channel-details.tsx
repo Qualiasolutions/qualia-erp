@@ -59,8 +59,8 @@ export function ChannelDetails({ project, isVisible }: ChannelDetailsProps) {
 
   return (
     <aside className="hidden w-[280px] shrink-0 border-l border-border bg-card lg:block">
-      <div className="border-b border-border px-4 py-3">
-        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="border-b border-border px-4 py-4">
+        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Details
         </h3>
       </div>
@@ -69,7 +69,7 @@ export function ChannelDetails({ project, isVisible }: ChannelDetailsProps) {
         <div className="space-y-4">
           {/* Project icon + name */}
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/[0.08]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
               <TypeIcon className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0">
@@ -83,7 +83,7 @@ export function ChannelDetails({ project, isVisible }: ChannelDetailsProps) {
           {/* Status badge */}
           {project.status && (
             <div>
-              <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Status
               </p>
               <Badge
@@ -98,7 +98,7 @@ export function ChannelDetails({ project, isVisible }: ChannelDetailsProps) {
           {/* Description */}
           {project.description && (
             <div>
-              <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Description
               </p>
               <p className="text-sm leading-relaxed text-muted-foreground">{project.description}</p>
@@ -108,7 +108,7 @@ export function ChannelDetails({ project, isVisible }: ChannelDetailsProps) {
           {/* Link to project */}
           <Link
             href={`/projects/${project.id}`}
-            className="group flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm font-medium text-foreground transition-all duration-150 hover:border-primary/20 hover:bg-primary/[0.04]"
+            className="group flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3 py-2.5 text-sm font-medium text-foreground transition-all duration-150 hover:border-primary/20 hover:bg-muted/30"
           >
             <FolderKanban className="h-4 w-4 text-muted-foreground" />
             View project

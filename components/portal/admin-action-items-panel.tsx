@@ -78,12 +78,15 @@ export function AdminActionItemsPanel({ clientId, projects }: AdminActionItemsPa
   const canSubmit = title.trim().length >= 2 && projectId && actionType && !isSubmitting;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card">
-      <div className="border-b border-border bg-secondary/40 px-5 py-3">
-        <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          <ClipboardList className="h-3.5 w-3.5" />
-          Create Action Item
-        </h3>
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="flex items-center gap-3 border-b border-border px-6 py-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+          <ClipboardList className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold tracking-tight">Create Action Item</h3>
+          <p className="text-xs text-muted-foreground">Assign tasks to clients</p>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 p-5">

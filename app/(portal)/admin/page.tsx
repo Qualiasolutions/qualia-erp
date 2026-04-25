@@ -28,10 +28,15 @@ export const metadata: Metadata = {
 function ControlSkeleton() {
   return (
     <div className="flex flex-col">
-      <div className="border-b border-border bg-muted/30 px-6 pt-8 lg:px-8">
+      <div className="border-b border-border px-6 pt-8 lg:px-8">
         <div>
-          <div className="h-3 w-28 animate-pulse rounded bg-muted" />
-          <div className="mt-2 h-9 w-44 animate-pulse rounded bg-muted" />
+          <div className="mb-2 flex items-center gap-4">
+            <div className="h-10 w-10 animate-pulse rounded-xl bg-muted" />
+            <div>
+              <div className="h-7 w-32 animate-pulse rounded bg-muted" />
+              <div className="mt-1.5 h-4 w-48 animate-pulse rounded bg-muted" />
+            </div>
+          </div>
           <div className="mt-6 flex gap-6">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="h-4 w-16 animate-pulse rounded bg-muted" />
@@ -43,7 +48,7 @@ function ControlSkeleton() {
       <div className="w-full p-6 lg:p-8">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-muted" />
           ))}
         </div>
       </div>

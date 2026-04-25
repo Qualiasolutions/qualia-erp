@@ -234,7 +234,14 @@ function NavItem({
 }) {
   const inner = (
     <>
-      <QIcon name={page.icon} size={15} />
+      <span
+        className={cn(
+          'inline-flex transition-transform duration-200',
+          !isActive && 'group-hover:scale-110'
+        )}
+      >
+        <QIcon name={page.icon} size={15} />
+      </span>
       <span className="flex-1 truncate text-left">{page.label}</span>
       {badge && badge > 0 ? (
         <span
@@ -253,11 +260,11 @@ function NavItem({
   );
 
   const classes = cn(
-    'group relative flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition-all duration-200',
+    'group relative flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all duration-200',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0',
     isActive
-      ? // Active: solid teal pill with glow in dark mode
-        'bg-primary font-semibold text-primary-foreground shadow-[0_1px_0_0_hsl(0_0%_100%/0.08)_inset,var(--glow-teal-sm)]'
+      ? // Active: solid teal pill with shadow + glow
+        'bg-primary font-semibold text-primary-foreground shadow-md glow-primary-sm'
       : 'font-medium text-muted-foreground hover:bg-muted/55 hover:text-foreground',
     disabled ? 'cursor-default opacity-40' : 'cursor-pointer'
   );
@@ -521,7 +528,7 @@ function BrandRow({
       <Link
         href="/"
         onClick={onLinkClick}
-        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-primary/10 ring-1 ring-primary/15 transition-shadow duration-150 hover:dark:shadow-[var(--glow-teal-sm)]"
+        className="glow-primary-sm flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-primary text-primary-foreground shadow-md transition-shadow duration-150"
         aria-label="Qualia home"
       >
         <Image
@@ -650,7 +657,7 @@ function SidebarBody({
       >
         {sectionedPages.map((section) => (
           <div key={section.id}>
-            <div className="mb-2 px-3 font-mono text-[9.5px] font-semibold uppercase text-muted-foreground/70">
+            <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
               {section.label}
             </div>
             <div className="space-y-0.5">

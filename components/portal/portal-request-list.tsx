@@ -237,7 +237,7 @@ const RequestRow = memo(function RequestRow({
   return (
     <div
       className={cn(
-        'rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/20',
+        'rounded-2xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/20',
         'animate-fade-in fill-mode-both'
       )}
       style={index < 10 ? { animationDelay: `${index * 30}ms` } : undefined}

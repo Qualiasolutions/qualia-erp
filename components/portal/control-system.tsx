@@ -62,11 +62,16 @@ export function ControlSystem({
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight">System</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Integrations, audit log, framework reports.
-        </p>
+      <div className="flex items-center gap-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+          <Server className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">System</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Integrations, audit log, framework reports.
+          </p>
+        </div>
       </div>
 
       <IntegrationsHealthGrid integrations={data.integrations} />
@@ -94,7 +99,7 @@ function IntegrationsHealthGrid({ integrations }: { integrations: IntegrationHea
         return (
           <div
             key={int.service}
-            className="flex items-start gap-3 rounded-xl border border-border bg-card p-5"
+            className="flex items-start gap-3 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
           >
             <span
               className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"
@@ -135,10 +140,10 @@ function IntegrationsHealthGrid({ integrations }: { integrations: IntegrationHea
 
 const AuditLogTable = memo(function AuditLogTable({ entries }: { entries: AuditLogEntry[] }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card">
-      <header className="flex items-baseline justify-between border-b border-border px-4 py-3">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+      <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <h3 className="text-sm font-semibold tracking-tight">Audit log</h3>
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Last {entries.length}
         </span>
       </header>
@@ -151,9 +156,12 @@ const AuditLogTable = memo(function AuditLogTable({ entries }: { entries: AuditL
           minimal
         />
       ) : (
-        <ul className="divide-y divide-dashed divide-border">
+        <ul>
           {entries.map((e) => (
-            <li key={e.id} className="flex items-center gap-3 px-4 py-2">
+            <li
+              key={e.id}
+              className="flex items-center gap-3 border-b border-border px-6 py-3 transition-colors last:border-b-0 hover:bg-muted/30"
+            >
               <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-wider text-muted-foreground">
                 {e.action_type.replace(/_/g, ' ')}
               </span>
@@ -188,14 +196,14 @@ const FrameworkReportsMini = memo(function FrameworkReportsMini({
   reports: FrameworkReportLite[];
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card">
-      <header className="flex items-baseline justify-between border-b border-border px-4 py-3">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+      <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <h3 className="text-sm font-semibold tracking-tight">Framework reports</h3>
         <Link
           href="/admin/reports?tab=framework"
-          className="font-mono text-[10px] uppercase tracking-[0.08em] text-primary underline-offset-4 hover:underline"
+          className="text-xs font-medium text-primary underline-offset-4 hover:underline"
         >
-          View all →
+          View all
         </Link>
       </header>
       {reports.length === 0 ? (
@@ -207,9 +215,12 @@ const FrameworkReportsMini = memo(function FrameworkReportsMini({
           minimal
         />
       ) : (
-        <ul className="divide-y divide-dashed divide-border">
+        <ul>
           {reports.map((r) => (
-            <li key={r.id} className="flex items-center gap-3 px-4 py-2 text-xs">
+            <li
+              key={r.id}
+              className="flex items-center gap-3 border-b border-border px-6 py-3 text-xs transition-colors last:border-b-0 hover:bg-muted/30"
+            >
               <span className="w-16 shrink-0 font-mono text-[10px] text-muted-foreground">
                 {r.client_report_id ?? '—'}
               </span>
@@ -238,19 +249,24 @@ const FrameworkReportsMini = memo(function FrameworkReportsMini({
 
 function SettingsShortcut() {
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
+    <section className="rounded-2xl border border-border bg-card p-6">
       <div className="flex items-center justify-between gap-4">
-        <div>
-          <h3 className="text-sm font-semibold tracking-tight">Workspace settings</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Portal policies, notification defaults, custom domain.
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+            <Settings className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold tracking-tight">Workspace settings</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Portal policies, notification defaults, custom domain.
+            </p>
+          </div>
         </div>
         <Link
           href="/settings/integrations"
-          className="cursor-pointer rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors duration-150 hover:border-primary/40 hover:text-primary"
+          className="cursor-pointer rounded-xl border border-border bg-background px-4 py-2 text-xs font-medium transition-colors duration-150 hover:border-primary/30 hover:text-primary"
         >
-          Open settings →
+          Open settings
         </Link>
       </div>
     </section>

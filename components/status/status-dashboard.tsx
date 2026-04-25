@@ -131,8 +131,8 @@ function MonitorCard({
   return (
     <div
       className={cn(
-        'group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card p-5 transition-all duration-200 ease-premium',
-        'hover:border-primary/20 hover:shadow-md',
+        'group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card p-5 transition-all duration-200 ease-premium',
+        'hover:border-primary/30 hover:shadow-md',
         monitor.status === 8 && 'border-amber-500/30',
         monitor.status === 9 && 'border-red-500/40',
         (monitor.status === 0 || monitor.status === 1) && 'opacity-50'
@@ -363,11 +363,11 @@ function MonitorSection({
         <div className="flex items-center gap-3">
           <div
             className={cn(
-              'flex size-8 items-center justify-center rounded-xl bg-muted/30',
+              'flex h-10 w-10 items-center justify-center rounded-xl bg-muted/30',
               config.accent
             )}
           >
-            <Icon className="size-4" />
+            <Icon className="h-5 w-5" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">{config.title}</h3>
@@ -468,33 +468,35 @@ export function StatusDashboard({
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-10 p-6 lg:p-8">
           {/* Header — desktop only */}
-          <div className="hidden items-end justify-between md:flex">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
-                  <Activity className="size-5 text-primary" />
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">System Status</h1>
+          <div className="hidden items-center justify-between md:flex">
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                <Activity className="h-5 w-5 text-primary" />
               </div>
-              <p className="ml-[52px] text-sm text-muted-foreground">
-                Real-time monitoring across {monitors.length} services
-              </p>
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                  System Status
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Real-time monitoring across {monitors.length} services
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/40">
-              <span className="relative flex size-1.5">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-30" />
-                <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
               </span>
-              Live
+              <span className="text-sm font-medium text-emerald-500">Live</span>
             </div>
           </div>
 
           {/* Stats bar */}
           <div
             className={cn(
-              'relative overflow-hidden rounded-xl border bg-card p-6',
+              'relative overflow-hidden rounded-2xl border bg-card p-6',
               overall.allUp
-                ? 'border-emerald-500/15'
+                ? 'border-emerald-500/20'
                 : overall.downCount > 0
                   ? 'border-red-500/20'
                   : 'border-amber-500/20'
@@ -557,12 +559,10 @@ export function StatusDashboard({
                 { label: 'Avg Response', value: avgResponse > 0 ? `${avgResponse}ms` : '--' },
               ].map((stat) => (
                 <div key={stat.label} className="flex flex-col justify-center px-6 py-5">
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">
+                  <span className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {stat.label}
                   </span>
-                  <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
-                    {stat.value}
-                  </p>
+                  <p className="text-2xl font-bold tabular-nums text-foreground">{stat.value}</p>
                 </div>
               ))}
             </div>

@@ -170,12 +170,12 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="default" className="h-10 cursor-pointer gap-1.5 rounded-lg">
+        <Button size="default" className="h-11 cursor-pointer gap-2 rounded-xl px-5">
           <Plus className="h-4 w-4" />
           New Request
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="rounded-2xl sm:max-w-lg">
         {submitted ? (
           <div className="flex flex-col items-center py-8 text-center">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10">

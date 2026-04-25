@@ -7,6 +7,7 @@ import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { PortalInvoiceList } from '@/components/portal/portal-invoice-list';
 import { PortalInvoiceFormDialog } from '@/components/portal/portal-invoice-form-dialog';
 import { PortalBillingSummary } from '@/components/portal/portal-billing-summary';
+import { CreditCard } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Billing' };
 
@@ -64,15 +65,23 @@ export default async function PortalBillingPage() {
   }>;
 
   return (
-    <div className="animate-fade-in-up space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Billing</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            View and track your invoices and payment history
-          </p>
+    <div className="space-y-6 p-6 lg:p-8">
+      {/* Page header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <CreditCard className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Billing</h1>
+            <p className="text-sm text-muted-foreground">
+              View and track your invoices and payment history
+            </p>
+          </div>
         </div>
-        {isAdmin && <PortalInvoiceFormDialog clients={clientList} />}
+        <div className="flex items-center gap-3">
+          {isAdmin && <PortalInvoiceFormDialog clients={clientList} />}
+        </div>
       </div>
 
       {invoiceLoadError && (

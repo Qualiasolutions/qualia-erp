@@ -75,17 +75,20 @@ const ControlOverview = memo(function ControlOverview({
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {data.kpis.map((k) => (
-          <div key={k.label} className="rounded-xl border border-border bg-card p-5">
-            <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <div
+            key={k.label}
+            className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
+          >
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               {k.label}
             </div>
-            <div className="mt-2 text-[26px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
+            <div className="text-3xl font-bold tabular-nums leading-none tracking-tight text-foreground">
               {k.value}
             </div>
             {k.delta ? (
               <div
                 className={cn(
-                  'mt-1.5 font-mono text-[11px] tabular-nums',
+                  'mt-1.5 text-[11px] font-medium tabular-nums',
                   k.positive
                     ? 'text-emerald-600 dark:text-emerald-400'
                     : 'text-red-600 dark:text-red-400'
@@ -102,46 +105,48 @@ const ControlOverview = memo(function ControlOverview({
 
       {/* This week + Activity */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-xl border border-border bg-card p-5">
-          <header className="mb-3 flex items-baseline justify-between">
+        <section className="overflow-hidden rounded-2xl border border-border bg-card">
+          <header className="flex items-center justify-between border-b border-border px-6 py-4">
             <h3 className="text-sm font-semibold tracking-tight">This week</h3>
-            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Last 7 days
             </span>
           </header>
-          <dl className="flex flex-col gap-2">
-            {data.week.map((w) => (
-              <div
-                key={w.label}
-                className="flex items-center justify-between border-b border-dashed border-border pb-2 last:border-b-0 last:pb-0"
-              >
-                <dt className="text-xs text-muted-foreground">{w.label}</dt>
-                <dd
-                  className={cn(
-                    'font-mono text-sm font-semibold tabular-nums',
-                    w.kind === 'ok' && 'text-emerald-600 dark:text-emerald-400',
-                    w.kind === 'accent' && 'text-primary',
-                    w.kind === 'warn' && 'text-amber-600 dark:text-amber-400',
-                    w.kind === 'neutral' && 'text-foreground'
-                  )}
+          <div className="px-6 py-5">
+            <dl className="flex flex-col gap-2">
+              {data.week.map((w) => (
+                <div
+                  key={w.label}
+                  className="flex items-center justify-between border-b border-dashed border-border pb-2 last:border-b-0 last:pb-0"
                 >
-                  {w.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
+                  <dt className="text-xs text-muted-foreground">{w.label}</dt>
+                  <dd
+                    className={cn(
+                      'font-mono text-sm font-semibold tabular-nums',
+                      w.kind === 'ok' && 'text-emerald-600 dark:text-emerald-400',
+                      w.kind === 'accent' && 'text-primary',
+                      w.kind === 'warn' && 'text-amber-600 dark:text-amber-400',
+                      w.kind === 'neutral' && 'text-foreground'
+                    )}
+                  >
+                    {w.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
         </section>
 
-        <section className="rounded-xl border border-border bg-card p-5">
-          <header className="mb-3 flex items-baseline justify-between">
+        <section className="overflow-hidden rounded-2xl border border-border bg-card">
+          <header className="flex items-center justify-between border-b border-border px-6 py-4">
             <h3 className="text-sm font-semibold tracking-tight">Recent activity</h3>
-            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
               Live
             </span>
           </header>
           {data.activity.length === 0 ? (
-            <p className="py-4 text-center text-xs italic text-muted-foreground">
+            <p className="px-6 py-8 text-center text-xs italic text-muted-foreground">
               No activity in the last 24h.
             </p>
           ) : (
@@ -149,7 +154,7 @@ const ControlOverview = memo(function ControlOverview({
               {data.activity.map((a) => (
                 <li
                   key={a.id}
-                  className="flex items-center gap-3 border-b border-dashed border-border py-2 last:border-b-0"
+                  className="flex items-center gap-3 border-b border-border px-6 py-3 transition-colors last:border-b-0 hover:bg-muted/30"
                 >
                   <span
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground"
@@ -258,17 +263,17 @@ export function QualiaControl({ initialTab, data }: QualiaControlProps) {
 
   return (
     <div className="flex flex-col">
-      <header className="border-b border-border bg-muted/30 px-6 pt-8 lg:px-8">
+      <header className="border-b border-border px-6 pt-8 lg:px-8">
         <div>
-          <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            Admin console
-          </div>
-          <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight">
-                Control
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">{activeTab.desc}</p>
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                <Activity className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight">Control</h1>
+                <p className="text-sm text-muted-foreground">{activeTab.desc}</p>
+              </div>
             </div>
           </div>
           <nav
