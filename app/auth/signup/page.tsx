@@ -78,10 +78,6 @@ export default async function Page({ searchParams }: PageProps) {
             animation: 'gradientShift 15s ease infinite',
           }}
         />
-        {/* Subtle radial glows */}
-        <div className="pointer-events-none absolute -left-32 -top-32 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[140px]" />
-        <div className="bg-primary/8 pointer-events-none absolute -right-20 bottom-0 h-[400px] w-[400px] rounded-full blur-[120px]" />
-
         {/* Top — Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-3">
@@ -92,13 +88,13 @@ export default async function Page({ searchParams }: PageProps) {
               height={40}
               className="rounded-lg"
             />
-            <span className="text-lg font-semibold tracking-tight text-white">Qualia Suite</span>
+            <span className="text-lg font-semibold text-white">Qualia Suite</span>
           </div>
         </div>
 
         {/* Center — Headline + Feature bullets */}
         <div className="relative z-10 max-w-md">
-          <h1 className="text-[3.25rem] font-bold leading-[1.06] tracking-[-0.04em] text-white">
+          <h1 className="text-[3.25rem] font-bold leading-[1.06] text-white">
             Welcome to <span className="text-primary">Qualia Suite.</span>
           </h1>
           <p className="mt-5 text-base leading-relaxed text-qualia-200/60">
@@ -131,9 +127,7 @@ export default async function Page({ searchParams }: PageProps) {
 
         {/* Bottom — Client logos grid */}
         <div className="relative z-10 space-y-5">
-          <p className="text-xs font-medium uppercase tracking-widest text-qualia-300/40">
-            Trusted by
-          </p>
+          <p className="text-xs font-medium uppercase text-qualia-300/40">Trusted by</p>
           <div className="flex items-center gap-6 opacity-40 grayscale">
             <Image
               src="/logos/alkemy.png"
@@ -169,9 +163,6 @@ export default async function Page({ searchParams }: PageProps) {
 
       {/* Right Panel — Form */}
       <div className="relative flex flex-1 items-center justify-center bg-background px-6 py-12 sm:px-12">
-        {/* Subtle top-right glow on dark */}
-        <div className="pointer-events-none absolute right-0 top-0 h-[300px] w-[300px] rounded-full bg-primary/[0.03] blur-[80px] dark:bg-primary/[0.06]" />
-
         <div className="relative z-10 w-full max-w-[420px]">
           {/* Mobile logo */}
           <div className="mb-10 flex items-center gap-3 lg:hidden">
@@ -182,16 +173,12 @@ export default async function Page({ searchParams }: PageProps) {
               height={36}
               className="rounded-lg"
             />
-            <span className="text-lg font-semibold tracking-tight text-foreground">
-              Qualia Suite
-            </span>
+            <span className="text-lg font-semibold text-foreground">Qualia Suite</span>
           </div>
 
           {/* Header */}
           <div className="mb-10">
-            <h2 className="text-[2rem] font-bold tracking-[-0.03em] text-foreground">
-              Create your account
-            </h2>
+            <h2 className="text-[2rem] font-bold text-foreground">Create your account</h2>
             <p className="mt-2 text-sm text-muted-foreground">Join your team on Qualia Suite</p>
           </div>
 

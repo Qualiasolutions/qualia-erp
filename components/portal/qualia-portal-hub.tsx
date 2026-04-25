@@ -111,20 +111,12 @@ export function QualiaPortalHub({
         className="relative overflow-hidden px-6 pb-14 pt-10 text-white md:px-10 md:pb-16 md:pt-12"
         style={{ background: gradient }}
       >
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-overlay"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 20% 20%, white 0%, transparent 30%), radial-gradient(circle at 80% 70%, white 0%, transparent 30%)',
-          }}
-          aria-hidden
-        />
         <div className="relative grid w-full grid-cols-1 items-end gap-8 lg:grid-cols-[2fr_1fr]">
           <div>
-            <div className="mb-4 font-mono text-[11px] uppercase tracking-[0.12em] text-white/70">
+            <div className="mb-4 font-mono text-[11px] uppercase text-white/70">
               Welcome back, {firstName}
             </div>
-            <h1 className="text-[clamp(1.875rem,1.2rem+3vw,3rem)] font-semibold leading-[1.1] tracking-[-0.02em]">
+            <h1 className="text-[clamp(1.875rem,1.2rem+3vw,3rem)] font-semibold leading-[1.1]">
               {clientName}
             </h1>
             <p className="mt-4 max-w-[560px] text-[15px] leading-relaxed text-white/75">

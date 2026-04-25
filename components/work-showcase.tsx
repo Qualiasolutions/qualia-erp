@@ -170,9 +170,7 @@ export function WorkShowcase({ clientName, workItems }: WorkShowcaseProps) {
   return (
     <div className="space-y-8">
       <div className="animate-in fade-in slide-in-from-bottom-2">
-        <h2 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-2xl font-bold tracking-tight text-foreground">
-          Work Showcase
-        </h2>
+        <h2 className="text-2xl font-bold text-foreground">Work Showcase</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Showcasing our work for{' '}
           <span className="font-medium text-foreground/80">{clientName}</span>

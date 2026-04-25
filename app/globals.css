@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 /* ============================================
-   QUALIA DESIGN SYSTEM v4.0
-   Impeccable • Warm • Tinted • Premium
+   QUALIA DESIGN SYSTEM v4.1
+   Modern ERP • Black/Teal • Data Dense • Premium
 
    Follows Impeccable best practices:
    - OKLCH for perceptually uniform colors
@@ -21,29 +21,27 @@
   }
 
   :root {
-    /* Light mode — Warm teal-tinted surfaces
-       Borders are now full opacity (no more border-border/40 pattern),
-       so border lightness is set to ~85% for subtle but visible lines. */
-    --background: 185 5% 96%;
-    --foreground: 190 15% 13%;
-    --card: 185 4% 99%;
-    --card-foreground: 190 15% 13%;
-    --popover: 185 4% 99%;
-    --popover-foreground: 190 15% 13%;
-    --primary: 174 60% 34%;
+    /* Light mode — clean teal-tinted grays from the ERP update prototype. */
+    --background: 185 7% 97%;
+    --foreground: 188 18% 12%;
+    --card: 185 9% 99%;
+    --card-foreground: 188 18% 12%;
+    --popover: 185 9% 99%;
+    --popover-foreground: 188 18% 12%;
+    --primary: 180 64% 35%;
     --primary-foreground: 180 6% 99%;
-    --secondary: 185 6% 92%;
-    --secondary-foreground: 185 10% 22%;
-    --muted: 185 5% 91%;
-    --muted-foreground: 185 6% 35%;
+    --secondary: 185 9% 93%;
+    --secondary-foreground: 185 14% 20%;
+    --muted: 185 8% 92%;
+    --muted-foreground: 185 8% 36%;
     --accent: 290 40% 52%;
     --accent-foreground: 0 0% 99%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 180 6% 99%;
-    --border: 185 4% 85%;
-    --input: 185 4% 82%;
-    --ring: 174 60% 34%;
-    --radius: 0.625rem;
+    --border: 185 7% 86%;
+    --input: 185 7% 84%;
+    --ring: 180 64% 35%;
+    --radius: 0.75rem;
 
     /* Status colors — tinted toward brand */
     --success: 155 55% 38%;
@@ -51,10 +49,10 @@
     --info: 200 70% 44%;
 
     /* Surface layers — more contrast spread for visible depth */
-    --surface-1: 185 4% 99%;
-    --surface-2: 185 4% 95.5%;
-    --surface-3: 185 4% 92%;
-    --surface-hover: 185 4% 94%;
+    --surface-1: 185 9% 99%;
+    --surface-2: 185 8% 95.5%;
+    --surface-3: 185 8% 92%;
+    --surface-hover: 185 9% 94.5%;
 
     /* Motion system — exponential deceleration only (Impeccable) */
     --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -62,11 +60,11 @@
     --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 
     /* Elevation system — 5 tiers */
-    --elevation-resting: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --elevation-raised: 0 2px 8px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-    --elevation-floating: 0 8px 24px rgba(0, 0, 0, 0.07), 0 2px 8px rgba(0, 0, 0, 0.03);
-    --elevation-modal: 0 16px 48px rgba(0, 0, 0, 0.1), 0 4px 16px rgba(0, 0, 0, 0.05);
-    --elevation-max: 0 24px 64px rgba(0, 0, 0, 0.14), 0 8px 24px rgba(0, 0, 0, 0.07);
+    --elevation-resting: 0 1px 2px hsl(190 20% 16% / 0.04);
+    --elevation-raised: 0 2px 8px hsl(190 20% 16% / 0.06), 0 1px 2px hsl(190 20% 16% / 0.04);
+    --elevation-floating: 0 10px 28px hsl(190 20% 16% / 0.08), 0 2px 8px hsl(190 20% 16% / 0.04);
+    --elevation-modal: 0 18px 56px hsl(190 20% 16% / 0.14), 0 4px 16px hsl(190 20% 16% / 0.07);
+    --elevation-max: 0 28px 72px hsl(190 20% 16% / 0.18), 0 8px 24px hsl(190 20% 16% / 0.08);
 
     /* Fluid spacing scale */
     --space-xs: clamp(0.25rem, 0.2rem + 0.25vw, 0.5rem);
@@ -91,7 +89,7 @@
     /* Brand teal — bound to existing --primary so the design layout inherits
        the exact teal the project already ships. No new teal is introduced. */
     --accent-teal: hsl(var(--primary));
-    --accent-hi: hsl(182 60% 49%); /* qualia-400 = #33C3C9 */
+    --accent-hi: hsl(182 62% 49%);
     --accent-soft: hsl(var(--primary) / 0.12);
     --on-accent: hsl(var(--primary-foreground));
 
@@ -108,37 +106,43 @@
     --gap: 16px;
 
     /* Shell dimensions */
-    --sidebar-w: 232px;
+    --sidebar-w: 256px;
     --rightrail-w: 320px;
+    --panel: hsl(var(--card) / 0.86);
+    --panel-strong: hsl(var(--card));
+    --panel-muted: hsl(var(--surface-2) / 0.72);
+    --nav-active-bg: hsl(var(--primary) / 0.1);
+    --nav-active-text: hsl(var(--primary));
+    --shell-bg: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--surface-2)) 100%);
   }
 
   .dark {
-    /* Dark mode — pure black bg with subtle teal-tinted depth steps + glowing teal primary. */
-    --background: 0 0% 0%; /* #000000 — pure black */
-    --foreground: 185 8% 93%;
-    --card: 220 10% 4%; /* near-black with faintest cool tint, just above pure black for depth */
-    --card-foreground: 185 8% 93%;
-    --popover: 220 12% 5%;
-    --popover-foreground: 185 8% 93%;
-    --primary: 175 100% 45%; /* slightly brighter teal for glow against pure black */
-    --primary-foreground: 0 0% 0%;
-    --secondary: 220 10% 9%;
-    --secondary-foreground: 185 8% 93%;
-    --muted: 220 10% 9%;
-    --muted-foreground: 185 5% 60%;
+    /* Dark mode — black/teal theme from the ERP update prototype. */
+    --background: 188 28% 5%;
+    --foreground: 185 9% 94%;
+    --card: 188 22% 8%;
+    --card-foreground: 185 9% 94%;
+    --popover: 188 22% 8%;
+    --popover-foreground: 185 9% 94%;
+    --primary: 176 92% 47%;
+    --primary-foreground: 188 28% 5%;
+    --secondary: 188 18% 13%;
+    --secondary-foreground: 185 9% 92%;
+    --muted: 188 17% 13%;
+    --muted-foreground: 185 8% 62%;
     --accent: 264 75% 68%;
     --accent-foreground: 185 8% 93%;
     --destructive: 5 65% 48%;
     --destructive-foreground: 15 65% 60%;
-    --border: 220 10% 13%;
-    --input: 220 10% 9%;
-    --ring: 175 100% 45%;
+    --border: 188 16% 18%;
+    --input: 188 17% 14%;
+    --ring: 176 92% 47%;
 
-    /* Surface layers — stepped from pure black with very subtle cool tint */
-    --surface-1: 220 10% 4%;
-    --surface-2: 220 10% 8%;
-    --surface-3: 220 10% 12%;
-    --surface-hover: 220 10% 6%;
+    /* Surface layers — stepped black with visible teal depth. */
+    --surface-1: 188 22% 8%;
+    --surface-2: 188 18% 11%;
+    --surface-3: 188 16% 15%;
+    --surface-hover: 188 17% 13%;
 
     /* Status colors — brighter for dark bg */
     --success: 155 60% 48%;
@@ -151,20 +155,26 @@
     --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 
     /* Elevation system — dark mode (stronger for depth against pure black) */
-    --elevation-resting: 0 1px 2px rgba(0, 0, 0, 0.5);
-    --elevation-raised: 0 2px 8px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.4);
-    --elevation-floating: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
-    --elevation-modal: 0 16px 48px rgba(0, 0, 0, 0.7), 0 4px 16px rgba(0, 0, 0, 0.5);
-    --elevation-max: 0 24px 64px rgba(0, 0, 0, 0.8), 0 8px 24px rgba(0, 0, 0, 0.5);
+    --elevation-resting: 0 1px 2px hsl(190 40% 1% / 0.55);
+    --elevation-raised: 0 2px 10px hsl(190 40% 1% / 0.6), 0 1px 2px hsl(190 40% 1% / 0.45);
+    --elevation-floating: 0 12px 32px hsl(190 40% 1% / 0.68), 0 2px 8px hsl(190 40% 1% / 0.48);
+    --elevation-modal: 0 20px 64px hsl(190 40% 1% / 0.76), 0 4px 16px hsl(190 40% 1% / 0.56);
+    --elevation-max: 0 28px 80px hsl(190 40% 1% / 0.84), 0 8px 24px hsl(190 40% 1% / 0.6);
 
     /* Teal glow — applied via box-shadow on active/focused/primary surfaces */
-    --glow-teal-sm: 0 0 8px hsl(175 100% 45% / 0.35);
-    --glow-teal-md: 0 0 16px hsl(175 100% 45% / 0.4), 0 0 4px hsl(175 100% 45% / 0.3);
-    --glow-teal-lg: 0 0 24px hsl(175 100% 45% / 0.5), 0 0 8px hsl(175 100% 45% / 0.4);
+    --glow-teal-sm: 0 0 10px hsl(var(--primary) / 0.28);
+    --glow-teal-md: 0 0 18px hsl(var(--primary) / 0.34), 0 0 5px hsl(var(--primary) / 0.26);
+    --glow-teal-lg: 0 0 28px hsl(var(--primary) / 0.42), 0 0 10px hsl(var(--primary) / 0.34);
 
     /* === Design-handoff token overrides for dark === */
-    --accent-hi: hsl(182 70% 65%); /* brighter teal-cyan for highlights */
+    --accent-hi: hsl(182 70% 65%);
     --accent-soft: hsl(var(--primary) / 0.14);
+    --panel: hsl(var(--card) / 0.86);
+    --panel-strong: hsl(var(--card));
+    --panel-muted: hsl(var(--surface-2) / 0.7);
+    --nav-active-bg: hsl(var(--primary) / 0.12);
+    --nav-active-text: hsl(var(--primary));
+    --shell-bg: linear-gradient(180deg, hsl(188 28% 5%) 0%, hsl(188 26% 4%) 100%);
   }
 
   /* Light mode glow tokens — softer, no-op fallback so the .glow-* utilities
@@ -222,6 +232,7 @@
 
   body {
     @apply bg-background text-foreground;
+    background: var(--shell-bg);
     font-family:
       var(--font-geist-sans),
       system-ui,
@@ -230,7 +241,7 @@
     font-feature-settings:
       'rlig' 1,
       'calt' 1;
-    letter-spacing: -0.011em;
+    letter-spacing: 0;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -244,7 +255,7 @@
   h5,
   h6 {
     font-weight: 500;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     line-height: 1.2;
     text-wrap: balance;
   }
@@ -252,19 +263,19 @@
   h1 {
     font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
     font-weight: 600;
-    letter-spacing: -0.035em;
+    letter-spacing: 0;
     line-height: 1.1;
   }
 
   h2 {
     font-size: clamp(1.25rem, 1.1rem + 0.75vw, 1.625rem);
     font-weight: 550;
-    letter-spacing: -0.025em;
+    letter-spacing: 0;
   }
 
   h3 {
     font-size: clamp(1rem, 0.95rem + 0.25vw, 1.175rem);
-    letter-spacing: -0.015em;
+    letter-spacing: 0;
   }
 
   h4 {
@@ -301,6 +312,18 @@
   }
 
   /* Surface layers for depth */
+  .bg-surface-1 {
+    background-color: hsl(var(--surface-1));
+  }
+
+  .bg-surface-2 {
+    background-color: hsl(var(--surface-2));
+  }
+
+  .bg-surface-3 {
+    background-color: hsl(var(--surface-3));
+  }
+
   .surface-1 {
     background: hsl(var(--surface-1));
   }
@@ -315,14 +338,15 @@
 
   /* Base card */
   .card-base {
-    @apply relative overflow-hidden rounded-xl border border-border/40;
-    background: hsl(var(--card));
+    @apply relative overflow-hidden rounded-xl border border-border;
+    background: var(--panel);
     box-shadow: var(--elevation-raised);
     transition: all 0.2s var(--ease-premium);
   }
 
   .card-base:hover {
-    @apply border-border/60;
+    @apply border-primary/25;
+    background: var(--panel-strong);
   }
 
   /* Interactive card */
@@ -332,8 +356,8 @@
   }
 
   .card-interactive:hover {
-    @apply border-border/80;
-    background: hsl(var(--surface-hover));
+    @apply border-primary/30;
+    background: var(--panel-strong);
     box-shadow: var(--elevation-floating);
   }
 
@@ -343,19 +367,20 @@
 
   /* Widget — dashboard cards */
   .widget {
-    @apply flex h-full flex-col overflow-hidden rounded-xl border border-border/40 bg-card;
+    @apply flex h-full flex-col overflow-hidden rounded-xl border border-border;
+    background: var(--panel);
     box-shadow: var(--elevation-raised);
     transition: all 0.25s var(--ease-premium);
   }
 
   .widget:hover {
-    @apply border-border/50;
+    @apply border-primary/20;
     box-shadow: var(--elevation-floating);
   }
 
   .widget-header {
-    @apply flex items-center justify-between border-b border-border/40 px-5 py-4;
-    background: hsl(var(--surface-2) / 0.4);
+    @apply flex items-center justify-between border-b border-border px-5 py-4;
+    background: var(--panel-muted);
   }
 
   .widget-title {
@@ -378,7 +403,7 @@
   /* Glass card */
   .card-glass {
     @apply relative overflow-hidden rounded-xl;
-    @apply border border-border/30 bg-muted/20 backdrop-blur-xl;
+    @apply border border-border bg-muted/20 backdrop-blur-xl;
   }
 
   /* Section label */
@@ -388,7 +413,7 @@
 
   /* Table row */
   .table-row {
-    @apply border-b border-border/40;
+    @apply border-b border-border;
     transition: all 0.15s var(--ease-premium);
   }
 
@@ -398,8 +423,8 @@
 
   /* Table header */
   .table-header {
-    @apply border-b border-border/40 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground;
-    background: hsl(var(--surface-2) / 0.5);
+    @apply border-b border-border text-[11px] font-semibold uppercase tracking-wider text-muted-foreground;
+    background: var(--panel-muted);
   }
 }
 
@@ -418,11 +443,13 @@
   }
 
   .nav-item-active {
-    @apply bg-primary/8 text-foreground;
+    background: var(--nav-active-bg);
+    color: var(--nav-active-text);
   }
 
   .sidebar {
-    @apply flex h-full flex-col border-r border-border/40 bg-card;
+    @apply flex h-full flex-col border-r border-border;
+    background: hsl(var(--surface-1));
   }
 }
 
@@ -431,7 +458,7 @@
    ============================================ */
 @layer utilities {
   .input-base {
-    @apply w-full rounded-lg border border-border/50 bg-background px-3 py-2;
+    @apply w-full rounded-lg border border-border bg-background px-3 py-2;
     @apply text-sm text-foreground placeholder:text-muted-foreground/50;
     transition: all 0.2s var(--ease-premium);
     @apply hover:border-border/80;
@@ -439,7 +466,8 @@
   }
 
   .input-search {
-    @apply bg-surface-2/40 h-9 rounded-lg border border-border/40 px-3;
+    @apply h-9 rounded-lg border border-border px-3;
+    background: var(--panel-muted);
     @apply text-sm placeholder:text-muted-foreground/40;
     transition: all 0.2s var(--ease-premium);
     @apply focus:ring-primary/8 focus:border-primary/30 focus:bg-background focus:outline-none focus:ring-2;
@@ -467,7 +495,7 @@
     @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2;
     @apply text-primary-foreground;
     @apply text-sm font-semibold;
-    background: linear-gradient(180deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.88) 100%);
+    background: hsl(var(--primary));
     transition: all 0.2s var(--ease-premium);
     @apply hover:brightness-110;
     @apply active:scale-[0.97];
@@ -475,7 +503,7 @@
   }
 
   .btn-primary:hover {
-    box-shadow: 0 0 20px -4px hsl(var(--primary) / 0.3);
+    box-shadow: var(--glow-teal-md);
   }
 
   .btn-secondary {
@@ -509,12 +537,12 @@
    ============================================ */
 @layer utilities {
   .page-header {
-    @apply sticky top-0 z-sticky border-b border-border/40 px-6 py-4 backdrop-blur-xl sm:px-8 sm:py-5;
-    background: linear-gradient(180deg, hsl(var(--card) / 0.9) 0%, hsl(var(--card) / 0.75) 100%);
+    @apply sticky top-0 z-sticky border-b border-border px-6 py-4 backdrop-blur-xl sm:px-8 sm:py-5;
+    background: hsl(var(--card) / 0.86);
   }
 
   .page-title {
-    @apply text-base font-semibold tracking-tight text-foreground;
+    @apply text-base font-semibold text-foreground;
   }
 
   .page-description {
@@ -522,8 +550,35 @@
   }
 
   .page-content {
-    @apply flex-1 overflow-auto p-6 sm:p-8;
+    @apply flex-1 overflow-auto p-4 sm:p-6 lg:p-8;
     animation: fade-in 0.2s var(--ease-premium) forwards;
+  }
+
+  .erp-shell {
+    background: var(--shell-bg);
+  }
+
+  .erp-panel {
+    background: var(--panel);
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--elevation-raised);
+  }
+
+  .erp-panel-muted {
+    background: var(--panel-muted);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .tracking-tight,
+  .tracking-tighter,
+  .tracking-wide,
+  .tracking-wider,
+  .tracking-widest {
+    letter-spacing: 0 !important;
+  }
+
+  [class*='tracking-['] {
+    letter-spacing: 0 !important;
   }
 }
 
@@ -751,14 +806,6 @@
     animation: glow-pulse 2.5s ease-in-out infinite;
   }
 
-  .animate-float {
-    animation: float 5s ease-in-out infinite;
-  }
-
-  .animate-breathe {
-    animation: breathe 3s ease-in-out infinite;
-  }
-
   .animate-spin-slow {
     animation: spin-slow 8s linear infinite;
   }
@@ -786,16 +833,6 @@
   }
 
   .animate-slide-up-smooth {
-    animation: slide-up-smooth 0.35s var(--ease-out-expo) forwards;
-    opacity: 0;
-  }
-
-  /* Backwards compat aliases */
-  .animate-checkbox-bounce {
-    animation: checkbox-check 0.2s var(--ease-out-quart);
-  }
-
-  .animate-slide-up-spring {
     animation: slide-up-smooth 0.35s var(--ease-out-expo) forwards;
     opacity: 0;
   }

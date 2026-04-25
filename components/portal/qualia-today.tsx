@@ -108,13 +108,13 @@ function TodayHero({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div
-            className="mb-3 inline-flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.08em]"
+            className="mb-3 inline-flex items-center gap-2 font-mono text-[10.5px] uppercase"
             style={{ color: 'var(--accent-teal)' }}
           >
             <span className="q-live-dot" aria-hidden />
             {dayName} · {dateStr} · {timeStr}
           </div>
-          <h1 className="q-display m-0 text-[28px] font-semibold leading-[1.15] tracking-[-0.02em]">
+          <h1 className="q-display m-0 text-[28px] font-semibold leading-[1.15]">
             {getGreeting(hour)}, <span style={{ color: 'var(--accent-teal)' }}>{firstName}</span>
           </h1>
           <p

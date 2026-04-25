@@ -5,79 +5,15 @@ import { m } from '@/lib/lazy-motion';
 
 export function LoginLeftPanel() {
   return (
-    <div className="relative hidden overflow-hidden bg-[#0a1a1f] lg:flex lg:w-1/2">
-      {/* Animated Gradient Mesh */}
-      <div className="absolute inset-0">
-        <m.div
-          animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-          className="absolute -left-1/2 -top-1/2 h-[200%] w-[200%]"
-          style={{
-            background: `
-              radial-gradient(circle at 30% 30%, rgba(0,164,172,0.15) 0%, transparent 50%),
-              radial-gradient(circle at 70% 70%, rgba(0,180,200,0.1) 0%, transparent 40%),
-              radial-gradient(circle at 50% 50%, rgba(0,164,172,0.08) 0%, transparent 60%)
-            `,
-          }}
-        />
-      </div>
-
-      {/* Geometric Shapes */}
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Rotating rings */}
-        <m.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        >
-          <svg width="600" height="600" viewBox="0 0 600 600" fill="none">
-            <circle cx="300" cy="300" r="250" stroke="rgba(0,164,172,0.1)" strokeWidth="1" />
-            <circle
-              cx="300"
-              cy="300"
-              r="200"
-              stroke="rgba(0,164,172,0.08)"
-              strokeWidth="1"
-              strokeDasharray="8 8"
-            />
-            <circle cx="300" cy="300" r="150" stroke="rgba(0,164,172,0.06)" strokeWidth="1" />
-          </svg>
-        </m.div>
-
-        {/* Floating elements */}
-        <m.div
-          animate={{ y: [0, -30, 0], x: [0, 15, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute left-[20%] top-[15%] h-32 w-32 rounded-full border border-qualia-400/20"
-        />
-        <m.div
-          animate={{ y: [0, 20, 0], x: [0, -10, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-          className="absolute left-[15%] top-[60%] h-4 w-4 rounded-full bg-primary/30 blur-sm"
-        />
-        <m.div
-          animate={{ y: [0, -15, 0], scale: [1, 1.1, 1] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-          className="absolute right-[20%] top-[25%] h-20 w-20 rotate-45 rounded-xl border border-cyan-400/15"
-        />
-        <m.div
-          animate={{ y: [0, 25, 0] }}
-          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-          className="absolute bottom-[20%] right-[25%] h-6 w-6 rounded-full bg-primary/20"
-        />
-        <m.div
-          animate={{ rotate: [0, 180, 360] }}
-          transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-          className="absolute right-[10%] top-[45%] h-16 w-16 border border-qualia-400/10"
-        />
-
-        {/* Glowing orb */}
-        <m.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-qualia-500/20 to-cyan-500/10 blur-3xl"
-        />
-      </div>
+    <div className="relative hidden overflow-hidden bg-[#071314] lg:flex lg:w-1/2">
+      <div
+        className="absolute inset-0 opacity-90"
+        style={{
+          background:
+            'linear-gradient(135deg, hsl(188 28% 5%) 0%, hsl(188 22% 8%) 55%, hsl(180 64% 16%) 100%)',
+        }}
+        aria-hidden
+      />
 
       {/* Content Overlay */}
       <div className="relative z-10 flex h-full w-full flex-col justify-between p-12">
@@ -96,9 +32,7 @@ export function LoginLeftPanel() {
             className="rounded-lg"
             priority
           />
-          <span className="text-sm font-semibold uppercase tracking-[0.2em] text-white/90">
-            Qualia Suite
-          </span>
+          <span className="text-sm font-semibold uppercase text-white/90">Qualia Suite</span>
         </m.div>
 
         {/* Center Content */}
@@ -108,10 +42,10 @@ export function LoginLeftPanel() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <h1 className="text-5xl font-bold leading-[1.1] tracking-tight text-white xl:text-6xl">
+            <h1 className="text-5xl font-bold leading-[1.1] text-white xl:text-6xl">
               Qualia Portal
             </h1>
-            <div className="mx-auto mt-6 h-0.5 w-16 rounded-full bg-gradient-to-r from-qualia-400 to-cyan-400" />
+            <div className="mx-auto mt-6 h-0.5 w-16 rounded-full bg-primary" />
             <p className="mx-auto mt-6 max-w-xs text-lg leading-relaxed text-white/50">
               Track your projects and stay connected with your team.
             </p>

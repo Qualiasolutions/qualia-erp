@@ -106,7 +106,6 @@ export default {
         'elevation-5': '0 24px 64px rgba(0,0,0,0.18), 0 8px 24px rgba(0,0,0,0.1)',
       },
       backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
         'glass-gradient':
           'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
@@ -118,7 +117,6 @@ export default {
         'fade-in': 'fadeIn 0.2s cubic-bezier(0.16,1,0.3,1) forwards',
         'slide-up': 'slideUp 0.25s cubic-bezier(0.16,1,0.3,1) forwards',
         'slide-in': 'slideIn 0.2s cubic-bezier(0.16,1,0.3,1) forwards',
-        'bounce-subtle': 'bounceSubtle 2s ease-in-out infinite',
         'pulse-subtle': 'pulseSubtle 3s ease-in-out infinite',
         'glow-pulse': 'glowPulse 2s ease-in-out infinite',
         'scale-in': 'scaleIn 0.2s cubic-bezier(0.16,1,0.3,1) forwards',
@@ -132,10 +130,6 @@ export default {
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-6px)' },
-        },
-        bounceSubtle: {
-          '0%, 100%': { transform: 'translateY(0) scale(1)' },
-          '50%': { transform: 'translateY(-4px) scale(1.01)' },
         },
         pulseSubtle: {
           '0%, 100%': { opacity: '0.75' },
