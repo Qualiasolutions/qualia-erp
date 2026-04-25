@@ -51,12 +51,6 @@ function ControlSkeleton() {
   );
 }
 
-/**
- * The Finance tab is restricted to the owner only — Fawzi at info@qualiasolutions.net.
- * Other admins do not see the tab and cannot reach it via direct URL.
- */
-const FINANCE_OWNER_EMAIL = 'info@qualiasolutions.net';
-
 async function ControlLoader({ tab }: { tab: ControlTab }) {
   await connection();
   const user = await getPortalAuthUser();
@@ -64,13 +58,8 @@ async function ControlLoader({ tab }: { tab: ControlTab }) {
   const profile = await getPortalProfile(user.id);
   if (!profile || !(await isUserAdmin(user.id))) redirect('/');
 
-  const userEmail = (user.email || '').toLowerCase();
-  const canViewFinance = userEmail === FINANCE_OWNER_EMAIL;
-
-  // Block direct-URL access to ?tab=finance for non-owners.
-  if (tab === 'finance' && !canViewFinance) {
-    redirect('/admin?tab=overview');
-  }
+  // Finance tab is admin-visible (back from owner-only gate).
+  const canViewFinance = true;
 
   const data: QualiaControlData = {};
   switch (tab) {
