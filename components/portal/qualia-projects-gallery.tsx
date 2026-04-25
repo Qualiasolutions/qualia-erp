@@ -416,9 +416,9 @@ const ProjectCardTile = memo(function ProjectCardTile({
       {isAdmin && <StageDropdown project={project} />}
 
       {/* Body */}
-      <div className="px-3 pb-3 pt-3">
+      <div className="px-3 pb-2 pt-2">
         {/* Top row: type label + logo + attention + percentage */}
-        <div className="mb-2 flex items-center gap-2">
+        <div className="mb-1.5 flex items-center gap-2">
           <span className="font-mono text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
             {typeLabel}
           </span>
@@ -449,7 +449,7 @@ const ProjectCardTile = memo(function ProjectCardTile({
         </h3>
 
         {/* Progress bar — stage-tinted */}
-        <div className="mb-2 mt-2 h-[2px] overflow-hidden rounded-full bg-border/30">
+        <div className="mb-1.5 mt-1.5 h-[2px] overflow-hidden rounded-full bg-border/30">
           <div
             className={cn('h-full rounded-full transition-all duration-500', progressBg)}
             style={{ width: `${progress}%` }}
@@ -780,9 +780,9 @@ function StageColumn({
         </span>
       </header>
 
-      <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto p-2">
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-2">
         {projects.length === 0 ? (
-          <div className="col-span-2 flex flex-1 flex-col items-center justify-center py-6 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center py-6 text-center">
             <span className={cn('mb-2 rounded-lg p-2.5', config.bg)} aria-hidden>
               <Icon className={cn('h-4 w-4', config.accent)} />
             </span>
@@ -804,13 +804,7 @@ function StageColumn({
    Both share the same compact item layout.
    ====================================================================== */
 
-function FinishedRow({
-  projects,
-  isAdmin,
-}: {
-  projects: GalleryProject[];
-  isAdmin?: boolean;
-}) {
+function FinishedRow({ projects, isAdmin }: { projects: GalleryProject[]; isAdmin?: boolean }) {
   return (
     <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card ring-1 ring-inset ring-primary/20">
       <header className="flex items-center gap-2 border-b border-border bg-primary/5 px-3 py-1.5">
@@ -879,13 +873,7 @@ function ReactivateButton({
   );
 }
 
-function FinishedRowItem({
-  project,
-  isAdmin,
-}: {
-  project: GalleryProject;
-  isAdmin?: boolean;
-}) {
+function FinishedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmin?: boolean }) {
   const typeLabel = getTypeLabel(project.project_type);
   return (
     <li className="group/projrow relative">
@@ -926,13 +914,7 @@ function FinishedRowItem({
   );
 }
 
-function ArchivedRow({
-  projects,
-  isAdmin,
-}: {
-  projects: GalleryProject[];
-  isAdmin?: boolean;
-}) {
+function ArchivedRow({ projects, isAdmin }: { projects: GalleryProject[]; isAdmin?: boolean }) {
   return (
     <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card">
       <header className="flex items-center gap-2 border-b border-border bg-muted/30 px-3 py-1.5">
@@ -956,13 +938,7 @@ function ArchivedRow({
   );
 }
 
-function ArchivedRowItem({
-  project,
-  isAdmin,
-}: {
-  project: GalleryProject;
-  isAdmin?: boolean;
-}) {
+function ArchivedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmin?: boolean }) {
   const typeLabel = getTypeLabel(project.project_type);
   return (
     <li className="group/projrow relative">
