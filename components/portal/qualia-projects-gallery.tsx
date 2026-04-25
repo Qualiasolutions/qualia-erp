@@ -73,6 +73,8 @@ interface StageStyle {
   headerBg: string;
   /** Tailwind class for the progress bar fill — matches headerBg. */
   progressBg: string;
+  /** Stroke color class for the SVG circular progress ring. */
+  progressStroke: string;
 }
 
 const STAGE_CONFIG: Record<StageKey, StageStyle> = {
@@ -84,6 +86,7 @@ const STAGE_CONFIG: Record<StageKey, StageStyle> = {
     ring: 'ring-sky-500/20',
     headerBg: 'bg-sky-500',
     progressBg: 'bg-sky-500',
+    progressStroke: 'stroke-sky-500',
   },
   building: {
     title: 'Building',
@@ -93,24 +96,27 @@ const STAGE_CONFIG: Record<StageKey, StageStyle> = {
     ring: 'ring-purple-500/20',
     headerBg: 'bg-purple-500',
     progressBg: 'bg-purple-500',
+    progressStroke: 'stroke-purple-500',
   },
   preProduction: {
-    title: 'Pre-Production',
+    title: 'Pre-Prod',
     icon: ClipboardCheck,
-    accent: 'text-yellow-600 dark:text-yellow-400',
-    bg: 'bg-yellow-500/10',
-    ring: 'ring-yellow-500/20',
-    headerBg: 'bg-yellow-500',
-    progressBg: 'bg-yellow-500',
+    accent: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-500/10',
+    ring: 'ring-amber-500/20',
+    headerBg: 'bg-amber-500',
+    progressBg: 'bg-amber-500',
+    progressStroke: 'stroke-amber-500',
   },
   live: {
     title: 'Live',
     icon: Rocket,
-    accent: 'text-green-600 dark:text-green-400',
-    bg: 'bg-green-500/10',
-    ring: 'ring-green-500/20',
-    headerBg: 'bg-green-500',
-    progressBg: 'bg-green-500',
+    accent: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-emerald-500/10',
+    ring: 'ring-emerald-500/20',
+    headerBg: 'bg-emerald-500',
+    progressBg: 'bg-emerald-500',
+    progressStroke: 'stroke-emerald-500',
   },
 };
 
@@ -118,6 +124,7 @@ const STAGE_CONFIG: Record<StageKey, StageStyle> = {
 const FALLBACK_STAGE_STYLE = {
   headerBg: 'bg-muted-foreground/40',
   progressBg: 'bg-muted-foreground/50',
+  progressStroke: 'stroke-muted-foreground/50',
 } as const;
 
 function getStage(project: GalleryProject): StageKey | null {
@@ -172,11 +179,16 @@ function getCurrentStage(project: GalleryProject): PipelineStage | null {
 function getProjectStyle(project: GalleryProject): {
   headerBg: string;
   progressBg: string;
+  progressStroke: string;
 } {
   const stage = getStage(project);
   if (!stage) return FALLBACK_STAGE_STYLE;
   const config = STAGE_CONFIG[stage];
-  return { headerBg: config.headerBg, progressBg: config.progressBg };
+  return {
+    headerBg: config.headerBg,
+    progressBg: config.progressBg,
+    progressStroke: config.progressStroke,
+  };
 }
 
 /** Get type label from PROJECT_TYPE_CONFIG. */
@@ -382,6 +394,49 @@ function StageDropdown({ project }: { project: GalleryProject }) {
    Gallery Card
    ====================================================================== */
 
+/** Compact circular progress ring — used at the left of every pipeline card. */
+function ProgressRing({
+  value,
+  size = 36,
+  strokeWidth = 2.5,
+  strokeClass,
+}: {
+  value: number;
+  size?: number;
+  strokeWidth?: number;
+  strokeClass: string;
+}) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (value / 100) * circumference;
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }} aria-hidden>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={strokeWidth}
+          className="fill-none stroke-border/40"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className={cn('fill-none transition-all duration-500', strokeClass)}
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] font-semibold tabular-nums text-foreground">
+        {value}
+      </span>
+    </div>
+  );
+}
+
 const ProjectCardTile = memo(function ProjectCardTile({
   project,
   isAdmin,
@@ -389,83 +444,59 @@ const ProjectCardTile = memo(function ProjectCardTile({
   project: GalleryProject;
   isAdmin?: boolean;
 }) {
-  const { headerBg, progressBg } = getProjectStyle(project);
+  const { progressStroke } = getProjectStyle(project);
   const progress = getProgress(project);
   const typeLabel = getTypeLabel(project.project_type);
+  const typeStyle = project.project_type
+    ? PROJECT_TYPE_CONFIG[project.project_type as ProjectType]
+    : null;
+  const typeColor = typeStyle?.color ?? 'text-muted-foreground';
   const avatars = useMemo(() => teamToAvatars(project.team), [project.team]);
   const attention = needsAttention(project);
-
-  const dueStr = project.target_date ? format(new Date(project.target_date), 'dd MMM') : null;
 
   return (
     <Link
       href={`/projects/${project.id}`}
       className={cn(
-        'group relative block overflow-hidden rounded-xl border border-border bg-card',
+        'group relative flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5',
         'transition-all duration-200 ease-premium',
-        'hover:border-primary/20 hover:shadow-[var(--elevation-floating)]',
-        'motion-safe:hover:-translate-y-[3px]',
+        'hover:border-primary/30 hover:bg-card hover:shadow-[var(--elevation-resting)]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         'cursor-pointer'
       )}
     >
-      {/* Accent stripe — thin top bar, unified per column stage */}
-      <div className={cn('h-1', headerBg)} aria-hidden />
-
-      {/* Admin stage dropdown */}
+      {/* Admin stage dropdown — absolute, top-right */}
       {isAdmin && <StageDropdown project={project} />}
 
-      {/* Body */}
-      <div className="px-3 pb-2 pt-2">
-        {/* Top row: type label + logo + attention + percentage */}
-        <div className="mb-1.5 flex items-center gap-2">
-          <span className="font-mono text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-            {typeLabel}
-          </span>
+      {/* Left: circular progress ring */}
+      <ProgressRing value={progress} strokeClass={progressStroke} />
+
+      {/* Center: name (top) + type label (bottom) */}
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex items-center gap-1.5">
+          <h3 className="truncate text-sm font-semibold leading-tight text-foreground">
+            {project.name}
+          </h3>
           {attention && (
             <AlertTriangle
               className="h-3 w-3 shrink-0 text-amber-500"
               aria-label="Needs attention"
             />
           )}
-          <span className="ml-auto font-mono text-[10px] font-semibold tabular-nums text-muted-foreground">
-            {progress}%
-          </span>
-          {project.logo_url && (
-            <Image
-              src={project.logo_url}
-              alt=""
-              aria-hidden
-              width={20}
-              height={20}
-              className="h-5 w-5 shrink-0 rounded object-contain"
-              unoptimized
-            />
-          )}
         </div>
-
-        <h3 className="truncate text-sm font-semibold leading-tight text-foreground">
-          {project.name}
-        </h3>
-
-        {/* Progress bar — stage-tinted */}
-        <div className="mb-1.5 mt-1.5 h-[2px] overflow-hidden rounded-full bg-border/30">
-          <div
-            className={cn('h-full rounded-full transition-all duration-500', progressBg)}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {/* Footer: avatars + due date */}
-        <div className="flex items-center justify-between">
-          <AvatarStack people={avatars} size={18} max={3} />
-          {dueStr ? (
-            <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-              {dueStr}
-            </span>
-          ) : null}
-        </div>
+        <span
+          className={cn('font-mono text-[9px] font-semibold uppercase tracking-wider', typeColor)}
+        >
+          {typeLabel}
+        </span>
       </div>
+
+      {/* Right: avatars (admin dropdown overlaps via absolute positioning) */}
+      {avatars.length > 0 && (
+        <div className="shrink-0 pr-6">
+          <AvatarStack people={avatars} size={20} max={3} />
+        </div>
+      )}
     </Link>
   );
 });
@@ -755,38 +786,26 @@ function StageColumn({
   const Icon = config.icon;
 
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[var(--elevation-resting)]">
-      <header
-        className={cn(
-          'flex shrink-0 items-center gap-2 border-b border-border bg-muted/20 px-3 py-2',
-          `ring-1 ring-inset ${config.ring}`
-        )}
-      >
-        <span
-          className={cn('flex h-6 w-6 items-center justify-center rounded-md', config.bg)}
-          aria-hidden
-        >
-          <Icon className={cn('h-3.5 w-3.5', config.accent)} />
-        </span>
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-muted/10">
+      <header className="flex shrink-0 items-center gap-2 px-3 py-2.5">
+        <Icon className={cn('h-3.5 w-3.5', config.accent)} aria-hidden />
         <h2 className="text-xs font-semibold tracking-tight text-foreground">{config.title}</h2>
-        <span
-          className={cn(
-            'ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold',
-            config.bg,
-            config.accent
-          )}
-        >
-          {projects.length}
-        </span>
+        {projects.length > 0 && (
+          <span className="ml-auto font-mono text-[10px] tabular-nums text-muted-foreground">
+            {projects.length}
+          </span>
+        )}
       </header>
 
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-2">
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
         {projects.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center py-6 text-center">
-            <span className={cn('mb-2 rounded-lg p-2.5', config.bg)} aria-hidden>
-              <Icon className={cn('h-4 w-4', config.accent)} />
-            </span>
-            <p className="text-[11px] text-muted-foreground">No {config.title.toLowerCase()}</p>
+          <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
+            <CheckCircle2
+              className="mb-2 h-5 w-5 text-muted-foreground/40"
+              aria-hidden
+              strokeWidth={1.5}
+            />
+            <p className="text-[11px] text-muted-foreground/70">No projects</p>
           </div>
         ) : (
           projects.map((project) => (
