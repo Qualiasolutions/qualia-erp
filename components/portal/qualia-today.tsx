@@ -475,7 +475,12 @@ function GlanceStack({
   nextShip,
   meetings,
 }: {
-  nextShip: { name: string; progress: number; daysLeft: number | null; href: string } | null;
+  nextShip: {
+    name: string;
+    progress: number | null;
+    daysLeft: number | null;
+    href: string;
+  } | null;
   meetings: TimetableMeeting[];
 }) {
   return (
@@ -488,10 +493,10 @@ function GlanceStack({
           <div className="q-eyebrow mb-3">Next ship</div>
           <div className="flex items-center gap-4">
             <ProgressRing
-              value={nextShip.progress}
+              value={nextShip.progress ?? 0}
               size={56}
               stroke={4}
-              label={`${Math.round(nextShip.progress * 100)}%`}
+              label={nextShip.progress !== null ? `${Math.round(nextShip.progress * 100)}%` : '—'}
             />
             <div className="min-w-0 flex-1">
               <div className="q-display truncate text-[14px] font-semibold leading-[1.3]">
@@ -585,7 +590,8 @@ type TapeProject = {
   name: string;
   clientName: string;
   clientAccent: string;
-  progress: number;
+  /** Real progress 0–1, or null when we don't have data yet (rather than lying with a midpoint). */
+  progress: number | null;
   team: AvatarStackPerson[];
   href: string;
 };
@@ -631,25 +637,29 @@ function ProjectsTape({ projects }: { projects: TapeProject[] }) {
               </span>
             </div>
             <div className="q-display mb-3.5 truncate text-[17px] leading-[1.25]">{p.name}</div>
-            <div
-              className="mb-2.5 h-1 overflow-hidden rounded"
-              style={{ background: 'var(--bg-sub)' }}
-            >
+            {p.progress !== null ? (
               <div
-                className="h-full transition-[width] duration-500 ease-out"
-                style={{
-                  width: `${Math.round(p.progress * 100)}%`,
-                  background: 'var(--accent-hi)',
-                }}
-              />
-            </div>
+                className="mb-2.5 h-1 overflow-hidden rounded"
+                style={{ background: 'var(--bg-sub)' }}
+              >
+                <div
+                  className="h-full transition-[width] duration-500 ease-out"
+                  style={{
+                    width: `${Math.round(p.progress * 100)}%`,
+                    background: 'var(--accent-hi)',
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="mb-2.5 h-1" aria-hidden />
+            )}
             <div className="flex items-center justify-between">
               <AvatarStack people={p.team} size={20} />
               <span
                 className="q-tabular font-mono text-[11px]"
                 style={{ color: 'var(--text-mute)' }}
               >
-                {Math.round(p.progress * 100)}%
+                {p.progress !== null ? `${Math.round(p.progress * 100)}%` : '—'}
               </span>
             </div>
           </Link>
@@ -724,7 +734,7 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
             name: p.name,
             clientName: ws.name,
             clientAccent: 'var(--accent-teal)',
-            progress: 0.5, // workspaces don't carry progress; render a mid-point
+            progress: null, // workspaces don't carry progress — show as unknown rather than lie with 50%
             team: [],
             href: `/projects/${p.id}/roadmap`,
           });
@@ -746,7 +756,7 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
       .filter(
         (a) => a.project && a.project.status !== 'Archived' && a.project.status !== 'Canceled'
       )
-      .map((a) => {
+      .map((a): TapeProject | null => {
         const p = a.project;
         if (!p) return null;
         return {
@@ -754,10 +764,10 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
           name: p.name,
           clientName: p.client?.name ?? 'No client',
           clientAccent: 'var(--accent-teal)',
-          progress: 0.5,
+          progress: null, // assignment rows don't carry roadmap_progress — show as unknown
           team: [personFromId(p.id, p.client?.name ?? p.name)],
           href: `/projects/${p.id}/roadmap`,
-        } satisfies TapeProject;
+        };
       })
       .filter((x): x is TapeProject => x !== null);
   }, [role, workspaces, assignments]);

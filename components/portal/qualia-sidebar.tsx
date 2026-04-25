@@ -83,7 +83,7 @@ const PAGES: PageDef[] = [
     label: 'Projects',
     icon: 'projects',
     href: '/projects',
-    roles: ['admin', 'employee', 'client'],
+    roles: ['admin', 'employee'],
     appKey: 'projects',
     section: 'workspace',
   },
