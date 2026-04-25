@@ -32,37 +32,28 @@ export async function loadClientsTab(): Promise<ClientsPayload> {
 
   if (error || !clients) return { clients: [] };
 
-  const { data: projects } = await supabase
-    .from('projects')
-    .select('id, client_id, status, updated_at');
-
-  const projectsByClient = new Map<string, Array<{ status: string; updated_at: string | null }>>();
-  for (const p of projects ?? []) {
-    if (!p.client_id) continue;
-    const list = projectsByClient.get(p.client_id) ?? [];
-    list.push({ status: p.status, updated_at: p.updated_at });
-    projectsByClient.set(p.client_id, list);
-  }
+  type ClientProjectStats = {
+    client_id: string;
+    project_count: number;
+    active_count: number;
+    last_activity: string | null;
+  };
+  const { data: stats } = await supabase.rpc('get_per_client_project_stats');
+  const statsByClient = new Map<string, ClientProjectStats>(
+    (stats ?? []).map((s: ClientProjectStats) => [s.client_id, s])
+  );
 
   const rows: ClientSummaryRow[] = clients.map((c) => {
-    const list = projectsByClient.get(c.id) ?? [];
-    const active = list.filter((p) => p.status === 'Active' || p.status === 'Delayed').length;
-    const lastActivity =
-      list
-        .map((p) => p.updated_at)
-        .filter((t): t is string => !!t)
-        .sort()
-        .reverse()[0] ?? null;
-
+    const s = statsByClient.get(c.id);
     return {
       id: c.id,
       name: c.display_name || c.name || '',
       username: null,
       email: null,
       lead_status: c.lead_status ?? 'active',
-      project_count: list.length,
-      active_project_count: active,
-      last_activity: lastActivity,
+      project_count: s?.project_count ?? 0,
+      active_project_count: s?.active_count ?? 0,
+      last_activity: s?.last_activity ?? null,
     };
   });
 

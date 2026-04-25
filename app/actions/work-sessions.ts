@@ -560,26 +560,16 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
 
   const lastSessionMap = new Map<string, string | null>();
   if (offlineProfileIds.length > 0) {
-    // PH-H3: Safety cap on unbounded query — 5x offline profiles to account for
-    // multiple sessions per person. JS de-dup below picks one per profile.
-    // TODO: Long-term fix is an RPC with DISTINCT ON (profile_id) for O(1) per profile.
-    const { data: recentSessions, error: recentError } = await supabase
-      .from('work_sessions')
-      .select('profile_id, ended_at')
-      .eq('workspace_id', workspaceId)
-      .in('profile_id', offlineProfileIds)
-      .not('ended_at', 'is', null)
-      .order('ended_at', { ascending: false })
-      .limit(offlineProfileIds.length * 5);
+    const { data: recentSessions, error: recentError } = await supabase.rpc(
+      'get_latest_session_per_profile',
+      { p_workspace_id: workspaceId, p_profile_ids: offlineProfileIds }
+    );
 
     if (recentError) {
       console.error('[getTeamStatus] Recent sessions error:', recentError);
     } else {
-      // Take first result per profile_id (most recent)
-      for (const session of recentSessions || []) {
-        if (!lastSessionMap.has(session.profile_id)) {
-          lastSessionMap.set(session.profile_id, session.ended_at);
-        }
+      for (const session of (recentSessions || []) as { profile_id: string; ended_at: string }[]) {
+        lastSessionMap.set(session.profile_id, session.ended_at);
       }
     }
   }

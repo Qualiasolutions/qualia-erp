@@ -134,18 +134,22 @@ export async function POST(req: Request) {
     let activeConversationId = conversationId;
 
     if (conversationId) {
-      // Save the latest user message
+      // Save the latest user message and update conversation timestamp concurrently
       const lastMessage = messages[messages.length - 1];
       if (lastMessage?.role === 'user') {
-        await supabase.from('ai_messages').insert({
-          conversation_id: conversationId,
-          role: 'user',
-          content: lastMessage.content,
+        await Promise.all([
+          supabase.from('ai_messages').insert({
+            conversation_id: conversationId,
+            role: 'user',
+            content: lastMessage.content,
+          }),
+          supabase
+            .from('ai_conversations')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', conversationId),
+        ]).catch((err) => {
+          console.error('[chat] parallel DB write failed:', err);
         });
-        await supabase
-          .from('ai_conversations')
-          .update({ updated_at: new Date().toISOString() })
-          .eq('id', conversationId);
       }
     } else if (messages.length > 0) {
       // Create a new conversation if none provided
@@ -163,14 +167,19 @@ export async function POST(req: Request) {
       if (newConv) {
         activeConversationId = newConv.id;
 
-        // Save the user message
+        // Fire-and-forget: save user message (don't block AI stream)
         const lastMessage = messages[messages.length - 1];
         if (lastMessage?.role === 'user') {
-          await supabase.from('ai_messages').insert({
-            conversation_id: newConv.id,
-            role: 'user',
-            content: lastMessage.content,
-          });
+          supabase
+            .from('ai_messages')
+            .insert({
+              conversation_id: newConv.id,
+              role: 'user',
+              content: lastMessage.content,
+            })
+            .then(({ error }) => {
+              if (error) console.error('[chat] message insert failed:', error);
+            });
         }
 
         // Auto-generate title from first user message (async, don't block)
