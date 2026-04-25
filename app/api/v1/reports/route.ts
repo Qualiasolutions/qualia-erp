@@ -87,6 +87,12 @@ const payloadSchema = z.object({
     .regex(/^QS-REPORT-\d+$/)
     .optional(),
   dry_run: z.boolean().optional().default(false),
+  // v4.2 — ERP linkage. client_id is a UUID FK to public.clients;
+  // framework_version is the semver that produced this payload. Both are
+  // optional — pre-v4.2 framework installs simply don't send them and
+  // legacy rows persist with NULL.
+  client_id: z.string().uuid().optional(),
+  framework_version: z.string().optional(),
 });
 
 type Payload = z.infer<typeof payloadSchema>;
@@ -217,6 +223,8 @@ export async function POST(request: NextRequest) {
     deploy_count: body.deploy_count ?? null,
     client_report_id: body.client_report_id || null,
     dry_run: body.dry_run,
+    client_id: body.client_id || null,
+    framework_version: body.framework_version || null,
     idempotency_key: idempotencyKey,
     token_id: auth.method === 'per_user_token' ? auth.tokenId : null,
     auth_method: auth.method,

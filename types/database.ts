@@ -3597,6 +3597,7 @@ export type Database = {
           auth_method: string | null;
           build_count: number | null;
           client: string | null;
+          client_id: string | null;
           client_report_id: string | null;
           commits: string[] | null;
           created_at: string | null;
@@ -3604,6 +3605,7 @@ export type Database = {
           deployed_url: string | null;
           dry_run: boolean;
           framework_project_id: string | null;
+          framework_version: string | null;
           gap_cycles: number | null;
           gap_cycles_raw: Json | null;
           git_remote: string | null;
@@ -3633,6 +3635,7 @@ export type Database = {
           auth_method?: string | null;
           build_count?: number | null;
           client?: string | null;
+          client_id?: string | null;
           client_report_id?: string | null;
           commits?: string[] | null;
           created_at?: string | null;
@@ -3640,6 +3643,7 @@ export type Database = {
           deployed_url?: string | null;
           dry_run?: boolean;
           framework_project_id?: string | null;
+          framework_version?: string | null;
           gap_cycles?: number | null;
           gap_cycles_raw?: Json | null;
           git_remote?: string | null;
@@ -3669,6 +3673,7 @@ export type Database = {
           auth_method?: string | null;
           build_count?: number | null;
           client?: string | null;
+          client_id?: string | null;
           client_report_id?: string | null;
           commits?: string[] | null;
           created_at?: string | null;
@@ -3676,6 +3681,7 @@ export type Database = {
           deployed_url?: string | null;
           dry_run?: boolean;
           framework_project_id?: string | null;
+          framework_version?: string | null;
           gap_cycles?: number | null;
           gap_cycles_raw?: Json | null;
           git_remote?: string | null;
@@ -3702,6 +3708,13 @@ export type Database = {
           verification?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'session_reports_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'session_reports_token_id_fkey';
             columns: ['token_id'];
