@@ -19,7 +19,7 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
-} from '@/app/actions';
+} from '@/app/actions/notifications';
 
 interface NotificationItem {
   id: string;

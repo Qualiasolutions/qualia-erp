@@ -116,7 +116,7 @@ const nextConfig: NextConfig = {
       'lucide-react',
       'date-fns',
       '@radix-ui/react-icons',
-      'framer-motion',
+      'motion',
       '@dnd-kit/core',
       '@dnd-kit/sortable',
       '@tanstack/react-virtual',
