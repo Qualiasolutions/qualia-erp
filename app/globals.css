@@ -117,36 +117,55 @@
   }
 
   .dark {
-    /* Dark mode — pure #000000 with teal accents (terminal aesthetic). */
-    --background: 0 0% 0%; /* #000000 — pure black */
-    --foreground: 180 8% 95%;
-    --card: 0 0% 3%; /* #080808 — barely-there lift off pure black */
-    --card-foreground: 180 8% 95%;
-    --popover: 0 0% 4%; /* #0a0a0a */
-    --popover-foreground: 180 8% 95%;
-    --primary: 176 92% 47%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 180 8% 8%; /* #131414 */
-    --secondary-foreground: 180 8% 92%;
-    --muted: 180 6% 7%; /* #111212 */
-    --muted-foreground: 180 6% 60%;
-    --accent: 264 75% 68%;
+    /* ===========================================================
+       Dark mode — Qualia Solutions brand spec
+       Source: Qualia_Solutions_Brand_Guidelines.pdf (Jan 2025)
+
+       Primary Teal     #00FFD1  → hsl(169 100% 50%)   ← brand accent
+       Primary Dark     #00D9B3  → hsl(170 100% 43%)
+       Brand Teal       #00A4AC  → hsl(184 100% 34%)
+       Background       #000000  ← per Fawzi (overrides brand #050505)
+       Card BG          #141414  → hsl(0 0% 8%)
+       Elevated         #0F0F0F  → hsl(0 0% 6%)
+       Primary Text     #EDEDED  → hsl(0 0% 93%)
+       Secondary Text   #A1A1AA  → hsl(240 5% 65%)
+       =========================================================== */
+    --background: 0 0% 0%; /* #000000 — pure black, hard requirement */
+    --foreground: 0 0% 93%; /* #EDEDED — brand primary text */
+    --card: 0 0% 8%; /* #141414 — brand card BG */
+    --card-foreground: 0 0% 93%;
+    --popover: 0 0% 8%; /* #141414 — match card */
+    --popover-foreground: 0 0% 93%;
+
+    /* Brand teal #00FFD1 — the glow color */
+    --primary: 169 100% 50%;
+    --primary-foreground: 0 0% 0%; /* black on teal — max contrast */
+
+    --secondary: 0 0% 6%; /* #0F0F0F — brand "Elevated" */
+    --secondary-foreground: 0 0% 93%;
+    --muted: 0 0% 6%; /* #0F0F0F */
+    --muted-foreground: 240 5% 65%; /* #A1A1AA — brand secondary text */
+
+    /* Brand secondary accent — Purple #8B5CF6 */
+    --accent: 252 87% 67%;
     --accent-foreground: 0 0% 0%;
+
     --destructive: 5 65% 48%;
     --destructive-foreground: 15 65% 60%;
-    /* Borders — subtle teal tint, glow comes from utilities */
-    --border: 180 18% 14%; /* teal-tinted line */
-    --input: 0 0% 5%;
-    --ring: 176 92% 47%;
 
-    /* Surface layers — pure-black stepped with teal-tinted lifts */
-    --surface-1: 0 0% 3%;
-    --surface-2: 0 0% 4%;
-    --surface-3: 0 0% 6%;
-    --surface-hover: 180 8% 7%;
+    /* Borders — teal-tinted dim line, pure brand teal glow layered on top */
+    --border: 169 35% 16%; /* dim brand-teal line */
+    --input: 0 0% 6%; /* #0F0F0F */
+    --ring: 169 100% 50%; /* #00FFD1 ring on focus */
 
-    /* Status colors — brighter for pure black bg */
-    --success: 155 65% 50%;
+    /* Surface layers — brand foundation: 000 → 0F → 14 */
+    --surface-1: 0 0% 6%; /* Elevated #0F0F0F */
+    --surface-2: 0 0% 8%; /* Card #141414 */
+    --surface-3: 0 0% 10%;
+    --surface-hover: 169 35% 10%;
+
+    /* Status colors — Emerald #10B981 from brand secondary */
+    --success: 160 84% 39%;
     --warning: 40 85% 55%;
     --info: 200 75% 55%;
 
@@ -155,40 +174,40 @@
     --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
     --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 
-    /* Elevation — for pure black, depth comes from teal glow not shadow */
-    --elevation-resting: 0 0 0 1px hsl(180 18% 14% / 1);
-    --elevation-raised: 0 0 0 1px hsl(180 18% 14% / 1), 0 0 24px -8px hsl(var(--primary) / 0.08);
-    --elevation-floating: 0 0 0 1px hsl(180 22% 18% / 1), 0 0 32px -6px hsl(var(--primary) / 0.18);
+    /* Elevation — depth = brand-teal radial glow, not opaque drop shadows */
+    --elevation-resting: 0 0 0 1px hsl(169 35% 16% / 1);
+    --elevation-raised: 0 0 0 1px hsl(169 35% 16% / 1), 0 0 24px -8px hsl(var(--primary) / 0.1);
+    --elevation-floating: 0 0 0 1px hsl(169 60% 22% / 1), 0 0 32px -6px hsl(var(--primary) / 0.22);
     --elevation-modal:
-      0 0 0 1px hsl(180 24% 20% / 1), 0 0 48px -4px hsl(var(--primary) / 0.28),
-      0 24px 64px hsl(0 0% 0% / 0.9);
+      0 0 0 1px hsl(169 70% 26% / 1), 0 0 56px -4px hsl(var(--primary) / 0.32),
+      0 24px 64px hsl(0 0% 0% / 0.92);
     --elevation-max:
-      0 0 0 1px hsl(180 26% 22% / 1), 0 0 64px -2px hsl(var(--primary) / 0.4),
-      0 32px 80px hsl(0 0% 0% / 0.95);
+      0 0 0 1px hsl(169 80% 30% / 1), 0 0 72px -2px hsl(var(--primary) / 0.45),
+      0 32px 80px hsl(0 0% 0% / 0.96);
 
-    /* Teal glow — pushed harder against pure black bg */
-    --glow-teal-sm: 0 0 12px hsl(var(--primary) / 0.4), 0 0 2px hsl(var(--primary) / 0.6);
+    /* Teal glow — uses pure brand #00FFD1, intensity tuned for pure-black bg */
+    --glow-teal-sm: 0 0 14px hsl(var(--primary) / 0.5), 0 0 3px hsl(var(--primary) / 0.7);
     --glow-teal-md:
-      0 0 22px hsl(var(--primary) / 0.5), 0 0 6px hsl(var(--primary) / 0.4),
-      inset 0 0 0 1px hsl(var(--primary) / 0.3);
-    --glow-teal-lg:
-      0 0 36px hsl(var(--primary) / 0.55), 0 0 12px hsl(var(--primary) / 0.45),
+      0 0 26px hsl(var(--primary) / 0.6), 0 0 8px hsl(var(--primary) / 0.5),
       inset 0 0 0 1px hsl(var(--primary) / 0.4);
+    --glow-teal-lg:
+      0 0 42px hsl(var(--primary) / 0.65), 0 0 16px hsl(var(--primary) / 0.55),
+      inset 0 0 0 1px hsl(var(--primary) / 0.5);
 
-    /* Border glow — applied to cards/inputs for the "glowing borders" look */
-    --border-glow: 0 0 0 1px hsl(var(--primary) / 0.18), 0 0 16px -4px hsl(var(--primary) / 0.2);
+    /* Border glow — the "glowing borders" tokens */
+    --border-glow: 0 0 0 1px hsl(var(--primary) / 0.22), 0 0 18px -4px hsl(var(--primary) / 0.28);
     --border-glow-strong:
-      0 0 0 1px hsl(var(--primary) / 0.32), 0 0 24px -2px hsl(var(--primary) / 0.32);
+      0 0 0 1px hsl(var(--primary) / 0.42), 0 0 28px -2px hsl(var(--primary) / 0.42);
 
     /* === Design-handoff token overrides for dark === */
-    --accent-hi: hsl(176 92% 60%);
-    --accent-soft: hsl(var(--primary) / 0.12);
-    --panel: hsl(0 0% 3% / 0.92);
-    --panel-strong: hsl(0 0% 3%);
-    --panel-muted: hsl(0 0% 5% / 0.6);
-    --nav-active-bg: hsl(var(--primary) / 0.14);
+    --accent-hi: hsl(169 100% 65%); /* lighter brand teal for hover/highlight */
+    --accent-soft: hsl(var(--primary) / 0.14);
+    --panel: hsl(0 0% 8% / 0.92); /* card #141414 with slight transparency */
+    --panel-strong: hsl(0 0% 8%);
+    --panel-muted: hsl(0 0% 6% / 0.7);
+    --nav-active-bg: hsl(var(--primary) / 0.16);
     --nav-active-text: hsl(var(--primary));
-    /* Pure black shell — no gradient, lets teal glow read against true black */
+    /* Pure black shell — no gradient, brand teal glow reads on true black */
     --shell-bg: hsl(0 0% 0%);
   }
 
@@ -233,22 +252,45 @@
   }
 }
 
-/* Dark mode: cards & section panels get a subtle teal-tinted edge by default
-   so they read against pure #000 without looking flat. */
+/* Dark mode: cards & section panels carry a subtle brand-teal edge by default
+   so they read against pure #000 without looking flat. Hover lights up
+   into a proper #00FFD1 glow. */
 .dark .card-base,
 .dark .widget,
 .dark .erp-panel {
   box-shadow:
-    inset 0 0 0 1px hsl(180 20% 14% / 0.7),
-    0 0 32px -16px hsl(var(--primary) / 0.18);
+    inset 0 0 0 1px hsl(169 35% 16% / 0.85),
+    0 0 36px -12px hsl(var(--primary) / 0.18);
 }
 
 .dark .card-base:hover,
 .dark .widget:hover,
 .dark .card-interactive:hover {
   box-shadow:
+    inset 0 0 0 1px hsl(var(--primary) / 0.4),
+    0 0 28px -2px hsl(var(--primary) / 0.32);
+}
+
+/* Tailwind .border-border in dark mode → use the teal-tinted brand line */
+.dark [class*='border-border'],
+.dark .border-border {
+  border-color: hsl(169 35% 16% / 0.9);
+}
+
+/* Brand-teal glow on the rounded-2xl section cards used across the ERP */
+.dark .rounded-2xl.bg-card,
+.dark .rounded-xl.bg-card {
+  box-shadow:
+    inset 0 0 0 1px hsl(169 35% 16% / 0.7),
+    0 0 24px -10px hsl(var(--primary) / 0.15);
+  transition: box-shadow 0.2s var(--ease-premium);
+}
+
+.dark .rounded-2xl.bg-card:hover,
+.dark .rounded-xl.bg-card:hover {
+  box-shadow:
     inset 0 0 0 1px hsl(var(--primary) / 0.3),
-    0 0 24px -4px hsl(var(--primary) / 0.22);
+    0 0 28px -4px hsl(var(--primary) / 0.28);
 }
 
 /* Teal glowing borders on inputs/buttons when focused (dark mode) */
@@ -257,9 +299,9 @@
 .dark select:focus-visible,
 .dark [data-slot='input']:focus-visible {
   box-shadow:
-    0 0 0 2px hsl(var(--primary) / 0.5),
-    0 0 16px -2px hsl(var(--primary) / 0.45) !important;
-  border-color: hsl(var(--primary) / 0.5) !important;
+    0 0 0 2px hsl(var(--primary) / 0.55),
+    0 0 18px -2px hsl(var(--primary) / 0.5) !important;
+  border-color: hsl(var(--primary) / 0.6) !important;
 }
 
 /* === Density system (UI remake, phase 14) ===
