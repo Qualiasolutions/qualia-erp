@@ -394,24 +394,38 @@ function StageDropdown({ project }: { project: GalleryProject }) {
    Gallery Card
    ====================================================================== */
 
-/** Compact circular progress ring — used at the left of every pipeline card. */
+/** Compact circular progress ring — used at the left of every pipeline card.
+ *  Inner content: project/client logo if present, otherwise the project's
+ *  initial as a fallback glyph. The progress percentage shows on hover via
+ *  title-attribute tooltip — keeps the visual lean while preserving info. */
 function ProgressRing({
   value,
   size = 36,
   strokeWidth = 2.5,
   strokeClass,
+  logoUrl,
+  fallbackInitial,
+  label,
 }: {
   value: number;
   size?: number;
   strokeWidth?: number;
   strokeClass: string;
+  logoUrl: string | null;
+  fallbackInitial: string;
+  label: string;
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
+  const innerSize = size - strokeWidth * 2 - 4;
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size }} aria-hidden>
-      <svg width={size} height={size} className="-rotate-90">
+    <div
+      className="relative shrink-0"
+      style={{ width: size, height: size }}
+      title={`${value}% complete`}
+    >
+      <svg width={size} height={size} className="-rotate-90" aria-hidden>
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -430,9 +444,28 @@ function ProgressRing({
           className={cn('fill-none transition-all duration-500', strokeClass)}
         />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] font-semibold tabular-nums text-foreground">
-        {value}
-      </span>
+      <div className="absolute inset-0 flex items-center justify-center" aria-label={label}>
+        {logoUrl ? (
+          <Image
+            src={logoUrl}
+            alt=""
+            aria-hidden
+            width={innerSize}
+            height={innerSize}
+            className="rounded-full object-cover"
+            style={{ width: innerSize, height: innerSize }}
+            unoptimized
+          />
+        ) : (
+          <span
+            className="flex items-center justify-center rounded-full bg-muted text-[10px] font-semibold uppercase text-muted-foreground"
+            style={{ width: innerSize, height: innerSize }}
+            aria-hidden
+          >
+            {fallbackInitial}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -468,8 +501,14 @@ const ProjectCardTile = memo(function ProjectCardTile({
       {/* Admin stage dropdown — absolute, top-right */}
       {isAdmin && <StageDropdown project={project} />}
 
-      {/* Left: circular progress ring */}
-      <ProgressRing value={progress} strokeClass={progressStroke} />
+      {/* Left: circular progress ring with project/client logo inside */}
+      <ProgressRing
+        value={progress}
+        strokeClass={progressStroke}
+        logoUrl={project.logo_url}
+        fallbackInitial={(project.name?.charAt(0) ?? '?').toUpperCase()}
+        label={`${project.name} — ${progress}% complete`}
+      />
 
       {/* Center: name (top) + type label (bottom) */}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
