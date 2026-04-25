@@ -7,6 +7,7 @@ export {
   type FinanceKpi,
   type FinancePaymentRow,
   type FinanceInvoiceRow,
+  type FinanceRecurringRow,
 } from './finance';
 export {
   loadSystemTab,
