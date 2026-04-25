@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Client } from '@/types/database';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -12,16 +13,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Building2, Phone, Globe, Folder, User, Pencil, Plus, X } from 'lucide-react';
+import { Building2, Phone, Globe, Folder, User, Pencil, Plus, X, Trash2 } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { WorkShowcase } from '@/components/work-showcase';
 import { EditClientModal } from '@/components/edit-client-modal';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { LogoUpload } from '@/components/logo-upload';
 import { ClientProjectAccess } from '@/components/clients/client-project-access';
 import { AdminActionItemsPanel } from '@/components/portal/admin-action-items-panel';
 import { RichText } from '@/components/ui/rich-text';
 import { updateProject } from '@/app/actions/projects';
+import { deleteClientRecord } from '@/app/actions/clients';
 import { toast } from 'sonner';
 
 const statusConfig = {
@@ -125,7 +128,23 @@ export function ClientDetailView({
   isAdmin,
 }: ClientDetailViewProps) {
   const [client, setClient] = useState(initialClient);
+  const router = useRouter();
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isDeleting, startDeleting] = useTransition();
+
+  function handleDelete() {
+    startDeleting(async () => {
+      const result = await deleteClientRecord(client.id);
+      if (result.success) {
+        toast.success(`Deleted "${client.display_name || client.name || 'client'}"`);
+        router.push('/clients');
+      } else {
+        toast.error(result.error || 'Failed to delete client');
+        setDeleteOpen(false);
+      }
+    });
+  }
   const [erpLinkedProjects, setErpLinkedProjects] =
     useState<ERPProject[]>(initialErpLinkedProjects);
   const [selectedErpProjectId, setSelectedErpProjectId] = useState('');
@@ -215,15 +234,27 @@ export function ClientDetailView({
                 {status.label}
               </Badge>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditModalOpen(true)}
-              className="gap-2"
-            >
-              <Pencil className="h-4 w-4" />
-              Edit
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditModalOpen(true)}
+                className="gap-2"
+              >
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDeleteOpen(true)}
+                disabled={isDeleting}
+                className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -484,6 +515,17 @@ export function ClientDetailView({
 
       {/* Edit Client Modal */}
       <EditClientModal client={client} open={editModalOpen} onOpenChange={setEditModalOpen} />
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={`Delete "${client.display_name || client.name || 'this client'}"?`}
+        description="This permanently deletes the client record. Linked projects, invoices, and activity stay (their client_id is set to NULL). This cannot be undone."
+        confirmLabel={isDeleting ? 'Deleting…' : 'Delete client'}
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
