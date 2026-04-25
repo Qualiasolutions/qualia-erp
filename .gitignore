@@ -67,3 +67,6 @@ tsc_output.txt
 
 # SWC cache
 .swc/
+
+# Codex CLI marker
+.codex
