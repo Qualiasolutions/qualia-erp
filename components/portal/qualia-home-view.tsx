@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, Calendar, CheckSquare, FolderKanban, ExternalLink } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   useInboxTasks,
   useTodaysMeetings,
@@ -24,6 +26,48 @@ interface QualiaHomeViewProps {
   workspaces?: ClientWorkspace[];
   /** Employee only — drives useEmployeeAssignments for project list. */
   userId?: string;
+}
+
+/** Small circular project/client mark: logo if present, initials otherwise.
+ *  Matches the ring treatment used on the /projects pipeline cards so the
+ *  visual language stays consistent across the homepage and the pipeline. */
+function ProjectMark({
+  logoUrl,
+  fallback,
+  size = 36,
+  className,
+}: {
+  logoUrl: string | null;
+  fallback: string;
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/30 bg-primary/5',
+        className
+      )}
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      {logoUrl ? (
+        <Image
+          src={logoUrl}
+          alt=""
+          width={size - 4}
+          height={size - 4}
+          className="rounded-full object-cover"
+          style={{ width: size - 4, height: size - 4 }}
+          unoptimized
+        />
+      ) : (
+        <span className="text-[10px] font-semibold uppercase text-primary">
+          {fallback.slice(0, 2)}
+        </span>
+      )}
+    </div>
+  );
 }
 
 function getGreeting(hour: number): string {
@@ -108,6 +152,7 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
             id: p.id,
             name: p.name,
             clientName: ws.name,
+            logoUrl: p.logo_url,
             href: `/projects/${p.id}/roadmap`,
           }))
       );
@@ -117,6 +162,7 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
         id: string;
         name: string;
         status: string | null;
+        logo_url: string | null;
         client: { id: string; name: string } | null;
       } | null;
     };
@@ -126,6 +172,7 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
         id: a.project!.id,
         name: a.project!.name,
         clientName: a.project!.client?.name ?? 'No client',
+        logoUrl: a.project!.logo_url,
         href: `/projects/${a.project!.id}/roadmap`,
       }));
   }, [role, workspaces, assignments]);
@@ -301,13 +348,14 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
                     <Link
                       key={p.id}
                       href={p.href}
-                      className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-muted/30"
+                      className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-muted/30"
                     >
-                      <div>
-                        <div className="font-medium">{p.name}</div>
-                        <div className="text-xs text-muted-foreground">{p.clientName}</div>
+                      <ProjectMark logoUrl={p.logoUrl} fallback={p.clientName || p.name} />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium">{p.name}</div>
+                        <div className="truncate text-xs text-muted-foreground">{p.clientName}</div>
                       </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                     </Link>
                   ))}
                 </div>
@@ -328,11 +376,11 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
                 Next Ship
               </p>
               <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full border border-primary/30 bg-primary/5">
-                  <span className="text-xs font-semibold text-primary">
-                    {nextShip.clientName.slice(0, 2).toUpperCase()}
-                  </span>
-                </div>
+                <ProjectMark
+                  logoUrl={nextShip.logoUrl}
+                  fallback={nextShip.clientName || nextShip.name}
+                  size={56}
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{nextShip.name}</p>
                   <p className="text-sm text-muted-foreground">{nextShip.clientName}</p>

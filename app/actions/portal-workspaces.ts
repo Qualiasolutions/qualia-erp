@@ -14,6 +14,7 @@ export interface ClientWorkspace {
     name: string;
     status: string | null;
     project_type: string | null;
+    logo_url: string | null;
   }>;
   portalUserId: string | null;
   lastActivity: string | null;
@@ -45,7 +46,7 @@ export async function getClientWorkspaces(): Promise<ActionResult> {
         supabase.from('client_contacts').select('client_id, email, is_primary'),
         supabase
           .from('projects')
-          .select('id, name, status, project_type, client_id')
+          .select('id, name, status, project_type, client_id, logo_url')
           .not('status', 'eq', 'Canceled')
           .order('name'),
         supabase.from('profiles').select('id, email, full_name').eq('role', 'client'),
@@ -83,7 +84,13 @@ export async function getClientWorkspaces(): Promise<ActionResult> {
     // Build project ID -> project detail map
     const projectById = new Map<
       string,
-      { id: string; name: string; status: string | null; project_type: string | null }
+      {
+        id: string;
+        name: string;
+        status: string | null;
+        project_type: string | null;
+        logo_url: string | null;
+      }
     >();
     for (const project of projectsResult.data ?? []) {
       projectById.set(project.id, {
@@ -91,13 +98,20 @@ export async function getClientWorkspaces(): Promise<ActionResult> {
         name: project.name,
         status: project.status,
         project_type: project.project_type,
+        logo_url: project.logo_url,
       });
     }
 
     // Build client_id -> projects map (CRM FK)
     const clientProjectsMap = new Map<
       string,
-      Array<{ id: string; name: string; status: string | null; project_type: string | null }>
+      Array<{
+        id: string;
+        name: string;
+        status: string | null;
+        project_type: string | null;
+        logo_url: string | null;
+      }>
     >();
     for (const project of projectsResult.data ?? []) {
       if (!project.client_id) continue;
@@ -107,6 +121,7 @@ export async function getClientWorkspaces(): Promise<ActionResult> {
         name: project.name,
         status: project.status,
         project_type: project.project_type,
+        logo_url: project.logo_url,
       });
       clientProjectsMap.set(project.client_id, existing);
     }

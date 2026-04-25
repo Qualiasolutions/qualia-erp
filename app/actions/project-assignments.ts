@@ -561,6 +561,7 @@ export async function getEmployeeAssignments(employeeId: string): Promise<Action
         name,
         status,
         project_type,
+        logo_url,
         client:clients (
           id,
           name
