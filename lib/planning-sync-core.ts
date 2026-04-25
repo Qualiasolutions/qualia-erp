@@ -179,6 +179,18 @@ export async function syncPlanningFromGitHubWithServiceRole(
     '.planning/STATE.md'
   );
 
+  // 4b. Fetch JOURNEY.md (qualia v4 — full milestone arc).
+  // ROADMAP.md only describes the CURRENT milestone; JOURNEY.md is the
+  // North Star with every milestone (closed + future). Without this fetch,
+  // closed milestones disappear from the tree once ROADMAP.md is regenerated
+  // for a new milestone, even though their phase dirs still exist on disk.
+  const journeyResult = await fetchGitHubFile(
+    token,
+    repoParsed.owner,
+    repoParsed.repo,
+    '.planning/JOURNEY.md'
+  );
+
   // 5. Choose parsing strategy:
   //    - If ROADMAP.md exists: parse it (the canonical Qualia format).
   //    - Else if STATE.md has a flat roadmap table: use the fallback parser
@@ -219,6 +231,28 @@ export async function syncPlanningFromGitHubWithServiceRole(
       phasesOnly: 0,
       error: detail,
     };
+  }
+
+  // 5b. Merge in milestones from JOURNEY.md (full multi-milestone arc).
+  // ROADMAP.md is the source of truth for the CURRENT milestone's phases.
+  // JOURNEY.md is the source of truth for the milestone arc itself —
+  // closed milestones, future milestones, and the Handoff at the end.
+  // Without this merge, closed milestones disappear from the tree once
+  // ROADMAP.md is regenerated for a new milestone.
+  //
+  // Dedup rule: if a milestone appears in BOTH, ROADMAP wins (it has live
+  // phases). JOURNEY entries only contribute when no ROADMAP entry exists
+  // for that number — those slots are filled later by the phase-dir scan.
+  if (journeyResult.content) {
+    const journeyMilestones = parseRoadmap(journeyResult.content);
+    const seenNumbers = new Set(milestones.map((m) => m.number));
+    for (const jm of journeyMilestones) {
+      if (!seenNumbers.has(jm.number)) {
+        milestones.push(jm);
+        seenNumbers.add(jm.number);
+      }
+    }
+    milestones.sort((a, b) => a.number - b.number);
   }
 
   // 6. For archived milestones with no inline phases, scan phase directories
