@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { unstable_rethrow } from 'next/navigation';
 import { safeCompare } from '@/lib/auth-utils';
 import { Resend } from 'resend';
 import { createClient } from '@/lib/supabase/server';
@@ -155,6 +156,7 @@ export async function GET(request: Request) {
       services: downMonitors.map((m) => m.friendly_name),
     });
   } catch (err) {
+    unstable_rethrow(err);
     console.error('[uptime-check] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

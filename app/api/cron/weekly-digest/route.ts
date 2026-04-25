@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { unstable_rethrow } from 'next/navigation';
 import { safeCompare } from '@/lib/auth-utils';
 import { sendWeeklyDigests } from '@/lib/email';
 
@@ -37,6 +38,7 @@ export async function GET(request: Request) {
       errors,
     });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('[cron/weekly-digest] Fatal error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

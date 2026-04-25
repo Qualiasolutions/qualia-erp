@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { unstable_rethrow } from 'next/navigation';
 import { safeCompare } from '@/lib/auth-utils';
 import { syncZohoFinancials } from '@/app/actions/financials';
 
@@ -40,6 +41,7 @@ export async function GET(request: Request) {
       paymentCount: result.paymentCount,
     });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('[cron/zoho-sync] Unexpected error:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }

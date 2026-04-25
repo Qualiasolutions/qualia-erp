@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { unstable_rethrow } from 'next/navigation';
 import { safeCompare } from '@/lib/auth-utils';
 import { createClient } from '@supabase/supabase-js';
 
@@ -120,6 +121,7 @@ export async function GET(request: Request) {
     console.log(`[cron/supabase-check] Created Supabase check task for ${profile.full_name}`);
     return NextResponse.json({ success: true, date: today, employee: profile.full_name });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('[cron/supabase-check] Unexpected error:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { unstable_rethrow } from 'next/navigation';
 import { safeCompare } from '@/lib/auth-utils';
 import { sendMorningEmail } from '@/lib/email';
 import { createClient } from '@/lib/supabase/server';
@@ -180,6 +181,7 @@ export async function GET(request: Request) {
       details: results,
     });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('[cron/morning-email] Unexpected error:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
