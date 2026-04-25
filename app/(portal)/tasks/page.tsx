@@ -54,6 +54,7 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
 
   const supabase = await createClient();
   let initialTasks: Task[] = [];
+  let initialNextCursor: string | null = null;
   let assignableMembers: Array<{
     id: string;
     full_name: string | null;
@@ -69,7 +70,12 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
     const result = await getClientVisibleTasks(projectIds, role);
     initialTasks = (result.success ? (result.data as Task[]) : []) ?? [];
   } else if (mode === 'all-tasks') {
-    initialTasks = await getTasks(workspaceId, { scope: 'all', limit: 500 });
+    // M5 (OPTIMIZE.md): cursor pagination — fetch first page (100) instead of
+    // a hard-capped 500. The Load more button in the task list fetches follow-up
+    // pages via the loadMoreWorkspaceTasks server action.
+    const paged = await getTasks(workspaceId, { scope: 'all', paged: true });
+    initialTasks = paged.tasks;
+    initialNextCursor = paged.nextCursor;
     const { data: members } = await supabase
       .from('profiles')
       .select('id, full_name, email, role')
@@ -100,6 +106,7 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
     <QualiaTasksList
       mode={mode}
       initialTasks={initialTasks}
+      initialNextCursor={initialNextCursor}
       userRole={normalizedRole}
       isAdmin={isAdmin}
       assignableMembers={assignableMembers}

@@ -21,6 +21,7 @@ import {
   bulkAssignTasks,
   bulkMarkDone,
   bulkDelete,
+  loadMoreWorkspaceTasks,
   type Task,
 } from '@/app/actions/inbox';
 import {
@@ -55,6 +56,7 @@ export type QualiaTasksMode = 'inbox' | 'all-tasks' | 'client';
 export interface QualiaTasksListProps {
   mode: QualiaTasksMode;
   initialTasks: Task[];
+  initialNextCursor?: string | null;
   userRole: 'admin' | 'employee' | 'client';
   isAdmin?: boolean;
   assignableMembers?: Array<{ id: string; full_name: string | null; email: string | null }>;
@@ -877,6 +879,7 @@ function TaskListContainer({
 export function QualiaTasksList({
   mode,
   initialTasks,
+  initialNextCursor = null,
   userRole,
   isAdmin = false,
   assignableMembers = [],
@@ -886,13 +889,26 @@ export function QualiaTasksList({
   const isClient = mode === 'client';
   const [isPending, startTransition] = useTransition();
 
+  // M5: cursor pagination state for admin all-tasks mode
+  const [cursor, setCursor] = useState<string | null>(initialNextCursor ?? null);
+  const [extraTasks, setExtraTasks] = useState<Task[]>([]);
+  const [isLoadingMore, startLoadMore] = useTransition();
+
   // SWR + realtime for inbox mode
   const inboxLive = useInboxTasks();
   const { workspaceId } = useCurrentWorkspaceId();
   useRealtimeTasks(mode === 'inbox' ? (workspaceId ?? null) : null);
 
+  // Merge initial + paginated extra tasks, deduplicating by id
+  const mergedTasks = useMemo(() => {
+    if (extraTasks.length === 0) return initialTasks;
+    const seen = new Set(initialTasks.map((t) => t.id));
+    const deduped = extraTasks.filter((t) => !seen.has(t.id));
+    return [...initialTasks, ...deduped];
+  }, [initialTasks, extraTasks]);
+
   const baseTasks =
-    mode === 'inbox' && inboxLive.tasks.length > 0 ? (inboxLive.tasks as Task[]) : initialTasks;
+    mode === 'inbox' && inboxLive.tasks.length > 0 ? (inboxLive.tasks as Task[]) : mergedTasks;
   const [optimisticTasks, dispatchOptimistic] = useOptimistic(baseTasks, tasksReducer);
 
   // UI state
@@ -1243,6 +1259,30 @@ export function QualiaTasksList({
           inboxLive.isValidating
         }
       />
+
+      {/* M5: Load more button for admin all-tasks pagination */}
+      {mode === 'all-tasks' && cursor !== null && (
+        <div className="mt-3 flex justify-center">
+          <Button
+            variant="outline"
+            className="h-10 w-full max-w-md cursor-pointer text-sm font-medium text-muted-foreground transition-colors duration-150 hover:text-foreground"
+            disabled={isLoadingMore}
+            aria-busy={isLoadingMore}
+            onClick={() => {
+              startLoadMore(async () => {
+                const result = await loadMoreWorkspaceTasks(cursor);
+                setExtraTasks((prev) => [...prev, ...result.tasks]);
+                setCursor(result.nextCursor);
+              });
+            }}
+          >
+            {isLoadingMore ? 'Loading more…' : 'Load more'}
+          </Button>
+        </div>
+      )}
+      {mode === 'all-tasks' && cursor === null && extraTasks.length > 0 && (
+        <p className="mt-3 text-center text-xs text-muted-foreground">All tasks loaded</p>
+      )}
 
       {/* Edit modal (admin only) */}
       {editingTask && canManage && (

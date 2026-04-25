@@ -13,7 +13,6 @@ import {
   XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -57,15 +56,15 @@ function StatusIcon({ status }: { status: string | null }) {
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {label}
-        </div>
-        <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
-        {sub && <div className="text-[11px] text-muted-foreground/80">{sub}</div>}
-      </CardContent>
-    </Card>
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-2 text-[26px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
+        {value}
+      </div>
+      {sub && <div className="mt-1 text-[11px] text-muted-foreground/80">{sub}</div>}
+    </div>
   );
 }
 
@@ -196,7 +195,7 @@ export function FrameworkReportsTab() {
 
       {/* Top projects bar */}
       {stats && stats.topProjects.length > 0 && (
-        <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
+        <div className="rounded-xl border border-border bg-muted/20 px-3 py-2">
           <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Top projects by report count
           </div>
@@ -219,7 +218,7 @@ export function FrameworkReportsTab() {
       )}
 
       {/* Reports table */}
-      <div className="rounded-lg border border-border">
+      <div className="rounded-xl border border-border bg-card">
         <Table>
           <TableHeader>
             <TableRow>

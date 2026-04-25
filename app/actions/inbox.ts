@@ -144,6 +144,45 @@ export type Task = {
 // default projection and is now fetched on-demand via getProjectTasks.
 const DEFAULT_TASK_FETCH_LIMIT = 200;
 
+// ============================================================================
+// M5 (OPTIMIZE.md): Cursor pagination helpers for keyset-based paging.
+// Cursor encodes (sort_order|created_at|id) as base64url.
+// ============================================================================
+
+function encodeCursor(row: { sort_order: number; created_at: string; id: string }): string {
+  return Buffer.from(`${row.sort_order}|${row.created_at}|${row.id}`).toString('base64url');
+}
+
+function decodeCursor(s: string): { sortOrder: number; createdAt: string; id: string } | null {
+  try {
+    const decoded = Buffer.from(s, 'base64url').toString('utf8');
+    const parts = decoded.split('|');
+    if (parts.length < 3) return null;
+    const sortOrder = Number(parts[0]);
+    if (Number.isNaN(sortOrder)) return null;
+    const createdAt = parts[1];
+    // id may contain pipes (unlikely for UUIDs, but be safe)
+    const id = parts.slice(2).join('|');
+    if (!createdAt || !id) return null;
+    return { sortOrder, createdAt, id };
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================================
+// getTasks — with optional cursor pagination via `paged: true`
+// ============================================================================
+
+export type GetTasksOptions = {
+  status?: string[];
+  limit?: number;
+  inboxOnly?: boolean;
+  scope?: 'mine' | 'all';
+  cursor?: string;
+  paged?: boolean;
+};
+
 /**
  * Get tasks for a workspace
  *
@@ -153,16 +192,22 @@ const DEFAULT_TASK_FETCH_LIMIT = 200;
  *  - `'all'` — admin-only. Returns every task in the workspace. Returns [] for
  *    non-admins.
  *  - omitted — legacy behavior: admins see all, others see scoped.
+ *
+ * When `paged: true`, returns `{ tasks, nextCursor }` for keyset pagination.
+ * Legacy callers (without `paged`) still receive `Task[]`.
  */
 export async function getTasks(
+  workspaceId: string | null | undefined,
+  options: { paged: true } & GetTasksOptions
+): Promise<{ tasks: Task[]; nextCursor: string | null }>;
+export async function getTasks(
   workspaceId?: string | null,
-  options: {
-    status?: string[];
-    limit?: number;
-    inboxOnly?: boolean;
-    scope?: 'mine' | 'all';
-  } = {}
-): Promise<Task[]> {
+  options?: GetTasksOptions
+): Promise<Task[]>;
+export async function getTasks(
+  workspaceId?: string | null,
+  options: GetTasksOptions = {}
+): Promise<Task[] | { tasks: Task[]; nextCursor: string | null }> {
   const supabase = await createClient();
 
   // Get workspace ID from parameter or user's default
@@ -173,7 +218,7 @@ export async function getTasks(
 
   if (!wsId) {
     console.error('[getTasks] No workspace ID available');
-    return [];
+    return options.paged ? { tasks: [], nextCursor: null } : [];
   }
 
   // First check auth
@@ -183,7 +228,7 @@ export async function getTasks(
 
   if (!user) {
     console.error('[getTasks] No authenticated user');
-    return [];
+    return options.paged ? { tasks: [], nextCursor: null } : [];
   }
 
   // Scope tasks: admins/managers see all, others see only their tasks.
@@ -198,7 +243,7 @@ export async function getTasks(
   } else if (options.scope === 'all') {
     if (!(await isUserAdmin(user.id))) {
       // Non-admins cannot request the workspace-wide view.
-      return [];
+      return options.paged ? { tasks: [], nextCursor: null } : [];
     }
     shouldScope = false;
   }
@@ -238,6 +283,11 @@ export async function getTasks(
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false });
 
+  // For paged mode, add a third ordering column for deterministic keyset pagination
+  if (options.paged) {
+    query = query.order('id', { ascending: false });
+  }
+
   // Scope visibility: strictly the user's own assigned tasks.
   // Tasks they created for other people (delegations) belong to the assignee's
   // queue, not the creator's. Tasks on projects they're assigned to but given
@@ -265,16 +315,36 @@ export async function getTasks(
     query = query.in('status', options.status);
   }
 
-  query = query.limit(options.limit ?? DEFAULT_TASK_FETCH_LIMIT);
+  // Keyset cursor filter for paged mode
+  if (options.paged && options.cursor) {
+    const decoded = decodeCursor(options.cursor);
+    if (decoded) {
+      const { sortOrder, createdAt, id } = decoded;
+      // Keyset condition matching the 3-column ordering:
+      // (sort_order ASC, created_at DESC, id DESC)
+      query = query.or(
+        `sort_order.gt.${sortOrder},and(sort_order.eq.${sortOrder},created_at.lt.${createdAt}),and(sort_order.eq.${sortOrder},created_at.eq.${createdAt},id.lt.${id})`
+      );
+    }
+    // If cursor is malformed, fall through to first page (no keyset filter)
+  }
+
+  // Determine page size: paged mode defaults to limit ?? 100; legacy uses DEFAULT_TASK_FETCH_LIMIT
+  const pageSize = options.paged
+    ? (options.limit ?? 100)
+    : (options.limit ?? DEFAULT_TASK_FETCH_LIMIT);
+
+  // Fetch pageSize + 1 in paged mode to detect if there's a next page
+  query = query.limit(options.paged ? pageSize + 1 : pageSize);
 
   const { data: tasks, error } = await query;
 
   if (error) {
     console.error('[getTasks] Error fetching tasks:', error);
-    return [];
+    return options.paged ? { tasks: [], nextCursor: null } : [];
   }
 
-  return (tasks || []).map((task) => {
+  const rawTasks = (tasks || []).map((task) => {
     const t = task as unknown as {
       creator: Task['creator'] | Task['creator'][] | null;
       assignee: Task['assignee'] | Task['assignee'][] | null;
@@ -287,6 +357,24 @@ export async function getTasks(
       project: Array.isArray(t.project) ? t.project[0] : t.project,
     } as Task;
   });
+
+  if (options.paged) {
+    let nextCursor: string | null = null;
+    let pageTasks = rawTasks;
+    if (rawTasks.length > pageSize) {
+      // The extra row tells us there are more pages
+      const lastRow = rawTasks[pageSize - 1];
+      nextCursor = encodeCursor({
+        sort_order: lastRow.sort_order,
+        created_at: lastRow.created_at,
+        id: lastRow.id,
+      });
+      pageTasks = rawTasks.slice(0, pageSize);
+    }
+    return { tasks: pageTasks, nextCursor };
+  }
+
+  return rawTasks;
 }
 
 // ============================================================================
@@ -1683,4 +1771,30 @@ export async function clearCompletedFromInbox(): Promise<ActionResult> {
   if (error) return { success: false, error: error.message };
 
   return { success: true, data: { cleared: count } };
+}
+
+// ============================================================================
+// M5 (OPTIMIZE.md): loadMoreWorkspaceTasks — paginated follow-up for admin
+// all-tasks view. One-shot server action (not SWR-driven).
+// ============================================================================
+
+export async function loadMoreWorkspaceTasks(
+  cursor: string
+): Promise<{ tasks: Task[]; nextCursor: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { tasks: [], nextCursor: null };
+
+  // Only admins may page through the full workspace task list
+  if (!(await isUserAdmin(user.id))) {
+    return { tasks: [], nextCursor: null };
+  }
+
+  const wsId = await getCurrentWorkspaceId();
+  if (!wsId) return { tasks: [], nextCursor: null };
+
+  return getTasks(wsId, { scope: 'all', paged: true, cursor });
 }
