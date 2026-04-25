@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/portal-utils';
-import { KnowledgePageClient } from './knowledge-page-client';
+import { QualiaKnowledgeView } from '@/components/portal/qualia-knowledge-view';
 import { getKnowledgeGuides } from '@/app/actions/knowledge';
 import { type Guide } from '@/lib/guides-data';
 
@@ -16,12 +16,9 @@ export default async function PortalKnowledgePage() {
   if (!user) redirect('/auth/login');
 
   const role = await getUserRole(user.id);
-  // Only admin, manager, employee can access knowledge
   if (role === 'client') redirect('/');
 
-  const isAdmin = role === 'admin';
-
-  // Try DB first, fall back to hardcoded (matching app/knowledge/page.tsx logic)
+  // Try DB first, fall back to hardcoded guide bundle
   let allGuides: Guide[];
   try {
     allGuides = await getKnowledgeGuides();
@@ -29,19 +26,5 @@ export default async function PortalKnowledgePage() {
     allGuides = (await import('@/lib/guides-data')).guides;
   }
 
-  const byCategory = (cat: string) => allGuides.filter((g) => g.category === cat);
-
-  return (
-    <KnowledgePageClient
-      initialData={{
-        foundationsGuides: byCategory('foundations'),
-        lifecycleGuides: byCategory('lifecycle'),
-        operationsGuides: byCategory('operations'),
-        referenceGuides: byCategory('reference'),
-        checklistGuides: byCategory('checklist'),
-        allGuides,
-      }}
-      isAdmin={isAdmin}
-    />
-  );
+  return <QualiaKnowledgeView guides={allGuides} />;
 }

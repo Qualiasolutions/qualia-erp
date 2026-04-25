@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/portal-utils';
-import { ResearchPageClient } from './research-page-client';
+import { QualiaResearchView } from '@/components/portal/qualia-research-view';
 import { getResearchEntries } from '@/app/actions/research';
 
 export const metadata = { title: 'Research' };
@@ -15,11 +15,11 @@ export default async function PortalResearchPage() {
   if (!user) redirect('/auth/login');
 
   const role = await getUserRole(user.id);
-  // Only admin, manager, employee can access research
   if (role === 'client') redirect('/');
 
+  const isAdmin = role === 'admin';
   const result = await getResearchEntries({ limit: 50 });
   const entries = result.success ? result.data || [] : [];
 
-  return <ResearchPageClient initialEntries={entries} />;
+  return <QualiaResearchView initialEntries={entries} isAdmin={isAdmin} />;
 }
