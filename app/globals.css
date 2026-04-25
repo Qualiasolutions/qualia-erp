@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 /* ============================================
-   QUALIA DESIGN SYSTEM v4.0
-   Impeccable • Warm • Tinted • Premium
+   QUALIA DESIGN SYSTEM v4.1
+   Modern ERP • Black/Teal • Data Dense • Premium
 
    Follows Impeccable best practices:
    - OKLCH for perceptually uniform colors
@@ -21,29 +21,27 @@
   }
 
   :root {
-    /* Light mode — Warm teal-tinted surfaces
-       Borders are now full opacity (no more border-border/40 pattern),
-       so border lightness is set to ~85% for subtle but visible lines. */
-    --background: 185 5% 96%;
-    --foreground: 190 15% 13%;
-    --card: 185 4% 99%;
-    --card-foreground: 190 15% 13%;
-    --popover: 185 4% 99%;
-    --popover-foreground: 190 15% 13%;
-    --primary: 174 60% 34%;
+    /* Light mode — clean teal-tinted grays from the ERP update prototype. */
+    --background: 185 7% 97%;
+    --foreground: 188 18% 12%;
+    --card: 185 9% 99%;
+    --card-foreground: 188 18% 12%;
+    --popover: 185 9% 99%;
+    --popover-foreground: 188 18% 12%;
+    --primary: 180 64% 35%;
     --primary-foreground: 180 6% 99%;
-    --secondary: 185 6% 92%;
-    --secondary-foreground: 185 10% 22%;
-    --muted: 185 5% 91%;
-    --muted-foreground: 185 6% 35%;
+    --secondary: 185 9% 93%;
+    --secondary-foreground: 185 14% 20%;
+    --muted: 185 8% 92%;
+    --muted-foreground: 185 8% 36%;
     --accent: 290 40% 52%;
     --accent-foreground: 0 0% 99%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 180 6% 99%;
-    --border: 185 4% 85%;
-    --input: 185 4% 82%;
-    --ring: 174 60% 34%;
-    --radius: 0.625rem;
+    --border: 185 7% 86%;
+    --input: 185 7% 84%;
+    --ring: 180 64% 35%;
+    --radius: 0.75rem;
 
     /* Status colors — tinted toward brand */
     --success: 155 55% 38%;
@@ -51,10 +49,10 @@
     --info: 200 70% 44%;
 
     /* Surface layers — more contrast spread for visible depth */
-    --surface-1: 185 4% 99%;
-    --surface-2: 185 4% 95.5%;
-    --surface-3: 185 4% 92%;
-    --surface-hover: 185 4% 94%;
+    --surface-1: 185 9% 99%;
+    --surface-2: 185 8% 95.5%;
+    --surface-3: 185 8% 92%;
+    --surface-hover: 185 9% 94.5%;
 
     /* Motion system — exponential deceleration only (Impeccable) */
     --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -62,11 +60,11 @@
     --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 
     /* Elevation system — 5 tiers */
-    --elevation-resting: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --elevation-raised: 0 2px 8px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-    --elevation-floating: 0 8px 24px rgba(0, 0, 0, 0.07), 0 2px 8px rgba(0, 0, 0, 0.03);
-    --elevation-modal: 0 16px 48px rgba(0, 0, 0, 0.1), 0 4px 16px rgba(0, 0, 0, 0.05);
-    --elevation-max: 0 24px 64px rgba(0, 0, 0, 0.14), 0 8px 24px rgba(0, 0, 0, 0.07);
+    --elevation-resting: 0 1px 2px hsl(190 20% 16% / 0.04);
+    --elevation-raised: 0 2px 8px hsl(190 20% 16% / 0.06), 0 1px 2px hsl(190 20% 16% / 0.04);
+    --elevation-floating: 0 10px 28px hsl(190 20% 16% / 0.08), 0 2px 8px hsl(190 20% 16% / 0.04);
+    --elevation-modal: 0 18px 56px hsl(190 20% 16% / 0.14), 0 4px 16px hsl(190 20% 16% / 0.07);
+    --elevation-max: 0 28px 72px hsl(190 20% 16% / 0.18), 0 8px 24px hsl(190 20% 16% / 0.08);
 
     /* Fluid spacing scale */
     --space-xs: clamp(0.25rem, 0.2rem + 0.25vw, 0.5rem);
@@ -91,7 +89,7 @@
     /* Brand teal — bound to existing --primary so the design layout inherits
        the exact teal the project already ships. No new teal is introduced. */
     --accent-teal: hsl(var(--primary));
-    --accent-hi: hsl(182 60% 49%); /* qualia-400 = #33C3C9 */
+    --accent-hi: hsl(182 62% 49%);
     --accent-soft: hsl(var(--primary) / 0.12);
     --on-accent: hsl(var(--primary-foreground));
 
@@ -108,68 +106,75 @@
     --gap: 16px;
 
     /* Shell dimensions */
-    --sidebar-w: 232px;
+    --sidebar-w: 256px;
     --rightrail-w: 320px;
+    --panel: hsl(var(--card) / 0.86);
+    --panel-strong: hsl(var(--card));
+    --panel-muted: hsl(var(--surface-2) / 0.72);
+    --nav-active-bg: hsl(var(--primary) / 0.1);
+    --nav-active-text: hsl(var(--primary));
+    --shell-bg: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--surface-2)) 100%);
   }
 
   .dark {
-    /* Dark mode — PURE BLACK bg with glowing teal (qualiasolutions.net style) */
-    --background: 0 0% 0%; /* #000000 — absolute black */
-    --foreground: 180 10% 96%; /* crisp white with subtle teal tint */
-    --card: 180 8% 3%; /* barely-there surface lift */
-    --card-foreground: 180 10% 96%;
-    --popover: 180 10% 4%;
-    --popover-foreground: 180 10% 96%;
-    --primary: 174 100% 42%; /* vivid teal — #00D4D8 equivalent */
-    --primary-foreground: 0 0% 0%;
-    --secondary: 180 8% 8%;
-    --secondary-foreground: 180 10% 96%;
-    --muted: 180 6% 10%;
-    --muted-foreground: 180 8% 55%;
-    --accent: 174 100% 42%; /* teal accent matches primary for cohesion */
-    --accent-foreground: 0 0% 0%;
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 180 8% 12%; /* subtle teal-tinted borders */
-    --input: 180 6% 8%;
-    --ring: 174 100% 42%;
+    /* Dark mode — black/teal theme from the ERP update prototype. */
+    --background: 188 28% 5%;
+    --foreground: 185 9% 94%;
+    --card: 188 22% 8%;
+    --card-foreground: 185 9% 94%;
+    --popover: 188 22% 8%;
+    --popover-foreground: 185 9% 94%;
+    --primary: 176 92% 47%;
+    --primary-foreground: 188 28% 5%;
+    --secondary: 188 18% 13%;
+    --secondary-foreground: 185 9% 92%;
+    --muted: 188 17% 13%;
+    --muted-foreground: 185 8% 62%;
+    --accent: 264 75% 68%;
+    --accent-foreground: 185 8% 93%;
+    --destructive: 5 65% 48%;
+    --destructive-foreground: 15 65% 60%;
+    --border: 188 16% 18%;
+    --input: 188 17% 14%;
+    --ring: 176 92% 47%;
 
-    /* Surface layers — glass-like depth against pure black */
-    --surface-1: 180 8% 3%;
-    --surface-2: 180 8% 6%;
-    --surface-3: 180 8% 10%;
-    --surface-hover: 180 8% 5%;
+    /* Surface layers — stepped black with visible teal depth. */
+    --surface-1: 188 22% 8%;
+    --surface-2: 188 18% 11%;
+    --surface-3: 188 16% 15%;
+    --surface-hover: 188 17% 13%;
 
-    /* Status colors — vibrant against black */
-    --success: 160 84% 39%;
-    --warning: 38 92% 50%;
-    --info: 199 89% 48%;
+    /* Status colors — brighter for dark bg */
+    --success: 155 60% 48%;
+    --warning: 40 85% 55%;
+    --info: 200 75% 55%;
 
     /* Motion system */
     --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
     --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
     --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 
-    /* Elevation system — teal-tinted shadows for depth */
-    --elevation-resting: 0 1px 2px rgba(0, 0, 0, 0.6);
-    --elevation-raised: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 1px rgba(0, 212, 216, 0.1);
-    --elevation-floating: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 1px rgba(0, 212, 216, 0.15);
-    --elevation-modal: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 1px rgba(0, 212, 216, 0.2);
-    --elevation-max: 0 32px 80px rgba(0, 0, 0, 0.8), 0 0 2px rgba(0, 212, 216, 0.25);
+    /* Elevation system — dark mode (stronger for depth against pure black) */
+    --elevation-resting: 0 1px 2px hsl(190 40% 1% / 0.55);
+    --elevation-raised: 0 2px 10px hsl(190 40% 1% / 0.6), 0 1px 2px hsl(190 40% 1% / 0.45);
+    --elevation-floating: 0 12px 32px hsl(190 40% 1% / 0.68), 0 2px 8px hsl(190 40% 1% / 0.48);
+    --elevation-modal: 0 20px 64px hsl(190 40% 1% / 0.76), 0 4px 16px hsl(190 40% 1% / 0.56);
+    --elevation-max: 0 28px 80px hsl(190 40% 1% / 0.84), 0 8px 24px hsl(190 40% 1% / 0.6);
 
-    /* Teal glow system — signature qualiasolutions.net effect */
-    --glow-teal-xs: 0 0 6px hsl(174 100% 42% / 0.3);
-    --glow-teal-sm: 0 0 12px hsl(174 100% 42% / 0.4), 0 0 4px hsl(174 100% 42% / 0.2);
-    --glow-teal-md: 0 0 20px hsl(174 100% 42% / 0.45), 0 0 8px hsl(174 100% 42% / 0.3);
-    --glow-teal-lg: 0 0 32px hsl(174 100% 42% / 0.5), 0 0 12px hsl(174 100% 42% / 0.4);
-    --glow-teal-xl: 0 0 48px hsl(174 100% 42% / 0.55), 0 0 20px hsl(174 100% 42% / 0.45);
-
-    /* Text glow for emphasis */
-    --text-glow-teal: 0 0 20px hsl(174 100% 42% / 0.6);
+    /* Teal glow — applied via box-shadow on active/focused/primary surfaces */
+    --glow-teal-sm: 0 0 10px hsl(var(--primary) / 0.28);
+    --glow-teal-md: 0 0 18px hsl(var(--primary) / 0.34), 0 0 5px hsl(var(--primary) / 0.26);
+    --glow-teal-lg: 0 0 28px hsl(var(--primary) / 0.42), 0 0 10px hsl(var(--primary) / 0.34);
 
     /* === Design-handoff token overrides for dark === */
-    --accent-hi: hsl(174 100% 55%); /* brighter teal for highlights */
-    --accent-soft: hsl(174 100% 42% / 0.12);
+    --accent-hi: hsl(182 70% 65%);
+    --accent-soft: hsl(var(--primary) / 0.14);
+    --panel: hsl(var(--card) / 0.86);
+    --panel-strong: hsl(var(--card));
+    --panel-muted: hsl(var(--surface-2) / 0.7);
+    --nav-active-bg: hsl(var(--primary) / 0.12);
+    --nav-active-text: hsl(var(--primary));
+    --shell-bg: linear-gradient(180deg, hsl(188 28% 5%) 0%, hsl(188 26% 4%) 100%);
   }
 
   /* Light mode glow tokens — softer, no-op fallback so the .glow-* utilities
@@ -183,9 +188,6 @@
 
 /* Glow utilities — opt-in via class. No effect in light mode (tokens above). */
 @layer utilities {
-  .glow-teal-xs {
-    box-shadow: var(--glow-teal-xs);
-  }
   .glow-teal-sm {
     box-shadow: var(--glow-teal-sm);
   }
@@ -195,44 +197,11 @@
   .glow-teal-lg {
     box-shadow: var(--glow-teal-lg);
   }
-  .glow-teal-xl {
-    box-shadow: var(--glow-teal-xl);
-  }
-
-  /* Text glow for headings/emphasis */
-  .text-glow {
-    text-shadow: var(--text-glow-teal);
-  }
-
-  /* Border glow effect */
-  .border-glow {
-    border-color: hsl(174 100% 42% / 0.3);
-    box-shadow:
-      inset 0 0 0 1px hsl(174 100% 42% / 0.1),
-      var(--glow-teal-sm);
-  }
-
   /* Combined: existing shadow + glow overlay */
   .with-glow:hover,
   .with-glow:focus-visible,
   .with-glow[data-active='true'] {
     box-shadow: var(--glow-teal-md);
-  }
-
-  /* Interactive glow — scales up on hover */
-  .glow-interactive {
-    transition: box-shadow 0.3s var(--ease-premium);
-  }
-  .glow-interactive:hover {
-    box-shadow: var(--glow-teal-md);
-  }
-  .glow-interactive:focus-visible {
-    box-shadow: var(--glow-teal-lg);
-  }
-
-  /* Pulsing glow animation for emphasis */
-  .glow-pulse {
-    animation: glow-pulse-teal 2.5s ease-in-out infinite;
   }
 }
 
@@ -263,6 +232,7 @@
 
   body {
     @apply bg-background text-foreground;
+    background: var(--shell-bg);
     font-family:
       var(--font-geist-sans),
       system-ui,
@@ -271,7 +241,7 @@
     font-feature-settings:
       'rlig' 1,
       'calt' 1;
-    letter-spacing: -0.011em;
+    letter-spacing: 0;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -285,7 +255,7 @@
   h5,
   h6 {
     font-weight: 500;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     line-height: 1.2;
     text-wrap: balance;
   }
@@ -293,19 +263,19 @@
   h1 {
     font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
     font-weight: 600;
-    letter-spacing: -0.035em;
+    letter-spacing: 0;
     line-height: 1.1;
   }
 
   h2 {
     font-size: clamp(1.25rem, 1.1rem + 0.75vw, 1.625rem);
     font-weight: 550;
-    letter-spacing: -0.025em;
+    letter-spacing: 0;
   }
 
   h3 {
     font-size: clamp(1rem, 0.95rem + 0.25vw, 1.175rem);
-    letter-spacing: -0.015em;
+    letter-spacing: 0;
   }
 
   h4 {
@@ -328,8 +298,8 @@
 }
 
 /* ============================================
-   CARD SYSTEM v4.0
-   Pure Black • Glowing Teal • Glassmorphism
+   CARD SYSTEM v3.0
+   Subtle • Spacious • Warm
    ============================================ */
 @layer utilities {
   /* Hide scrollbars but allow scrolling */
@@ -342,6 +312,18 @@
   }
 
   /* Surface layers for depth */
+  .bg-surface-1 {
+    background-color: hsl(var(--surface-1));
+  }
+
+  .bg-surface-2 {
+    background-color: hsl(var(--surface-2));
+  }
+
+  .bg-surface-3 {
+    background-color: hsl(var(--surface-3));
+  }
+
   .surface-1 {
     background: hsl(var(--surface-1));
   }
@@ -354,70 +336,51 @@
     background: hsl(var(--surface-3));
   }
 
-  /* Base card — glassmorphism with subtle teal border glow */
+  /* Base card */
   .card-base {
-    @apply relative overflow-hidden rounded-xl;
-    background: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
+    @apply relative overflow-hidden rounded-xl border border-border;
+    background: var(--panel);
     box-shadow: var(--elevation-raised);
+    transition: all 0.2s var(--ease-premium);
+  }
+
+  .card-base:hover {
+    @apply border-primary/25;
+    background: var(--panel-strong);
+  }
+
+  /* Interactive card */
+  .card-interactive {
+    @apply card-base;
     transition: all 0.3s var(--ease-premium);
   }
 
-  .dark .card-base {
-    background: hsl(var(--card) / 0.8);
-    backdrop-filter: blur(12px);
-    border-color: hsl(174 100% 42% / 0.08);
-  }
-
-  .dark .card-base:hover {
-    border-color: hsl(174 100% 42% / 0.2);
-    box-shadow: var(--elevation-floating), var(--glow-teal-xs);
-  }
-
-  /* Interactive card — stronger glow on hover */
-  .card-interactive {
-    @apply card-base cursor-pointer;
-  }
-
-  .dark .card-interactive:hover {
-    border-color: hsl(174 100% 42% / 0.3);
-    box-shadow: var(--elevation-floating), var(--glow-teal-sm);
-    transform: translateY(-1px);
+  .card-interactive:hover {
+    @apply border-primary/30;
+    background: var(--panel-strong);
+    box-shadow: var(--elevation-floating);
   }
 
   .card-interactive:active {
-    transform: translateY(0);
     box-shadow: var(--elevation-resting);
   }
 
-  /* Widget — dashboard cards with header glow accent */
+  /* Widget — dashboard cards */
   .widget {
-    @apply flex h-full flex-col overflow-hidden rounded-xl bg-card;
-    border: 1px solid hsl(var(--border));
+    @apply flex h-full flex-col overflow-hidden rounded-xl border border-border;
+    background: var(--panel);
     box-shadow: var(--elevation-raised);
-    transition: all 0.3s var(--ease-premium);
+    transition: all 0.25s var(--ease-premium);
   }
 
-  .dark .widget {
-    background: hsl(var(--card) / 0.6);
-    backdrop-filter: blur(16px);
-    border-color: hsl(174 100% 42% / 0.1);
-  }
-
-  .dark .widget:hover {
-    border-color: hsl(174 100% 42% / 0.2);
-    box-shadow: var(--elevation-floating), var(--glow-teal-xs);
+  .widget:hover {
+    @apply border-primary/20;
+    box-shadow: var(--elevation-floating);
   }
 
   .widget-header {
-    @apply flex items-center justify-between px-5 py-4;
-    border-bottom: 1px solid hsl(var(--border) / 0.6);
-    background: hsl(var(--surface-2) / 0.4);
-  }
-
-  .dark .widget-header {
-    background: hsl(174 100% 42% / 0.03);
-    border-bottom-color: hsl(174 100% 42% / 0.08);
+    @apply flex items-center justify-between border-b border-border px-5 py-4;
+    background: var(--panel-muted);
   }
 
   .widget-title {
@@ -426,37 +389,21 @@
 
   .widget-icon {
     @apply flex h-8 w-8 items-center justify-center rounded-lg;
-    transition: all 0.25s var(--ease-out-quart);
-  }
-
-  .dark .widget-icon {
-    background: hsl(174 100% 42% / 0.1);
-    color: hsl(174 100% 50%);
+    transition: transform 0.25s var(--ease-out-quart);
   }
 
   .widget:hover .widget-icon {
     transform: scale(1.05);
   }
 
-  .dark .widget:hover .widget-icon {
-    box-shadow: var(--glow-teal-xs);
-  }
-
   .widget-content {
     @apply min-h-0 flex-1;
   }
 
-  /* Glass card — frosted glass effect */
+  /* Glass card */
   .card-glass {
     @apply relative overflow-hidden rounded-xl;
-    background: hsl(var(--card) / 0.4);
-    backdrop-filter: blur(20px);
-    border: 1px solid hsl(var(--border) / 0.3);
-  }
-
-  .dark .card-glass {
-    background: hsl(180 8% 3% / 0.6);
-    border-color: hsl(174 100% 42% / 0.1);
+    @apply border border-border bg-muted/20 backdrop-blur-xl;
   }
 
   /* Section label */
@@ -464,31 +411,25 @@
     @apply text-[11px] font-semibold uppercase tracking-wider text-muted-foreground;
   }
 
-  /* Table row — subtle teal highlight on hover */
+  /* Table row */
   .table-row {
-    @apply border-b;
-    border-color: hsl(var(--border) / 0.4);
+    @apply border-b border-border;
     transition: all 0.15s var(--ease-premium);
   }
 
-  .dark .table-row:hover {
-    background: hsl(174 100% 42% / 0.04);
+  .table-row:hover {
+    background: hsl(var(--surface-hover) / 0.5);
   }
 
   /* Table header */
   .table-header {
-    @apply text-[11px] font-semibold uppercase tracking-wider text-muted-foreground;
-    border-bottom: 1px solid hsl(var(--border) / 0.4);
-    background: hsl(var(--surface-2) / 0.5);
-  }
-
-  .dark .table-header {
-    background: hsl(174 100% 42% / 0.02);
+    @apply border-b border-border text-[11px] font-semibold uppercase tracking-wider text-muted-foreground;
+    background: var(--panel-muted);
   }
 }
 
 /* ============================================
-   NAVIGATION — Glowing teal active states
+   NAVIGATION
    ============================================ */
 @layer utilities {
   .nav-item {
@@ -498,95 +439,38 @@
   }
 
   .nav-item:hover {
-    @apply text-foreground;
-    background: hsl(var(--muted) / 0.5);
-  }
-
-  .dark .nav-item:hover {
-    background: hsl(174 100% 42% / 0.06);
+    @apply bg-muted/50 text-foreground;
   }
 
   .nav-item-active {
-    @apply font-semibold text-foreground;
-    background: hsl(var(--primary) / 0.1);
-  }
-
-  .dark .nav-item-active {
-    background: hsl(174 100% 42% / 0.12);
-    box-shadow: var(--glow-teal-xs);
+    background: var(--nav-active-bg);
+    color: var(--nav-active-text);
   }
 
   .sidebar {
-    @apply flex h-full flex-col bg-card;
-    border-right: 1px solid hsl(var(--border) / 0.4);
-  }
-
-  .dark .sidebar {
-    background: hsl(var(--card) / 0.5);
-    backdrop-filter: blur(16px);
-    border-color: hsl(174 100% 42% / 0.08);
+    @apply flex h-full flex-col border-r border-border;
+    background: hsl(var(--surface-1));
   }
 }
 
 /* ============================================
-   INPUTS — Glowing focus states
+   INPUTS
    ============================================ */
 @layer utilities {
   .input-base {
-    @apply w-full rounded-lg border bg-background px-3 py-2;
+    @apply w-full rounded-lg border border-border bg-background px-3 py-2;
     @apply text-sm text-foreground placeholder:text-muted-foreground/50;
-    border-color: hsl(var(--border) / 0.5);
-    transition: all 0.25s var(--ease-premium);
-  }
-
-  .input-base:hover {
-    border-color: hsl(var(--border) / 0.8);
-  }
-
-  .input-base:focus {
-    @apply outline-none;
-    border-color: hsl(var(--primary) / 0.5);
-    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
-  }
-
-  .dark .input-base {
-    background: hsl(var(--input) / 0.5);
-    border-color: hsl(174 100% 42% / 0.1);
-  }
-
-  .dark .input-base:hover {
-    border-color: hsl(174 100% 42% / 0.2);
-  }
-
-  .dark .input-base:focus {
-    border-color: hsl(174 100% 42% / 0.4);
-    box-shadow: var(--glow-teal-sm);
-    background: hsl(var(--background));
+    transition: all 0.2s var(--ease-premium);
+    @apply hover:border-border/80;
+    @apply focus:ring-primary/8 focus:border-primary/50 focus:bg-background focus:outline-none focus:ring-2;
   }
 
   .input-search {
-    @apply h-9 rounded-lg border px-3;
+    @apply h-9 rounded-lg border border-border px-3;
+    background: var(--panel-muted);
     @apply text-sm placeholder:text-muted-foreground/40;
-    background: hsl(var(--surface-2) / 0.4);
-    border-color: hsl(var(--border) / 0.4);
     transition: all 0.2s var(--ease-premium);
-  }
-
-  .input-search:focus {
-    @apply outline-none;
-    border-color: hsl(var(--primary) / 0.3);
-    background: hsl(var(--background));
-    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08);
-  }
-
-  .dark .input-search {
-    background: hsl(180 8% 4% / 0.6);
-    border-color: hsl(174 100% 42% / 0.08);
-  }
-
-  .dark .input-search:focus {
-    border-color: hsl(174 100% 42% / 0.3);
-    box-shadow: var(--glow-teal-xs);
+    @apply focus:ring-primary/8 focus:border-primary/30 focus:bg-background focus:outline-none focus:ring-2;
   }
 
   .inline-editable {
@@ -598,22 +482,13 @@
     @apply bg-muted/40;
   }
 
-  .dark .inline-editable:hover {
-    background: hsl(174 100% 42% / 0.06);
-  }
-
   .inline-editable:focus-within {
     @apply bg-muted/60;
-  }
-
-  .dark .inline-editable:focus-within {
-    background: hsl(174 100% 42% / 0.1);
-    box-shadow: var(--glow-teal-xs);
   }
 }
 
 /* ============================================
-   BUTTONS — Glowing teal primary buttons
+   BUTTONS
    ============================================ */
 @layer utilities {
   .btn-primary {
@@ -621,26 +496,14 @@
     @apply text-primary-foreground;
     @apply text-sm font-semibold;
     background: hsl(var(--primary));
-    transition: all 0.25s var(--ease-premium);
+    transition: all 0.2s var(--ease-premium);
     @apply hover:brightness-110;
     @apply active:scale-[0.97];
-    @apply focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary/15 focus:ring-offset-1;
   }
 
   .btn-primary:hover {
-    box-shadow: 0 0 24px -4px hsl(var(--primary) / 0.4);
-  }
-
-  .dark .btn-primary {
-    box-shadow: var(--glow-teal-sm);
-  }
-
-  .dark .btn-primary:hover {
     box-shadow: var(--glow-teal-md);
-  }
-
-  .dark .btn-primary:focus-visible {
-    box-shadow: var(--glow-teal-lg);
   }
 
   .btn-secondary {
@@ -652,26 +515,12 @@
     @apply active:scale-[0.97];
   }
 
-  .dark .btn-secondary {
-    border: 1px solid hsl(174 100% 42% / 0.1);
-  }
-
-  .dark .btn-secondary:hover {
-    border-color: hsl(174 100% 42% / 0.2);
-    box-shadow: var(--glow-teal-xs);
-  }
-
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2;
     @apply text-sm font-medium text-muted-foreground;
     transition: all 0.2s var(--ease-premium);
     @apply hover:bg-muted/50 hover:text-foreground;
     @apply active:scale-[0.97];
-  }
-
-  .dark .btn-ghost:hover {
-    background: hsl(174 100% 42% / 0.08);
-    color: hsl(var(--foreground));
   }
 
   .btn-icon {
@@ -681,12 +530,6 @@
     @apply hover:bg-muted/50 hover:text-foreground;
     @apply active:scale-95;
   }
-
-  .dark .btn-icon:hover {
-    background: hsl(174 100% 42% / 0.1);
-    color: hsl(174 100% 50%);
-    box-shadow: var(--glow-teal-xs);
-  }
 }
 
 /* ============================================
@@ -694,12 +537,12 @@
    ============================================ */
 @layer utilities {
   .page-header {
-    @apply sticky top-0 z-sticky border-b border-border/40 px-6 py-4 backdrop-blur-xl sm:px-8 sm:py-5;
-    background: linear-gradient(180deg, hsl(var(--card) / 0.9) 0%, hsl(var(--card) / 0.75) 100%);
+    @apply sticky top-0 z-sticky border-b border-border px-6 py-4 backdrop-blur-xl sm:px-8 sm:py-5;
+    background: hsl(var(--card) / 0.86);
   }
 
   .page-title {
-    @apply text-base font-semibold tracking-tight text-foreground;
+    @apply text-base font-semibold text-foreground;
   }
 
   .page-description {
@@ -707,8 +550,35 @@
   }
 
   .page-content {
-    @apply flex-1 overflow-auto p-6 sm:p-8;
+    @apply flex-1 overflow-auto p-4 sm:p-6 lg:p-8;
     animation: fade-in 0.2s var(--ease-premium) forwards;
+  }
+
+  .erp-shell {
+    background: var(--shell-bg);
+  }
+
+  .erp-panel {
+    background: var(--panel);
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--elevation-raised);
+  }
+
+  .erp-panel-muted {
+    background: var(--panel-muted);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .tracking-tight,
+  .tracking-tighter,
+  .tracking-wide,
+  .tracking-wider,
+  .tracking-widest {
+    letter-spacing: 0 !important;
+  }
+
+  [class*='tracking-['] {
+    letter-spacing: 0 !important;
   }
 }
 
@@ -802,26 +672,6 @@
   50% {
     box-shadow: 0 0 24px -4px hsl(var(--primary) / 0.35);
     opacity: 1;
-  }
-}
-
-@keyframes glow-pulse-teal {
-  0%,
-  100% {
-    box-shadow: var(--glow-teal-sm);
-  }
-  50% {
-    box-shadow: var(--glow-teal-md);
-  }
-}
-
-@keyframes border-glow-pulse {
-  0%,
-  100% {
-    border-color: hsl(174 100% 42% / 0.2);
-  }
-  50% {
-    border-color: hsl(174 100% 42% / 0.4);
   }
 }
 
@@ -956,14 +806,6 @@
     animation: glow-pulse 2.5s ease-in-out infinite;
   }
 
-  .animate-float {
-    animation: float 5s ease-in-out infinite;
-  }
-
-  .animate-breathe {
-    animation: breathe 3s ease-in-out infinite;
-  }
-
   .animate-spin-slow {
     animation: spin-slow 8s linear infinite;
   }
@@ -991,16 +833,6 @@
   }
 
   .animate-slide-up-smooth {
-    animation: slide-up-smooth 0.35s var(--ease-out-expo) forwards;
-    opacity: 0;
-  }
-
-  /* Backwards compat aliases */
-  .animate-checkbox-bounce {
-    animation: checkbox-check 0.2s var(--ease-out-quart);
-  }
-
-  .animate-slide-up-spring {
     animation: slide-up-smooth 0.35s var(--ease-out-expo) forwards;
     opacity: 0;
   }

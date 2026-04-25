@@ -20,8 +20,7 @@ const SheetOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     className={cn(
-      'fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-      'dark:bg-black/70',
+      'bg-background/72 fixed inset-0 z-50 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       className
     )}
     {...props}
@@ -43,8 +42,7 @@ const SheetContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'ease-out-quart fixed z-50 gap-4 bg-background/95 p-6 shadow-lg backdrop-blur-xl transition data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out',
-        'dark:border-[hsl(174_100%_42%/0.12)] dark:bg-[hsl(180_8%_2%/0.95)]',
+        'ease-out-quart fixed z-50 gap-4 bg-card/95 p-6 shadow-elevation-4 backdrop-blur-xl transition data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out',
         side === 'top' &&
           'inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top',
         side === 'bottom' &&
@@ -89,7 +87,7 @@ const SheetTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('text-base font-semibold tracking-tight text-foreground sm:text-lg', className)}
+    className={cn('text-base font-semibold text-foreground sm:text-lg', className)}
     {...props}
   />
 ));

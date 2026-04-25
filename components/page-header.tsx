@@ -29,9 +29,7 @@ export function PageHeader({ icon, iconBg, title, children, className }: PageHea
   const { toggleMobile } = useSidebar();
 
   return (
-    <header
-      className={`flex items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8 ${className ?? ''}`}
-    >
+    <header className={`page-header flex items-center justify-between ${className ?? ''}`}>
       <div className="flex items-center gap-2.5">
         {/* Hamburger — mobile only, 44×44 touch target */}
         <Button
@@ -47,18 +45,16 @@ export function PageHeader({ icon, iconBg, title, children, className }: PageHea
 
         {/* Icon badge */}
         {iconBg ? (
-          <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${iconBg}`}>
+          <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${iconBg}`}>
             {icon}
           </div>
         ) : (
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
             {icon}
           </div>
         )}
 
-        <h1 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
-          {title}
-        </h1>
+        <h1 className="text-base font-semibold text-foreground sm:text-lg">{title}</h1>
       </div>
 
       {children && <div className="flex items-center gap-2">{children}</div>}

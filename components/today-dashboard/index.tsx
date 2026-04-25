@@ -196,9 +196,9 @@ export function TodayDashboard({
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-background">
+    <div className="flex h-full flex-col overflow-hidden">
       {/* ═══════════════════ HEADER ═══════════════════ */}
-      <header className="sticky top-0 z-sticky flex shrink-0 items-center justify-between border-b border-border/60 bg-card/80 px-4 py-2 backdrop-blur-xl sm:px-6">
+      <header className="page-header flex shrink-0 items-center justify-between px-4 py-3 sm:px-6">
         {/* Left: Nav + Greeting */}
         <div className="flex items-center gap-3">
           <Button
@@ -211,8 +211,8 @@ export function TodayDashboard({
             <Menu className="size-4" />
           </Button>
           <div className="flex items-baseline gap-2">
-            <h1 className="text-base font-semibold tracking-tight text-foreground">{greeting}</h1>
-            <span className="hidden text-[11px] tabular-nums text-muted-foreground/40 sm:inline">
+            <h1 className="text-base font-semibold text-foreground">{greeting}</h1>
+            <span className="hidden text-[11px] tabular-nums text-muted-foreground sm:inline">
               {format(now, 'EEE, MMM d')}
             </span>
           </div>
@@ -342,7 +342,7 @@ export function TodayDashboard({
         </div>
 
         {/* ── RIGHT COLUMN: Schedule + Projects (desktop) ── */}
-        <aside className="hidden min-h-0 w-80 shrink-0 flex-col border-l border-border/50 bg-muted/[0.02] lg:flex xl:w-[340px]">
+        <aside className="surface-1 hidden min-h-0 w-80 shrink-0 flex-col border-l border-border lg:flex xl:w-[340px]">
           {/* Meetings — takes available space, scrolls if needed */}
           <div className="min-h-0 flex-1 overflow-y-auto">
             <MeetingsSidebar meetings={meetings} />

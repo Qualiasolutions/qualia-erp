@@ -83,12 +83,11 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       boxShadow: {
-        // Teal glow system — qualiasolutions.net style
-        'glow-xs': '0 0 6px hsl(174 100% 42% / 0.3)',
-        'glow-sm': '0 0 12px hsl(174 100% 42% / 0.4), 0 0 4px hsl(174 100% 42% / 0.2)',
-        glow: '0 0 20px hsl(174 100% 42% / 0.45), 0 0 8px hsl(174 100% 42% / 0.3)',
-        'glow-lg': '0 0 32px hsl(174 100% 42% / 0.5), 0 0 12px hsl(174 100% 42% / 0.4)',
-        'glow-xl': '0 0 48px hsl(174 100% 42% / 0.55), 0 0 20px hsl(174 100% 42% / 0.45)',
+        // Refined shadow system
+        'glow-sm': '0 0 12px -4px hsl(174 60% 38% / 0.12)',
+        glow: '0 0 20px -4px hsl(174 60% 38% / 0.15)',
+        'glow-lg': '0 0 32px -8px hsl(174 60% 38% / 0.18)',
+        'glow-xl': '0 0 48px -12px hsl(174 60% 38% / 0.2)',
         'inner-glow': 'inset 0 1px 0 0 hsl(0 0% 100% / 0.04)',
         // Depth system
         'depth-1': '0 1px 2px rgba(0,0,0,0.06), 0 1px 1px rgba(0,0,0,0.04)',
@@ -107,7 +106,6 @@ export default {
         'elevation-5': '0 24px 64px rgba(0,0,0,0.18), 0 8px 24px rgba(0,0,0,0.1)',
       },
       backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
         'glass-gradient':
           'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
@@ -119,7 +117,6 @@ export default {
         'fade-in': 'fadeIn 0.2s cubic-bezier(0.16,1,0.3,1) forwards',
         'slide-up': 'slideUp 0.25s cubic-bezier(0.16,1,0.3,1) forwards',
         'slide-in': 'slideIn 0.2s cubic-bezier(0.16,1,0.3,1) forwards',
-        'bounce-subtle': 'bounceSubtle 2s ease-in-out infinite',
         'pulse-subtle': 'pulseSubtle 3s ease-in-out infinite',
         'glow-pulse': 'glowPulse 2s ease-in-out infinite',
         'scale-in': 'scaleIn 0.2s cubic-bezier(0.16,1,0.3,1) forwards',
@@ -133,10 +130,6 @@ export default {
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-6px)' },
-        },
-        bounceSubtle: {
-          '0%, 100%': { transform: 'translateY(0) scale(1)' },
-          '50%': { transform: 'translateY(-4px) scale(1.01)' },
         },
         pulseSubtle: {
           '0%, 100%': { opacity: '0.75' },

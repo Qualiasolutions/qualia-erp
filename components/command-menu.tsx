@@ -183,11 +183,11 @@ export function CommandMenu() {
 
   return (
     <div
-      className="fixed inset-0 z-command flex animate-fade-in items-start justify-center bg-foreground/40 pt-[15vh] backdrop-blur-[12px] dark:bg-black/70"
+      className="fixed inset-0 z-command flex animate-fade-in items-start justify-center bg-foreground/40 pt-[15vh] backdrop-blur-[12px]"
       onClick={handleClose}
     >
       <div
-        className="animate-modal-entrance w-full max-w-[560px] overflow-hidden rounded-2xl border border-border bg-card shadow-elevation-4 dark:border-[hsl(174_100%_42%/0.15)] dark:bg-[hsl(180_8%_3%/0.95)] dark:shadow-[var(--glow-teal-md)]"
+        className="animate-modal-entrance w-full max-w-[560px] overflow-hidden rounded-2xl border border-border bg-card shadow-elevation-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mode indicator */}
@@ -245,7 +245,7 @@ export function CommandMenu() {
               >
                 <Command.Item
                   onSelect={switchToAI}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground dark:hover:bg-[hsl(174_100%_42%/0.08)] dark:aria-selected:bg-[hsl(174_100%_42%/0.12)]"
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
                 >
                   <Sparkles className="h-4 w-4 text-primary" />
                   <span>Ask AI...</span>

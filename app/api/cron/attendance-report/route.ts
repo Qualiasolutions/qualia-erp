@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { unstable_rethrow } from 'next/navigation';
 import { safeCompare } from '@/lib/auth-utils';
 import { createClient } from '@/lib/supabase/server';
 import { Resend } from 'resend';
@@ -121,6 +122,7 @@ export async function GET(request: Request) {
       offToday: offToday.length,
     });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('[attendance-report] Error:', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }

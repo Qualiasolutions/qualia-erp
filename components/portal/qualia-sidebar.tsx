@@ -253,12 +253,12 @@ function NavItem({
   );
 
   const classes = cn(
-    'group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition-all duration-200',
+    'group relative flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition-all duration-200',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0',
     isActive
       ? // Active: solid teal pill with glow in dark mode
-        'bg-primary font-semibold text-primary-foreground shadow-[0_1px_0_0_hsl(0_0%_100%/0.08)_inset] dark:shadow-[0_1px_0_0_hsl(0_0%_100%/0.08)_inset,var(--glow-teal-md)]'
-      : 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-[hsl(174_100%_42%/0.08)] dark:hover:text-foreground',
+        'bg-primary font-semibold text-primary-foreground shadow-[0_1px_0_0_hsl(0_0%_100%/0.08)_inset,var(--glow-teal-sm)]'
+      : 'font-medium text-muted-foreground hover:bg-muted/55 hover:text-foreground',
     disabled ? 'cursor-default opacity-40' : 'cursor-pointer'
   );
 
@@ -424,11 +424,11 @@ function IdentityStrip({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="group flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1.5 transition-colors duration-150 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="group flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl px-2 py-2 transition-colors duration-150 hover:bg-muted/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             aria-label="Account menu"
           >
             <span
-              className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/15"
+              className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/15"
               aria-hidden
             >
               {logoUrl ? (
@@ -491,7 +491,7 @@ function IdentityStrip({
         <button
           type="button"
           onClick={onOpenTweaks}
-          className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-muted/55 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           aria-label="Tweaks"
         >
           <QIcon name="settings" size={13} />
@@ -517,30 +517,30 @@ function BrandRow({
   onJump: () => void;
 }) {
   return (
-    <div className="flex items-center gap-2 px-3 pb-3 pt-3">
+    <div className="flex items-center gap-3 px-4 py-5">
       <Link
         href="/"
         onClick={onLinkClick}
-        className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md ring-1 ring-border transition-shadow duration-150 hover:dark:shadow-[var(--glow-teal-sm)]"
+        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-primary/10 ring-1 ring-primary/15 transition-shadow duration-150 hover:dark:shadow-[var(--glow-teal-sm)]"
         aria-label="Qualia home"
       >
         <Image
           src={brandLogoUrl}
           alt={brandName}
-          width={28}
-          height={28}
+          width={36}
+          height={36}
           className="h-full w-full object-contain"
           priority
           unoptimized={brandLogoUrl !== '/logo.webp'}
         />
       </Link>
-      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold tracking-tight text-foreground">
+      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-foreground">
         {brandName}
       </span>
       <button
         type="button"
         onClick={onJump}
-        className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-1 font-mono text-[10px] font-medium text-muted-foreground transition-colors duration-150 hover:border-primary/30 hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        className="flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-border bg-muted/40 px-2 py-1.5 font-mono text-[10px] font-medium text-muted-foreground transition-colors duration-150 hover:border-primary/30 hover:bg-muted/70 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
         aria-label="Open command menu"
       >
         <QIcon name="search" size={11} />
@@ -623,7 +623,7 @@ function SidebarBody({
 
   return (
     <aside
-      className="m-2 flex h-[calc(100%-1rem)] flex-col rounded-xl border bg-card shadow-elevation-2 dark:border-[hsl(174_100%_42%/0.1)] dark:bg-[hsl(180_8%_3%/0.8)] dark:backdrop-blur-xl"
+      className="bg-surface-1 flex h-full flex-col border-r border-border"
       aria-label="Primary navigation"
     >
       {/* Brand + ⌘K */}
@@ -636,7 +636,7 @@ function SidebarBody({
 
       {/* Optional company hint (admin viewing a client's portal) */}
       {companyName ? (
-        <div className="border-t border-border/60 px-3 py-2">
+        <div className="border-t border-border px-4 py-2">
           <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
             {companyName}
           </p>
@@ -645,12 +645,12 @@ function SidebarBody({
 
       {/* Sectioned nav */}
       <nav
-        className="flex-1 space-y-3 overflow-y-auto border-t border-border/60 px-2 pb-3 pt-3"
+        className="flex-1 space-y-5 overflow-y-auto border-t border-border px-3 pb-4 pt-4"
         aria-label="Primary"
       >
         {sectionedPages.map((section) => (
           <div key={section.id}>
-            <div className="mb-1 px-2.5 font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">
+            <div className="mb-2 px-3 font-mono text-[9.5px] font-semibold uppercase text-muted-foreground/70">
               {section.label}
             </div>
             <div className="space-y-0.5">
@@ -670,7 +670,7 @@ function SidebarBody({
       </nav>
 
       {/* Footer — clock pill + identity strip */}
-      <div className="space-y-2 border-t border-border/60 p-2">
+      <div className="space-y-3 border-t border-border p-4">
         {isInternal ? <ClockPill userId={userId ?? null} /> : null}
 
         <IdentityStrip
@@ -723,29 +723,30 @@ export function QualiaSidebar(props: QualiaSidebarProps) {
 
   return (
     <>
-      {/* Mobile hamburger — pure-black-friendly floating launcher with glow */}
+      {/* Mobile hamburger — pure-black-friendly floating launcher */}
       <div className="fixed left-3 top-3 z-50 md:hidden">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <button
               type="button"
-              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border bg-card text-foreground shadow-elevation-2 transition-all duration-200 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-[hsl(174_100%_42%/0.15)] dark:bg-[hsl(180_8%_3%/0.9)] dark:backdrop-blur-lg dark:hover:border-[hsl(174_100%_42%/0.3)] dark:hover:shadow-[var(--glow-teal-sm)]"
+              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-border bg-card text-foreground shadow-elevation-2 transition-colors duration-150 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               aria-label="Open navigation"
               data-mobile-time={formatDate(now, 'HH:mm')}
             >
               <QIcon name="more" size={18} />
             </button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[88vw] max-w-[280px] p-0">
+          <SheetContent
+            side="left"
+            className="bg-surface-1 w-[88vw] max-w-[288px] border-border p-0"
+          >
             <SheetTitle className="sr-only">Navigation</SheetTitle>
             <SidebarBody {...props} onLinkClick={handleLinkClick} />
           </SheetContent>
         </Sheet>
       </div>
 
-      {/* Desktop slot — outer width remains var(--sidebar-w) so layout geometry
-          is preserved; inner aside floats with m-2 + rounded-xl. */}
-      <div className="hidden h-full shrink-0 md:block" style={{ width: 'var(--sidebar-w, 232px)' }}>
+      <div className="hidden h-full shrink-0 md:block" style={{ width: 'var(--sidebar-w, 256px)' }}>
         <SidebarBody {...props} />
       </div>
     </>
