@@ -117,35 +117,36 @@
   }
 
   .dark {
-    /* Dark mode — black/teal theme from the ERP update prototype. */
-    --background: 188 28% 5%;
-    --foreground: 185 9% 94%;
-    --card: 188 22% 8%;
-    --card-foreground: 185 9% 94%;
-    --popover: 188 22% 8%;
-    --popover-foreground: 185 9% 94%;
+    /* Dark mode — pure #000000 with teal accents (terminal aesthetic). */
+    --background: 0 0% 0%; /* #000000 — pure black */
+    --foreground: 180 8% 95%;
+    --card: 0 0% 3%; /* #080808 — barely-there lift off pure black */
+    --card-foreground: 180 8% 95%;
+    --popover: 0 0% 4%; /* #0a0a0a */
+    --popover-foreground: 180 8% 95%;
     --primary: 176 92% 47%;
-    --primary-foreground: 188 28% 5%;
-    --secondary: 188 18% 13%;
-    --secondary-foreground: 185 9% 92%;
-    --muted: 188 17% 13%;
-    --muted-foreground: 185 8% 62%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 180 8% 8%; /* #131414 */
+    --secondary-foreground: 180 8% 92%;
+    --muted: 180 6% 7%; /* #111212 */
+    --muted-foreground: 180 6% 60%;
     --accent: 264 75% 68%;
-    --accent-foreground: 185 8% 93%;
+    --accent-foreground: 0 0% 0%;
     --destructive: 5 65% 48%;
     --destructive-foreground: 15 65% 60%;
-    --border: 188 16% 18%;
-    --input: 188 17% 14%;
+    /* Borders — subtle teal tint, glow comes from utilities */
+    --border: 180 18% 14%; /* teal-tinted line */
+    --input: 0 0% 5%;
     --ring: 176 92% 47%;
 
-    /* Surface layers — stepped black with visible teal depth. */
-    --surface-1: 188 22% 8%;
-    --surface-2: 188 18% 11%;
-    --surface-3: 188 16% 15%;
-    --surface-hover: 188 17% 13%;
+    /* Surface layers — pure-black stepped with teal-tinted lifts */
+    --surface-1: 0 0% 3%;
+    --surface-2: 0 0% 4%;
+    --surface-3: 0 0% 6%;
+    --surface-hover: 180 8% 7%;
 
-    /* Status colors — brighter for dark bg */
-    --success: 155 60% 48%;
+    /* Status colors — brighter for pure black bg */
+    --success: 155 65% 50%;
     --warning: 40 85% 55%;
     --info: 200 75% 55%;
 
@@ -154,27 +155,41 @@
     --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
     --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 
-    /* Elevation system — dark mode (stronger for depth against pure black) */
-    --elevation-resting: 0 1px 2px hsl(190 40% 1% / 0.55);
-    --elevation-raised: 0 2px 10px hsl(190 40% 1% / 0.6), 0 1px 2px hsl(190 40% 1% / 0.45);
-    --elevation-floating: 0 12px 32px hsl(190 40% 1% / 0.68), 0 2px 8px hsl(190 40% 1% / 0.48);
-    --elevation-modal: 0 20px 64px hsl(190 40% 1% / 0.76), 0 4px 16px hsl(190 40% 1% / 0.56);
-    --elevation-max: 0 28px 80px hsl(190 40% 1% / 0.84), 0 8px 24px hsl(190 40% 1% / 0.6);
+    /* Elevation — for pure black, depth comes from teal glow not shadow */
+    --elevation-resting: 0 0 0 1px hsl(180 18% 14% / 1);
+    --elevation-raised: 0 0 0 1px hsl(180 18% 14% / 1), 0 0 24px -8px hsl(var(--primary) / 0.08);
+    --elevation-floating: 0 0 0 1px hsl(180 22% 18% / 1), 0 0 32px -6px hsl(var(--primary) / 0.18);
+    --elevation-modal:
+      0 0 0 1px hsl(180 24% 20% / 1), 0 0 48px -4px hsl(var(--primary) / 0.28),
+      0 24px 64px hsl(0 0% 0% / 0.9);
+    --elevation-max:
+      0 0 0 1px hsl(180 26% 22% / 1), 0 0 64px -2px hsl(var(--primary) / 0.4),
+      0 32px 80px hsl(0 0% 0% / 0.95);
 
-    /* Teal glow — applied via box-shadow on active/focused/primary surfaces */
-    --glow-teal-sm: 0 0 10px hsl(var(--primary) / 0.28);
-    --glow-teal-md: 0 0 18px hsl(var(--primary) / 0.34), 0 0 5px hsl(var(--primary) / 0.26);
-    --glow-teal-lg: 0 0 28px hsl(var(--primary) / 0.42), 0 0 10px hsl(var(--primary) / 0.34);
+    /* Teal glow — pushed harder against pure black bg */
+    --glow-teal-sm: 0 0 12px hsl(var(--primary) / 0.4), 0 0 2px hsl(var(--primary) / 0.6);
+    --glow-teal-md:
+      0 0 22px hsl(var(--primary) / 0.5), 0 0 6px hsl(var(--primary) / 0.4),
+      inset 0 0 0 1px hsl(var(--primary) / 0.3);
+    --glow-teal-lg:
+      0 0 36px hsl(var(--primary) / 0.55), 0 0 12px hsl(var(--primary) / 0.45),
+      inset 0 0 0 1px hsl(var(--primary) / 0.4);
+
+    /* Border glow — applied to cards/inputs for the "glowing borders" look */
+    --border-glow: 0 0 0 1px hsl(var(--primary) / 0.18), 0 0 16px -4px hsl(var(--primary) / 0.2);
+    --border-glow-strong:
+      0 0 0 1px hsl(var(--primary) / 0.32), 0 0 24px -2px hsl(var(--primary) / 0.32);
 
     /* === Design-handoff token overrides for dark === */
-    --accent-hi: hsl(182 70% 65%);
-    --accent-soft: hsl(var(--primary) / 0.14);
-    --panel: hsl(var(--card) / 0.86);
-    --panel-strong: hsl(var(--card));
-    --panel-muted: hsl(var(--surface-2) / 0.7);
-    --nav-active-bg: hsl(var(--primary) / 0.12);
+    --accent-hi: hsl(176 92% 60%);
+    --accent-soft: hsl(var(--primary) / 0.12);
+    --panel: hsl(0 0% 3% / 0.92);
+    --panel-strong: hsl(0 0% 3%);
+    --panel-muted: hsl(0 0% 5% / 0.6);
+    --nav-active-bg: hsl(var(--primary) / 0.14);
     --nav-active-text: hsl(var(--primary));
-    --shell-bg: linear-gradient(180deg, hsl(188 28% 5%) 0%, hsl(188 26% 4%) 100%);
+    /* Pure black shell — no gradient, lets teal glow read against true black */
+    --shell-bg: hsl(0 0% 0%);
   }
 
   /* Light mode glow tokens — softer, no-op fallback so the .glow-* utilities
@@ -184,6 +199,12 @@
     --glow-teal-md: 0 0 0 transparent;
     --glow-teal-lg: 0 0 0 transparent;
   }
+}
+
+/* Light-mode fallback for the new border-glow tokens */
+:root {
+  --border-glow: 0 0 0 1px hsl(var(--border));
+  --border-glow-strong: 0 0 0 1px hsl(var(--primary) / 0.4);
 }
 
 /* Glow utilities — opt-in via class. No effect in light mode (tokens above). */
@@ -203,6 +224,42 @@
   .with-glow[data-active='true'] {
     box-shadow: var(--glow-teal-md);
   }
+  /* Subtle teal glowing border — for cards/panels in dark mode */
+  .border-glow {
+    box-shadow: var(--border-glow);
+  }
+  .border-glow-strong {
+    box-shadow: var(--border-glow-strong);
+  }
+}
+
+/* Dark mode: cards & section panels get a subtle teal-tinted edge by default
+   so they read against pure #000 without looking flat. */
+.dark .card-base,
+.dark .widget,
+.dark .erp-panel {
+  box-shadow:
+    inset 0 0 0 1px hsl(180 20% 14% / 0.7),
+    0 0 32px -16px hsl(var(--primary) / 0.18);
+}
+
+.dark .card-base:hover,
+.dark .widget:hover,
+.dark .card-interactive:hover {
+  box-shadow:
+    inset 0 0 0 1px hsl(var(--primary) / 0.3),
+    0 0 24px -4px hsl(var(--primary) / 0.22);
+}
+
+/* Teal glowing borders on inputs/buttons when focused (dark mode) */
+.dark input:focus-visible,
+.dark textarea:focus-visible,
+.dark select:focus-visible,
+.dark [data-slot='input']:focus-visible {
+  box-shadow:
+    0 0 0 2px hsl(var(--primary) / 0.5),
+    0 0 16px -2px hsl(var(--primary) / 0.45) !important;
+  border-color: hsl(var(--primary) / 0.5) !important;
 }
 
 /* === Density system (UI remake, phase 14) ===
