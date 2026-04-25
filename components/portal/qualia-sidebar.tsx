@@ -4,7 +4,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { format as formatDate } from 'date-fns';
 
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -708,14 +707,6 @@ function SidebarBody({
 
 export function QualiaSidebar(props: QualiaSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [now, setNow] = useState(() => new Date());
-
-  // Mobile-only: subtle ticker so the mobile launcher could surface time later.
-  // Kept minimal to avoid wasting renders.
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 60_000);
-    return () => window.clearInterval(id);
-  }, []);
 
   const handleLinkClick = () => {
     if (mobileOpen) setMobileOpen(false);
@@ -731,7 +722,6 @@ export function QualiaSidebar(props: QualiaSidebarProps) {
               type="button"
               className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-border bg-card text-foreground shadow-elevation-2 transition-colors duration-150 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               aria-label="Open navigation"
-              data-mobile-time={formatDate(now, 'HH:mm')}
             >
               <QIcon name="more" size={18} />
             </button>

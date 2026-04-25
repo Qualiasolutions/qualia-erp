@@ -524,7 +524,7 @@ const TaskRow = React.memo(function TaskRow({
       {/* Status chip */}
       <span
         className={cn(
-          'hidden shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium sm:inline-flex',
+          'inline-flex shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium',
           statusStyle
         )}
       >
