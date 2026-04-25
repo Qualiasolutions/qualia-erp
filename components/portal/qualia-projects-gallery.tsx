@@ -402,7 +402,7 @@ const ProjectCardTile = memo(function ProjectCardTile({
     <Link
       href={`/projects/${project.id}`}
       className={cn(
-        'group relative block rounded-2xl border border-border bg-card p-5',
+        'group relative block rounded-xl border border-border bg-card px-3 py-2.5',
         'transition-all duration-200 ease-premium',
         'hover:shadow-medium hover:border-primary/30',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
@@ -413,34 +413,37 @@ const ProjectCardTile = memo(function ProjectCardTile({
       {isAdmin && <StageDropdown project={project} />}
 
       {/* Client label row: colored dot + mono-caps type + attention + logo */}
-      <div className="mb-3 flex items-center gap-2">
-        <span className={cn('h-2 w-2 shrink-0 rounded-full', progressBg)} aria-hidden />
-        <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', progressBg)} aria-hidden />
+        <span className="truncate font-mono text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
           {project.client_name || typeLabel}
         </span>
         {attention && (
-          <AlertTriangle className="h-3 w-3 shrink-0 text-amber-500" aria-label="Needs attention" />
+          <AlertTriangle
+            className="h-2.5 w-2.5 shrink-0 text-amber-500"
+            aria-label="Needs attention"
+          />
         )}
         {project.logo_url && (
           <Image
             src={project.logo_url}
             alt=""
             aria-hidden
-            width={20}
-            height={20}
-            className="ml-auto h-5 w-5 shrink-0 rounded object-contain"
+            width={16}
+            height={16}
+            className="ml-auto h-4 w-4 shrink-0 rounded object-contain"
             unoptimized
           />
         )}
       </div>
 
-      {/* Project name — big */}
-      <h3 className="truncate text-sm font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
+      {/* Project name */}
+      <h3 className="truncate text-[13px] font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
         {project.name}
       </h3>
 
       {/* Progress bar — 1px tall */}
-      <div className="mb-3 mt-3 h-px overflow-hidden rounded-full bg-border/40">
+      <div className="my-2 h-px overflow-hidden rounded-full bg-border/40">
         <div
           className={cn('h-full rounded-full transition-all duration-500', progressBg)}
           style={{ width: `${progress}%` }}
@@ -449,14 +452,14 @@ const ProjectCardTile = memo(function ProjectCardTile({
 
       {/* Footer: avatar stack + percentage */}
       <div className="flex items-center justify-between">
-        <AvatarStack people={avatars} size={18} max={3} />
-        <div className="flex items-center gap-2">
+        <AvatarStack people={avatars} size={16} max={3} />
+        <div className="flex items-center gap-1.5">
           {dueStr && (
-            <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
+            <span className="font-mono text-[9px] tabular-nums text-muted-foreground">
               {dueStr}
             </span>
           )}
-          <span className="font-mono text-[10px] font-semibold tabular-nums text-muted-foreground">
+          <span className="font-mono text-[9px] font-semibold tabular-nums text-muted-foreground">
             {progress}%
           </span>
         </div>
@@ -663,7 +666,7 @@ export function QualiaProjectsGallery({ projects, isAdmin }: QualiaProjectsGalle
             />
           </div>
         ) : viewMode === 'columns' ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-3">
+          <div className="flex min-h-0 flex-1 flex-col gap-2">
             <StageColumns stages={stages} isAdmin={isAdmin} />
             {finishedProjects.length > 0 && <FinishedRow projects={finishedProjects} />}
             {archivedProjects.length > 0 && <ArchivedRow projects={archivedProjects} />}
@@ -725,7 +728,7 @@ function StageColumns({
 }) {
   const order: StageKey[] = ['demo', 'building', 'preProduction', 'live'];
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
       {order.map((key) => (
         <StageColumn key={key} stage={key} projects={stages[key]} isAdmin={isAdmin} />
       ))}
@@ -748,12 +751,12 @@ function StageColumn({
   return (
     <section className="flex min-h-0 flex-col overflow-hidden">
       {/* Column header — v0 style: icon + title + count badge */}
-      <header className="mb-4 flex shrink-0 items-center gap-2 px-1">
-        <Icon className={cn('h-4 w-4', config.accent)} />
-        <h2 className="text-sm font-semibold tracking-tight text-foreground">{config.title}</h2>
+      <header className="mb-2 flex shrink-0 items-center gap-2 px-1">
+        <Icon className={cn('h-3.5 w-3.5', config.accent)} />
+        <h2 className="text-[13px] font-semibold tracking-tight text-foreground">{config.title}</h2>
         <span
           className={cn(
-            'ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-md px-1.5 text-[10px] font-semibold',
+            'ml-auto inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-md px-1.5 text-[10px] font-semibold',
             'bg-muted/50 text-muted-foreground'
           )}
         >
@@ -761,14 +764,14 @@ function StageColumn({
         </span>
       </header>
 
-      {/* Column content — rounded-2xl muted background */}
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-2xl bg-muted/20 p-3">
+      {/* Column content — rounded-xl muted background, tight gap */}
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto rounded-xl bg-muted/15 p-2">
         {projects.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
-            <span className={cn('mb-2 rounded-lg p-2.5', config.bg)} aria-hidden>
-              <Icon className={cn('h-4 w-4', config.accent)} />
+          <div className="flex flex-1 flex-col items-center justify-center py-6 text-center">
+            <span className={cn('mb-1.5 rounded-lg p-2', config.bg)} aria-hidden>
+              <Icon className={cn('h-3.5 w-3.5', config.accent)} />
             </span>
-            <p className="text-[11px] text-muted-foreground">No {config.title.toLowerCase()}</p>
+            <p className="text-[10.5px] text-muted-foreground">No {config.title.toLowerCase()}</p>
           </div>
         ) : (
           projects.map((project) => (
@@ -789,17 +792,19 @@ function StageColumn({
 function FinishedRow({ projects }: { projects: GalleryProject[] }) {
   return (
     <section className="shrink-0 animate-fade-in">
-      {/* Section header */}
-      <div className="mb-4 flex items-center gap-2 px-1">
-        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-        <span className="text-sm font-semibold">Finished</span>
-        <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-md bg-muted/50 px-1.5 text-[10px] font-semibold text-muted-foreground">
+      {/* Section header — compact */}
+      <div className="mb-1.5 flex items-center gap-1.5 px-1">
+        <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Finished
+        </span>
+        <span className="ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded bg-muted/50 px-1 text-[9px] font-semibold text-muted-foreground">
           {projects.length}
         </span>
       </div>
       <div
-        className="grid gap-3"
-        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
+        className="grid gap-1.5"
+        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}
       >
         {projects.map((p) => (
           <FinishedRowItem key={p.id} project={p} />
@@ -815,8 +820,8 @@ function FinishedRowItem({ project }: { project: GalleryProject }) {
     <Link
       href={`/projects/${project.id}`}
       className={cn(
-        'flex items-center gap-2 rounded-xl bg-muted/30 px-3 py-2 text-sm text-muted-foreground',
-        'cursor-pointer transition-colors hover:bg-muted/50',
+        'flex items-center gap-1.5 rounded-md bg-muted/25 px-2 py-1 text-xs text-muted-foreground',
+        'cursor-pointer transition-colors hover:bg-muted/45',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
       )}
       title={`${project.name} · ${project.status}`}
@@ -826,18 +831,18 @@ function FinishedRowItem({ project }: { project: GalleryProject }) {
           src={project.logo_url}
           alt=""
           aria-hidden
-          width={16}
-          height={16}
-          className="h-4 w-4 shrink-0 rounded-full object-cover ring-1 ring-border"
+          width={14}
+          height={14}
+          className="h-3.5 w-3.5 shrink-0 rounded-full object-cover ring-1 ring-border"
           unoptimized
         />
       ) : (
-        <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/30" aria-hidden />
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/60" aria-hidden />
       )}
-      <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+      <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-foreground">
         {project.name}
       </span>
-      <span className="shrink-0 rounded bg-muted/50 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+      <span className="shrink-0 rounded bg-muted/40 px-1 py-0.5 font-mono text-[8.5px] uppercase tracking-wider text-muted-foreground">
         {typeLabel}
       </span>
     </Link>
@@ -847,17 +852,19 @@ function FinishedRowItem({ project }: { project: GalleryProject }) {
 function ArchivedRow({ projects }: { projects: GalleryProject[] }) {
   return (
     <section className="shrink-0 animate-fade-in">
-      {/* Section header */}
-      <div className="mb-4 flex items-center gap-2 px-1">
-        <Archive className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-semibold text-muted-foreground">Archived</span>
-        <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-md bg-muted/50 px-1.5 text-[10px] font-semibold text-muted-foreground">
+      {/* Section header — compact */}
+      <div className="mb-1.5 flex items-center gap-1.5 px-1">
+        <Archive className="h-3 w-3 text-muted-foreground" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Archived
+        </span>
+        <span className="ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded bg-muted/50 px-1 text-[9px] font-semibold text-muted-foreground">
           {projects.length}
         </span>
       </div>
       <div
-        className="grid gap-3"
-        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
+        className="grid gap-1.5"
+        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}
       >
         {projects.map((p) => (
           <ArchivedRowItem key={p.id} project={p} />
@@ -873,9 +880,9 @@ function ArchivedRowItem({ project }: { project: GalleryProject }) {
     <Link
       href={`/projects/${project.id}`}
       className={cn(
-        'flex items-center gap-2 rounded-xl bg-muted/20 px-3 py-2 text-sm',
-        'text-muted-foreground opacity-80 hover:opacity-100',
-        'cursor-pointer transition-colors hover:bg-muted/40',
+        'flex items-center gap-1.5 rounded-md bg-muted/15 px-2 py-1 text-xs',
+        'text-muted-foreground opacity-75 hover:opacity-100',
+        'cursor-pointer transition-colors hover:bg-muted/35',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
       )}
       title={`${project.name} · ${project.status}`}
@@ -885,16 +892,16 @@ function ArchivedRowItem({ project }: { project: GalleryProject }) {
           src={project.logo_url}
           alt=""
           aria-hidden
-          width={16}
-          height={16}
-          className="h-4 w-4 shrink-0 rounded-full object-cover opacity-70 ring-1 ring-border grayscale"
+          width={14}
+          height={14}
+          className="h-3.5 w-3.5 shrink-0 rounded-full object-cover opacity-70 ring-1 ring-border grayscale"
           unoptimized
         />
       ) : (
-        <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/20" aria-hidden />
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/30" aria-hidden />
       )}
-      <span className="min-w-0 flex-1 truncate text-sm font-medium">{project.name}</span>
-      <span className="shrink-0 rounded bg-muted/50 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider">
+      <span className="min-w-0 flex-1 truncate text-[12px] font-medium">{project.name}</span>
+      <span className="shrink-0 rounded bg-muted/40 px-1 py-0.5 font-mono text-[8.5px] uppercase tracking-wider">
         {typeLabel}
       </span>
     </Link>
