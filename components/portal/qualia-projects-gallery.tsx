@@ -670,8 +670,12 @@ export function QualiaProjectsGallery({ projects, isAdmin }: QualiaProjectsGalle
         ) : viewMode === 'columns' ? (
           <div className="flex min-h-0 flex-1 flex-col gap-3">
             <StageColumns stages={stages} isAdmin={isAdmin} />
-            {finishedProjects.length > 0 && <FinishedRow projects={finishedProjects} />}
-            {archivedProjects.length > 0 && <ArchivedRow projects={archivedProjects} />}
+            {finishedProjects.length > 0 && (
+              <FinishedRow projects={finishedProjects} isAdmin={isAdmin} />
+            )}
+            {archivedProjects.length > 0 && (
+              <ArchivedRow projects={archivedProjects} isAdmin={isAdmin} />
+            )}
           </div>
         ) : viewMode === 'gallery' ? (
           <div
@@ -800,7 +804,13 @@ function StageColumn({
    Both share the same compact item layout.
    ====================================================================== */
 
-function FinishedRow({ projects }: { projects: GalleryProject[] }) {
+function FinishedRow({
+  projects,
+  isAdmin,
+}: {
+  projects: GalleryProject[];
+  isAdmin?: boolean;
+}) {
   return (
     <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card ring-1 ring-inset ring-primary/20">
       <header className="flex items-center gap-2 border-b border-border bg-primary/5 px-3 py-1.5">
@@ -817,17 +827,68 @@ function FinishedRow({ projects }: { projects: GalleryProject[] }) {
       </header>
       <ul className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
         {projects.map((p) => (
-          <FinishedRowItem key={p.id} project={p} />
+          <FinishedRowItem key={p.id} project={p} isAdmin={isAdmin} />
         ))}
       </ul>
     </section>
   );
 }
 
-function FinishedRowItem({ project }: { project: GalleryProject }) {
+function ReactivateButton({
+  project,
+  targetStage = 'Building',
+}: {
+  project: GalleryProject;
+  targetStage?: PipelineStage;
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  function handleReactivate(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    startTransition(async () => {
+      const result = await setProjectPipelineStage(project.id, targetStage);
+      if (result.success) {
+        toast.success(`Reactivated "${project.name}" → ${targetStage}`);
+        router.refresh();
+      } else {
+        toast.error(result.error || 'Failed to reactivate');
+      }
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleReactivate}
+      disabled={isPending}
+      title={`Move "${project.name}" back to ${targetStage}`}
+      aria-label={`Reactivate ${project.name}`}
+      className={cn(
+        'inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-md',
+        'bg-primary/10 text-primary opacity-0 transition-all duration-150',
+        'hover:bg-primary/20 focus-visible:opacity-100',
+        'group-hover/projrow:opacity-100',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+        isPending && 'pointer-events-none opacity-50'
+      )}
+    >
+      <Hammer className="h-3 w-3" />
+    </button>
+  );
+}
+
+function FinishedRowItem({
+  project,
+  isAdmin,
+}: {
+  project: GalleryProject;
+  isAdmin?: boolean;
+}) {
   const typeLabel = getTypeLabel(project.project_type);
   return (
-    <li>
+    <li className="group/projrow relative">
       <Link
         href={`/projects/${project.id}`}
         className={cn(
@@ -856,6 +917,7 @@ function FinishedRowItem({ project }: { project: GalleryProject }) {
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
           {project.name}
         </span>
+        {isAdmin ? <ReactivateButton project={project} /> : null}
         <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
           {typeLabel}
         </span>
@@ -864,7 +926,13 @@ function FinishedRowItem({ project }: { project: GalleryProject }) {
   );
 }
 
-function ArchivedRow({ projects }: { projects: GalleryProject[] }) {
+function ArchivedRow({
+  projects,
+  isAdmin,
+}: {
+  projects: GalleryProject[];
+  isAdmin?: boolean;
+}) {
   return (
     <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card">
       <header className="flex items-center gap-2 border-b border-border bg-muted/30 px-3 py-1.5">
@@ -881,17 +949,23 @@ function ArchivedRow({ projects }: { projects: GalleryProject[] }) {
       </header>
       <ul className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
         {projects.map((p) => (
-          <ArchivedRowItem key={p.id} project={p} />
+          <ArchivedRowItem key={p.id} project={p} isAdmin={isAdmin} />
         ))}
       </ul>
     </section>
   );
 }
 
-function ArchivedRowItem({ project }: { project: GalleryProject }) {
+function ArchivedRowItem({
+  project,
+  isAdmin,
+}: {
+  project: GalleryProject;
+  isAdmin?: boolean;
+}) {
   const typeLabel = getTypeLabel(project.project_type);
   return (
-    <li>
+    <li className="group/projrow relative">
       <Link
         href={`/projects/${project.id}`}
         className={cn(
@@ -919,6 +993,7 @@ function ArchivedRowItem({ project }: { project: GalleryProject }) {
           />
         )}
         <span className="min-w-0 flex-1 truncate text-xs font-medium">{project.name}</span>
+        {isAdmin ? <ReactivateButton project={project} /> : null}
         <span className="shrink-0 rounded bg-muted/60 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider">
           {typeLabel}
         </span>

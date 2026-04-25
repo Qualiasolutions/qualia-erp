@@ -123,6 +123,7 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
       mode={mode}
       initialTasks={initialTasks}
       userRole={normalizedRole as 'admin' | 'employee'}
+      isAdmin={isAdmin}
     />
   );
 }
