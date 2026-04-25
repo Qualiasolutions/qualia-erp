@@ -7,6 +7,7 @@ import { isUserAdmin } from '@/app/actions/shared';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { QualiaTasksList } from '@/components/portal/qualia-tasks-list';
+import { QualiaTasksView } from '@/components/portal/qualia-tasks-view';
 
 type TasksMode = 'inbox' | 'all-tasks' | 'client';
 
@@ -102,14 +103,26 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
   const normalizedRole: 'admin' | 'employee' | 'client' =
     role === 'admin' ? 'admin' : role === 'client' ? 'client' : 'employee';
 
+  // Client mode keeps the existing read-only QualiaTasksList. Admin/employee
+  // adopt the new QualiaTasksView (Today's Focus + quick add + detail panel).
+  if (mode === 'client') {
+    return (
+      <QualiaTasksList
+        mode={mode}
+        initialTasks={initialTasks}
+        initialNextCursor={initialNextCursor}
+        userRole={normalizedRole}
+        isAdmin={isAdmin}
+        assignableMembers={assignableMembers}
+      />
+    );
+  }
+
   return (
-    <QualiaTasksList
+    <QualiaTasksView
       mode={mode}
       initialTasks={initialTasks}
-      initialNextCursor={initialNextCursor}
-      userRole={normalizedRole}
-      isAdmin={isAdmin}
-      assignableMembers={assignableMembers}
+      userRole={normalizedRole as 'admin' | 'employee'}
     />
   );
 }

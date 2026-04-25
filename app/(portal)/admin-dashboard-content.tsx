@@ -1,7 +1,7 @@
 'use client';
 
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
-import { QualiaToday } from '@/components/portal/qualia-today';
+import { QualiaHomeView } from '@/components/portal/qualia-home-view';
 
 interface AdminDashboardContentProps {
   workspaces: ClientWorkspace[];
@@ -10,5 +10,5 @@ interface AdminDashboardContentProps {
 }
 
 export function AdminDashboardContent({ workspaces, displayName }: AdminDashboardContentProps) {
-  return <QualiaToday role="admin" displayName={displayName} workspaces={workspaces} />;
+  return <QualiaHomeView role="admin" displayName={displayName} workspaces={workspaces} />;
 }
