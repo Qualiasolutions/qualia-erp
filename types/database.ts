@@ -1648,44 +1648,74 @@ export type Database = {
       };
       meetings: {
         Row: {
+          action_items: Json | null;
+          chapter_summaries: Json | null;
           client_id: string | null;
           created_at: string | null;
           created_by: string | null;
           description: string | null;
           end_time: string;
           id: string;
+          ingested_at: string | null;
+          key_questions: Json | null;
           meeting_link: string | null;
+          participants_meta: Json | null;
           project_id: string | null;
+          read_ai_session_id: string | null;
+          recording_url: string | null;
+          report_url: string | null;
           start_time: string;
+          summary: string | null;
           title: string;
+          topics: Json | null;
           updated_at: string | null;
           workspace_id: string | null;
         };
         Insert: {
+          action_items?: Json | null;
+          chapter_summaries?: Json | null;
           client_id?: string | null;
           created_at?: string | null;
           created_by?: string | null;
           description?: string | null;
           end_time: string;
           id?: string;
+          ingested_at?: string | null;
+          key_questions?: Json | null;
           meeting_link?: string | null;
+          participants_meta?: Json | null;
           project_id?: string | null;
+          read_ai_session_id?: string | null;
+          recording_url?: string | null;
+          report_url?: string | null;
           start_time: string;
+          summary?: string | null;
           title: string;
+          topics?: Json | null;
           updated_at?: string | null;
           workspace_id?: string | null;
         };
         Update: {
+          action_items?: Json | null;
+          chapter_summaries?: Json | null;
           client_id?: string | null;
           created_at?: string | null;
           created_by?: string | null;
           description?: string | null;
           end_time?: string;
           id?: string;
+          ingested_at?: string | null;
+          key_questions?: Json | null;
           meeting_link?: string | null;
+          participants_meta?: Json | null;
           project_id?: string | null;
+          read_ai_session_id?: string | null;
+          recording_url?: string | null;
+          report_url?: string | null;
           start_time?: string;
+          summary?: string | null;
           title?: string;
+          topics?: Json | null;
           updated_at?: string | null;
           workspace_id?: string | null;
         };
@@ -3293,6 +3323,59 @@ export type Database = {
           },
         ];
       };
+      public_bookings: {
+        Row: {
+          created_at: string;
+          duration_minutes: number;
+          email: string;
+          end_time: string;
+          id: string;
+          meeting_id: string | null;
+          name: string;
+          notes: string | null;
+          phone: string | null;
+          start_time: string;
+          status: string;
+          timezone: string;
+        };
+        Insert: {
+          created_at?: string;
+          duration_minutes: number;
+          email: string;
+          end_time: string;
+          id?: string;
+          meeting_id?: string | null;
+          name: string;
+          notes?: string | null;
+          phone?: string | null;
+          start_time: string;
+          status?: string;
+          timezone: string;
+        };
+        Update: {
+          created_at?: string;
+          duration_minutes?: number;
+          email?: string;
+          end_time?: string;
+          id?: string;
+          meeting_id?: string | null;
+          name?: string;
+          notes?: string | null;
+          phone?: string | null;
+          start_time?: string;
+          status?: string;
+          timezone?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'public_bookings_meeting_id_fkey';
+            columns: ['meeting_id'];
+            isOneToOne: false;
+            referencedRelation: 'meetings';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       reminders: {
         Row: {
           created_at: string;
@@ -4184,6 +4267,57 @@ export type Database = {
           },
         ];
       };
+      website_leads: {
+        Row: {
+          company: string | null;
+          created_at: string;
+          email: string | null;
+          id: string;
+          intent: string | null;
+          ip_hash: string | null;
+          name: string | null;
+          page_url: string | null;
+          phone: string | null;
+          raw: Json | null;
+          source: string;
+          summary: string | null;
+          user_agent: string | null;
+          wants_call: boolean;
+        };
+        Insert: {
+          company?: string | null;
+          created_at?: string;
+          email?: string | null;
+          id?: string;
+          intent?: string | null;
+          ip_hash?: string | null;
+          name?: string | null;
+          page_url?: string | null;
+          phone?: string | null;
+          raw?: Json | null;
+          source: string;
+          summary?: string | null;
+          user_agent?: string | null;
+          wants_call?: boolean;
+        };
+        Update: {
+          company?: string | null;
+          created_at?: string;
+          email?: string | null;
+          id?: string;
+          intent?: string | null;
+          ip_hash?: string | null;
+          name?: string | null;
+          page_url?: string | null;
+          phone?: string | null;
+          raw?: Json | null;
+          source?: string;
+          summary?: string | null;
+          user_agent?: string | null;
+          wants_call?: boolean;
+        };
+        Relationships: [];
+      };
       work_sessions: {
         Row: {
           clock_in_note: string | null;
@@ -4480,6 +4614,7 @@ export type Database = {
         Args: { p_project_id: string };
         Returns: number;
       };
+      can_view_profile: { Args: { target_id: string }; Returns: boolean };
       check_and_award_achievements: {
         Args: { p_user_id: string };
         Returns: {

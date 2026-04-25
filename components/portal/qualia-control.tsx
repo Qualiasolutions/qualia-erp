@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Activity } from 'lucide-react';
@@ -35,9 +35,11 @@ export interface QualiaControlData {
 interface QualiaControlProps {
   initialTab: ControlTab;
   data: QualiaControlData;
+  /** When false, the Finance tab is hidden in the UI. Server still enforces. */
+  canViewFinance?: boolean;
 }
 
-const TABS: Array<{ id: ControlTab; label: string; desc: string }> = [
+const ALL_TABS: Array<{ id: ControlTab; label: string; desc: string }> = [
   { id: 'overview', label: 'Overview', desc: 'Pulse · health · this week' },
   { id: 'clients', label: 'Clients', desc: 'Directory & retainers' },
   { id: 'team', label: 'Team', desc: 'People, capacity, roles' },
@@ -196,10 +198,16 @@ const ControlOverview = memo(function ControlOverview({
    QualiaControl — shell
    ====================================================================== */
 
-export function QualiaControl({ initialTab, data }: QualiaControlProps) {
+export function QualiaControl({ initialTab, data, canViewFinance = false }: QualiaControlProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<ControlTab>(initialTab);
+
+  // Filter out tabs the current user can't see. The Finance tab is owner-only.
+  const TABS = useMemo(
+    () => ALL_TABS.filter((t) => t.id !== 'finance' || canViewFinance),
+    [canViewFinance]
+  );
 
   // On mount, honor localStorage if URL didn't specify.
   useEffect(() => {
@@ -255,7 +263,7 @@ export function QualiaControl({ initialTab, data }: QualiaControlProps) {
         document.getElementById(`tab-${nextTab.id}`)?.focus();
       }
     },
-    [tab, changeTab]
+    [tab, changeTab, TABS]
   );
 
   return (
@@ -316,7 +324,7 @@ export function QualiaControl({ initialTab, data }: QualiaControlProps) {
         {tab === 'overview' && <ControlOverview data={data.overview} />}
         {tab === 'clients' && <ControlClients data={data.clients} />}
         {tab === 'team' && <ControlTeam data={data.team} />}
-        {tab === 'finance' && <ControlFinance data={data.finance} />}
+        {tab === 'finance' && canViewFinance && <ControlFinance data={data.finance} />}
         {tab === 'system' && (
           <ControlSystem
             data={data.system}

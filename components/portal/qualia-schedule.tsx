@@ -12,13 +12,14 @@ import {
   isSameDay,
   isSameWeek,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus, Calendar, Pencil, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Calendar, Pencil, Trash2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMeetings, invalidateMeetings, type MeetingWithRelations } from '@/lib/swr';
 import { deleteMeeting } from '@/app/actions/meetings';
 import { useAdmin } from '@/lib/hooks/use-admin';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
 import { EditMeetingModal } from '@/components/edit-meeting-modal';
+import { MeetingBriefModal, type MeetingBriefData } from '@/components/meeting-brief-modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -179,6 +180,7 @@ const EventBlock = memo(function EventBlock({
   isAdmin,
   onEdit,
   onDelete,
+  onViewBrief,
 }: {
   meeting: MeetingWithRelations;
   kind: MeetingKind;
@@ -188,12 +190,14 @@ const EventBlock = memo(function EventBlock({
   isAdmin: boolean;
   onEdit: (meeting: MeetingWithRelations) => void;
   onDelete: (meetingId: string) => void;
+  onViewBrief: (meeting: MeetingWithRelations) => void;
 }) {
   const colors = KIND_COLORS[kind];
   const startTime = parseISO(meeting.start_time);
   const endTime = parseISO(meeting.end_time);
   const timeLabel = `${format(startTime, 'HH:mm')}\u2013${format(endTime, 'HH:mm')}`;
   const isPublic = (meeting.title || '').startsWith(PUBLIC_BOOKING_PREFIX);
+  const hasBrief = Boolean((meeting as { read_ai_session_id?: string | null }).read_ai_session_id);
 
   // Find creator profile
   const creator = Array.isArray(meeting.creator) ? meeting.creator[0] : meeting.creator;
@@ -228,6 +232,14 @@ const EventBlock = memo(function EventBlock({
               className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary"
               aria-label="Public booking"
             />
+          )}
+          {hasBrief && !isPublic && (
+            <span
+              className="absolute right-1.5 top-1.5 inline-flex items-center justify-center"
+              aria-label="Has Read.ai brief"
+            >
+              <Sparkles className="h-2.5 w-2.5 text-primary" />
+            </span>
           )}
           <span
             className={cn('block truncate text-[11.5px] font-semibold leading-tight', colors.text)}
@@ -273,6 +285,16 @@ const EventBlock = memo(function EventBlock({
             >
               Join meeting
             </a>
+          )}
+          {hasBrief && (
+            <button
+              type="button"
+              onClick={() => onViewBrief(meeting)}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-2 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+            >
+              <Sparkles className="h-3 w-3" aria-hidden />
+              View Read.ai brief
+            </button>
           )}
           {isAdmin && (
             <div className="flex items-center gap-2 border-t border-border pt-2">
@@ -432,6 +454,10 @@ export function QualiaSchedule({
   const [editTarget, setEditTarget] = useState<MeetingWithRelations | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
 
+  // Read.ai brief modal state
+  const [briefTarget, setBriefTarget] = useState<MeetingWithRelations | null>(null);
+  const [briefModalOpen, setBriefModalOpen] = useState(false);
+
   // Delete confirmation state
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -440,6 +466,11 @@ export function QualiaSchedule({
   const handleEdit = useCallback((meeting: MeetingWithRelations) => {
     setEditTarget(meeting);
     setEditModalOpen(true);
+  }, []);
+
+  const handleViewBrief = useCallback((meeting: MeetingWithRelations) => {
+    setBriefTarget(meeting);
+    setBriefModalOpen(true);
   }, []);
 
   const handleDeleteRequest = useCallback((meetingId: string) => {
@@ -482,6 +513,42 @@ export function QualiaSchedule({
       attendees,
     };
   }, [editTarget]);
+
+  // Convert MeetingWithRelations into MeetingBriefData for the brief modal.
+  const briefModalMeeting = useMemo<MeetingBriefData | null>(() => {
+    if (!briefTarget) return null;
+    const m = briefTarget as MeetingWithRelations & {
+      read_ai_session_id?: string | null;
+      report_url?: string | null;
+      recording_url?: string | null;
+      summary?: string | null;
+      topics?: unknown;
+      action_items?: unknown;
+      key_questions?: unknown;
+      chapter_summaries?: unknown;
+      participants_meta?: unknown;
+    };
+    const project = Array.isArray(m.project) ? m.project[0] : m.project;
+    const client = Array.isArray(m.client) ? m.client[0] : m.client;
+    return {
+      id: m.id,
+      title: m.title,
+      start_time: m.start_time,
+      end_time: m.end_time,
+      meeting_link: m.meeting_link ?? null,
+      report_url: m.report_url ?? null,
+      recording_url: m.recording_url ?? null,
+      read_ai_session_id: m.read_ai_session_id ?? null,
+      summary: m.summary ?? null,
+      topics: m.topics,
+      action_items: m.action_items,
+      key_questions: m.key_questions,
+      chapter_summaries: m.chapter_summaries,
+      participants_meta: m.participants_meta,
+      project: project ? { id: project.id, name: project.name } : null,
+      client: client ? { id: client.id, display_name: client.display_name } : null,
+    };
+  }, [briefTarget]);
 
   // Today index for highlighting
   const todayIndex = useMemo(() => {
@@ -670,6 +737,7 @@ export function QualiaSchedule({
                           isAdmin={isAdmin}
                           onEdit={handleEdit}
                           onDelete={handleDeleteRequest}
+                          onViewBrief={handleViewBrief}
                         />
                       );
                     })}
@@ -689,6 +757,13 @@ export function QualiaSchedule({
         meeting={editModalMeeting}
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
+      />
+
+      {/* Read.ai Meeting Brief Modal */}
+      <MeetingBriefModal
+        meeting={briefModalMeeting}
+        open={briefModalOpen}
+        onOpenChange={setBriefModalOpen}
       />
 
       {/* Delete Confirmation Dialog (admin) */}
