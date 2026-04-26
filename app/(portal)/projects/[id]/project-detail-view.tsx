@@ -324,8 +324,11 @@ export function ProjectDetailView({
               <PanelRightOpen className="h-4 w-4" />
             </Button>
 
-            {/* Settings gear — admin-only, opens full project settings dialog (distinct from inline edit) */}
-            {!isClient && (
+            {/* Settings gear — admin-only, opens full project settings dialog.
+             *  Hidden from employees + clients: even though the server action
+             *  rejects non-admins with "Not authorized", showing the button
+             *  was misleading — assigned employees thought they could edit. */}
+            {isAdmin && (
               <Button
                 variant="ghost"
                 size="icon"
