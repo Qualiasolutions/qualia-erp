@@ -4,36 +4,15 @@ import type { ReactNode } from 'react';
 import { memo } from 'react';
 import Link from 'next/link';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { Github, Cloud, Database, Settings, Server, FileText } from 'lucide-react';
+import { Server, FileText } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/ui/empty-state';
 import type {
   SystemPayload,
-  IntegrationHealth,
   AuditLogEntry,
   FrameworkReportLite,
 } from '@/app/actions/admin-control';
 import { ApiTokensPanel } from './api-tokens-panel';
-
-const SERVICE_META: Record<IntegrationHealth['service'], { icon: typeof Github; label: string }> = {
-  github: { icon: Github, label: 'GitHub' },
-  vercel: { icon: Cloud, label: 'Vercel' },
-  supabase: { icon: Database, label: 'Supabase' },
-  other: { icon: Settings, label: 'Other' },
-};
-
-const STATUS_TONE: Record<IntegrationHealth['status'], string> = {
-  ok: 'bg-emerald-500',
-  warn: 'bg-amber-500',
-  down: 'bg-red-500',
-};
-
-const STATUS_LABEL: Record<IntegrationHealth['status'], string> = {
-  ok: 'healthy',
-  warn: 'stale',
-  down: 'not connected',
-};
 
 /* ======================================================================
    ControlSystem
@@ -66,11 +45,9 @@ export function ControlSystem({
       <div>
         <h2 className="text-lg font-semibold tracking-tight">System</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Integrations, audit log, framework reports.
+          Audit log, framework reports, API tokens.
         </p>
       </div>
-
-      <IntegrationsHealthGrid integrations={data.integrations} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <AuditLogTable entries={data.auditEntries} />
@@ -78,56 +55,6 @@ export function ControlSystem({
       </div>
 
       <ApiTokensPanel profiles={data.tokenAssignableProfiles} />
-
-      <SettingsShortcut />
-    </div>
-  );
-}
-
-/* ======================================================================
-   IntegrationsHealthGrid
-   ====================================================================== */
-
-function IntegrationsHealthGrid({ integrations }: { integrations: IntegrationHealth[] }) {
-  return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-      {integrations.map((int) => {
-        const meta = SERVICE_META[int.service];
-        const Icon = meta.icon;
-        return (
-          <div
-            key={int.service}
-            className="flex items-start gap-3 rounded-xl border border-border bg-card p-5"
-          >
-            <span
-              className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"
-              aria-hidden
-            >
-              <Icon className="size-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold tracking-tight">{meta.label}</span>
-                <span
-                  className={cn('size-1.5 rounded-full', STATUS_TONE[int.status])}
-                  aria-hidden
-                />
-                <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                  {STATUS_LABEL[int.status]}
-                </span>
-              </div>
-              <div className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground">
-                {int.connected_count} {int.connected_count === 1 ? 'project' : 'projects'}
-              </div>
-              {int.last_sync_at ? (
-                <div className="mt-0.5 font-mono text-[10px] text-muted-foreground">
-                  synced {formatDistanceToNowStrict(new Date(int.last_sync_at))} ago
-                </div>
-              ) : null}
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -234,28 +161,3 @@ const FrameworkReportsMini = memo(function FrameworkReportsMini({
     </section>
   );
 });
-
-/* ======================================================================
-   SettingsShortcut
-   ====================================================================== */
-
-function SettingsShortcut() {
-  return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h3 className="text-sm font-semibold tracking-tight">Workspace settings</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Portal policies, notification defaults, custom domain.
-          </p>
-        </div>
-        <Link
-          href="/settings/integrations"
-          className="cursor-pointer rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors duration-150 hover:border-primary/40 hover:text-primary"
-        >
-          Open settings →
-        </Link>
-      </div>
-    </section>
-  );
-}

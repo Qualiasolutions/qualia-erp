@@ -12,7 +12,6 @@ export {
 export {
   loadSystemTab,
   type SystemPayload,
-  type IntegrationHealth,
   type AuditLogEntry,
   type FrameworkReportLite,
   type TokenAssignableProfile,
