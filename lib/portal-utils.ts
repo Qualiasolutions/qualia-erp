@@ -183,10 +183,13 @@ export async function assertAppEnabledForClient(
   if (role !== 'client') return false;
 
   const workspaceId = await getClientWorkspaceId(userId);
-  // Fail closed for app-specific routes. A client without a project link can
-  // still land on the home shell, but disabled app routes should not bypass the
-  // App Library just because workspace resolution failed.
-  if (!workspaceId) return appKey === 'home';
+  // No workspace yet (client not linked to a project): allow the default client
+  // shell so the portal is usable on day one. Pages render empty states. The
+  // App Library still gates access once a workspace is resolved.
+  if (!workspaceId) {
+    const SHELL_APPS = ['home', 'requests', 'messages', 'billing', 'settings'];
+    return SHELL_APPS.includes(appKey);
+  }
 
   const { getEnabledAppsForClient } = await import('@/app/actions/portal-admin');
   const result = await getEnabledAppsForClient(workspaceId, userId);
