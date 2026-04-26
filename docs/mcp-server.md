@@ -13,18 +13,23 @@ SSE is intentionally disabled — modern MCP clients (Claude.ai, Cursor, the SDK
 all use streamable HTTP, and SSE would require Redis for serverless session
 persistence.
 
-## Auth
+## Auth & scoping
 
 Bearer tokens minted from the `api_tokens` table (same `qlt_*` tokens used by
 `/api/v1/reports`).
+
+- Client-role tokens are rejected — clients use the portal UI.
+- Every read query is filtered by the token owner's `workspace_id`.
+- Mutations verify the target row's `workspace_id` before writing.
+- Per-token rate limit: 60 req/min (`mcpRateLimiter` in `lib/rate-limit.ts`).
+- Only `qlt_*` per-user tokens are accepted; the legacy shared
+  `CLAUDE_API_KEY` is not.
 
 | Scope       | Tools unlocked                                             |
 | ----------- | ---------------------------------------------------------- |
 | `mcp:read`  | `whoami`, `list_*`, `get_*`                                |
 | `mcp:write` | `create_task`, `update_task_status`, `log_client_activity` |
 | `*`         | All scopes (use sparingly — service / break-glass)         |
-
-The legacy shared `CLAUDE_API_KEY` is **not** accepted on this endpoint.
 
 ### Mint a token
 

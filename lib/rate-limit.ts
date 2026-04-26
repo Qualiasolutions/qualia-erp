@@ -98,3 +98,10 @@ export const ttsRateLimiter = createRateLimiter({
   windowSeconds: 60,
   prefix: 'ratelimit:tts',
 });
+// MCP server endpoint — per-token rate limit. Higher than chat (it's
+// programmatic), lower than apiRateLimiter (each call hits Supabase).
+export const mcpRateLimiter = createRateLimiter({
+  limit: 60,
+  windowSeconds: 60,
+  prefix: 'ratelimit:mcp',
+});
