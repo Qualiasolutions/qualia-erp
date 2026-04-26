@@ -168,30 +168,33 @@ export async function createRepository(
       };
     }
 
-    // 2. Create empty repo (works for both personal accounts and orgs)
+    // 2. Create empty repo. Prefer the configured GitHub org so repos land
+    //    under QualiasolutionsCY (or whatever the workspace is configured
+    //    with), not the authenticated user's personal account. Only fall
+    //    back to the user account if the configured "org" is actually a
+    //    user (createInOrg returns 404 on non-orgs).
     let newRepo;
     try {
-      const { data: emptyRepo } = await client.octokit.repos.createForAuthenticatedUser({
+      const { data: orgRepo } = await client.octokit.repos.createInOrg({
+        org: client.org,
         name: repoName,
         description: config.description || `${config.projectType} project`,
         private: config.isPrivate ?? true,
-        auto_init: true, // Creates with README
+        auto_init: true,
       });
-      newRepo = emptyRepo;
+      newRepo = orgRepo;
     } catch (createError: unknown) {
-      // If personal account fails, try org method
-      if ((createError as { status?: number }).status === 422) {
-        const { data: orgRepo } = await client.octokit.repos.createInOrg({
-          org: client.org,
-          name: repoName,
-          description: config.description || `${config.projectType} project`,
-          private: config.isPrivate ?? true,
-          auto_init: true,
-        });
-        newRepo = orgRepo;
-      } else {
-        throw createError;
-      }
+      const status = (createError as { status?: number }).status;
+      // 404 = "org" is actually a user account; fall through to personal create.
+      // Any other error (422 name conflict, 403 perm denied, etc.) should bubble.
+      if (status !== 404) throw createError;
+      const { data: userRepo } = await client.octokit.repos.createForAuthenticatedUser({
+        name: repoName,
+        description: config.description || `${config.projectType} project`,
+        private: config.isPrivate ?? true,
+        auto_init: true,
+      });
+      newRepo = userRepo;
     }
 
     // Wait for repo to be ready

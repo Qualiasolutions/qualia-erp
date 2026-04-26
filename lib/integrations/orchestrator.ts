@@ -104,6 +104,21 @@ export async function setupProjectIntegrations(
         .update({ github_repo_url: gitHubResult.data.repoUrl })
         .eq('id', config.projectId);
 
+      // Link the repo to the project via project_integrations so the GitHub
+      // webhook (app/api/github/webhook/route.ts) can match push events to
+      // this project for phase sync + auto-assign. Without this row, pushes
+      // hit the webhook but find no linked project and become no-ops.
+      await supabase.from('project_integrations').upsert(
+        {
+          project_id: config.projectId,
+          service_type: 'github',
+          external_url: gitHubResult.data.repoUrl,
+          external_id: gitHubResult.data.repoName,
+          connected_at: new Date().toISOString(),
+        },
+        { onConflict: 'project_id,service_type' }
+      );
+
       // Auto-setup push webhook for phase sync + auto-assign
       if (gitHubResult.data.repoName) {
         const webhookResult = await setupRepoWebhook(
