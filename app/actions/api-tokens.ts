@@ -13,10 +13,32 @@ import type { ActionResult } from './shared';
  * time and never stored — only sha256(plaintext) is persisted.
  */
 
+const ALLOWED_SCOPES = [
+  'reports:write',
+  'reports:read',
+  'mcp:read',
+  'mcp:write',
+  'admin',
+  '*',
+] as const;
+
+const scopeSchema = z
+  .string()
+  .min(1)
+  .max(200)
+  .refine(
+    (raw) => {
+      const parts = raw.split(/\s+/).filter(Boolean);
+      if (parts.length === 0) return false;
+      return parts.every((p) => (ALLOWED_SCOPES as readonly string[]).includes(p));
+    },
+    { message: `Scope must be a space-separated subset of: ${ALLOWED_SCOPES.join(', ')}` }
+  );
+
 const mintSchema = z.object({
   profileId: z.string().uuid(),
   name: z.string().min(1).max(120),
-  scope: z.enum(['reports:write', 'reports:read', 'admin']).default('reports:write'),
+  scope: scopeSchema.default('reports:write'),
   expiresInDays: z.number().int().min(1).max(365).default(90),
 });
 
@@ -100,6 +122,29 @@ export async function revokeApiToken(tokenId: string): Promise<ActionResult> {
 
   if (error) return { success: false, error: error.message };
   return { success: true };
+}
+
+/**
+ * Admin-only: list every token across the workspace with the owner's name.
+ * Used by the admin Tokens panel.
+ */
+export async function listAllApiTokens(): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getClaims();
+  const actorId = userData?.claims?.sub;
+  if (!actorId) return { success: false, error: 'Unauthenticated' };
+  if (!(await isUserAdmin(actorId))) return { success: false, error: 'Admin only' };
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from('api_tokens')
+    .select(
+      'id, name, token_prefix, scope, expires_at, revoked_at, last_used_at, created_at, profile_id, profile:profiles!api_tokens_profile_id_fkey(id, full_name, email)'
+    )
+    .order('created_at', { ascending: false });
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
 }
 
 export async function listApiTokens(profileId?: string): Promise<ActionResult> {

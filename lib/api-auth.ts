@@ -76,6 +76,17 @@ export function generateToken(): { plaintext: string; hash: string; prefix: stri
   };
 }
 
+/**
+ * Check whether an authenticated token's scope grants access to a required scope.
+ * Scopes are space-separated strings (e.g. "reports:write mcp:read"). The
+ * pseudo-scope "*" grants everything. Legacy shared keys are reports:write only.
+ */
+export function hasScope(auth: AuthResult, required: string): boolean {
+  if (!auth.ok) return false;
+  const granted = auth.scope.split(/\s+/).filter(Boolean);
+  return granted.includes('*') || granted.includes(required);
+}
+
 export async function authenticateRequest(request: NextRequest): Promise<AuthResult> {
   const bearer = extractBearer(request.headers.get('authorization'));
 

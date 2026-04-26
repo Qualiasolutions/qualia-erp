@@ -15,6 +15,7 @@ export {
   type IntegrationHealth,
   type AuditLogEntry,
   type FrameworkReportLite,
+  type TokenAssignableProfile,
 } from './system';
 
 export type ControlTab = 'overview' | 'clients' | 'team' | 'finance' | 'system';

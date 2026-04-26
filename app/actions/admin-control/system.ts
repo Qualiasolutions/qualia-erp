@@ -28,10 +28,17 @@ export type FrameworkReportLite = {
   total_phases: number | null;
 };
 
+export type TokenAssignableProfile = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+};
+
 export type SystemPayload = {
   integrations: IntegrationHealth[];
   auditEntries: AuditLogEntry[];
   frameworkReports: FrameworkReportLite[];
+  tokenAssignableProfiles: TokenAssignableProfile[];
 };
 
 function resolveHealth(lastSyncAt: string | null): IntegrationHealth['status'] {
@@ -47,10 +54,15 @@ export async function loadSystemTab(): Promise<SystemPayload> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await isUserAdmin(user.id))) {
-    return { integrations: [], auditEntries: [], frameworkReports: [] };
+    return {
+      integrations: [],
+      auditEntries: [],
+      frameworkReports: [],
+      tokenAssignableProfiles: [],
+    };
   }
 
-  const [integrationsRes, auditRes, frameworkReports] = await Promise.all([
+  const [integrationsRes, auditRes, frameworkReports, profilesRes] = await Promise.all([
     supabase.from('project_integrations').select('service_type, last_sync_at, last_event_at'),
     supabase
       .from('activity_log')
@@ -74,6 +86,11 @@ export async function loadSystemTab(): Promise<SystemPayload> {
       .order('created_at', { ascending: false })
       .limit(20),
     getFrameworkReports({ limit: 15 }, { includeDryRun: false }),
+    supabase
+      .from('profiles')
+      .select('id, full_name, email, role')
+      .neq('role', 'client')
+      .order('full_name', { ascending: true }),
   ]);
 
   const grouped: Record<IntegrationHealth['service'], { count: number; last: string | null }> = {
@@ -125,9 +142,16 @@ export async function loadSystemTab(): Promise<SystemPayload> {
       total_phases: r.total_phases,
     }));
 
+  const tokenAssignableProfiles: TokenAssignableProfile[] = (profilesRes.data ?? []).map((p) => ({
+    id: p.id,
+    full_name: p.full_name,
+    email: p.email,
+  }));
+
   return {
     integrations,
     auditEntries,
     frameworkReports: reportsList,
+    tokenAssignableProfiles,
   };
 }

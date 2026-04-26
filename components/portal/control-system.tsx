@@ -14,6 +14,7 @@ import type {
   AuditLogEntry,
   FrameworkReportLite,
 } from '@/app/actions/admin-control';
+import { ApiTokensPanel } from './api-tokens-panel';
 
 const SERVICE_META: Record<IntegrationHealth['service'], { icon: typeof Github; label: string }> = {
   github: { icon: Github, label: 'GitHub' },
@@ -75,6 +76,8 @@ export function ControlSystem({
         <AuditLogTable entries={data.auditEntries} />
         <FrameworkReportsMini reports={data.frameworkReports} />
       </div>
+
+      <ApiTokensPanel profiles={data.tokenAssignableProfiles} />
 
       <SettingsShortcut />
     </div>
