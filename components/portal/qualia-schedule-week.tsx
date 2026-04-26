@@ -2,15 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  addDays,
-  addWeeks,
-  format,
-  formatISO,
-  isSameDay,
-  parseISO,
-  startOfWeek,
-} from 'date-fns';
+import { addDays, addWeeks, format, formatISO, isSameDay, parseISO, startOfWeek } from 'date-fns';
 import {
   Plus,
   ChevronLeft,
@@ -24,14 +16,10 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
+import { EditMeetingModal } from '@/components/edit-meeting-modal';
 import type { MeetingWithRelations } from '@/lib/swr';
 
 type EventType = 'standup' | 'client' | 'focus' | 'internal' | 'launch';
@@ -107,6 +95,7 @@ export function QualiaScheduleWeek({
 }: QualiaScheduleWeekProps) {
   const router = useRouter();
   const [selected, setSelected] = useState<MeetingWithRelations | null>(null);
+  const [editing, setEditing] = useState<MeetingWithRelations | null>(null);
   const weekStartDate = useMemo(() => parseISO(weekStart), [weekStart]);
   const weekEndDate = useMemo(() => addDays(weekStartDate, 6), [weekStartDate]);
   const today = new Date();
@@ -144,7 +133,10 @@ export function QualiaScheduleWeek({
   }, [initialMeetings, weekStartDate]);
 
   const goToWeek = (direction: -1 | 0 | 1) => {
-    const next = direction === 0 ? startOfWeek(new Date(), { weekStartsOn: 1 }) : addWeeks(weekStartDate, direction);
+    const next =
+      direction === 0
+        ? startOfWeek(new Date(), { weekStartsOn: 1 })
+        : addWeeks(weekStartDate, direction);
     const iso = formatISO(next, { representation: 'date' });
     router.push(`/schedule?week=${iso}`);
   };
@@ -177,7 +169,7 @@ export function QualiaScheduleWeek({
           </p>
         </div>
 
-        <div className="animate-fade-in flex items-center gap-3">
+        <div className="flex animate-fade-in items-center gap-3">
           <div className="hidden items-center gap-3 text-sm lg:flex">
             <div className="text-center">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Nicosia</p>
@@ -223,7 +215,7 @@ export function QualiaScheduleWeek({
       </div>
 
       {/* Legend */}
-      <div className="stagger-1 mb-3 flex flex-shrink-0 flex-wrap items-center gap-4 animate-fade-in">
+      <div className="stagger-1 mb-3 flex flex-shrink-0 animate-fade-in flex-wrap items-center gap-4">
         {legend.map((item) => (
           <div key={item.label} className="flex items-center gap-2">
             <span className={cn('h-2 w-2 rounded-full', item.color)} />
@@ -233,7 +225,7 @@ export function QualiaScheduleWeek({
       </div>
 
       {/* Calendar Grid */}
-      <div className="stagger-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card animate-fade-in">
+      <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
         {/* Day headers */}
         <div
           className="grid flex-shrink-0 border-b border-border"
@@ -343,10 +335,7 @@ export function QualiaScheduleWeek({
                 <div className="mb-3 flex items-center gap-3">
                   <Badge
                     variant="outline"
-                    className={cn(
-                      'capitalize text-xs',
-                      eventTypeBadge[classifyMeeting(selected)]
-                    )}
+                    className={cn('text-xs capitalize', eventTypeBadge[classifyMeeting(selected)])}
                   >
                     {classifyMeeting(selected)}
                   </Badge>
@@ -431,7 +420,14 @@ export function QualiaScheduleWeek({
                       </Button>
                     ) : null;
                   })()}
-                  <Button variant="outline" className="flex-1 gap-2 rounded-xl" disabled>
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2 rounded-xl"
+                    onClick={() => {
+                      setEditing(selected);
+                      setSelected(null);
+                    }}
+                  >
                     <Pencil className="h-4 w-4" />
                     Edit
                   </Button>
@@ -441,6 +437,38 @@ export function QualiaScheduleWeek({
           )}
         </DialogContent>
       </Dialog>
+
+      <EditMeetingModal
+        meeting={
+          editing
+            ? {
+                id: editing.id,
+                title: editing.title,
+                description: editing.description ?? null,
+                start_time: editing.start_time,
+                end_time: editing.end_time,
+                meeting_link:
+                  (editing as MeetingWithRelations & { meeting_link?: string | null })
+                    .meeting_link ?? null,
+                project: (() => {
+                  const p = (
+                    editing as MeetingWithRelations & {
+                      project?:
+                        | { id: string; name: string }
+                        | { id: string; name: string }[]
+                        | null;
+                    }
+                  ).project;
+                  if (!p) return null;
+                  return Array.isArray(p) ? (p[0] ?? null) : p;
+                })(),
+                attendees: editing.attendees ?? [],
+              }
+            : null
+        }
+        open={!!editing}
+        onOpenChange={(o) => !o && setEditing(null)}
+      />
 
       {/* Suppress unused-var noise on currentUserId — reserved for future
           permission-based UI (e.g., highlighting your own meetings). */}
