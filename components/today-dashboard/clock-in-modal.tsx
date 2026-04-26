@@ -1,16 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import {
-  LogIn,
-  Clock,
-  AlertCircle,
-  Loader2,
-  FolderOpen,
-  MoreHorizontal,
-  ArrowLeft,
-  Timer,
-} from 'lucide-react';
+import { LogIn, Clock, AlertCircle, Loader2, FolderOpen } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,14 +10,11 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { clockIn } from '@/app/actions/work-sessions';
 import { invalidateActiveSession } from '@/lib/swr';
 import { getEmployeeAssignments } from '@/app/actions/project-assignments';
 import { getActiveProjects } from '@/app/actions/projects';
 import { useAdminContext } from '@/components/admin-provider';
-import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 interface ClockInModalProps {
@@ -49,10 +37,6 @@ export function ClockInModal({
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clockingProjectId, setClockingProjectId] = useState<string | null>(null);
-  const [showOtherInput, setShowOtherInput] = useState(false);
-  const [otherNote, setOtherNote] = useState('');
-  const [plannedDuration, setPlannedDuration] = useState<number | null>(null);
-  const [otherReason, setOtherReason] = useState('');
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -61,10 +45,6 @@ export function ClockInModal({
     setLoadingProjects(true);
     setError(null);
     setClockingProjectId(null);
-    setShowOtherInput(false);
-    setOtherNote('');
-    setPlannedDuration(null);
-    setOtherReason('');
 
     // Admin sees all active projects; employees see only assigned ones
     const fetchProjects = isAdmin
@@ -84,18 +64,13 @@ export function ClockInModal({
       .finally(() => setLoadingProjects(false));
   }, [open, currentUserId, isAdmin]);
 
-  function handleClockIn(
-    projectId: string | null,
-    note?: string,
-    duration?: number,
-    reason?: string
-  ) {
+  function handleClockIn(projectId: string) {
     setError(null);
-    setClockingProjectId(projectId ?? '__other__');
+    setClockingProjectId(projectId);
 
     startTransition(async () => {
       try {
-        const result = await clockIn(workspaceId, projectId, note, duration, reason);
+        const result = await clockIn(workspaceId, projectId);
 
         if (!result.success) {
           setError(result.error ?? 'Failed to clock in. Please try again.');
@@ -142,155 +117,42 @@ export function ClockInModal({
             </span>
           </div>
 
-          {/* Project buttons or Other input */}
-          {showOtherInput ? (
-            <div className="space-y-3">
-              <button
-                type="button"
-                className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-                onClick={() => {
-                  setShowOtherInput(false);
-                  setOtherNote('');
-                  setPlannedDuration(null);
-                  setOtherReason('');
-                  setError(null);
-                }}
-                disabled={isPending}
-              >
-                <ArrowLeft className="size-3" />
-                Back to projects
-              </button>
-
-              {/* Planned duration */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">How long do you plan to be here?</Label>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {[
-                    { label: '1 hour', value: 60 },
-                    { label: '2 hours', value: 120 },
-                    { label: '3 hours', value: 180 },
-                    { label: '4 hours', value: 240 },
-                    { label: '6 hours', value: 360 },
-                    { label: '8 hours', value: 480 },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      aria-pressed={plannedDuration === opt.value}
-                      className={cn(
-                        'flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors',
-                        plannedDuration === opt.value
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
-                      )}
-                      onClick={() => setPlannedDuration(opt.value)}
-                      disabled={isPending}
-                    >
-                      <Timer className="size-3" />
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+          {/* Project buttons */}
+          <div className="space-y-2">
+            {loadingProjects && (
+              <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                <span className="text-sm">Loading projects...</span>
               </div>
+            )}
 
-              {/* Reason */}
-              <div className="space-y-2">
-                <Label htmlFor="clockin-other-reason" className="text-sm font-medium">
-                  Why?
-                </Label>
-                <Textarea
-                  id="clockin-other-reason"
-                  placeholder="Why are you clocking in under Other?"
-                  value={otherReason}
-                  onChange={(e) => setOtherReason(e.target.value)}
-                  className="min-h-[60px] resize-none text-sm"
-                  required
-                  aria-required="true"
-                  disabled={isPending}
-                />
+            {!loadingProjects && projects.length === 0 && (
+              <div className="flex flex-col items-center gap-2 py-6 text-center">
+                <FolderOpen className="size-8 text-muted-foreground/50" />
+                <p className="text-sm text-muted-foreground">
+                  No projects assigned — contact your admin.
+                </p>
               </div>
+            )}
 
-              {/* What are you working on */}
-              <div className="space-y-2">
-                <Label htmlFor="clockin-other-note" className="text-sm font-medium">
-                  What will you be working on?
-                </Label>
-                <Textarea
-                  id="clockin-other-note"
-                  placeholder="Describe the task or activity..."
-                  value={otherNote}
-                  onChange={(e) => setOtherNote(e.target.value)}
-                  className="min-h-[60px] resize-none text-sm"
-                  required
-                  aria-required="true"
-                  autoFocus
-                  disabled={isPending}
-                />
-              </div>
-
-              <Button
-                className="w-full"
-                disabled={isPending || !otherNote.trim() || !plannedDuration || !otherReason.trim()}
-                onClick={() => handleClockIn(null, otherNote, plannedDuration!, otherReason)}
-              >
-                {clockingProjectId === '__other__' ? (
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                ) : (
-                  <LogIn className="mr-2 size-4" />
-                )}
-                Start Session
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {loadingProjects && (
-                <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" />
-                  <span className="text-sm">Loading projects...</span>
-                </div>
-              )}
-
-              {!loadingProjects && projects.length === 0 && (
-                <div className="flex flex-col items-center gap-2 py-6 text-center">
-                  <FolderOpen className="size-8 text-muted-foreground/50" />
-                  <p className="text-sm text-muted-foreground">
-                    No projects assigned — contact your admin.
-                  </p>
-                </div>
-              )}
-
-              {!loadingProjects &&
-                projects.map((p) => (
-                  <Button
-                    key={p.id}
-                    variant="outline"
-                    className="h-auto w-full cursor-pointer justify-start px-4 py-3 text-left text-sm font-medium hover:border-primary/40 hover:bg-primary/5"
-                    disabled={isPending}
-                    onClick={() => handleClockIn(p.id)}
-                  >
-                    {clockingProjectId === p.id ? (
-                      <Loader2 className="mr-2 size-4 animate-spin text-primary" />
-                    ) : (
-                      <FolderOpen className="mr-2 size-4 text-muted-foreground" />
-                    )}
-                    {p.name}
-                  </Button>
-                ))}
-
-              {/* Other option */}
-              {!loadingProjects && (
+            {!loadingProjects &&
+              projects.map((p) => (
                 <Button
+                  key={p.id}
                   variant="outline"
-                  className="h-auto w-full cursor-pointer justify-start border-dashed px-4 py-3 text-left text-sm font-medium text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+                  className="h-auto w-full cursor-pointer justify-start px-4 py-3 text-left text-sm font-medium hover:border-primary/40 hover:bg-primary/5"
                   disabled={isPending}
-                  onClick={() => setShowOtherInput(true)}
+                  onClick={() => handleClockIn(p.id)}
                 >
-                  <MoreHorizontal className="mr-2 size-4" />
-                  Other
+                  {clockingProjectId === p.id ? (
+                    <Loader2 className="mr-2 size-4 animate-spin text-primary" />
+                  ) : (
+                    <FolderOpen className="mr-2 size-4 text-muted-foreground" />
+                  )}
+                  {p.name}
                 </Button>
-              )}
-            </div>
-          )}
+              ))}
+          </div>
 
           {/* Error message */}
           {error && (
