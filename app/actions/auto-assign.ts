@@ -128,9 +128,20 @@ export async function createTasksFromMilestones(
   const taskObjects = milestoneEntries
     .filter(([mn]) => !existingKeys.has(`${projectId}:M${mn}`))
     .map(([mn, group]) => {
-      const rollupName = group.rollup?.name?.trim();
+      const rawRollup = group.rollup?.name?.trim() ?? '';
+      // Framework milestone names often look like
+      //   "Milestone 1: Foundations 1 of 5 (CURRENT)"
+      // The label below already says "Milestone 1", so strip the prefix and
+      // any trailing meta markers ("(CURRENT)", "1 of 5", etc) to avoid the
+      // duplicated, noisy "Milestone 1: Milestone 1: 1 of 5 (CURRENT)" title.
+      const cleanedRollup = rawRollup
+        .replace(/^M(?:ilestone)?\s*\d+\s*[:\-—–]\s*/i, '') // drop leading "Milestone N:" / "M N -"
+        .replace(/\s*\d+\s*of\s*\d+\s*$/i, '') // drop trailing "1 of 5"
+        .replace(/\s*\((?:CURRENT|NEXT|FINAL|HANDOFF)\)\s*$/i, '') // drop status tag
+        .replace(/\s*\d+\s*of\s*\d+\s*$/i, '') // sometimes there are two — strip again
+        .trim();
       const milestoneLabel = `Milestone ${mn}`;
-      const title = rollupName ? `${milestoneLabel}: ${rollupName}` : milestoneLabel;
+      const title = cleanedRollup ? `${milestoneLabel}: ${cleanedRollup}` : milestoneLabel;
 
       const phaseLines = group.phases.map((p) => {
         const marker = p.status === 'completed' ? 'x' : ' ';

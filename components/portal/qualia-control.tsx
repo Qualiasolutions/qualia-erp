@@ -134,7 +134,7 @@ const ControlOverview = memo(function ControlOverview({
 
         <section className="rounded-xl border border-border bg-card p-5">
           <header className="mb-3 flex items-baseline justify-between">
-            <h3 className="text-sm font-semibold tracking-tight">Recent activity</h3>
+            <h3 className="text-sm font-semibold tracking-tight">Latest task completions</h3>
             <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
               Live
@@ -142,7 +142,7 @@ const ControlOverview = memo(function ControlOverview({
           </header>
           {data.activity.length === 0 ? (
             <p className="py-4 text-center text-xs italic text-muted-foreground">
-              No activity in the last 24h.
+              No tasks completed yet — get the team shipping!
             </p>
           ) : (
             <ul className="flex flex-col">

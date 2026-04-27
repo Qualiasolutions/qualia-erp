@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { memo } from 'react';
 import Link from 'next/link';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { Server, FileText } from 'lucide-react';
+import { Server, Rocket } from 'lucide-react';
 
 import { EmptyState } from '@/components/ui/empty-state';
 import type {
@@ -45,7 +45,7 @@ export function ControlSystem({
       <div>
         <h2 className="text-lg font-semibold tracking-tight">System</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Audit log, framework reports, API tokens.
+          Recent deploys, framework reports, API tokens.
         </p>
       </div>
 
@@ -67,41 +67,54 @@ const AuditLogTable = memo(function AuditLogTable({ entries }: { entries: AuditL
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-card">
       <header className="flex items-baseline justify-between border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold tracking-tight">Audit log</h3>
+        <h3 className="text-sm font-semibold tracking-tight">Recent deploys</h3>
         <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
           Last {entries.length}
         </span>
       </header>
       {entries.length === 0 ? (
         <EmptyState
-          icon={FileText}
-          title="No audit entries"
-          description="Admin actions will appear here."
+          icon={Rocket}
+          title="No deploys yet"
+          description="Production deploys will appear here."
           compact
           minimal
         />
       ) : (
         <ul className="divide-y divide-dashed divide-border">
-          {entries.map((e) => (
-            <li key={e.id} className="flex items-center gap-3 px-4 py-2">
-              <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-wider text-muted-foreground">
-                {e.action_type.replace(/_/g, ' ')}
-              </span>
-              <div className="min-w-0 flex-1 text-xs">
-                <span className="font-medium text-foreground">{e.actor_name ?? 'Someone'}</span>
-                {e.target_name ? (
-                  <>
-                    {' '}
-                    <span className="text-muted-foreground">→</span>{' '}
-                    <span className="text-foreground">{e.target_name}</span>
-                  </>
-                ) : null}
-              </div>
-              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                {formatDistanceToNowStrict(new Date(e.created_at))}
-              </span>
-            </li>
-          ))}
+          {entries.map((e) => {
+            const action = e.action_type.replace(/_/g, ' ');
+            const isFail = action.startsWith('deploy ') && action !== 'deployed';
+            return (
+              <li key={e.id} className="flex items-center gap-3 px-4 py-2">
+                <span
+                  className={
+                    'rounded px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-wider ' +
+                    (isFail
+                      ? 'bg-destructive/10 text-destructive'
+                      : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400')
+                  }
+                >
+                  {action}
+                </span>
+                <div className="min-w-0 flex-1 text-xs">
+                  <span className="font-medium text-foreground">
+                    {e.target_name ?? 'Unknown project'}
+                  </span>
+                  {e.actor_name ? (
+                    <>
+                      {' '}
+                      <span className="text-muted-foreground">·</span>{' '}
+                      <span className="text-muted-foreground">{e.actor_name}</span>
+                    </>
+                  ) : null}
+                </div>
+                <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                  {formatDistanceToNowStrict(new Date(e.created_at))}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

@@ -63,18 +63,23 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
     activityWeekRes,
   ] = await Promise.all([
     getFinancialSummary(),
+    // Activity feed: recent task completions — the activity_log table is not
+    // wired up, so instead we read from the tasks table (which actually has
+    // data). Each row tells the operator "{actor} completed {target}".
     supabase
-      .from('activity_log')
+      .from('tasks')
       .select(
         `
         id,
-        action_type,
-        created_at,
-        target_name,
-        actor:profiles!activity_log_actor_id_fkey (id, full_name, avatar_url)
+        title,
+        completed_at,
+        assignee:profiles!tasks_assignee_id_fkey (id, full_name, avatar_url),
+        project:projects!tasks_project_id_fkey (id, name)
       `
       )
-      .order('created_at', { ascending: false })
+      .eq('status', 'Done')
+      .not('completed_at', 'is', null)
+      .order('completed_at', { ascending: false })
       .limit(10),
     supabase
       .from('projects')
@@ -174,15 +179,30 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
     },
   ];
 
-  const activityList: OverviewPayload['activity'] = (activityDirect.data ?? []).map((a) => {
-    const actor = Array.isArray(a.actor) ? a.actor[0] : a.actor;
+  const activityList: OverviewPayload['activity'] = (activityDirect.data ?? []).map((row) => {
+    const r = row as unknown as {
+      id: string;
+      title: string | null;
+      completed_at: string | null;
+      assignee:
+        | { full_name: string | null; avatar_url: string | null }
+        | null
+        | Array<{ full_name: string | null; avatar_url: string | null }>;
+      project: { name: string | null } | null | Array<{ name: string | null }>;
+    };
+    const assignee = Array.isArray(r.assignee) ? r.assignee[0] : r.assignee;
+    const project = Array.isArray(r.project) ? r.project[0] : r.project;
     return {
-      id: a.id as string,
-      actor_name: actor?.full_name ?? null,
-      actor_avatar_url: actor?.avatar_url ?? null,
-      action_type: a.action_type as string,
-      target_name: (a.target_name as string | null) ?? null,
-      created_at: a.created_at as string,
+      id: r.id,
+      actor_name: assignee?.full_name ?? null,
+      actor_avatar_url: assignee?.avatar_url ?? null,
+      action_type: 'completed',
+      target_name: r.title
+        ? project?.name
+          ? `${r.title} · ${project.name}`
+          : r.title
+        : (project?.name ?? null),
+      created_at: r.completed_at ?? new Date(0).toISOString(),
     };
   });
 
