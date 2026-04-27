@@ -6,14 +6,50 @@ import { aiRateLimiter } from '@/lib/rate-limit';
 
 export const maxDuration = 30;
 
-const inputSchema = z.object({
-  action: z.enum(['generate', 'search']),
-  text: z.string().optional(),
-  texts: z.array(z.string()).optional(),
-  query: z.string().optional(),
-  threshold: z.number().min(0).max(1).optional().default(0.7),
-  limit: z.number().min(1).max(20).optional().default(5),
-});
+const MAX_EMBED_TEXT_CHARS = 8000;
+const MAX_EMBED_BATCH_ITEMS = 20;
+const MAX_EMBED_BATCH_CHARS = 40000;
+const MAX_SEARCH_QUERY_CHARS = 2000;
+
+const inputSchema = z
+  .object({
+    action: z.enum(['generate', 'search']),
+    text: z.string().trim().min(1).max(MAX_EMBED_TEXT_CHARS).optional(),
+    texts: z
+      .array(z.string().trim().min(1).max(MAX_EMBED_TEXT_CHARS))
+      .min(1)
+      .max(MAX_EMBED_BATCH_ITEMS)
+      .optional(),
+    query: z.string().trim().min(1).max(MAX_SEARCH_QUERY_CHARS).optional(),
+    threshold: z.number().min(0).max(1).optional().default(0.7),
+    limit: z.number().min(1).max(20).optional().default(5),
+  })
+  .superRefine((input, ctx) => {
+    if (input.action === 'generate' && !input.text && !input.texts?.length) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['text'],
+        message: 'Provide text or texts to generate embeddings.',
+      });
+    }
+
+    if (input.action === 'search' && !input.query) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['query'],
+        message: 'Provide a query to search embeddings.',
+      });
+    }
+
+    const batchChars = input.texts?.reduce((sum, text) => sum + text.length, 0) || 0;
+    if (batchChars > MAX_EMBED_BATCH_CHARS) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['texts'],
+        message: `Batch text must stay under ${MAX_EMBED_BATCH_CHARS.toLocaleString()} characters.`,
+      });
+    }
+  });
 
 /**
  * Embeddings API for RAG knowledge base
@@ -79,6 +115,12 @@ export async function POST(req: Request) {
       .single();
 
     const workspaceId = membership?.workspace_id;
+    if (!workspaceId) {
+      return Response.json(
+        { error: 'No workspace is available for this account' },
+        { status: 403 }
+      );
+    }
 
     const body = await req.json();
     const input = inputSchema.parse(body);
@@ -119,14 +161,10 @@ export async function POST(req: Request) {
     }
 
     if (input.action === 'search') {
-      if (!input.query) {
-        return Response.json({ error: 'No query provided' }, { status: 400 });
-      }
-
       // Generate embedding for the query using Google's model
       const { embedding } = await embed({
         model: google.textEmbeddingModel('text-embedding-004'),
-        value: input.query,
+        value: input.query!,
       });
 
       // Search using match_documents function

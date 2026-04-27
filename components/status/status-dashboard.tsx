@@ -115,6 +115,7 @@ function MonitorCard({
   project?: ProjectInfo;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const faviconUrl = getFaviconUrl(monitor.url);
   const responseTime = parseInt(monitor.average_response_time || '0');
   const uptimeRatios = monitor.custom_uptime_ratio?.split('-') || [];
@@ -157,7 +158,7 @@ function MonitorCard({
               (monitor.status === 0 || monitor.status === 1) && 'border-border/10'
             )}
           >
-            {project?.logoUrl ? (
+            {project?.logoUrl && !imageFailed ? (
               <Image
                 src={project.logoUrl}
                 alt={project.name}
@@ -165,8 +166,9 @@ function MonitorCard({
                 height={32}
                 className="size-8 rounded-lg object-cover"
                 unoptimized
+                onError={() => setImageFailed(true)}
               />
-            ) : faviconUrl ? (
+            ) : faviconUrl && !imageFailed ? (
               <Image
                 src={faviconUrl}
                 alt=""
@@ -174,6 +176,7 @@ function MonitorCard({
                 height={32}
                 className="size-8"
                 unoptimized
+                onError={() => setImageFailed(true)}
               />
             ) : (
               <Globe className="size-6 text-muted-foreground/30" />
@@ -188,12 +191,12 @@ function MonitorCard({
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
-                  'flex size-7 items-center justify-center rounded-lg border transition-all duration-200 ease-premium',
-                  'border-transparent opacity-0 group-hover:border-border group-hover:opacity-100',
+                  'flex size-11 items-center justify-center rounded-lg border transition-all duration-200 ease-premium md:size-7',
+                  'border-border/70 opacity-100 md:border-transparent md:opacity-0 md:group-hover:border-border md:group-hover:opacity-100',
                   'hover:bg-muted/40'
                 )}
               >
-                <ArrowUpRight className="size-3.5 text-muted-foreground" />
+                <ArrowUpRight className="size-4 text-muted-foreground md:size-3.5" />
               </a>
             )}
           </div>
@@ -466,7 +469,7 @@ export function StatusDashboard({
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-10 p-6 lg:p-8">
+        <div className="space-y-6 p-4 sm:space-y-10 sm:p-6 lg:p-8">
           {/* Header — desktop only */}
           <div className="hidden items-end justify-between md:flex">
             <div className="space-y-1">
@@ -492,7 +495,7 @@ export function StatusDashboard({
           {/* Stats bar */}
           <div
             className={cn(
-              'relative overflow-hidden rounded-xl border bg-card p-6',
+              'relative overflow-hidden rounded-xl border bg-card p-3 sm:p-6',
               overall.allUp
                 ? 'border-emerald-500/15'
                 : overall.downCount > 0
@@ -512,12 +515,12 @@ export function StatusDashboard({
               )}
             />
 
-            <div className="relative grid grid-cols-5 divide-x divide-border/20">
+            <div className="relative grid gap-3 sm:grid-cols-3 md:grid-cols-5 md:gap-0 md:divide-x md:divide-border/20">
               {/* Status */}
-              <div className="col-span-2 flex items-center gap-4 p-6">
+              <div className="flex min-w-0 items-center gap-3 rounded-lg bg-background/45 p-3 sm:col-span-3 md:col-span-2 md:gap-4 md:rounded-none md:bg-transparent md:p-6">
                 <div
                   className={cn(
-                    'flex size-12 items-center justify-center rounded-xl',
+                    'flex size-11 shrink-0 items-center justify-center rounded-xl sm:size-12',
                     overall.allUp && 'bg-emerald-500/10',
                     overall.downCount > 0 && 'bg-red-500/10',
                     overall.degradedCount > 0 && overall.downCount === 0 && 'bg-amber-500/10'
@@ -531,10 +534,10 @@ export function StatusDashboard({
                     <AlertTriangle size={24} className="animate-pulse text-amber-500" />
                   )}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h2
                     className={cn(
-                      'text-base font-semibold',
+                      'text-sm font-semibold sm:text-base',
                       overall.allUp && 'text-emerald-700 dark:text-emerald-400',
                       overall.downCount > 0 && 'text-red-700 dark:text-red-400',
                       overall.degradedCount > 0 &&
@@ -556,11 +559,14 @@ export function StatusDashboard({
                 { label: 'Avg Uptime', value: `${avgUptime}%` },
                 { label: 'Avg Response', value: avgResponse > 0 ? `${avgResponse}ms` : '--' },
               ].map((stat) => (
-                <div key={stat.label} className="flex flex-col justify-center px-6 py-5">
+                <div
+                  key={stat.label}
+                  className="flex min-w-0 flex-col justify-center rounded-lg bg-background/45 px-3 py-3 sm:px-4 md:rounded-none md:bg-transparent md:px-6 md:py-5"
+                >
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">
                     {stat.label}
                   </span>
-                  <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
+                  <p className="mt-1 break-words text-base font-bold tabular-nums text-foreground sm:text-lg">
                     {stat.value}
                   </p>
                 </div>

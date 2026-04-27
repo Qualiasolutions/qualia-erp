@@ -71,6 +71,7 @@ interface Task {
   status: string;
   priority: string;
   due_date: string | null;
+  phase_id: string | null;
   phase_name: string | null;
   sort_order: number;
 }
@@ -546,7 +547,7 @@ function MilestoneSection({
       {expanded && milestone.phases.length > 0 && (
         <div className="mt-2 pl-4 sm:pl-6">
           {milestone.phases.map((phase, idx) => {
-            const phaseTasks = tasksByPhase.get(phase.name) || [];
+            const phaseTasks = tasksByPhase.get(phase.id) || [];
             const completed = phaseTasks.filter((t) => t.status === 'Done').length;
 
             return (
@@ -693,18 +694,16 @@ export function ProjectWorkflow({
     // child counter. Rewrite at display time — keeps DB + framework source intact.
     const toMilestoneLabel = (rawName: string | undefined, msNum: number): string => {
       if (rawName) return rawName.replace(/^Phase\s+(\d+)/i, 'Milestone $1');
-      if (msNum >= 0) return `Milestone ${msNum}`;
-      return 'Phases';
+      return `Milestone ${msNum}`;
     };
 
-    // Seed a group for EVERY milestone record first, even ones with no child
-    // phases yet (e.g. future milestones from JOURNEY.md that haven't been
-    // broken down into phases, or milestones closed by the framework's
-    // close-milestone action without a per-phase sync). Without this seed
-    // step, empty milestones disappear from the tree because the phase loop
-    // below never visits them.
+    // Seed a group for every numbered milestone record. Records without a
+    // milestone_number are dropped on purpose — they used to create an
+    // "unphased / Between milestones" bucket at the top of the project, which
+    // confused users. Real work always lives under a numbered milestone.
     for (const msRecord of milestoneRecords) {
-      const msNum = msRecord.milestone_number ?? -1;
+      const msNum = msRecord.milestone_number;
+      if (msNum == null || msNum < 0) continue;
       groups.set(msNum, {
         number: msNum,
         name: toMilestoneLabel(msRecord.name, msNum),
@@ -714,7 +713,8 @@ export function ProjectWorkflow({
     }
 
     for (const phase of phaseRecords) {
-      const msNum = phase.milestone_number ?? -1;
+      const msNum = phase.milestone_number;
+      if (msNum == null || msNum < 0) continue; // skip phases not tied to a numbered milestone
       if (!groups.has(msNum)) {
         // Phase refers to a milestone that has no milestone_record. Synthesize
         // one from the msNum so the phase still renders.
@@ -741,36 +741,26 @@ export function ProjectWorkflow({
     return sorted;
   }, [phaseRecords, milestoneRecords]);
 
-  // Map tasks by phase name
+  // Map tasks by actual phase id. Phase names can change, so they should not
+  // decide whether work belongs in a phase.
   const tasksByPhase = useMemo(() => {
     const map = new Map<string, Task[]>();
     for (const task of tasks) {
-      if (task.phase_name) {
-        if (!map.has(task.phase_name)) map.set(task.phase_name, []);
-        map.get(task.phase_name)!.push(task);
+      if (task.phase_id) {
+        if (!map.has(task.phase_id)) map.set(task.phase_id, []);
+        map.get(task.phase_id)!.push(task);
       }
     }
     return map;
   }, [tasks]);
 
-  // Unphased tasks
-  const unphasedTasks = tasks.filter(
-    (t) => !t.phase_name || !phases.some((p) => p.name === t.phase_name)
-  );
-
   // Active phase
-  const activePhase =
-    activePhaseId === '__general' ? null : phases.find((p) => p.id === activePhaseId) || null;
+  const activePhase = phases.find((p) => p.id === activePhaseId) || null;
 
-  const isGeneralView = activePhaseId === '__general';
   const isDrilledIn = activePhaseId !== null;
 
   // Tasks for active view
-  const phaseTasks = isGeneralView
-    ? unphasedTasks
-    : activePhase
-      ? tasks.filter((t) => t.phase_name === activePhase.name)
-      : [];
+  const phaseTasks = activePhase ? tasksByPhase.get(activePhase.id) || [] : [];
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
@@ -961,7 +951,7 @@ export function ProjectWorkflow({
 
   // ─── Empty State ──────────────────────────────────────────────────────────
 
-  if (phases.length === 0 && unphasedTasks.length === 0) {
+  if (phases.length === 0) {
     return (
       <div className={cn('flex flex-col items-center justify-center gap-6 px-6', className)}>
         <div className="text-center">
@@ -1022,7 +1012,7 @@ export function ProjectWorkflow({
   // ─── Phase Detail View (drilled in) ────────────────────────────────────────
 
   if (isDrilledIn) {
-    const phaseName = isGeneralView ? 'General Tasks' : activePhase?.name || '';
+    const phaseName = activePhase?.name || '';
     const phaseDesc = activePhase?.description;
     const doneCount = sortedTasks.filter((t) => t.status === 'Done').length;
 
@@ -1360,28 +1350,6 @@ export function ProjectWorkflow({
         {/* Milestone sections — scrollable */}
         <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
           <div className="px-5 pb-4">
-            {/* General tasks section */}
-            {unphasedTasks.length > 0 && (
-              <div className="mb-4">
-                <button
-                  onClick={() => setActivePhaseId('__general')}
-                  className="group flex w-full items-center gap-3 rounded-lg border border-border px-4 py-3 text-left transition-all hover:border-primary/20 hover:bg-muted/20"
-                >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted/30">
-                    <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground">Unphased Tasks</p>
-                    <p className="text-xs text-muted-foreground">
-                      {unphasedTasks.filter((t) => t.status === 'Done').length}/
-                      {unphasedTasks.length} done
-                    </p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 transition-colors group-hover:text-foreground" />
-                </button>
-              </div>
-            )}
-
             {/* Milestone groups */}
             {milestones.map((ms) => (
               <MilestoneSection

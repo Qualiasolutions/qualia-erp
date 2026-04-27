@@ -123,8 +123,7 @@ export async function getClients(workspaceId?: string | null, leadStatus?: LeadS
             created_at,
             logo_url,
             creator:profiles!clients_created_by_fkey (id, full_name, email),
-            assigned:profiles!clients_assigned_to_fkey (id, full_name, email),
-            projects:projects!projects_client_id_fkey (id)
+            assigned:profiles!clients_assigned_to_fkey (id, full_name, email)
         `
     )
     .order('created_at', { ascending: false });
@@ -144,10 +143,47 @@ export async function getClients(workspaceId?: string | null, leadStatus?: LeadS
     return [];
   }
 
-  return (clients || []).map((client) => ({
+  const normalizedClients = (clients || []).map((client) => ({
     ...client,
     creator: Array.isArray(client.creator) ? client.creator[0] || null : client.creator,
     assigned: Array.isArray(client.assigned) ? client.assigned[0] || null : client.assigned,
+  }));
+
+  const clientIds = normalizedClients.map((client) => client.id);
+  if (clientIds.length === 0) return normalizedClients;
+
+  const [directProjects, portalLinks] = await Promise.all([
+    supabase.from('projects').select('id, client_id').in('client_id', clientIds),
+    supabase.from('client_projects').select('client_id, project_id').in('client_id', clientIds),
+  ]);
+
+  if (directProjects.error) {
+    console.error('Error fetching client project links:', directProjects.error);
+  }
+  if (portalLinks.error) {
+    console.error('Error fetching portal project links:', portalLinks.error);
+  }
+
+  const projectsByClient = new Map<string, Set<string>>();
+  const ensureSet = (clientId: string) => {
+    let set = projectsByClient.get(clientId);
+    if (!set) {
+      set = new Set<string>();
+      projectsByClient.set(clientId, set);
+    }
+    return set;
+  };
+
+  for (const project of directProjects.data || []) {
+    if (project.client_id) ensureSet(project.client_id).add(project.id);
+  }
+  for (const link of portalLinks.data || []) {
+    ensureSet(link.client_id).add(link.project_id);
+  }
+
+  return normalizedClients.map((client) => ({
+    ...client,
+    projects: Array.from(projectsByClient.get(client.id) || []).map((id) => ({ id })),
   }));
 }
 

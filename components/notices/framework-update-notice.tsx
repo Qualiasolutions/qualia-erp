@@ -57,7 +57,7 @@ export function FrameworkUpdateNotice() {
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : dismiss())}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="w-[calc(100vw-2rem)] p-5 sm:max-w-[480px] sm:p-6">
         <DialogHeader>
           <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Terminal className="h-5 w-5" aria-hidden />
@@ -69,7 +69,7 @@ export function FrameworkUpdateNotice() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="my-2 flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5">
+        <div className="my-2 flex min-w-0 items-center gap-2 overflow-hidden rounded-lg border border-border bg-muted/40 px-3 py-2.5">
           <code className="min-w-0 flex-1 truncate font-mono text-sm text-foreground">
             {COMMAND}
           </code>
@@ -91,7 +91,7 @@ export function FrameworkUpdateNotice() {
           Tip: run it from any project folder — the framework installs globally for your user.
         </p>
 
-        <DialogFooter className="mt-2 gap-2 sm:gap-2">
+        <DialogFooter className="mt-2 gap-2 sm:gap-2 [&>button]:w-full sm:[&>button]:w-auto">
           <Button variant="outline" onClick={dismiss}>
             Remind me later
           </Button>

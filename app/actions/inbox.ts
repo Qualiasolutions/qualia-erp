@@ -99,6 +99,7 @@ export type Task = {
   status: 'Todo' | 'In Progress' | 'Done';
   priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
   item_type: 'task' | 'issue' | 'note' | 'resource';
+  phase_id: string | null;
   phase_name: string | null;
   sort_order: number;
   due_date: string | null;
@@ -262,6 +263,7 @@ export async function getTasks(
       status,
       priority,
       item_type,
+      phase_id,
       phase_name,
       sort_order,
       due_date,

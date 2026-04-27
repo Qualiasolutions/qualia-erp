@@ -43,14 +43,19 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
   ]);
 
   // Resolve mode from role + ?scope=
+  // Admins default to workspace-wide tasks (Hasan, Moayad, every team member).
+  // `?scope=mine` flips an admin back to their personal inbox view.
+  // Employees can't request the workspace view.
   let mode: TasksMode;
   if (role === 'client') {
     mode = 'client';
+  } else if (requestedScope === 'mine') {
+    mode = 'inbox';
   } else if (requestedScope === 'all') {
-    if (!isAdmin) redirect('/tasks'); // employees can't request the workspace-wide view
+    if (!isAdmin) redirect('/tasks');
     mode = 'all-tasks';
   } else {
-    mode = 'inbox';
+    mode = isAdmin ? 'all-tasks' : 'inbox';
   }
 
   const supabase = await createClient();
