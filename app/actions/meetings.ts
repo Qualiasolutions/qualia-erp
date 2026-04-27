@@ -302,6 +302,11 @@ export async function getMeetings(
     filteredMeetings = filteredMeetings.filter((meeting) => {
       const m = meeting as unknown as MeetingResponse;
 
+      // Public bookings (qualiasolutions.net/contact) are visible to the whole
+      // workspace — they have no created_by/attendees/project, so they'd
+      // otherwise be hidden from every non-admin.
+      if ((m.title || '').startsWith('Public: ')) return true;
+
       // User created the meeting
       if (m.created_by === scopeToUserId) return true;
 

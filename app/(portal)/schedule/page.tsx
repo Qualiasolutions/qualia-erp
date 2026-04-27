@@ -20,15 +20,7 @@ function resolveWeekStart(weekParam?: string): Date {
   return startOfWeek(new Date(), { weekStartsOn: 1 });
 }
 
-async function ScheduleLoader({
-  weekStartISO,
-  userId,
-  scopeToUserId,
-}: {
-  weekStartISO: string;
-  userId: string;
-  scopeToUserId?: string | null;
-}) {
+async function ScheduleLoader({ weekStartISO, userId }: { weekStartISO: string; userId: string }) {
   await connection();
 
   try {
@@ -37,7 +29,7 @@ async function ScheduleLoader({
       start: weekStart.toISOString(),
       end: addDays(weekStart, 7).toISOString(),
     };
-    const meetings = await getMeetings(undefined, scopeToUserId, dateRange);
+    const meetings = await getMeetings(undefined, null, dateRange);
 
     return (
       <QualiaScheduleWeek
@@ -106,16 +98,10 @@ export default async function PortalSchedulePage({
   const weekStart = resolveWeekStart(params.week);
   const weekStartISO = formatISO(weekStart, { representation: 'date' });
 
-  const scopeToUserId = profile?.role === 'employee' ? user.id : null;
-
   return (
     <div className="flex h-full flex-col">
       <Suspense fallback={<ScheduleSkeleton />}>
-        <ScheduleLoader
-          weekStartISO={weekStartISO}
-          userId={user.id}
-          scopeToUserId={scopeToUserId}
-        />
+        <ScheduleLoader weekStartISO={weekStartISO} userId={user.id} />
       </Suspense>
     </div>
   );
