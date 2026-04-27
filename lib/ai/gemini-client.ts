@@ -22,5 +22,9 @@ export const geminiModel = openrouter('google/gemini-3-flash-preview');
 // Gemini 2.5 Flash - Stable fallback
 export const geminiFlashModel = openrouter('google/gemini-2.5-flash-preview');
 
+// Claude Sonnet 4.6 — primary model for the in-app Knowledge assistant
+// (the gemini flash preview was returning empty completions for some prompts).
+export const knowledgeAssistantModel = openrouter('anthropic/claude-sonnet-4.6');
+
 // Keep Google embeddings for RAG (requires GOOGLE_GENERATIVE_AI_API_KEY)
 export const geminiEmbeddingModel = google.textEmbeddingModel('text-embedding-004');

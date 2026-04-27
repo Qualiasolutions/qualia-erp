@@ -1,6 +1,6 @@
 import { streamText } from 'ai';
 import { z } from 'zod';
-import { geminiFlashModel } from '@/lib/ai/gemini-client';
+import { knowledgeAssistantModel } from '@/lib/ai/gemini-client';
 import { createClient } from '@/lib/supabase/server';
 import { chatRateLimiter } from '@/lib/rate-limit';
 
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
   }
 
   const result = streamText({
-    model: geminiFlashModel,
+    model: knowledgeAssistantModel,
     system: KNOWLEDGE_SYSTEM_PROMPT,
     messages: parsed.data.messages,
     maxOutputTokens: 1500,

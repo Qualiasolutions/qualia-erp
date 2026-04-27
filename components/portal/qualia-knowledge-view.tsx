@@ -235,15 +235,15 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
   return (
     <div className="flex h-full max-h-[calc(100vh-3rem)] flex-1 flex-col overflow-hidden lg:flex-row">
       {/* Chat — primary column */}
-      <section className="flex min-h-0 flex-1 flex-col overflow-hidden p-5 lg:p-7">
-        <header className="mb-4 flex flex-shrink-0 items-center justify-between gap-3">
+      <section className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 lg:p-5">
+        <header className="mb-3 flex flex-shrink-0 items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
-              <QualiaMark size={22} className="h-[22px] w-[22px]" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+              <QualiaMark size={20} className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold tracking-tight">Knowledge</h1>
-              <p className="text-xs text-muted-foreground">
+              <h1 className="text-lg font-semibold leading-tight tracking-tight">Knowledge</h1>
+              <p className="text-[11px] text-muted-foreground">
                 Ask the assistant or open a resource on the right.
               </p>
             </div>
@@ -264,12 +264,12 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
         {/* Messages or empty state */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto rounded-2xl border border-border bg-card/40 p-4 lg:p-6"
+          className="flex-1 overflow-y-auto rounded-2xl border border-border bg-card/40 p-3 lg:p-4"
         >
           {!hasMessages ? (
             <EmptyChatState onPick={(q) => sendMessage(q)} />
           ) : (
-            <div className="mx-auto flex max-w-3xl flex-col gap-5">
+            <div className="mx-auto flex max-w-3xl flex-col gap-4">
               {messages.map((m) => (
                 <MessageBubble
                   key={m.id}
@@ -290,7 +290,7 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
         </div>
 
         {/* Composer */}
-        <form onSubmit={handleSubmit} className="mt-3 flex-shrink-0">
+        <form onSubmit={handleSubmit} className="mt-2 flex-shrink-0">
           <div className="relative rounded-2xl border border-border bg-card shadow-sm transition-colors focus-within:border-primary/50 focus-within:shadow-md">
             <textarea
               ref={inputRef}
@@ -328,19 +328,21 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
       </section>
 
       {/* Resources — curated, simple, beautiful */}
-      <aside className="flex min-h-0 w-full flex-col overflow-hidden border-t border-border bg-muted/20 lg:w-[400px] lg:border-l lg:border-t-0 xl:w-[440px]">
-        <header className="flex flex-shrink-0 items-center gap-3 border-b border-border px-5 py-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
-            <Books size={18} weight="duotone" className="text-primary" />
+      <aside className="flex min-h-0 w-full flex-col overflow-hidden border-t border-border bg-muted/20 lg:w-[360px] lg:border-l lg:border-t-0 xl:w-[400px]">
+        <header className="flex flex-shrink-0 items-center gap-3 border-b border-border px-4 py-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+            <Books size={16} weight="duotone" className="text-primary" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold tracking-tight text-foreground">Resources</h2>
-            <p className="text-[11px] text-muted-foreground">
+            <h2 className="text-sm font-semibold leading-tight tracking-tight text-foreground">
+              Resources
+            </h2>
+            <p className="text-[11px] leading-snug text-muted-foreground">
               Click a card to open the visual reference.
             </p>
           </div>
         </header>
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+        <div className="flex-1 space-y-2.5 overflow-y-auto p-3">
           {RESOURCES.map((r) => (
             <ResourceCard key={r.id} resource={r} onOpen={() => setOpenResource(r.id)} />
           ))}
