@@ -30,7 +30,7 @@ import { toast } from 'sonner';
    Types
    ====================================================================== */
 
-type MeetingKind = 'standup' | 'client' | 'focus' | 'internal' | 'launch';
+type MeetingKind = 'client' | 'internal';
 
 interface Profile {
   id: string;
@@ -60,39 +60,26 @@ const HOURS = Array.from({ length: HOUR_COUNT }, (_, i) => i + HOUR_START);
 
 /** Color mapping for meeting kinds — Tailwind classes */
 const KIND_COLORS: Record<MeetingKind, { bg: string; border: string; text: string }> = {
-  standup: {
-    bg: 'bg-muted-foreground/10',
-    border: 'border-l-muted-foreground',
-    text: 'text-muted-foreground',
-  },
   client: {
     bg: 'bg-violet-500/10',
     border: 'border-l-violet-500',
     text: 'text-violet-700 dark:text-violet-400',
-  },
-  focus: {
-    bg: 'bg-primary/10',
-    border: 'border-l-primary',
-    text: 'text-primary',
   },
   internal: {
     bg: 'bg-emerald-500/10',
     border: 'border-l-emerald-500',
     text: 'text-emerald-700 dark:text-emerald-400',
   },
-  launch: {
-    bg: 'bg-red-500/10',
-    border: 'border-l-red-500',
-    text: 'text-red-700 dark:text-red-400',
-  },
 };
 
 const KIND_DOT_COLORS: Record<MeetingKind, string> = {
-  standup: 'bg-muted-foreground',
   client: 'bg-violet-500',
-  focus: 'bg-primary',
   internal: 'bg-emerald-500',
-  launch: 'bg-red-500',
+};
+
+const KIND_LABELS: Record<MeetingKind, string> = {
+  client: 'Client meeting',
+  internal: 'Internal meeting',
 };
 
 const DAY_LABELS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -105,27 +92,11 @@ const PUBLIC_BOOKING_PREFIX = 'Public: ';
    ====================================================================== */
 
 /**
- * Infer meeting kind from meeting data.
- * No `meeting_type` column exists — we derive from title keywords + client relation.
+ * Infer meeting kind: meetings linked to a client are "client", everything else is "internal".
  */
 function inferMeetingKind(meeting: MeetingWithRelations): MeetingKind {
-  const title = (meeting.title || '').toLowerCase();
-
-  if (title.includes('standup') || title.includes('stand-up') || title.includes('daily sync')) {
-    return 'standup';
-  }
-  if (title.includes('launch') || title.includes('release') || title.includes('go live')) {
-    return 'launch';
-  }
-  if (title.includes('focus') || title.includes('deep work') || title.includes('heads down')) {
-    return 'focus';
-  }
-  // If meeting has a client relation, it's a client meeting
   const client = Array.isArray(meeting.client) ? meeting.client[0] : meeting.client;
-  if (client) {
-    return 'client';
-  }
-  return 'internal';
+  return client ? 'client' : 'internal';
 }
 
 function formatHour(hour: number): string {
@@ -610,9 +581,9 @@ export function QualiaSchedule({
       {/* ── Legend ── */}
       <div className="mb-4 flex flex-wrap gap-4 text-xs">
         {(Object.keys(KIND_DOT_COLORS) as MeetingKind[]).map((kind) => (
-          <span key={kind} className="flex items-center gap-1.5 capitalize text-muted-foreground">
+          <span key={kind} className="flex items-center gap-1.5 text-muted-foreground">
             <span className={cn('inline-block h-2 w-2 rounded-full', KIND_DOT_COLORS[kind])} />
-            {kind}
+            {KIND_LABELS[kind]}
           </span>
         ))}
       </div>

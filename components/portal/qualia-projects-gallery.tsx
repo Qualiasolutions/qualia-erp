@@ -20,6 +20,7 @@ import {
   Archive,
   MoreHorizontal,
   Check,
+  ChevronDown,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -863,9 +864,16 @@ function StageColumn({
    ====================================================================== */
 
 function FinishedRow({ projects, isAdmin }: { projects: GalleryProject[]; isAdmin?: boolean }) {
+  const [open, setOpen] = useState(false);
   return (
     <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card ring-1 ring-inset ring-primary/20">
-      <header className="flex items-center gap-2 border-b border-border bg-primary/5 px-3 py-1.5">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="finished-projects-list"
+        className="flex w-full cursor-pointer items-center gap-2 border-b border-border bg-primary/5 px-3 py-1.5 text-left transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+      >
         <span
           className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10"
           aria-hidden
@@ -876,12 +884,25 @@ function FinishedRow({ projects, isAdmin }: { projects: GalleryProject[]; isAdmi
         <span className="ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold text-primary">
           {projects.length}
         </span>
-      </header>
-      <ul className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
-        {projects.map((p) => (
-          <FinishedRowItem key={p.id} project={p} isAdmin={isAdmin} />
-        ))}
-      </ul>
+        <ChevronDown
+          className={cn(
+            'h-3.5 w-3.5 text-primary/70 transition-transform duration-200',
+            open && 'rotate-180'
+          )}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <ul
+          id="finished-projects-list"
+          className="grid"
+          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
+        >
+          {projects.map((p) => (
+            <FinishedRowItem key={p.id} project={p} isAdmin={isAdmin} />
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
@@ -973,9 +994,16 @@ function FinishedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
 }
 
 function ArchivedRow({ projects, isAdmin }: { projects: GalleryProject[]; isAdmin?: boolean }) {
+  const [open, setOpen] = useState(false);
   return (
     <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card">
-      <header className="flex items-center gap-2 border-b border-border bg-muted/30 px-3 py-1.5">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="archived-projects-list"
+        className="flex w-full cursor-pointer items-center gap-2 border-b border-border bg-muted/30 px-3 py-1.5 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+      >
         <span
           className="flex h-5 w-5 items-center justify-center rounded-md bg-muted-foreground/10"
           aria-hidden
@@ -986,12 +1014,25 @@ function ArchivedRow({ projects, isAdmin }: { projects: GalleryProject[]; isAdmi
         <span className="ml-auto inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-muted-foreground/10 px-1.5 text-[10px] font-semibold text-muted-foreground">
           {projects.length}
         </span>
-      </header>
-      <ul className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
-        {projects.map((p) => (
-          <ArchivedRowItem key={p.id} project={p} isAdmin={isAdmin} />
-        ))}
-      </ul>
+        <ChevronDown
+          className={cn(
+            'h-3.5 w-3.5 text-muted-foreground transition-transform duration-200',
+            open && 'rotate-180'
+          )}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <ul
+          id="archived-projects-list"
+          className="grid"
+          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
+        >
+          {projects.map((p) => (
+            <ArchivedRowItem key={p.id} project={p} isAdmin={isAdmin} />
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
