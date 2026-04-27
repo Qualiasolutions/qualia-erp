@@ -55,7 +55,8 @@ export async function clockIn(
   projectId: string | null,
   clockInNote?: string,
   plannedDurationMinutes?: number,
-  clockInReason?: string
+  clockInReason?: string,
+  clockInActivities?: string[]
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -112,6 +113,17 @@ export async function clockIn(
     return { success: false, error: 'Please provide a reason for this session.' };
   }
 
+  // Normalize activities: trim, drop empties, dedupe, cap at 10.
+  const activities = Array.isArray(clockInActivities)
+    ? Array.from(
+        new Set(
+          clockInActivities
+            .map((a) => (typeof a === 'string' ? a.trim() : ''))
+            .filter((a) => a.length > 0 && a.length <= 64)
+        )
+      ).slice(0, 10)
+    : [];
+
   const { data, error } = await supabase
     .from('work_sessions')
     .insert({
@@ -122,6 +134,7 @@ export async function clockIn(
       clock_in_note: clockInNote?.trim() || null,
       planned_duration_minutes: plannedDurationMinutes || null,
       clock_in_reason: clockInReason?.trim() || null,
+      clock_in_activities: activities.length > 0 ? activities : null,
     })
     .select()
     .single();
@@ -163,7 +176,7 @@ export async function clockOut(
   // Fetch the open session (must belong to this user)
   const { data: session, error: fetchError } = await supabase
     .from('work_sessions')
-    .select('id, started_at')
+    .select('id, started_at, project_id, report_url')
     .eq('id', sessionId)
     .eq('profile_id', user.id)
     .eq('workspace_id', workspaceId)
@@ -177,6 +190,25 @@ export async function clockOut(
 
   if (!session) {
     return { success: false, error: 'No active session found.' };
+  }
+
+  // Block clock-out for project sessions until a session report is attached.
+  // Either an uploaded file (work_sessions.report_url) OR a structured row in
+  // session_reports (matched by project name + time window) counts. "Other"
+  // sessions (no project_id) remain optional.
+  if (session.project_id) {
+    const effectiveReportUrl = reportUrl ?? session.report_url ?? null;
+    let hasReport = !!effectiveReportUrl;
+    if (!hasReport) {
+      const structured = await hasStructuredReportForSession(sessionId);
+      hasReport = structured.attached;
+    }
+    if (!hasReport) {
+      return {
+        success: false,
+        error: 'You can’t clock out yet — run /qualia-report to submit your session report first.',
+      };
+    }
   }
 
   const updatePayload: Record<string, unknown> = {

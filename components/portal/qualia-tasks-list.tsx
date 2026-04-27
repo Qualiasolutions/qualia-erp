@@ -129,6 +129,7 @@ function TasksHeader({
   totalCount,
   doneCount,
   blockedCount,
+  overdueCount,
   onNewTask,
   isClient,
 }: {
@@ -137,6 +138,7 @@ function TasksHeader({
   totalCount: number;
   doneCount: number;
   blockedCount: number;
+  overdueCount: number;
   onNewTask: () => void;
   isClient: boolean;
 }) {
@@ -151,9 +153,24 @@ function TasksHeader({
       </div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <span className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight text-foreground">
-            {activeCount} open
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight text-foreground">
+              {activeCount} open
+            </span>
+            {overdueCount > 0 ? (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/[0.08] px-2.5 py-1 text-xs font-semibold text-destructive"
+                role="status"
+                aria-live="polite"
+              >
+                <span
+                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-destructive"
+                  aria-hidden
+                />
+                {overdueCount} overdue
+              </span>
+            ) : null}
+          </div>
           <div className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
             {totalCount} total{' '}
             <span className="mx-1 opacity-40" aria-hidden>
@@ -930,7 +947,11 @@ export function QualiaTasksList({
     const blocked = optimisticTasks.filter(
       (t) => t.status === 'In Progress' && t.priority === 'Urgent'
     ).length;
-    return { active, done, total: optimisticTasks.length, blocked };
+    const todayKey = new Date().toLocaleDateString('en-CA');
+    const overdue = optimisticTasks.filter(
+      (t) => t.status !== 'Done' && t.due_date && t.due_date < todayKey
+    ).length;
+    return { active, done, total: optimisticTasks.length, blocked, overdue };
   }, [optimisticTasks]);
 
   // Filtered + sorted
@@ -1190,6 +1211,7 @@ export function QualiaTasksList({
         totalCount={stats.total}
         doneCount={stats.done}
         blockedCount={stats.blocked}
+        overdueCount={stats.overdue}
         onNewTask={() => setComposerOpen(true)}
         isClient={isClient}
       />

@@ -133,12 +133,14 @@ export function ClockOutModal({
   };
 
   const startedAtFormatted = format(parseISO(session.started_at), 'h:mm a');
-  // Report is recommended but not hard-required — employees can clock out
-  // without one if the upload fails or they generated the report outside
-  // the normal flow. A warning is shown in the UI when the report is missing.
+  // Report is required for project sessions — clock-out is blocked at the
+  // server until either work_sessions.report_url or a structured row in
+  // session_reports exists for this session. "Other" sessions (no project)
+  // remain optional. The UI mirrors that contract so the user can't even
+  // press Clock Out before /qualia-report has run.
   const isOtherSession = !session.project;
   const reportMissing = !isOtherSession && !reportAttached;
-  const canSubmit = summary.trim() && !isPending;
+  const canSubmit = !!summary.trim() && !isPending && !reportMissing;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -235,7 +237,7 @@ export function ClockOutModal({
                     reportMissing ? 'text-destructive' : 'text-muted-foreground'
                   )}
                 >
-                  No report attached
+                  {reportMissing ? 'Report required to clock out' : 'No report attached'}
                 </span>
                 <p className="text-[10px] text-muted-foreground/60">
                   Run <code className="font-mono">/qualia-report</code> to attach one

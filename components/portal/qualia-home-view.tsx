@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   useInboxTasks,
+  useInboxPreview,
   useTodaysMeetings,
   useTeamTodaySnapshot,
   useEmployeeAssignments,
@@ -124,6 +125,8 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
 
   const { tasks: inboxTasks } = useInboxTasks();
   const openTasksCount = (inboxTasks as Array<{ id: string }>).length;
+  const { data: inboxPreview } = useInboxPreview(1);
+  const overdueCount = inboxPreview.overdueCount;
 
   type InboxTask = {
     id: string;
@@ -220,16 +223,28 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
         <h1 className="text-3xl font-semibold tracking-tight lg:text-4xl">
           {getGreeting(hour)}, <span className="text-primary">{displayName.split(' ')[0]}</span>
         </h1>
-        <p className="mt-2 text-muted-foreground">
-          {openTasksCount === 0
-            ? 'No open tasks. Inbox zero — enjoy the breathing room.'
-            : `${openTasksCount} open ${openTasksCount === 1 ? 'task' : 'tasks'} on your list.`}
-          {activeProjects.length > 0
-            ? ` ${activeProjects.length} active ${
-                activeProjects.length === 1 ? 'project' : 'projects'
-              } in flight.`
-            : ''}
-        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
+          <span>
+            {openTasksCount === 0
+              ? 'No open tasks. Inbox zero — enjoy the breathing room.'
+              : `${openTasksCount} open ${openTasksCount === 1 ? 'task' : 'tasks'} on your list.`}
+            {activeProjects.length > 0
+              ? ` ${activeProjects.length} active ${
+                  activeProjects.length === 1 ? 'project' : 'projects'
+                } in flight.`
+              : ''}
+          </span>
+          {overdueCount > 0 ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/[0.08] px-2 py-0.5 text-xs font-semibold text-destructive"
+              role="status"
+              aria-live="polite"
+            >
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-destructive" aria-hidden />
+              {overdueCount} overdue
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {/* Stats Grid */}

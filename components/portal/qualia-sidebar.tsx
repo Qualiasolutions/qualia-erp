@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import {
   useUnreadMessageCount,
+  useInboxPreview,
   invalidateActiveSession,
   invalidateTodaysSessions,
 } from '@/lib/swr';
@@ -309,6 +310,8 @@ function ClockPill({ userId }: { userId: string | null }) {
   const [showIn, setShowIn] = useState(false);
   const [showOut, setShowOut] = useState(false);
   const { session, isLoading, workspaceId } = useClockGate();
+  const { data: inboxPreview } = useInboxPreview(1);
+  const overdueCount = inboxPreview.overdueCount;
 
   if (!workspaceId || isLoading) return null;
 
@@ -344,19 +347,36 @@ function ClockPill({ userId }: { userId: string | null }) {
             </div>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => (clockedIn ? setShowOut(true) : setShowIn(true))}
-          className={cn(
-            'shrink-0 cursor-pointer rounded-md px-2 py-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.05em] transition-colors duration-150',
-            clockedIn
-              ? 'border border-border bg-card text-foreground hover:bg-muted'
-              : 'bg-primary text-primary-foreground hover:bg-primary/90 dark:shadow-[var(--glow-teal-sm)] dark:hover:shadow-[var(--glow-teal-md)]'
-          )}
-          aria-label={clockedIn ? 'Clock out' : 'Clock in'}
-        >
-          {clockedIn ? 'Out' : 'In'}
-        </button>
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => (clockedIn ? setShowOut(true) : setShowIn(true))}
+            className={cn(
+              'cursor-pointer rounded-md px-2 py-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.05em] transition-colors duration-150',
+              clockedIn
+                ? 'border border-border bg-card text-foreground hover:bg-muted'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90 dark:shadow-[var(--glow-teal-sm)] dark:hover:shadow-[var(--glow-teal-md)]'
+            )}
+            aria-label={
+              clockedIn
+                ? 'Clock out'
+                : overdueCount > 0
+                  ? `Clock in — ${overdueCount} overdue ${overdueCount === 1 ? 'task' : 'tasks'}`
+                  : 'Clock in'
+            }
+          >
+            {clockedIn ? 'Out' : 'In'}
+          </button>
+          {!clockedIn && overdueCount > 0 ? (
+            <span
+              className="pointer-events-none absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-background bg-destructive px-1 font-mono text-[9px] font-bold leading-none text-destructive-foreground shadow-[0_0_6px_hsl(0_84%_60%/0.45)]"
+              aria-hidden
+              title={`${overdueCount} overdue ${overdueCount === 1 ? 'task' : 'tasks'}`}
+            >
+              {overdueCount > 9 ? '9+' : overdueCount}
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {workspaceId ? (
