@@ -694,18 +694,16 @@ export function ProjectWorkflow({
     // child counter. Rewrite at display time — keeps DB + framework source intact.
     const toMilestoneLabel = (rawName: string | undefined, msNum: number): string => {
       if (rawName) return rawName.replace(/^Phase\s+(\d+)/i, 'Milestone $1');
-      if (msNum >= 0) return `Milestone ${msNum}`;
-      return 'Phases';
+      return `Milestone ${msNum}`;
     };
 
-    // Seed a group for EVERY milestone record first, even ones with no child
-    // phases yet (e.g. future milestones from JOURNEY.md that haven't been
-    // broken down into phases, or milestones closed by the framework's
-    // close-milestone action without a per-phase sync). Without this seed
-    // step, empty milestones disappear from the tree because the phase loop
-    // below never visits them.
+    // Seed a group for every numbered milestone record. Records without a
+    // milestone_number are dropped on purpose — they used to create an
+    // "unphased / Between milestones" bucket at the top of the project, which
+    // confused users. Real work always lives under a numbered milestone.
     for (const msRecord of milestoneRecords) {
-      const msNum = msRecord.milestone_number ?? -1;
+      const msNum = msRecord.milestone_number;
+      if (msNum == null || msNum < 0) continue;
       groups.set(msNum, {
         number: msNum,
         name: toMilestoneLabel(msRecord.name, msNum),
@@ -715,7 +713,8 @@ export function ProjectWorkflow({
     }
 
     for (const phase of phaseRecords) {
-      const msNum = phase.milestone_number ?? -1;
+      const msNum = phase.milestone_number;
+      if (msNum == null || msNum < 0) continue; // skip phases not tied to a numbered milestone
       if (!groups.has(msNum)) {
         // Phase refers to a milestone that has no milestone_record. Synthesize
         // one from the msNum so the phase still renders.
