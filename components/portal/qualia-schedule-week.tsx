@@ -98,7 +98,7 @@ export function QualiaScheduleWeek({
   const [editing, setEditing] = useState<MeetingWithRelations | null>(null);
   const weekStartDate = useMemo(() => parseISO(weekStart), [weekStart]);
   const weekEndDate = useMemo(() => addDays(weekStartDate, 6), [weekStartDate]);
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const todayIndex = useMemo(() => {
     for (let i = 0; i < 7; i++) {
       if (isSameDay(addDays(weekStartDate, i), today)) return i;

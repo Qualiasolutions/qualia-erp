@@ -1013,6 +1013,7 @@ export function QualiaTasksList({
         creator_id: null,
         assignee_id: null,
         project_id: null,
+        phase_id: null,
         phase_name: null,
         description: null,
         sort_order: 0,

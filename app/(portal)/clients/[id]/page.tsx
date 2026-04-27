@@ -108,6 +108,26 @@ async function ClientLoader({ id }: ClientLoaderProps) {
     status: p.status,
   }));
 
+  const linkedProjectMap = new Map<
+    string,
+    { id: string; name: string; project_type: string | null; status: string }
+  >();
+  for (const project of assignedProjects) {
+    linkedProjectMap.set(project.id, {
+      id: project.id,
+      name: project.name,
+      project_type: project.project_type ?? null,
+      status: project.project_status ?? 'Active',
+    });
+  }
+  for (const project of erpLinkedProjects) {
+    linkedProjectMap.set(project.id, project);
+  }
+  const clientForView = {
+    ...client,
+    projects: Array.from(linkedProjectMap.values()),
+  };
+
   // Fetch all projects without a client_id for the link dropdown (admin only)
   let erpAvailableProjects: Array<{ id: string; name: string; project_type: string | null }> = [];
   if (isAdmin) {
@@ -125,7 +145,7 @@ async function ClientLoader({ id }: ClientLoaderProps) {
 
   return (
     <ClientDetailView
-      client={client}
+      client={clientForView}
       assignedProjects={assignedProjects}
       availableProjects={allProjects}
       erpLinkedProjects={erpLinkedProjects}

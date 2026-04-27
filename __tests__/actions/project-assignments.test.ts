@@ -39,6 +39,10 @@ jest.mock('@/app/actions/notifications', () => ({
   createNotification: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+jest.mock('@/lib/email', () => ({
+  sendProjectAssignmentNotification: jest.fn().mockResolvedValue({ success: true }),
+}));
+
 // ---- Mock setup ----
 
 type ChainMethods = Record<string, jest.Mock>;

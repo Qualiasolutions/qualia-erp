@@ -16,8 +16,59 @@ import {
 } from '@/app/actions/ai-context';
 import { loadFullMemoryContext, updateInteractionCount } from '@/lib/ai/memory';
 import type { EnrichedContext } from '@/lib/ai/system-prompt';
+import { z } from 'zod';
 
 export const maxDuration = 60;
+
+const MAX_CHAT_MESSAGES = 40;
+const MAX_CHAT_MESSAGE_CHARS = 12000;
+const MAX_CHAT_TOTAL_CHARS = 80000;
+
+const chatMessageSchema = z
+  .object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string().optional(),
+    parts: z
+      .array(
+        z
+          .object({
+            type: z.string(),
+            text: z.string().optional(),
+          })
+          .passthrough()
+      )
+      .optional(),
+  })
+  .passthrough();
+
+const chatRequestSchema = z
+  .object({
+    conversationId: z.string().uuid().optional().nullable(),
+    messages: z.array(chatMessageSchema).min(1).max(MAX_CHAT_MESSAGES),
+  })
+  .passthrough();
+
+type ChatMessage = { role: 'user' | 'assistant'; content: string };
+
+function jsonError(error: string, status: number) {
+  return new Response(JSON.stringify({ error }), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function extractMessageContent(message: z.infer<typeof chatMessageSchema>): string {
+  if (typeof message.content === 'string') return message.content;
+  if (!message.parts?.length) return '';
+  return message.parts
+    .filter((part) => part.type === 'text' && typeof part.text === 'string')
+    .map((part) => part.text)
+    .join('');
+}
+
+function logBackgroundError(label: string, error: unknown) {
+  console.error(`[chat] ${label}:`, error);
+}
 
 export async function POST(req: Request) {
   try {
@@ -33,18 +84,12 @@ export async function POST(req: Request) {
     // Get authenticated user
     const user = await getUserInfo();
     if (!user) {
-      return new Response(JSON.stringify({ error: 'Please sign in to use the AI assistant' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return jsonError('Please sign in to use the AI assistant', 401);
     }
 
     // Role guard — block client accounts from AI assistant
     if (user.role === 'client') {
-      return new Response(
-        JSON.stringify({ error: 'AI assistant is not available for client accounts' }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonError('AI assistant is not available for client accounts', 403);
     }
 
     // Rate limiting
@@ -64,18 +109,45 @@ export async function POST(req: Request) {
     }
 
     // Parse request
-    const body = await req.json();
-    const { messages, conversationId } = body;
+    const body = await req.json().catch(() => null);
+    const parsed = chatRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return jsonError(parsed.error.issues[0]?.message || 'Invalid chat request', 400);
+    }
 
-    if (!messages || !Array.isArray(messages)) {
-      return new Response(JSON.stringify({ error: 'Invalid request: messages array required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    const messages: ChatMessage[] = parsed.data.messages.map((message) => ({
+      role: message.role,
+      content: extractMessageContent(message).trim(),
+    }));
+    const conversationId = parsed.data.conversationId || null;
+
+    const invalidMessage = messages.find(
+      (message) => !message.content || message.content.length > MAX_CHAT_MESSAGE_CHARS
+    );
+    if (invalidMessage) {
+      return jsonError(
+        `Each message must include text and stay under ${MAX_CHAT_MESSAGE_CHARS.toLocaleString()} characters.`,
+        400
+      );
+    }
+
+    const totalChars = messages.reduce((sum, message) => sum + message.content.length, 0);
+    if (totalChars > MAX_CHAT_TOTAL_CHARS) {
+      return jsonError(
+        `Chat context is too large. Keep the request under ${MAX_CHAT_TOTAL_CHARS.toLocaleString()} characters.`,
+        400
+      );
+    }
+
+    if (messages[messages.length - 1]?.role !== 'user') {
+      return jsonError('The latest chat message must come from the user.', 400);
     }
 
     // Get workspace
     const workspaceId = await getWorkspaceId(user.id);
+    if (!workspaceId) {
+      return jsonError('No workspace is available for this account.', 403);
+    }
     const supabase = await createClient();
 
     // Fetch enriched context (admin notes, summaries, work context)
@@ -131,30 +203,51 @@ export async function POST(req: Request) {
     }
 
     // Handle conversation persistence
-    let activeConversationId = conversationId;
+    let activeConversationId: string | null = conversationId;
 
     if (conversationId) {
+      const { data: conversation, error: conversationError } = await supabase
+        .from('ai_conversations')
+        .select('id')
+        .eq('id', conversationId)
+        .eq('user_id', user.id)
+        .eq('workspace_id', workspaceId)
+        .maybeSingle();
+
+      if (conversationError) {
+        console.error('[chat] conversation verification failed:', conversationError);
+        return jsonError('Failed to verify conversation. Please try again.', 500);
+      }
+
+      if (!conversation) {
+        return jsonError('Conversation not found or access denied.', 404);
+      }
+
       // Save the latest user message and update conversation timestamp concurrently
       const lastMessage = messages[messages.length - 1];
-      if (lastMessage?.role === 'user') {
-        await Promise.all([
-          supabase.from('ai_messages').insert({
-            conversation_id: conversationId,
-            role: 'user',
-            content: lastMessage.content,
-          }),
-          supabase
-            .from('ai_conversations')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', conversationId),
-        ]).catch((err) => {
-          console.error('[chat] parallel DB write failed:', err);
+      const [messageResult, timestampResult] = await Promise.all([
+        supabase.from('ai_messages').insert({
+          conversation_id: conversationId,
+          role: 'user',
+          content: lastMessage.content,
+        }),
+        supabase
+          .from('ai_conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', conversationId),
+      ]);
+
+      if (messageResult.error || timestampResult.error) {
+        console.error('[chat] failed to persist user message:', {
+          messageError: messageResult.error,
+          timestampError: timestampResult.error,
         });
+        return jsonError('Failed to save your message. Please try again.', 500);
       }
     } else if (messages.length > 0) {
       // Create a new conversation if none provided
       const firstMessage = messages[0]?.content || '';
-      const { data: newConv } = await supabase
+      const { data: newConv, error: conversationCreateError } = await supabase
         .from('ai_conversations')
         .insert({
           workspace_id: workspaceId,
@@ -164,40 +257,41 @@ export async function POST(req: Request) {
         .select('id')
         .single();
 
-      if (newConv) {
-        activeConversationId = newConv.id;
+      if (conversationCreateError || !newConv) {
+        console.error('[chat] conversation create failed:', conversationCreateError);
+        return jsonError('Failed to start a new conversation. Please try again.', 500);
+      }
 
-        // Fire-and-forget: save user message (don't block AI stream)
-        const lastMessage = messages[messages.length - 1];
-        if (lastMessage?.role === 'user') {
-          supabase
-            .from('ai_messages')
-            .insert({
-              conversation_id: newConv.id,
-              role: 'user',
-              content: lastMessage.content,
-            })
-            .then(({ error }) => {
-              if (error) console.error('[chat] message insert failed:', error);
-            });
-        }
+      activeConversationId = newConv.id;
 
-        // Auto-generate title from first user message (async, don't block)
-        if (firstMessage) {
-          generateSimpleResponse(
-            `Generate a short title (max 6 words) for a conversation that starts with: "${firstMessage.slice(0, 200)}". Return ONLY the title, no quotes.`
-          )
-            .then(async (title) => {
-              const trimmed = title.trim().replace(/^["']|["']$/g, '');
-              if (trimmed) {
-                await supabase
-                  .from('ai_conversations')
-                  .update({ title: trimmed })
-                  .eq('id', newConv.id);
-              }
-            })
-            .catch(() => {});
-        }
+      const lastMessage = messages[messages.length - 1];
+      const { error: messageInsertError } = await supabase.from('ai_messages').insert({
+        conversation_id: newConv.id,
+        role: 'user',
+        content: lastMessage.content,
+      });
+
+      if (messageInsertError) {
+        console.error('[chat] message insert failed:', messageInsertError);
+        return jsonError('Failed to save your message. Please try again.', 500);
+      }
+
+      // Auto-generate title from first user message (async, don't block)
+      if (firstMessage) {
+        generateSimpleResponse(
+          `Generate a short title (max 6 words) for a conversation that starts with: "${firstMessage.slice(0, 200)}". Return ONLY the title, no quotes.`
+        )
+          .then(async (title) => {
+            const trimmed = title.trim().replace(/^["']|["']$/g, '');
+            if (trimmed) {
+              const { error: titleError } = await supabase
+                .from('ai_conversations')
+                .update({ title: trimmed })
+                .eq('id', newConv.id);
+              if (titleError) logBackgroundError('title update failed', titleError);
+            }
+          })
+          .catch((error) => logBackgroundError('title generation failed', error));
       }
     }
 
@@ -228,20 +322,31 @@ export async function POST(req: Request) {
             const text =
               rawText.trim() ||
               'I processed your request using tools but had no additional response.';
-            await supabase.from('ai_messages').insert({
+            const { error: assistantMessageError } = await supabase.from('ai_messages').insert({
               conversation_id: activeConversationId,
               role: 'assistant',
               content: text,
             });
+            if (assistantMessageError) {
+              logBackgroundError('assistant message insert failed', assistantMessageError);
+              return;
+            }
 
             // Mark admin notes as delivered
             if (hasUndeliveredNotes && workspaceId) {
-              markNotesDelivered(user.id, workspaceId).catch(() => {});
+              markNotesDelivered(user.id, workspaceId)
+                .then((result) => {
+                  if (!result.success)
+                    logBackgroundError('mark notes delivered failed', result.error);
+                })
+                .catch((error) => logBackgroundError('mark notes delivered failed', error));
             }
 
             // Increment interaction count for skill detection
             if (workspaceId) {
-              updateInteractionCount(user.id, workspaceId).catch(() => {});
+              updateInteractionCount(user.id, workspaceId).catch((error) =>
+                logBackgroundError('interaction count update failed', error)
+              );
             }
 
             // Generate conversation summary if 4+ messages
@@ -260,18 +365,31 @@ export async function POST(req: Request) {
                   const trimmed = summary.trim().replace(/^["']|["']$/g, '');
                   if (trimmed) {
                     // Save to ai_user_context
-                    await updateConversationSummaries(user.id, workspaceId!, trimmed);
+                    const summaryResult = await updateConversationSummaries(
+                      user.id,
+                      workspaceId!,
+                      trimmed
+                    );
+                    if (!summaryResult.success) {
+                      logBackgroundError('context summary update failed', summaryResult.error);
+                    }
                     // Save to conversation record
-                    await supabase
+                    const { error: conversationSummaryError } = await supabase
                       .from('ai_conversations')
                       .update({ summary: trimmed })
                       .eq('id', activeConversationId);
+                    if (conversationSummaryError) {
+                      logBackgroundError(
+                        'conversation summary update failed',
+                        conversationSummaryError
+                      );
+                    }
                   }
                 })
-                .catch(() => {});
+                .catch((error) => logBackgroundError('summary generation failed', error));
             }
           })
-          .catch(() => {});
+          .catch((error) => logBackgroundError('assistant persistence failed', error));
       }
 
       return new Response(response.body, {

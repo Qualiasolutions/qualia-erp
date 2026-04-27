@@ -101,6 +101,9 @@ export async function getTaskAttachments(taskId: string): Promise<TaskAttachment
 
   if (!user) return [];
 
+  const canRead = await canModifyTask(user.id, taskId);
+  if (!canRead) return [];
+
   const { data, error } = await supabase
     .from('task_attachments')
     .select(
@@ -214,10 +217,19 @@ export async function uploadTaskAttachment(formData: FormData): Promise<ActionRe
 
   // Optionally mark task as done
   if (markAsDone) {
-    await supabase
+    const { error: statusError } = await supabase
       .from('tasks')
       .update({ status: 'Done', completed_at: new Date().toISOString() })
       .eq('id', taskId);
+
+    if (statusError) {
+      console.error('[uploadTaskAttachment] Task status update error:', statusError);
+      return {
+        success: false,
+        error: 'File uploaded, but the task could not be marked as done.',
+        data: attachment,
+      };
+    }
   }
 
   return { success: true, data: attachment };

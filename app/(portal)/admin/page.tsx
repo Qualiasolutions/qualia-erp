@@ -6,14 +6,12 @@ import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { isUserAdmin } from '@/app/actions/shared';
 import {
   loadOverviewTab,
-  loadClientsTab,
   loadTeamTab,
   loadFinanceTab,
   loadSystemTab,
   resolveControlTab,
   type ControlTab,
   type OverviewPayload,
-  type ClientsPayload,
   type TeamPayload,
   type FinancePayload,
   type SystemPayload,
@@ -22,7 +20,7 @@ import { QualiaControl, type QualiaControlData } from '@/components/portal/quali
 
 export const metadata: Metadata = {
   title: 'Control | Qualia',
-  description: 'Admin console — pulse, clients, team, finance, system',
+  description: 'Admin console — pulse, team, finance, system',
 };
 
 function ControlSkeleton() {
@@ -33,7 +31,7 @@ function ControlSkeleton() {
           <div className="h-3 w-28 animate-pulse rounded bg-muted" />
           <div className="mt-2 h-9 w-44 animate-pulse rounded bg-muted" />
           <div className="mt-6 flex gap-6">
-            {Array.from({ length: 5 }).map((_, i) => (
+            {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="h-4 w-16 animate-pulse rounded bg-muted" />
             ))}
           </div>
@@ -68,11 +66,6 @@ async function ControlLoader({ tab }: { tab: ControlTab }) {
       data.overview = overview;
       break;
     }
-    case 'clients': {
-      const clients: ClientsPayload = await loadClientsTab();
-      data.clients = clients;
-      break;
-    }
     case 'team': {
       const team: TeamPayload = await loadTeamTab();
       data.team = team;
@@ -99,6 +92,7 @@ interface PageProps {
 
 export default async function AdminControlPage({ searchParams }: PageProps) {
   const params = await searchParams;
+  if (params.tab === 'clients') redirect('/clients');
   const tab = resolveControlTab(params.tab);
 
   return (

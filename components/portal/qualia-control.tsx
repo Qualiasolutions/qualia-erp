@@ -9,13 +9,11 @@ import { cn } from '@/lib/utils';
 import type {
   ControlTab,
   OverviewPayload,
-  ClientsPayload,
   TeamPayload,
   FinancePayload,
   SystemPayload,
 } from '@/app/actions/admin-control';
 
-import { ControlClients } from './control-clients';
 import { ControlTeam } from './control-team';
 import { ControlFinance } from './control-finance';
 import { ControlSystem } from './control-system';
@@ -26,7 +24,6 @@ import { ControlSystem } from './control-system';
 
 export interface QualiaControlData {
   overview?: OverviewPayload;
-  clients?: ClientsPayload;
   team?: TeamPayload;
   finance?: FinancePayload;
   system?: SystemPayload;
@@ -41,7 +38,6 @@ interface QualiaControlProps {
 
 const ALL_TABS: Array<{ id: ControlTab; label: string; desc: string }> = [
   { id: 'overview', label: 'Overview', desc: 'Pulse · health · this week' },
-  { id: 'clients', label: 'Clients', desc: 'Directory & retainers' },
   { id: 'team', label: 'Team', desc: 'People, capacity, roles' },
   { id: 'finance', label: 'Finance', desc: 'Invoices, MRR, expenses' },
   { id: 'system', label: 'System', desc: 'Integrations, audit, workspace' },
@@ -322,7 +318,6 @@ export function QualiaControl({ initialTab, data, canViewFinance = false }: Qual
         className="w-full p-6 lg:p-8"
       >
         {tab === 'overview' && <ControlOverview data={data.overview} />}
-        {tab === 'clients' && <ControlClients data={data.clients} />}
         {tab === 'team' && <ControlTeam data={data.team} />}
         {tab === 'finance' && canViewFinance && <ControlFinance data={data.finance} />}
         {tab === 'system' && (
