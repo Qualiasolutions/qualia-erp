@@ -794,6 +794,14 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
 
   const nextSortOrder = lastTask ? lastTask.sort_order + 1 : 0;
 
+  // Default assignee to the creator when none is supplied. The inline
+  // composer doesn't expose an assignee picker (employees create personal
+  // tasks for themselves), and the inbox view scopes by assignee_id. Without
+  // this default, employees couldn't see their own freshly-created tasks.
+  // The full NewTaskModal explicitly forwards assignee_id (admin delegation),
+  // so this only fires for the inline self-create path.
+  const finalAssigneeId = assignee_id || user.id;
+
   const { data, error } = await supabase
     .from('tasks')
     .insert({
@@ -806,7 +814,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       phase_id: phase_id || null,
       workspace_id: wsId,
       creator_id: user.id,
-      assignee_id: assignee_id || null,
+      assignee_id: finalAssigneeId,
       project_id: finalProjectId || null,
       due_date: due_date || null,
       sort_order: nextSortOrder,
