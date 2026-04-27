@@ -764,12 +764,20 @@ export async function hasStructuredReportForSession(
   const windowEnd = session.ended_at ?? new Date().toISOString();
 
   const admin = createAdminClient();
-  // Case-insensitive match: framework uses slug-style lowercase ("sakani"),
-  // projects.name is human-cased ("Sakani"). Exact-match drops the link.
+  // Substring match (case-insensitive). The framework's tracking.json often
+  // carries a longer descriptive project_name in the report ("Qualia
+  // Solutions — qualiasolutions.net Rebuild"), while the ERP's projects.name
+  // is the canonical short name ("Qualia Solutions"). Exact / prefix-only
+  // matching dropped the link and blocked clock-out for legitimate reports.
+  // The time-window filter (started_at..ended_at) keeps cross-project
+  // collisions astronomically unlikely.
+  // Escape postgres LIKE meta-characters to avoid accidental wildcard match
+  // for short project names that contain '%' or '_'.
+  const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
   let reportQuery = admin
     .from('session_reports')
     .select('id, submitted_at')
-    .ilike('project_name', projectName)
+    .ilike('project_name', `%${escapeLike(projectName)}%`)
     .gte('submitted_at', session.started_at)
     .lte('submitted_at', windowEnd)
     .order('submitted_at', { ascending: false })
