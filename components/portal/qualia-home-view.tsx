@@ -206,9 +206,9 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
   const nextShip = activeProjects[0] ?? null;
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden p-6 lg:p-8">
+    <div className="flex h-full flex-col overflow-hidden p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-6 flex-shrink-0 animate-fade-in">
+      <div className="mb-4 flex-shrink-0 animate-fade-in">
         <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
           <span className="h-2 w-2 rounded-full bg-primary" />
           <span className="font-medium tracking-wider">{dayName}</span>
@@ -233,7 +233,7 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
       </div>
 
       {/* Stats Grid */}
-      <div className="stagger-1 mb-6 grid flex-shrink-0 animate-fade-in grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="stagger-1 mb-4 grid flex-shrink-0 animate-fade-in grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Open Tasks
@@ -454,22 +454,19 @@ function EmployeeMainGrid({
   isGated: boolean;
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
-      {/* Top row — Tasks + Quick Actions */}
-      <div className="stagger-2 grid animate-fade-in gap-6 lg:grid-cols-3">
-        <TasksCard
-          tasks={tasks}
-          openTasksCount={openTasksCount}
-          isGated={isGated}
-          className="lg:col-span-2"
-        />
-        <QuickActionsCard role="employee" isGated={isGated} />
-      </div>
+    <div className="stagger-2 grid min-h-0 flex-1 animate-fade-in gap-6 overflow-hidden lg:grid-cols-3">
+      {/* Tasks (left, 2/3) */}
+      <TasksCard
+        tasks={tasks}
+        openTasksCount={openTasksCount}
+        isGated={isGated}
+        className="min-h-0 lg:col-span-2"
+      />
 
-      {/* Bottom row — Next Ship + Today's Meetings */}
-      <div className="stagger-3 grid animate-fade-in gap-6 lg:grid-cols-2">
+      {/* Right column — Today's Meetings + Next Ship */}
+      <div className="flex min-h-0 flex-col gap-6 overflow-hidden">
+        <TodayMeetingsCard meetings={meetings} isGated={isGated} className="min-h-0 flex-1" />
         <NextShipCard nextShip={nextShip} isGated={isGated} />
-        <TodayMeetingsCard meetings={meetings} isGated={isGated} />
       </div>
     </div>
   );
@@ -495,8 +492,13 @@ function TasksCard({
 }) {
   const todayKey = new Date().toLocaleDateString('en-CA');
   return (
-    <div className={cn('overflow-hidden rounded-2xl border border-border bg-card', className)}>
-      <div className="flex items-center justify-between border-b border-border px-6 py-4">
+    <div
+      className={cn(
+        'flex flex-col overflow-hidden rounded-2xl border border-border bg-card',
+        className
+      )}
+    >
+      <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-6 py-4">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Your Active Work
@@ -536,7 +538,7 @@ function TasksCard({
           Inbox zero — nothing open.
         </div>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
           {tasks.map((t) => {
             const priorityKey = (t.priority ?? 'No Priority') as TaskPriorityKey;
             const priority =
@@ -689,13 +691,21 @@ function NextShipCard({
 function TodayMeetingsCard({
   meetings,
   isGated,
+  className,
 }: {
   meetings: Array<{ id: string; title: string; start_time: string; end_time: string }>;
   isGated: boolean;
+  className?: string;
 }) {
   return (
-    <div className={cn('rounded-2xl border border-border bg-card p-6', isGated && 'opacity-60')}>
-      <div className="mb-4 flex items-center justify-between">
+    <div
+      className={cn(
+        'flex flex-col overflow-hidden rounded-2xl border border-border bg-card p-6',
+        isGated && 'opacity-60',
+        className
+      )}
+    >
+      <div className="mb-4 flex flex-shrink-0 items-center justify-between">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Today&apos;s Meetings
         </p>
@@ -720,7 +730,7 @@ function TodayMeetingsCard({
       {meetings.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nothing on the calendar today.</p>
       ) : (
-        <div className="space-y-3">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
           {meetings.map((m) => {
             const start = new Date(m.start_time);
             const end = new Date(m.end_time);
