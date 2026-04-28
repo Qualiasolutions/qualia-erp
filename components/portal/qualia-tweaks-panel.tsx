@@ -3,6 +3,7 @@
 import { useEffect, useRef, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
+import { useSWRConfig } from 'swr';
 import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
@@ -21,6 +22,7 @@ export function QualiaTweaksPanel({
   isImpersonating: boolean;
 }) {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const { theme, setTheme, systemTheme } = useTheme();
   const { density, setDensity } = useDensity();
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -33,6 +35,8 @@ export function QualiaTweaksPanel({
         toast.error(res.error || 'Failed to exit view-as mode');
         return;
       }
+      // Static SWR keys would otherwise keep serving the impersonated user's data.
+      await mutate(() => true, undefined, { revalidate: true });
       router.refresh();
       onClose();
     });

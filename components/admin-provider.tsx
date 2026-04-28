@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSWRConfig } from 'swr';
 import { createClient } from '@/lib/supabase/client';
 import {
   getViewAsState,
@@ -61,6 +62,7 @@ interface AdminProviderProps {
 
 export function AdminProvider({ children }: AdminProviderProps) {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const [realRole, setRealRole] = useState<string | null>(null);
   const [viewAsRole, setViewAsRole] = useState<string | null>(null);
   const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
@@ -87,13 +89,16 @@ export function AdminProvider({ children }: AdminProviderProps) {
       setViewAsRole(role);
       if (userId) {
         setViewAsUserId(userId);
-        setViewAsUser(userId).then((result) => {
+        setViewAsUser(userId).then(async (result) => {
           if (!result.success) {
             console.error('[AdminProvider] Failed to switch view-as user:', result.error);
             setViewAsRole(null);
             setViewAsUserId(null);
             return;
           }
+          // Static SWR keys (e.g. 'inbox-tasks') don't include the effective user,
+          // so they'd serve the previous user's data after view-as switches.
+          await mutate(() => true, undefined, { revalidate: true });
           router.refresh();
         });
         return;
@@ -101,16 +106,17 @@ export function AdminProvider({ children }: AdminProviderProps) {
 
       router.refresh();
     },
-    [router]
+    [router, mutate]
   );
 
   const stopViewAs = useCallback(() => {
-    clearViewAsAction().then(() => {
+    clearViewAsAction().then(async () => {
       setViewAsRole(null);
       setViewAsUserId(null);
+      await mutate(() => true, undefined, { revalidate: true });
       router.refresh();
     });
-  }, [router]);
+  }, [router, mutate]);
 
   const { user: authUser, isLoading: authLoading } = useAuthUser();
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSWRConfig } from 'swr';
 import { Search, Eye, Users, UserCircle, Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -42,6 +43,7 @@ const ROLE_CONFIG = {
 
 export function ViewAsDialog({ open, onOpenChange }: ViewAsDialogProps) {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const [search, setSearch] = useState('');
   const [grouped, setGrouped] = useState<GroupedUsers | null>(null);
   const [loading, setLoading] = useState(false);
@@ -102,6 +104,10 @@ export function ViewAsDialog({ open, onOpenChange }: ViewAsDialogProps) {
     startTransition(async () => {
       const result = await setViewAsUser(userId);
       if (result.success) {
+        // SWR cache keys (e.g. 'inbox-tasks') are static and don't include
+        // the effective user, so switching view-as would otherwise serve the
+        // previous user's cached data. Wipe + revalidate everything.
+        await mutate(() => true, undefined, { revalidate: true });
         onOpenChange(false);
         router.refresh();
       } else {

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
+import { useSWRConfig } from 'swr';
 import { Eye, X, Loader2 } from 'lucide-react';
 import { clearViewAs } from '@/app/actions/view-as';
 
@@ -12,12 +13,16 @@ interface ViewAsBannerProps {
 
 export function ViewAsBanner({ viewAsName, viewAsRole }: ViewAsBannerProps) {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const [isPending, startTransition] = useTransition();
 
   const handleStop = () => {
     startTransition(async () => {
       const result = await clearViewAs();
       if (result.success) {
+        // Static SWR keys would otherwise keep serving the impersonated user's
+        // cached data after exiting view-as.
+        await mutate(() => true, undefined, { revalidate: true });
         router.refresh();
       }
     });
