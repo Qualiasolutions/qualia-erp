@@ -65,6 +65,9 @@ tsc_output.txt
 # Playwright MCP logs
 .playwright-mcp/
 
+# QA screenshot artifacts (browser-qa / qualia-qa-browser runs)
+.qa-screenshots/
+
 # SWC cache
 .swc/
 
