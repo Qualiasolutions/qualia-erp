@@ -47,6 +47,8 @@ async function ClientLoader({ id }: ClientLoaderProps) {
   const isAdmin = user ? await isUserAdmin(user.id) : false;
 
   // Fetch assigned projects via client_projects
+  // NOTE: projects.status is the canonical column; the legacy `project_status`
+  // column was renamed and only exists on the portal_project_mappings view.
   const { data: clientProjectsData } = await supabase
     .from('client_projects')
     .select(
@@ -56,7 +58,7 @@ async function ClientLoader({ id }: ClientLoaderProps) {
         id,
         name,
         project_type,
-        project_status
+        status
       )
     `
     )
@@ -72,7 +74,7 @@ async function ClientLoader({ id }: ClientLoaderProps) {
           id: string;
           name: string;
           project_type: string | null;
-          project_status: string | null;
+          status: string | null;
         } => p != null
       ) || [];
 
@@ -81,14 +83,14 @@ async function ClientLoader({ id }: ClientLoaderProps) {
     id: string;
     name: string;
     project_type?: string | null;
-    project_status?: string | null;
+    status?: string | null;
   }> = [];
 
   if (isAdmin) {
     const { data: projectsData } = await supabase
       .from('projects')
-      .select('id, name, project_type, project_status')
-      .in('project_status', ['Active', 'Demos', 'Delayed'])
+      .select('id, name, project_type, status')
+      .in('status', ['Active', 'Demos', 'Delayed'])
       .order('name');
 
     allProjects = projectsData || [];
@@ -117,7 +119,7 @@ async function ClientLoader({ id }: ClientLoaderProps) {
       id: project.id,
       name: project.name,
       project_type: project.project_type ?? null,
-      status: project.project_status ?? 'Active',
+      status: project.status ?? 'Active',
     });
   }
   for (const project of erpLinkedProjects) {

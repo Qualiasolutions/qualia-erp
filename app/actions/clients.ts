@@ -6,7 +6,25 @@ import { createClient } from '@/lib/supabase/server';
 import { parseFormData, createClientSchema, updateClientSchema } from '@/lib/validation';
 import { notifyClientCreated } from '@/lib/email';
 import { getCurrentWorkspaceId } from './workspace';
-import { canDeleteClient, type ActionResult, type ProfileRef } from './shared';
+import { canDeleteClient, isUserAdmin, type ActionResult, type ProfileRef } from './shared';
+
+// ============ CLIENT/PROJECT LINKAGE NOTE ============
+// Two columns/tables represent client↔project linkage and they mean different
+// things. Code here treats them as DISTINCT and reconciles them via
+// `getClientAccessDrift()`.
+//
+//   projects.client_id      → ownership: this project belongs to that client
+//                             (CRM-side fact, drives invoicing + reports).
+//   client_projects (table) → portal access: that client may LOG IN and view
+//                             this project from /portal (auth-side fact).
+//
+// The two are intentionally decoupled (a project can be owned by Client A but
+// shared with Client B's portal account, or owned with no portal access yet),
+// but drift between them usually signals a bug. The drift detector below
+// surfaces three error classes: ownership without portal access, portal
+// access pointing at someone else's project, and access to non-active
+// projects. Keep this comment in sync with the helper if you change either
+// column's meaning.
 
 // ============ CLIENT TYPES ============
 
@@ -443,4 +461,131 @@ export async function toggleClientStatus(
   revalidatePath('/clients');
   revalidatePath('/admin');
   return { success: true };
+}
+
+// ============ CLIENT ACCESS DRIFT (admin-only diagnostic) ============
+
+/**
+ * Drift kinds — see top-of-file note for the meaning of `projects.client_id`
+ * vs the `client_projects` table. These three classes match the
+ * 2026-04-28 ops diagnosis recommendation and are the only conditions
+ * surfaced to admins for now.
+ */
+export type ClientAccessDriftKind =
+  | 'project_owned_no_portal_access'
+  | 'portal_access_owner_mismatch'
+  | 'portal_access_to_archived_project';
+
+export interface ClientAccessDriftRow {
+  kind: ClientAccessDriftKind;
+  /** Free-form description rendered in the warning banner. */
+  detail: string;
+  projectId: string;
+  projectName: string;
+  /** When applicable, the client whose ownership/portal access is involved. */
+  clientId?: string;
+  clientName?: string;
+}
+
+export interface ClientAccessDriftReport {
+  rows: ClientAccessDriftRow[];
+  total: number;
+  /** True only if the caller is an admin. Non-admins always see total: 0. */
+  authorized: boolean;
+}
+
+/**
+ * Compute drift between `projects.client_id` (ownership) and
+ * `client_projects` (portal access). Admin-only — non-admins get an
+ * empty report (no data leak).
+ */
+export async function getClientAccessDrift(): Promise<ClientAccessDriftReport> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { rows: [], total: 0, authorized: false };
+  if (!(await isUserAdmin(user.id))) {
+    return { rows: [], total: 0, authorized: false };
+  }
+
+  const workspaceId = await getCurrentWorkspaceId();
+  if (!workspaceId) return { rows: [], total: 0, authorized: true };
+
+  const [projectsRes, accessRes, clientsRes] = await Promise.all([
+    supabase.from('projects').select('id, name, status, client_id').eq('workspace_id', workspaceId),
+    supabase.from('client_projects').select('client_id, project_id'),
+    supabase.from('clients').select('id, display_name, name').eq('workspace_id', workspaceId),
+  ]);
+
+  const projects = projectsRes.data ?? [];
+  const access = accessRes.data ?? [];
+  const clients = clientsRes.data ?? [];
+
+  const clientName = new Map<string, string>();
+  for (const c of clients) {
+    clientName.set(c.id, c.display_name || c.name || 'Unknown client');
+  }
+
+  const projectsById = new Map<string, (typeof projects)[number]>();
+  for (const p of projects) projectsById.set(p.id, p);
+
+  const accessByProject = new Map<string, Set<string>>();
+  for (const row of access) {
+    if (!row.project_id || !row.client_id) continue;
+    if (!accessByProject.has(row.project_id)) accessByProject.set(row.project_id, new Set());
+    accessByProject.get(row.project_id)!.add(row.client_id);
+  }
+
+  const rows: ClientAccessDriftRow[] = [];
+  const ARCHIVED_STATUSES = new Set(['Archived', 'Canceled']);
+
+  // Kind 1: project ownership exists but no portal access row at all.
+  for (const project of projects) {
+    if (!project.client_id) continue;
+    const portalSet = accessByProject.get(project.id);
+    if (!portalSet || portalSet.size === 0) {
+      rows.push({
+        kind: 'project_owned_no_portal_access',
+        projectId: project.id,
+        projectName: project.name,
+        clientId: project.client_id,
+        clientName: clientName.get(project.client_id) ?? 'Unknown client',
+        detail: `Owned by ${clientName.get(project.client_id) ?? 'a client'} but no portal access granted.`,
+      });
+    }
+  }
+
+  // Kind 2 + 3: walk every portal-access row.
+  for (const row of access) {
+    if (!row.project_id || !row.client_id) continue;
+    const project = projectsById.get(row.project_id);
+    if (!project) continue;
+
+    if (project.client_id && project.client_id !== row.client_id) {
+      rows.push({
+        kind: 'portal_access_owner_mismatch',
+        projectId: project.id,
+        projectName: project.name,
+        clientId: row.client_id,
+        clientName: clientName.get(row.client_id) ?? 'Unknown client',
+        detail: `Portal access points to ${clientName.get(row.client_id) ?? 'a client'} but project is owned by ${
+          clientName.get(project.client_id) ?? 'a different client'
+        }.`,
+      });
+    }
+
+    if (project.status && ARCHIVED_STATUSES.has(project.status)) {
+      rows.push({
+        kind: 'portal_access_to_archived_project',
+        projectId: project.id,
+        projectName: project.name,
+        clientId: row.client_id,
+        clientName: clientName.get(row.client_id) ?? 'Unknown client',
+        detail: `Active portal access to a ${project.status} project — revoke or unarchive.`,
+      });
+    }
+  }
+
+  return { rows, total: rows.length, authorized: true };
 }

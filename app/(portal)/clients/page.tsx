@@ -3,14 +3,16 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/portal-utils';
 import { getClients } from '@/app/actions';
+import { getClientAccessDrift } from '@/app/actions/clients';
 import { QualiaClientsView } from '@/components/portal/qualia-clients-view';
+import { ClientAccessDriftBanner } from '@/components/clients/client-access-drift-banner';
 import { type Client } from '@/lib/client-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export const metadata = { title: 'Clients' };
 
 async function ClientListLoader() {
-  const data = await getClients();
+  const [data, drift] = await Promise.all([getClients(), getClientAccessDrift()]);
   // Only show clients (active_client, inactive_client, dead_lead), not leads
   const clients = (data as Client[]).filter(
     (c) =>
@@ -18,7 +20,16 @@ async function ClientListLoader() {
       c.lead_status === 'inactive_client' ||
       c.lead_status === 'dead_lead'
   );
-  return <QualiaClientsView clients={clients} />;
+  return (
+    <>
+      {drift.authorized && drift.rows.length > 0 && (
+        <div className="px-6 pt-6 lg:px-8">
+          <ClientAccessDriftBanner rows={drift.rows} />
+        </div>
+      )}
+      <QualiaClientsView clients={clients} />
+    </>
+  );
 }
 
 function ClientTableSkeleton() {

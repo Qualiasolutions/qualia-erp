@@ -215,18 +215,21 @@ export async function getAssignedVsDone(
   if (!user) return [];
   if (!(await isUserAdmin(user.id))) return [];
 
-  // Get active assignments
+  // Get active assignments.
+  // Live schema: project_assignments uses employee_id (FK to profiles) and
+  // marks an assignment as inactive by setting removed_at. There is no `status`
+  // column or `profile_id` column anymore.
   const { data: assignments, error: assignErr } = await supabase
     .from('project_assignments')
     .select(
       `
-      profile_id,
+      employee_id,
       project:projects!project_assignments_project_id_fkey (id, name),
-      profile:profiles!project_assignments_profile_id_fkey (id, full_name)
+      employee:profiles!project_assignments_employee_id_fkey (id, full_name)
     `
     )
     .eq('workspace_id', workspaceId)
-    .eq('status', 'active');
+    .is('removed_at', null);
 
   if (assignErr) {
     console.error('[getAssignedVsDone] Assignments error:', assignErr);
@@ -263,10 +266,10 @@ export async function getAssignedVsDone(
   // Build per-employee assigned projects map
   const assignedMap = new Map<string, { fullName: string; projects: Map<string, string> }>();
   for (const a of assignments ?? []) {
-    const profile = Array.isArray(a.profile) ? a.profile[0] : a.profile;
+    const employee = Array.isArray(a.employee) ? a.employee[0] : a.employee;
     const project = Array.isArray(a.project) ? a.project[0] : a.project;
-    if (!profile || !project) continue;
-    const p = profile as { id: string; full_name: string | null };
+    if (!employee || !project) continue;
+    const p = employee as { id: string; full_name: string | null };
     const proj = project as { id: string; name: string };
     if (!assignedMap.has(p.id)) {
       assignedMap.set(p.id, { fullName: p.full_name ?? 'Unknown', projects: new Map() });

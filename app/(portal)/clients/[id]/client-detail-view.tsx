@@ -57,7 +57,7 @@ interface Project {
   id: string;
   name: string;
   project_type?: string | null;
-  project_status?: string | null;
+  status?: string | null;
 }
 
 interface ERPProject {

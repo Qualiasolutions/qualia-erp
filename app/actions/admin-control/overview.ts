@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getFinancialSummary } from '@/app/actions/financials';
 import { isUserAdmin } from '@/app/actions/shared';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
+import { loadPlanningHealth, type PlanningHealthPayload } from './planning-health';
 
 export type OverviewKpi = {
   label: string;
@@ -23,6 +24,7 @@ export type OverviewPayload = {
     target_name: string | null;
     created_at: string;
   }>;
+  planningHealth: PlanningHealthPayload;
 };
 
 function eurCompact(amount: number): string {
@@ -41,7 +43,7 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await isUserAdmin(user.id))) {
-    return { kpis: [], week: [], activity: [] };
+    return { kpis: [], week: [], activity: [], planningHealth: { rows: [], totalIssues: 0 } };
   }
 
   const workspaceId = await getCurrentWorkspaceId();
@@ -61,6 +63,7 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
     deploymentsRes,
     sessionsRes,
     activityWeekRes,
+    planningHealth,
   ] = await Promise.all([
     getFinancialSummary(),
     // Activity feed: recent task completions — the activity_log table is not
@@ -105,6 +108,7 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
       .select('duration_seconds')
       .gte('started_at', weekStart.toISOString()),
     supabase.from('activity_log').select('action_type').gte('created_at', weekStart.toISOString()),
+    loadPlanningHealth(),
   ]);
 
   const activeProjectsCount = projectsRes.data?.length ?? 0;
@@ -206,5 +210,5 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
     };
   });
 
-  return { kpis, week, activity: activityList };
+  return { kpis, week, activity: activityList, planningHealth };
 }

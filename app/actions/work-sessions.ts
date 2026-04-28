@@ -101,14 +101,24 @@ export async function clockIn(
     return { success: false, error: 'You already have an active session. Clock out first.' };
   }
 
-  if (!projectId && !clockInNote?.trim()) {
-    return { success: false, error: 'Please describe what you will be working on.' };
+  // Both project and non-project sessions now require a planned outcome and a
+  // planned duration — the 2026-04-28 ops diagnosis flagged loose project
+  // clock-ins as a root cause of unaccountable session work.
+  if (!clockInNote?.trim()) {
+    return {
+      success: false,
+      error: projectId
+        ? 'Tell the team what you plan to ship this session.'
+        : 'Please describe what you will be working on.',
+    };
   }
 
-  if (!projectId && !plannedDurationMinutes) {
+  if (!plannedDurationMinutes) {
     return { success: false, error: 'Please select how long you plan to work.' };
   }
 
+  // Reason is still required only for non-project sessions, where it's the
+  // primary explanation. Project sessions can rely on the project itself.
   if (!projectId && !clockInReason?.trim()) {
     return { success: false, error: 'Please provide a reason for this session.' };
   }
@@ -291,6 +301,108 @@ export async function autoClockOut(
     console.error('[autoClockOut] Update error:', error);
     return { success: false, error: error.message };
   }
+
+  return { success: true, data };
+}
+
+/**
+ * Admin override: force-close a stuck session belonging to ANY profile.
+ *
+ * Background (2026-04-28 ops diagnosis): if /qualia-report fails for an
+ * employee, the standard clockOut path blocks them at the modal. This is
+ * the audited escape hatch — admin presses a button, supplies a reason,
+ * the session is closed and the override is logged.
+ *
+ * Audit trail:
+ *   - work_sessions.summary is overwritten with `[Admin override by <name>]`
+ *     so the row is self-explanatory in the dashboard.
+ *   - For project sessions, an activity_log row is also inserted with
+ *     action_type='session_admin_overrode' so the override surfaces in the
+ *     project's activity feed.
+ */
+export async function adminOverrideClockOut(
+  workspaceId: string,
+  sessionId: string,
+  reason: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  if (!(await isUserAdmin(user.id))) {
+    return { success: false, error: 'Admin only.' };
+  }
+
+  const trimmedReason = reason.trim();
+  if (!trimmedReason) {
+    return { success: false, error: 'Override reason is required for the audit log.' };
+  }
+
+  const { data: session, error: fetchError } = await supabase
+    .from('work_sessions')
+    .select('id, started_at, profile_id, project_id, summary')
+    .eq('id', sessionId)
+    .eq('workspace_id', workspaceId)
+    .is('ended_at', null)
+    .maybeSingle();
+
+  if (fetchError) {
+    console.error('[adminOverrideClockOut] Fetch error:', fetchError);
+    return { success: false, error: fetchError.message };
+  }
+
+  if (!session) {
+    return { success: false, error: 'No active session found.' };
+  }
+
+  const overrideStamp = `[Admin override · ${new Date().toISOString()}] ${trimmedReason}`;
+
+  // Use the admin client so workspace-scoped RLS doesn't block updating a row
+  // owned by another profile.
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from('work_sessions')
+    .update({
+      ended_at: new Date().toISOString(),
+      summary: session.summary ? `${session.summary}\n\n${overrideStamp}` : overrideStamp,
+    })
+    .eq('id', sessionId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[adminOverrideClockOut] Update error:', error);
+    return { success: false, error: error.message };
+  }
+
+  // Best-effort audit: only project sessions get an activity_log entry
+  // (the table requires a non-null project_id).
+  if (session.project_id) {
+    const { error: logError } = await admin.from('activity_log').insert({
+      project_id: session.project_id,
+      actor_id: user.id,
+      action_type: 'session_admin_overrode',
+      action_data: {
+        session_id: sessionId,
+        target_profile_id: session.profile_id,
+        reason: trimmedReason,
+        started_at: session.started_at,
+      },
+      is_client_visible: false,
+    });
+    if (logError) {
+      // Don't fail the override on a log-write failure; just surface it.
+      console.error('[adminOverrideClockOut] Audit log write failed:', logError);
+    }
+  }
+
+  revalidatePath('/');
+  revalidatePath('/tasks');
 
   return { success: true, data };
 }

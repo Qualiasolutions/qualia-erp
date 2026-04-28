@@ -177,7 +177,8 @@ export function ClockOutModal({
                 '(optional)'
               ) : (
                 <>
-                  (recommended) — run <code className="font-mono">/qualia-report</code>
+                  (required for project sessions) — run{' '}
+                  <code className="font-mono">/qualia-report</code>, then click Refresh
                 </>
               )}
             </span>

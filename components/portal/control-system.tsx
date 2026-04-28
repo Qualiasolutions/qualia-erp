@@ -4,12 +4,13 @@ import type { ReactNode } from 'react';
 import { memo } from 'react';
 import Link from 'next/link';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { Server, Rocket } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Rocket, Server } from 'lucide-react';
 
 import { EmptyState } from '@/components/ui/empty-state';
 import type {
   SystemPayload,
   AuditLogEntry,
+  FrameworkReportCompleteness,
   FrameworkReportLite,
 } from '@/app/actions/admin-control';
 import { ApiTokensPanel } from './api-tokens-panel';
@@ -53,6 +54,8 @@ export function ControlSystem({
         <AuditLogTable entries={data.auditEntries} />
         <FrameworkReportsMini reports={data.frameworkReports} />
       </div>
+
+      <FrameworkCompletenessPanel stats={data.frameworkCompleteness} />
 
       <ApiTokensPanel profiles={data.tokenAssignableProfiles} />
     </div>
@@ -170,6 +173,77 @@ const FrameworkReportsMini = memo(function FrameworkReportsMini({
             </li>
           ))}
         </ul>
+      )}
+    </section>
+  );
+});
+
+/* ======================================================================
+   FrameworkCompletenessPanel
+   ====================================================================== */
+
+const FrameworkCompletenessPanel = memo(function FrameworkCompletenessPanel({
+  stats,
+}: {
+  stats: FrameworkReportCompleteness;
+}) {
+  const hasGaps = stats.checkedReports > stats.completeReports;
+  const gaps = [
+    { label: 'Client ID missing', value: stats.missingClientId },
+    { label: 'Framework version missing', value: stats.missingFrameworkVersion },
+    { label: 'QS report ID missing', value: stats.missingClientReportId },
+    { label: 'Framework project ID missing', value: stats.missingFrameworkProjectId },
+    { label: 'Team ID missing', value: stats.missingTeamId },
+    { label: 'Not per-user token', value: stats.nonPerUserTokenAuth },
+  ].filter((gap) => gap.value > 0);
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-border bg-card">
+      <header className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          {hasGaps ? (
+            <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          ) : (
+            <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+          )}
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold tracking-tight">Framework report completeness</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Last {stats.checkedReports} production reports checked for ERP linkage and token
+              hygiene.
+            </p>
+          </div>
+        </div>
+        <div className="shrink-0 text-left sm:text-right">
+          <div className="font-mono text-2xl font-semibold tabular-nums text-foreground">
+            {stats.score}%
+          </div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            {stats.completeReports}/{stats.checkedReports} complete
+          </div>
+        </div>
+      </header>
+
+      {stats.checkedReports === 0 ? (
+        <p className="px-4 py-4 text-xs text-muted-foreground">
+          No production framework reports found yet.
+        </p>
+      ) : gaps.length === 0 ? (
+        <p className="px-4 py-4 text-xs text-muted-foreground">
+          The latest reports include client, framework version, stable project/team IDs, report ID,
+          and per-user token auth.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          {gaps.map((gap) => (
+            <div key={gap.label} className="px-4 py-3">
+              <div className="font-mono text-lg font-semibold tabular-nums text-foreground">
+                {gap.value}
+              </div>
+              <div className="mt-0.5 text-xs text-muted-foreground">{gap.label}</div>
+            </div>
+          ))}
+        </div>
       )}
     </section>
   );

@@ -23,7 +23,7 @@ interface Project {
   id: string;
   name: string;
   project_type?: string | null;
-  project_status?: string | null;
+  status?: string | null;
 }
 
 interface ClientProjectAccessProps {
@@ -186,7 +186,7 @@ export function ClientProjectAccess({
                   {project.project_type && (
                     <p className="mt-1 text-sm capitalize text-muted-foreground">
                       {project.project_type.replace('_', ' ')}
-                      {project.project_status && ` • ${project.project_status}`}
+                      {project.status && ` • ${project.status}`}
                     </p>
                   )}
                 </div>
@@ -322,7 +322,7 @@ export function ClientProjectAccess({
                     {project.project_type && (
                       <p className="mt-1 text-sm capitalize text-muted-foreground">
                         {project.project_type.replace('_', ' ')}
-                        {project.project_status && ` • ${project.project_status}`}
+                        {project.status && ` • ${project.status}`}
                       </p>
                     )}
                   </div>
