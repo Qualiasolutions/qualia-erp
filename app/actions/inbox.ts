@@ -180,6 +180,7 @@ export type GetTasksOptions = {
   limit?: number;
   inboxOnly?: boolean;
   scope?: 'mine' | 'all';
+  missing?: 'phase' | 'due_date';
   cursor?: string;
   paged?: boolean;
 };
@@ -315,6 +316,15 @@ export async function getTasks(
 
   if (options.status && options.status.length > 0) {
     query = query.in('status', options.status);
+  }
+
+  if (options.missing === 'phase') {
+    query = query
+      .not('project_id', 'is', null)
+      .is('phase_id', null)
+      .not('status', 'in', '("Done","Canceled")');
+  } else if (options.missing === 'due_date') {
+    query = query.is('due_date', null).not('status', 'in', '("Done","Canceled")');
   }
 
   // Keyset cursor filter for paged mode

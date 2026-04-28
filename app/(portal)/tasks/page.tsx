@@ -10,6 +10,7 @@ import { QualiaTasksList } from '@/components/portal/qualia-tasks-list';
 import { QualiaTasksView } from '@/components/portal/qualia-tasks-view';
 
 type TasksMode = 'inbox' | 'all-tasks' | 'client';
+type MissingTaskFilter = 'phase' | 'due_date';
 
 export const metadata: Metadata = {
   title: 'Tasks | Qualia',
@@ -17,7 +18,12 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-  searchParams: Promise<{ scope?: string }>;
+  searchParams: Promise<{ scope?: string; missing?: string }>;
+}
+
+function resolveMissingTaskFilter(value: string | undefined): MissingTaskFilter | undefined {
+  if (value === 'phase' || value === 'due_date') return value;
+  return undefined;
 }
 
 export default async function PortalTasksPage({ searchParams }: PageProps) {
@@ -29,6 +35,7 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
   const role = profile?.role || 'client';
   const params = await searchParams;
   const requestedScope = params.scope;
+  const missingFilter = resolveMissingTaskFilter(params.missing);
 
   if (role === 'client') {
     const allowed = await assertAppEnabledForClient(user.id, 'tasks', role);
@@ -79,7 +86,11 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
     // M5 (OPTIMIZE.md): cursor pagination — fetch first page (100) instead of
     // a hard-capped 500. The Load more button in the task list fetches follow-up
     // pages via the loadMoreWorkspaceTasks server action.
-    const paged = await getTasks(workspaceId, { scope: 'all', paged: true });
+    const paged = await getTasks(workspaceId, {
+      scope: 'all',
+      paged: true,
+      missing: missingFilter,
+    });
     initialTasks = paged.tasks;
     initialNextCursor = paged.nextCursor;
     const { data: members } = await supabase
@@ -129,6 +140,7 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
       initialTasks={initialTasks}
       userRole={normalizedRole as 'admin' | 'employee'}
       isAdmin={isAdmin}
+      missingFilter={mode === 'all-tasks' ? missingFilter : undefined}
     />
   );
 }

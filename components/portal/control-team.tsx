@@ -4,11 +4,20 @@ import { memo, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { Crown, Shield, User, Users } from 'lucide-react';
+import { AlertTriangle, Crown, Loader2, Shield, User, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { hueFromId, clientAccent } from '@/lib/color-constants';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -16,9 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { updateUserRole, removeTeamMember, type AdminProfile } from '@/app/actions/admin';
+import { adminOverrideClockOut } from '@/app/actions/work-sessions';
 import type { TeamPayload, AssignmentProject } from '@/app/actions/admin-control';
 import type { Database } from '@/types/database';
 
@@ -68,7 +79,7 @@ export function ControlTeam({ data }: { data: TeamPayload | undefined }) {
           matrix={data.assignments.matrix}
         />
       </div>
-      <TeamLivePanel statuses={data.liveStatus} />
+      <TeamLivePanel statuses={data.liveStatus} workspaceId={data.workspaceId} />
     </div>
   );
 }
@@ -217,8 +228,47 @@ const RosterRow = memo(function RosterRow({
    TeamLivePanel
    ====================================================================== */
 
-function TeamLivePanel({ statuses }: { statuses: TeamPayload['liveStatus'] }) {
+function TeamLivePanel({
+  statuses,
+  workspaceId,
+}: {
+  statuses: TeamPayload['liveStatus'];
+  workspaceId: string | null;
+}) {
   const online = statuses.filter((s) => s.status === 'online');
+  const router = useRouter();
+  const [overrideTarget, setOverrideTarget] = useState<TeamPayload['liveStatus'][number] | null>(
+    null
+  );
+  const [overrideReason, setOverrideReason] = useState('');
+  const [isPending, startTransition] = useTransition();
+
+  const closeOverrideDialog = () => {
+    if (isPending) return;
+    setOverrideTarget(null);
+    setOverrideReason('');
+  };
+
+  const handleOverride = () => {
+    if (!workspaceId || !overrideTarget?.sessionId) return;
+    const reason = overrideReason.trim();
+    if (!reason) {
+      toast.error('Override reason is required');
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await adminOverrideClockOut(workspaceId, overrideTarget.sessionId!, reason);
+      if (res.success) {
+        toast.success(`${overrideTarget.fullName ?? 'Session'} force-closed`);
+        setOverrideTarget(null);
+        setOverrideReason('');
+        router.refresh();
+      } else {
+        toast.error(res.error ?? 'Failed to force close session');
+      }
+    });
+  };
 
   return (
     <aside className="sticky top-4 flex flex-col gap-5 self-start">
@@ -265,11 +315,87 @@ function TeamLivePanel({ statuses }: { statuses: TeamPayload['liveStatus'] }) {
                     ? formatDistanceToNowStrict(new Date(s.sessionStartedAt))
                     : '—'}
                 </span>
+                {s.sessionId ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 shrink-0 cursor-pointer px-2 text-[10px] text-muted-foreground hover:text-destructive"
+                    onClick={() => setOverrideTarget(s)}
+                  >
+                    Force close
+                  </Button>
+                ) : null}
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      <Dialog open={!!overrideTarget} onOpenChange={(open) => !open && closeOverrideDialog()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
+              <DialogTitle>Force close session</DialogTitle>
+            </div>
+            <DialogDescription>
+              Use this only when an employee is stuck and cannot submit the normal clock-out flow.
+              The reason is appended to the session and logged.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs">
+            <div className="font-medium text-foreground">{overrideTarget?.fullName ?? '—'}</div>
+            <div className="mt-0.5 text-muted-foreground">
+              {overrideTarget?.projectName ? `on ${overrideTarget.projectName}` : 'No project'}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="override-reason" className="text-sm font-medium">
+              Override reason
+            </Label>
+            <Textarea
+              id="override-reason"
+              value={overrideReason}
+              onChange={(e) => setOverrideReason(e.target.value)}
+              rows={4}
+              placeholder="Explain why this session needs admin force-close..."
+              className="resize-none"
+              disabled={isPending}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="cursor-pointer"
+              onClick={closeOverrideDialog}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="cursor-pointer"
+              onClick={handleOverride}
+              disabled={isPending || !overrideReason.trim()}
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Closing…
+                </>
+              ) : (
+                'Force close'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </aside>
   );
 }

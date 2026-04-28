@@ -14,6 +14,7 @@ export interface TeamMemberStatus {
   avatarUrl: string | null;
   status: 'online' | 'offline';
   // When online:
+  sessionId: string | null;
   projectName: string | null;
   clockInNote: string | null;
   sessionStartedAt: string | null;
@@ -626,7 +627,7 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
       supabase
         .from('work_sessions')
         .select(
-          'profile_id, started_at, clock_in_note, project:projects!work_sessions_project_id_fkey (id, name)'
+          'id, profile_id, started_at, clock_in_note, project:projects!work_sessions_project_id_fkey (id, name)'
         )
         .eq('workspace_id', workspaceId)
         .is('ended_at', null),
@@ -664,7 +665,7 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
   const now = Date.now();
   const openSessionMap = new Map<
     string,
-    { started_at: string; projectName: string | null; clockInNote: string | null }
+    { id: string; started_at: string; projectName: string | null; clockInNote: string | null }
   >();
   const staleSessionIds: string[] = [];
   for (const session of openSessions || []) {
@@ -676,6 +677,7 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
     }
     const project = Array.isArray(session.project) ? session.project[0] || null : session.project;
     openSessionMap.set(session.profile_id, {
+      id: session.id,
       started_at: session.started_at,
       projectName: (project as { name: string } | null)?.name ?? null,
       clockInNote: session.clock_in_note ?? null,
@@ -727,6 +729,7 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
         fullName: profile.full_name,
         avatarUrl: profile.avatar_url,
         status: 'online',
+        sessionId: openSession.id,
         projectName: openSession.projectName,
         clockInNote: openSession.clockInNote,
         sessionStartedAt: openSession.started_at,
@@ -738,6 +741,7 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
         fullName: profile.full_name,
         avatarUrl: profile.avatar_url,
         status: 'offline',
+        sessionId: null,
         projectName: null,
         clockInNote: null,
         sessionStartedAt: null,

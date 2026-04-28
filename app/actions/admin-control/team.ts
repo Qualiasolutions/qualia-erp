@@ -16,6 +16,7 @@ export type AssignmentProject = {
 };
 
 export type TeamPayload = {
+  workspaceId: string | null;
   members: AdminProfile[];
   liveStatus: TeamMemberStatus[];
   assignments: {
@@ -33,6 +34,7 @@ export async function loadTeamTab(): Promise<TeamPayload> {
   } = await supabase.auth.getUser();
   if (!user || !(await isUserAdmin(user.id))) {
     return {
+      workspaceId: null,
       members: [],
       liveStatus: [],
       assignments: { employees: [], projects: [], matrix: {} },
@@ -52,6 +54,7 @@ export async function loadTeamTab(): Promise<TeamPayload> {
   return {
     members,
     liveStatus,
+    workspaceId,
     assignments: assignmentsData,
   };
 }

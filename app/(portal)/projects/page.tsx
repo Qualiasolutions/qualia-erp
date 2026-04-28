@@ -49,7 +49,14 @@ export interface ProjectData {
   is_assigned: boolean;
 }
 
-async function ProjectListLoader() {
+type MissingProjectFilter = 'target_date' | 'phase_dates';
+
+function resolveMissingProjectFilter(value: string | undefined): MissingProjectFilter | undefined {
+  if (value === 'target_date' || value === 'phase_dates') return value;
+  return undefined;
+}
+
+async function ProjectListLoader({ missing }: { missing?: MissingProjectFilter }) {
   await connection();
   const supabase = await createClient();
   const [workspaceId, userProfile] = await Promise.all([
@@ -59,7 +66,7 @@ async function ProjectListLoader() {
 
   // Fan out all three workspace-scoped queries in parallel — they share only
   // workspaceId as input, so there's no reason to chain them sequentially.
-  const [rpcResult, assignmentsResult, githubResult] = await Promise.all([
+  const [rpcResult, assignmentsResult, githubResult, phasesMissingDatesResult] = await Promise.all([
     supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
     supabase
       .from('project_assignments')
@@ -69,6 +76,12 @@ async function ProjectListLoader() {
       .eq('workspace_id', workspaceId)
       .is('removed_at', null),
     supabase.from('project_integrations').select('project_id').eq('service_type', 'github'),
+    supabase
+      .from('project_phases')
+      .select('project_id')
+      .eq('workspace_id', workspaceId)
+      .in('status', ['not_started', 'in_progress'])
+      .or('start_date.is.null,target_date.is.null'),
   ]);
 
   const { data: rawProjects, error } = rpcResult;
@@ -82,12 +95,16 @@ async function ProjectListLoader() {
         live={[]}
         done={[]}
         archived={[]}
+        missingFilter={missing}
       />
     );
   }
 
   const allAssignments = assignmentsResult.data;
   const githubIntegrations = githubResult.data;
+  const projectsWithMissingPhaseDates = new Set(
+    (phasesMissingDatesResult.data || []).map((phase) => phase.project_id)
+  );
 
   const githubProjectIds = new Set((githubIntegrations || []).map((i) => i.project_id));
 
@@ -149,7 +166,16 @@ async function ProjectListLoader() {
   }));
 
   // Employees see EVERY project but only assigned ones are clickable (UI-side gate).
-  const visibleProjects = allProjects;
+  const activeDeadlineStatuses = new Set(['Active', 'Demos', 'Launched', 'Delayed']);
+  const visibleProjects = allProjects.filter((project) => {
+    if (missing === 'target_date') {
+      return activeDeadlineStatuses.has(project.status) && !project.target_date;
+    }
+    if (missing === 'phase_dates') {
+      return projectsWithMissingPhaseDates.has(project.id);
+    }
+    return true;
+  });
 
   const sortByOrder = (a: ProjectData, b: ProjectData) => a.sort_order - b.sort_order;
 
@@ -159,8 +185,11 @@ async function ProjectListLoader() {
   const building = activeDelayed.filter((p) => !p.is_pre_production).sort(sortByOrder);
   const preProduction = activeDelayed.filter((p) => p.is_pre_production).sort(sortByOrder);
   const live = visibleProjects.filter((p) => p.status === 'Launched').sort(sortByOrder);
-  // Done: show all Done projects to everyone (admins + employees). Employees get read-only view.
-  const done = allProjects.filter((p) => p.status === 'Done').sort(sortByOrder);
+  // Done: show all Done projects normally. In planning-cleanup mode, keep the
+  // filtered project set strict so the cleanup link doesn't show unrelated rows.
+  const done = (missing ? visibleProjects : allProjects)
+    .filter((p) => p.status === 'Done')
+    .sort(sortByOrder);
   const archived = visibleProjects
     .filter((p) => ['Archived', 'Canceled'].includes(p.status))
     .sort(sortByOrder);
@@ -174,6 +203,7 @@ async function ProjectListLoader() {
       done={done}
       archived={archived}
       isAdmin={isAdmin}
+      missingFilter={missing}
     />
   );
 }
@@ -232,11 +262,17 @@ function ProjectsSkeleton() {
   );
 }
 
-export default async function ProjectsPage() {
+interface PageProps {
+  searchParams: Promise<{ missing?: string }>;
+}
+
+export default async function ProjectsPage({ searchParams }: PageProps) {
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
   const profile = await getPortalProfile(user.id);
   if (profile?.role === 'client') redirect('/');
+  const params = await searchParams;
+  const missing = resolveMissingProjectFilter(params.missing);
 
   const canCreate = profile?.role === 'admin';
 
@@ -253,7 +289,7 @@ export default async function ProjectsPage() {
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         <Suspense fallback={<ProjectsSkeleton />}>
-          <ProjectListLoader />
+          <ProjectListLoader missing={missing} />
         </Suspense>
       </div>
     </div>

@@ -15,6 +15,7 @@ import {
   Clock,
   X,
   Calendar as CalendarIcon,
+  AlertTriangle,
   User,
   Flag,
   Zap,
@@ -22,6 +23,7 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +46,7 @@ interface QualiaTasksViewProps {
   initialTasks: Task[];
   userRole: 'admin' | 'employee';
   isAdmin?: boolean;
+  missingFilter?: 'phase' | 'due_date';
 }
 
 type LocalOverride = { status?: Task['status']; completed_at?: string | null; deleted?: boolean };
@@ -84,6 +87,20 @@ function dueLabel(due: string | null): string | null {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
+function isOpenTask(task: Task): boolean {
+  return !['Done', 'Canceled'].includes(String(task.status));
+}
+
+function matchesMissingFilter(task: Task, filter: QualiaTasksViewProps['missingFilter']): boolean {
+  if (filter === 'phase') {
+    return Boolean(task.project_id) && !task.phase_id && isOpenTask(task);
+  }
+  if (filter === 'due_date') {
+    return !task.due_date && isOpenTask(task);
+  }
+  return true;
+}
+
 /** Apply optimistic overrides to a task list, dropping deleted items. */
 function applyOverrides(tasks: Task[], overrides: Map<string, LocalOverride>): Task[] {
   if (overrides.size === 0) return tasks;
@@ -101,7 +118,13 @@ function applyOverrides(tasks: Task[], overrides: Map<string, LocalOverride>): T
   });
 }
 
-export function QualiaTasksView({ mode, initialTasks, userRole, isAdmin }: QualiaTasksViewProps) {
+export function QualiaTasksView({
+  mode,
+  initialTasks,
+  userRole,
+  isAdmin,
+  missingFilter,
+}: QualiaTasksViewProps) {
   const canManage = userRole === 'admin' || userRole === 'employee';
   const isAdminUser = !!isAdmin || userRole === 'admin';
 
@@ -137,32 +160,61 @@ export function QualiaTasksView({ mode, initialTasks, userRole, isAdmin }: Quali
 
   const inbox = useInboxTasks();
   const inboxTasks = useMemo<Task[]>(() => {
-    const live = (inbox.tasks as Task[]) ?? [];
+    const live = missingFilter ? [] : ((inbox.tasks as Task[]) ?? []);
     const base = live.length > 0 ? live : initialTasks;
     return applyOverrides(base, overrides);
-  }, [inbox.tasks, initialTasks, overrides]);
+  }, [inbox.tasks, initialTasks, overrides, missingFilter]);
+
+  const cleanupTasks = useMemo(
+    () => inboxTasks.filter((task) => matchesMissingFilter(task, missingFilter)),
+    [inboxTasks, missingFilter]
+  );
 
   // Today's open + completed — both sourced from todaysTasks so the row stays
   // visible after the optimistic toggle (inbox query filters by status='Todo'
   // and would otherwise drop completed items immediately).
   const todayOpen = useMemo(
-    () => todaysTasks.filter((t) => t.status !== 'Done'),
-    [todaysTasks]
+    () =>
+      missingFilter
+        ? cleanupTasks.filter((t) => t.status !== 'Done')
+        : todaysTasks.filter((t) => t.status !== 'Done'),
+    [cleanupTasks, missingFilter, todaysTasks]
   );
   const completedToday = useMemo(
     () =>
-      todaysTasks.filter((t) => t.status === 'Done' && (isToday(t.completed_at) || true)),
-    [todaysTasks]
+      missingFilter
+        ? []
+        : todaysTasks.filter((t) => t.status === 'Done' && (isToday(t.completed_at) || true)),
+    [missingFilter, todaysTasks]
   );
 
-  const todayIds = useMemo(() => new Set(todaysTasks.map((t) => t.id)), [todaysTasks]);
+  const todayIds = useMemo(
+    () => new Set((missingFilter ? cleanupTasks : todaysTasks).map((t) => t.id)),
+    [cleanupTasks, missingFilter, todaysTasks]
+  );
   const upcoming = useMemo(
     () =>
-      inboxTasks
-        .filter((t) => t.status !== 'Done' && !todayIds.has(t.id))
-        .slice(0, 8),
-    [inboxTasks, todayIds]
+      missingFilter
+        ? []
+        : inboxTasks.filter((t) => t.status !== 'Done' && !todayIds.has(t.id)).slice(0, 8),
+    [inboxTasks, missingFilter, todayIds]
   );
+
+  const missingFilterLabel =
+    missingFilter === 'phase'
+      ? 'Open project tasks without a phase'
+      : missingFilter === 'due_date'
+        ? 'Open tasks without a due date'
+        : null;
+
+  const missingFilterDescription =
+    missingFilter === 'phase'
+      ? 'These tasks need planning cleanup. Assign each one to the correct phase instead of using an unphased bucket.'
+      : missingFilter === 'due_date'
+        ? 'These tasks need a due date or an explicit decision to close or reschedule them.'
+        : null;
+
+  const cleanupCount = cleanupTasks.length;
 
   const weekDoneCount = useMemo(() => {
     const now = new Date();
@@ -284,8 +336,11 @@ export function QualiaTasksView({ mode, initialTasks, userRole, isAdmin }: Quali
   }, [selectedTask, todaysTasks, inboxTasks]);
 
   const headerSubtitle = useMemo(() => {
+    if (missingFilter) {
+      return `${cleanupCount} cleanup item${cleanupCount === 1 ? '' : 's'}`;
+    }
     return `${todayOpen.length} task${todayOpen.length === 1 ? '' : 's'} · ${weekDoneCount} done · 7d`;
-  }, [todayOpen.length, weekDoneCount]);
+  }, [cleanupCount, missingFilter, todayOpen.length, weekDoneCount]);
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -320,21 +375,41 @@ export function QualiaTasksView({ mode, initialTasks, userRole, isAdmin }: Quali
           </Button>
         </div>
 
-        {/* Quick Add */}
-        <div className="mb-5 flex-shrink-0">
-          <div className="relative">
-            <Zap className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
-            <Input
-              id="quick-add-input"
-              placeholder="Quick add task… press Enter"
-              value={quickAdd}
-              onChange={(e) => setQuickAdd(e.target.value)}
-              onKeyDown={handleQuickAdd}
-              disabled={isPending}
-              className="h-11 rounded-xl border-border bg-card pl-11"
-            />
+        {missingFilter && missingFilterLabel && missingFilterDescription && (
+          <div className="mb-5 flex shrink-0 items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.05] p-4">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-foreground">{missingFilterLabel}</div>
+              <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+                {missingFilterDescription}
+              </p>
+            </div>
+            <Link
+              href="/tasks?scope=all"
+              className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-background"
+            >
+              Clear
+            </Link>
           </div>
-        </div>
+        )}
+
+        {/* Quick Add */}
+        {!missingFilter && (
+          <div className="mb-5 flex-shrink-0">
+            <div className="relative">
+              <Zap className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+              <Input
+                id="quick-add-input"
+                placeholder="Quick add task… press Enter"
+                value={quickAdd}
+                onChange={(e) => setQuickAdd(e.target.value)}
+                onKeyDown={handleQuickAdd}
+                disabled={isPending}
+                className="h-11 rounded-xl border-border bg-card pl-11"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Body grid */}
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 overflow-hidden lg:grid-cols-3">
@@ -343,7 +418,9 @@ export function QualiaTasksView({ mode, initialTasks, userRole, isAdmin }: Quali
             <div className="flex-1 space-y-2 overflow-y-auto pr-1">
               {todayOpen.length === 0 && completedToday.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-                  Nothing scoped for today. Use Quick Add above to capture work.
+                  {missingFilter
+                    ? 'No cleanup items match this filter.'
+                    : 'Nothing scoped for today. Use Quick Add above to capture work.'}
                 </div>
               ) : (
                 todayOpen.map((task) => {
@@ -412,9 +489,7 @@ export function QualiaTasksView({ mode, initialTasks, userRole, isAdmin }: Quali
           <div className="flex min-h-0 flex-col gap-4 overflow-hidden">
             <div className="grid flex-shrink-0 grid-cols-2 gap-3">
               <div className="rounded-xl border border-border bg-card p-4">
-                <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
-                  Today
-                </p>
+                <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">Today</p>
                 <p className="text-2xl font-bold tabular-nums">{todayOpen.length}</p>
               </div>
               <div className="rounded-xl border border-border bg-card p-4">
@@ -515,7 +590,7 @@ export function QualiaTasksView({ mode, initialTasks, userRole, isAdmin }: Quali
               <Badge
                 variant="outline"
                 className={cn(
-                  'capitalize text-xs',
+                  'text-xs capitalize',
                   priorityKey(selectedTask.priority) === 'high' &&
                     'border-red-500/30 bg-red-500/10 text-red-400',
                   priorityKey(selectedTask.priority) === 'medium' &&
@@ -617,11 +692,7 @@ export function QualiaTasksView({ mode, initialTasks, userRole, isAdmin }: Quali
         open={!!pendingDelete}
         onOpenChange={(open) => !open && setPendingDelete(null)}
         title="Delete this task?"
-        description={
-          pendingDelete
-            ? `"${pendingDelete.title}" will be permanently deleted.`
-            : ''
-        }
+        description={pendingDelete ? `"${pendingDelete.title}" will be permanently deleted.` : ''}
         confirmLabel="Delete"
         variant="destructive"
         onConfirm={handleDelete}
@@ -654,7 +725,8 @@ function TaskRow({
         'group flex cursor-pointer items-center gap-4 rounded-xl border border-border bg-card p-4',
         'transition-all duration-200 hover:border-primary/30 active:scale-[0.99]',
         isSelected && 'border-primary/50 bg-primary/5',
-        isFlashing && 'border-emerald-500/60 bg-emerald-500/10 shadow-[0_0_16px_-4px_var(--primary)]'
+        isFlashing &&
+          'border-emerald-500/60 bg-emerald-500/10 shadow-[0_0_16px_-4px_var(--primary)]'
       )}
     >
       <Checkbox
@@ -668,12 +740,15 @@ function TaskRow({
         aria-label={`Mark ${task.title} ${task.status === 'Done' ? 'incomplete' : 'done'}`}
       />
       <div className="min-w-0 flex-1">
-        <p className={cn('truncate font-medium', task.status === 'Done' && 'text-muted-foreground line-through')}>
+        <p
+          className={cn(
+            'truncate font-medium',
+            task.status === 'Done' && 'text-muted-foreground line-through'
+          )}
+        >
           {task.title}
         </p>
-        {projectName && (
-          <p className="mt-0.5 text-sm text-primary/70">{projectName}</p>
-        )}
+        {projectName && <p className="mt-0.5 text-sm text-primary/70">{projectName}</p>}
       </div>
       <div className="flex flex-shrink-0 items-center gap-2">
         {task.due_date && (
