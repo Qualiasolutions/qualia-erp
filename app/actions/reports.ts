@@ -706,6 +706,8 @@ export interface FrameworkReportRow {
   id: string;
   client_report_id: string | null;
   project_name: string;
+  erp_project_id: string | null;
+  erp_project_name: string | null;
   client: string | null;
   submitted_at: string | null;
   submitted_by: string | null;
@@ -725,6 +727,10 @@ export interface FrameworkReportRow {
   notes: string | null;
   auth_method: string | null;
 }
+
+type RawFrameworkReportRow = Omit<FrameworkReportRow, 'erp_project_name'> & {
+  erp_project?: { name?: string } | { name?: string }[] | null;
+};
 
 export interface FrameworkReportsFilters {
   project?: string;
@@ -761,6 +767,11 @@ async function requireAdmin(): Promise<{ ok: boolean; error?: string }> {
   return { ok: true };
 }
 
+function firstRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
 export async function getFrameworkReports(
   filters: FrameworkReportsFilters = {},
   options?: { includeDryRun?: boolean }
@@ -772,7 +783,7 @@ export async function getFrameworkReports(
   let query = admin
     .from('session_reports')
     .select(
-      'id, client_report_id, project_name, client, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, commits, notes, auth_method'
+      'id, client_report_id, project_name, erp_project_id, erp_project:projects!session_reports_erp_project_id_fkey(id, name), client, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, commits, notes, auth_method'
     )
     .order('submitted_at', { ascending: false, nullsFirst: false });
 
@@ -781,7 +792,9 @@ export async function getFrameworkReports(
     query = query.neq('dry_run', true);
   }
 
-  if (filters.project) query = query.eq('project_name', filters.project);
+  // Project filters are applied after mapping because modern reports may be
+  // canonically linked to an ERP project whose display name differs from the
+  // framework repo slug (e.g. legacy USD-Academy -> Underdog-Sales-Academy).
   if (filters.status) query = query.eq('status', filters.status);
   if (filters.verification) query = query.eq('verification', filters.verification);
   if (filters.submittedBy) query = query.ilike('submitted_by', `%${filters.submittedBy}%`);
@@ -790,14 +803,28 @@ export async function getFrameworkReports(
 
   const limit = Math.min(Math.max(filters.limit ?? 100, 1), 500);
   const offset = Math.max(filters.offset ?? 0, 0);
-  query = query.range(offset, offset + limit - 1);
+  query = filters.project ? query.limit(500) : query.range(offset, offset + limit - 1);
 
   const { data, error } = await query;
   if (error) {
     console.error('[getFrameworkReports] Error:', error);
     return [];
   }
-  return (data ?? []) as FrameworkReportRow[];
+  const rows = ((data ?? []) as unknown as RawFrameworkReportRow[]).map((row) => {
+    const erpProject = firstRelation(row.erp_project);
+    return {
+      ...row,
+      erp_project_name: erpProject?.name ?? null,
+    };
+  });
+
+  const projectFiltered = filters.project
+    ? rows.filter(
+        (row) => row.project_name === filters.project || row.erp_project_name === filters.project
+      )
+    : rows;
+
+  return filters.project ? projectFiltered.slice(offset, offset + limit) : projectFiltered;
 }
 
 export async function getFrameworkReportsStats(options?: {
@@ -825,7 +852,9 @@ export async function getFrameworkReportsStats(options?: {
   // small per-org (one row per /qualia-report call) so 2000 rows is plenty.
   let statsQuery = admin
     .from('session_reports')
-    .select('project_name, submitted_at, status, verification, build_count, deploy_count, commits')
+    .select(
+      'project_name, erp_project:projects!session_reports_erp_project_id_fkey(name), submitted_at, status, verification, build_count, deploy_count, commits'
+    )
     .order('submitted_at', { ascending: false, nullsFirst: false })
     .limit(2000);
 
@@ -858,8 +887,11 @@ export async function getFrameworkReportsStats(options?: {
     const ts = r.submitted_at ? new Date(r.submitted_at).getTime() : 0;
     if (ts >= d7) reportsLast7d++;
     if (ts >= d30) reportsLast30d++;
-    if (r.project_name)
-      projectCounts.set(r.project_name, (projectCounts.get(r.project_name) ?? 0) + 1);
+    const erpProject = firstRelation(
+      (r as { erp_project?: { name?: string } | { name?: string }[] | null }).erp_project
+    );
+    const projectName = erpProject?.name ?? r.project_name;
+    if (projectName) projectCounts.set(projectName, (projectCounts.get(projectName) ?? 0) + 1);
     if (r.status) statusCounts.set(r.status, (statusCounts.get(r.status) ?? 0) + 1);
     if (r.verification) verifCounts.set(r.verification, (verifCounts.get(r.verification) ?? 0) + 1);
     if (Array.isArray(r.commits)) totalCommits += r.commits.length;
@@ -900,7 +932,7 @@ export async function getFrameworkReportsProjects(options?: {
   const admin = createAdminClient();
   let projectsQuery = admin
     .from('session_reports')
-    .select('project_name')
+    .select('project_name, erp_project:projects!session_reports_erp_project_id_fkey(name)')
     .order('project_name', { ascending: true });
 
   if (!options?.includeDryRun) {
@@ -912,9 +944,13 @@ export async function getFrameworkReportsProjects(options?: {
   const seen = new Set<string>();
   const result: string[] = [];
   for (const r of data ?? []) {
-    if (r.project_name && !seen.has(r.project_name)) {
-      seen.add(r.project_name);
-      result.push(r.project_name);
+    const erpProject = firstRelation(
+      (r as { erp_project?: { name?: string } | { name?: string }[] | null }).erp_project
+    );
+    const projectName = erpProject?.name ?? r.project_name;
+    if (projectName && !seen.has(projectName)) {
+      seen.add(projectName);
+      result.push(projectName);
     }
   }
   return result;

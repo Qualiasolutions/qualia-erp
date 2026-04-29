@@ -141,7 +141,7 @@ export async function loadSystemTab(): Promise<SystemPayload> {
     .map((r) => ({
       id: r.id,
       client_report_id: r.client_report_id,
-      project_name: r.project_name,
+      project_name: r.erp_project_name ?? r.project_name,
       recorded_at: r.submitted_at ?? new Date().toISOString(),
       total_phases: r.total_phases,
     }));

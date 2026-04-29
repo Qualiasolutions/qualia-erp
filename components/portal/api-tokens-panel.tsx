@@ -234,7 +234,7 @@ function MintForm({
 }) {
   const [name, setName] = useState('');
   const [profileId, setProfileId] = useState<string>(profiles[0]?.id ?? '');
-  const [scopes, setScopes] = useState<Set<string>>(new Set(['mcp:read']));
+  const [scopes, setScopes] = useState<Set<string>>(new Set(['reports:write']));
   const [expiresInDays, setExpiresInDays] = useState(90);
   const [submitting, setSubmitting] = useState(false);
 

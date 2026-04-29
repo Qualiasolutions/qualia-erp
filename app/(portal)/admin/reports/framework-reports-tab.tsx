@@ -277,7 +277,12 @@ export function FrameworkReportsTab() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-medium">{r.project_name}</span>
+                        <span className="font-medium">{r.erp_project_name ?? r.project_name}</span>
+                        {r.erp_project_name && r.erp_project_name !== r.project_name && (
+                          <span className="text-[11px] text-muted-foreground">
+                            Framework: {r.project_name}
+                          </span>
+                        )}
                         {r.client && (
                           <span className="text-[11px] text-muted-foreground">{r.client}</span>
                         )}

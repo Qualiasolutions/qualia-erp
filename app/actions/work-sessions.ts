@@ -863,7 +863,7 @@ export async function hasStructuredReportForSession(
 
   const { data: session } = await supabase
     .from('work_sessions')
-    .select('started_at, ended_at, profile_id, project:projects(name)')
+    .select('started_at, ended_at, profile_id, project_id, project:projects(name)')
     .eq('id', sessionId)
     .maybeSingle();
 
@@ -880,6 +880,30 @@ export async function hasStructuredReportForSession(
   const windowEnd = session.ended_at ?? new Date().toISOString();
 
   const admin = createAdminClient();
+  if (session.project_id) {
+    let canonicalQuery = admin
+      .from('session_reports')
+      .select('id, submitted_at')
+      .eq('erp_project_id', session.project_id)
+      .gte('submitted_at', session.started_at)
+      .lte('submitted_at', windowEnd)
+      .order('submitted_at', { ascending: false })
+      .limit(1);
+
+    if (!options?.includeDryRun) {
+      canonicalQuery = canonicalQuery.neq('dry_run', true);
+    }
+
+    const { data: canonicalReport } = await canonicalQuery.maybeSingle();
+    if (canonicalReport) {
+      return {
+        attached: true,
+        report_id: canonicalReport.id,
+        submitted_at: canonicalReport.submitted_at ?? undefined,
+      };
+    }
+  }
+
   // Substring match (case-insensitive). The framework's tracking.json often
   // carries a longer descriptive project_name in the report ("Qualia
   // Solutions — qualiasolutions.net Rebuild"), while the ERP's projects.name

@@ -3604,6 +3604,7 @@ export type Database = {
           deploy_count: number | null;
           deployed_url: string | null;
           dry_run: boolean;
+          erp_project_id: string | null;
           framework_project_id: string | null;
           framework_version: string | null;
           gap_cycles: number | null;
@@ -3642,6 +3643,7 @@ export type Database = {
           deploy_count?: number | null;
           deployed_url?: string | null;
           dry_run?: boolean;
+          erp_project_id?: string | null;
           framework_project_id?: string | null;
           framework_version?: string | null;
           gap_cycles?: number | null;
@@ -3680,6 +3682,7 @@ export type Database = {
           deploy_count?: number | null;
           deployed_url?: string | null;
           dry_run?: boolean;
+          erp_project_id?: string | null;
           framework_project_id?: string | null;
           framework_version?: string | null;
           gap_cycles?: number | null;
@@ -3713,6 +3716,13 @@ export type Database = {
             columns: ['client_id'];
             isOneToOne: false;
             referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'session_reports_erp_project_id_fkey';
+            columns: ['erp_project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
             referencedColumns: ['id'];
           },
           {

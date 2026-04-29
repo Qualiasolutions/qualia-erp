@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/server';
-import { authenticateRequest, LEGACY_DEPRECATION_HEADERS } from '@/lib/api-auth';
+import { authenticateRequest, hasScope, LEGACY_DEPRECATION_HEADERS } from '@/lib/api-auth';
 
 /**
  * POST /api/v1/reports
@@ -97,6 +97,291 @@ const payloadSchema = z.object({
 
 type Payload = z.infer<typeof payloadSchema>;
 
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+type ProfileCandidate = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+};
+
+type OpenWorkSession = {
+  id: string;
+  started_at: string;
+  project_id: string | null;
+  report_url: string | null;
+  project: { id: string; name: string } | { id: string; name: string }[] | null;
+};
+
+type ProjectCandidate = {
+  id: string;
+  name: string;
+  github_repo_url: string | null;
+  is_pre_production: boolean | null;
+  metadata: unknown;
+};
+
+function normalizeToken(value: string | null | undefined): string {
+  return (value ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function scoreSubmittedByProfile(submittedBy: string, profile: ProfileCandidate): number {
+  const submitted = normalizeToken(submittedBy);
+  if (!submitted) return 0;
+
+  const name = normalizeToken(profile.full_name);
+  const emailLocal = normalizeToken(profile.email?.split('@')[0]);
+
+  if (name && submitted === name) return 100;
+  if (emailLocal && submitted === emailLocal) return 95;
+
+  const submittedParts = submitted.split(/\s+/).filter(Boolean);
+  const nameParts = name.split(/\s+/).filter(Boolean);
+
+  if (nameParts.length > 0 && nameParts.every((part) => submittedParts.includes(part))) {
+    return 80;
+  }
+
+  if (
+    submittedParts[0] &&
+    nameParts[0] &&
+    submittedParts[0].length >= 3 &&
+    submittedParts[0] === nameParts[0]
+  ) {
+    return 70;
+  }
+
+  if (emailLocal && submittedParts[0] && submittedParts[0] === emailLocal) {
+    return 65;
+  }
+
+  return 0;
+}
+
+async function resolveSubmittedByProfileId(
+  supabase: AdminClient,
+  submittedBy: string | null | undefined
+): Promise<string | null> {
+  if (!submittedBy?.trim()) return null;
+
+  const { data, error } = await supabase.from('profiles').select('id, full_name, email').limit(500);
+
+  if (error || !data) {
+    console.warn('[api/v1/reports] Could not resolve submitted_by profile:', error?.message);
+    return null;
+  }
+
+  const scored = (data as ProfileCandidate[])
+    .map((profile) => ({
+      id: profile.id,
+      score: scoreSubmittedByProfile(submittedBy, profile),
+    }))
+    .filter((match) => match.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (scored.length === 0) return null;
+  if (scored.length > 1 && scored[0].score === scored[1].score) {
+    console.warn(
+      `[api/v1/reports] Ambiguous submitted_by profile match for "${submittedBy}"; skipping work-session link`
+    );
+    return null;
+  }
+
+  return scored[0].id;
+}
+
+function normalizeProjectName(value: string | null | undefined): string {
+  return normalizeToken(value)
+    .replace(/\b(project|portal|website|app|demo|v2)\b/g, '')
+    .trim();
+}
+
+function normalizeRepo(value: string | null | undefined): string {
+  return (value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/^git@github\.com:/, 'github.com/')
+    .replace(/^https?:\/\//, '')
+    .replace(/^ssh:\/\/git@github\.com\//, 'github.com/')
+    .replace(/\.git$/, '')
+    .replace(/\/+$/, '');
+}
+
+function repoSlug(value: string | null | undefined): string {
+  const normalized = normalizeRepo(value);
+  const parts = normalized.split('/').filter(Boolean);
+  return normalizeProjectName(parts[parts.length - 1]);
+}
+
+function projectAliases(metadata: unknown): string[] {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return [];
+  const aliases = (metadata as { framework_aliases?: unknown }).framework_aliases;
+  if (!Array.isArray(aliases)) return [];
+  return aliases.filter((alias): alias is string => typeof alias === 'string');
+}
+
+function projectNamesOverlap(reportProject: string, sessionProject: string): boolean {
+  const report = normalizeProjectName(reportProject);
+  const session = normalizeProjectName(sessionProject);
+  if (!report || !session) return false;
+  return report.includes(session) || session.includes(report);
+}
+
+function buildFrameworkReportUrl(request: NextRequest, reportId: string): string {
+  const origin = new URL(request.url).origin;
+  return `${origin}/admin/reports?tab=framework&report=${encodeURIComponent(reportId)}`;
+}
+
+async function resolveErpProject(
+  supabase: AdminClient,
+  body: Payload
+): Promise<{ id: string; name: string } | null> {
+  if (body.dry_run) return null;
+
+  const { data, error } = await supabase
+    .from('projects')
+    .select('id, name, github_repo_url, is_pre_production, metadata')
+    .limit(1000);
+
+  if (error || !data) {
+    console.warn('[api/v1/reports] Could not resolve ERP project:', error?.message);
+    return null;
+  }
+
+  const reportProject = normalizeProjectName(body.project);
+  const frameworkProjectId = normalizeProjectName(body.project_id);
+  const incomingRemote = normalizeRepo(body.git_remote);
+  const incomingRepoSlug =
+    repoSlug(body.git_remote) || normalizeProjectName(body.project_id) || reportProject;
+
+  const scored = (data as ProjectCandidate[])
+    .map((project) => {
+      const projectName = normalizeProjectName(project.name);
+      const projectRepo = normalizeRepo(project.github_repo_url);
+      const projectRepoSlug = repoSlug(project.github_repo_url);
+      const aliases = projectAliases(project.metadata).map(normalizeProjectName);
+      let score = 0;
+
+      if (incomingRemote && projectRepo && incomingRemote === projectRepo) score = 130;
+      else if (incomingRepoSlug && projectRepoSlug && incomingRepoSlug === projectRepoSlug)
+        score = 110;
+      else if (
+        (reportProject && aliases.includes(reportProject)) ||
+        (frameworkProjectId && aliases.includes(frameworkProjectId)) ||
+        (incomingRepoSlug && aliases.includes(incomingRepoSlug))
+      )
+        score = 100;
+      else if (reportProject && projectName && reportProject === projectName) score = 90;
+      else if (frameworkProjectId && projectName && frameworkProjectId === projectName) score = 85;
+      else if (reportProject && projectName && projectNamesOverlap(reportProject, projectName))
+        score = 60;
+
+      if (score > 0 && project.is_pre_production) score += 5;
+
+      return { id: project.id, name: project.name, score };
+    })
+    .filter((match) => match.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (scored.length === 0) return null;
+  if (scored.length > 1 && scored[0].score === scored[1].score) {
+    console.warn(
+      `[api/v1/reports] Ambiguous ERP project match for project="${body.project}" git_remote="${body.git_remote ?? ''}"; skipping canonical link`
+    );
+    return null;
+  }
+
+  return { id: scored[0].id, name: scored[0].name };
+}
+
+async function linkReportToActiveWorkSession({
+  supabase,
+  request,
+  profileId,
+  body,
+  responseReportId,
+  erpProjectId,
+}: {
+  supabase: AdminClient;
+  request: NextRequest;
+  profileId: string | null;
+  body: Payload;
+  responseReportId: string;
+  erpProjectId: string | null;
+}): Promise<{ linked_session_id: string | null; link_method: string | null }> {
+  if (!profileId || body.dry_run) {
+    return { linked_session_id: null, link_method: null };
+  }
+
+  const submittedAt = new Date(body.submitted_at ?? new Date().toISOString()).getTime();
+  const graceMs = 5 * 60 * 1000;
+
+  const { data: sessions, error } = await supabase
+    .from('work_sessions')
+    .select(
+      'id, started_at, project_id, report_url, project:projects!work_sessions_project_id_fkey(id, name)'
+    )
+    .eq('profile_id', profileId)
+    .not('project_id', 'is', null)
+    .is('ended_at', null)
+    .order('started_at', { ascending: false })
+    .limit(5);
+
+  if (error || !sessions || sessions.length === 0) {
+    if (error) console.warn('[api/v1/reports] Active session lookup failed:', error.message);
+    return { linked_session_id: null, link_method: null };
+  }
+
+  const candidates = (sessions as OpenWorkSession[]).filter((session) => {
+    const startedAt = new Date(session.started_at).getTime();
+    return Number.isFinite(startedAt) && startedAt <= submittedAt + graceMs;
+  });
+
+  if (candidates.length === 0) return { linked_session_id: null, link_method: null };
+
+  const projectIdMatched = erpProjectId
+    ? candidates.find((session) => session.project_id === erpProjectId)
+    : undefined;
+
+  const projectMatched = candidates.find((session) => {
+    const project = Array.isArray(session.project) ? session.project[0] : session.project;
+    return project?.name ? projectNamesOverlap(body.project, project.name) : false;
+  });
+
+  // A user can only have one meaningful active session in the UI; if stale
+  // rows exist, use the newest one, matching getActiveSession().
+  const selected = projectIdMatched ?? projectMatched ?? candidates[0];
+  const reportUrl = buildFrameworkReportUrl(request, responseReportId);
+
+  if (!selected.report_url) {
+    const { error: updateError } = await supabase
+      .from('work_sessions')
+      .update({ report_url: reportUrl })
+      .eq('id', selected.id)
+      .is('ended_at', null);
+
+    if (updateError) {
+      console.warn(
+        '[api/v1/reports] Could not attach report to work session:',
+        updateError.message
+      );
+      return { linked_session_id: null, link_method: null };
+    }
+  }
+
+  return {
+    linked_session_id: selected.id,
+    link_method: projectIdMatched
+      ? 'profile_active_session_canonical_project'
+      : projectMatched
+        ? 'profile_active_session_project_match'
+        : 'profile_active_session',
+  };
+}
+
 function flattenGapCycles(
   raw: Payload['gap_cycles'],
   phase: number | undefined
@@ -117,6 +402,12 @@ export async function POST(request: NextRequest) {
   const auth = await authenticateRequest(request);
   if (!auth.ok) {
     return errorResponse(401, { error: auth.error, message: auth.message });
+  }
+  if (!hasScope(auth, 'reports:write')) {
+    return errorResponse(403, {
+      error: 'INSUFFICIENT_SCOPE',
+      message: 'Token must include reports:write scope',
+    });
   }
 
   const deprecationHeaders =
@@ -191,10 +482,12 @@ export async function POST(request: NextRequest) {
   }
 
   const gapFlat = flattenGapCycles(body.gap_cycles, body.phase);
+  const erpProject = await resolveErpProject(supabase, body);
+  const erpProjectId = erpProject?.id ?? null;
 
   // Build the row object once — used by both insert and upsert paths.
   const row = {
-    project_name: body.project,
+    project_name: erpProject?.name ?? body.project,
     client: body.client || null,
     milestone: body.milestone ?? null,
     milestone_name: body.milestone_name || null,
@@ -224,6 +517,7 @@ export async function POST(request: NextRequest) {
     client_report_id: body.client_report_id || null,
     dry_run: body.dry_run,
     client_id: body.client_id || null,
+    erp_project_id: erpProjectId,
     framework_version: body.framework_version || null,
     idempotency_key: idempotencyKey,
     token_id: auth.method === 'per_user_token' ? auth.tokenId : null,
@@ -277,8 +571,30 @@ export async function POST(request: NextRequest) {
   // otherwise fall back to the internal UUID (legacy behavior).
   const responseReportId = body.client_report_id ?? insertedReport.id;
 
+  let profileId = auth.method === 'per_user_token' ? auth.profileId : null;
+  if (!profileId && auth.method === 'legacy_shared_key') {
+    profileId = await resolveSubmittedByProfileId(supabase, body.submitted_by);
+  }
+
+  const sessionLink = await linkReportToActiveWorkSession({
+    supabase,
+    request,
+    profileId,
+    body,
+    responseReportId,
+    erpProjectId,
+  });
+
   return NextResponse.json(
-    { ok: true, report_id: responseReportId, message: 'Report received' },
+    {
+      ok: true,
+      report_id: responseReportId,
+      erp_project_id: erpProjectId,
+      erp_project_name: erpProject?.name ?? null,
+      linked_session_id: sessionLink.linked_session_id,
+      link_method: sessionLink.link_method,
+      message: 'Report received',
+    },
     { headers: deprecationHeaders }
   );
 }
