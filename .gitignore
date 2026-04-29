@@ -61,6 +61,9 @@ tsc_output.txt
 
 # Planning workflow (local state)
 .planning/
+# Allow tracked planning files the ERP and pre-push hook need to read/write.
+!.planning/tracking.json
+!.planning/STATE.md
 
 # Playwright MCP logs
 .playwright-mcp/
