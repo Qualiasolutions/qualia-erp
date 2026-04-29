@@ -16,6 +16,10 @@ import {
   useEmployeeAssignments,
 } from '@/lib/swr';
 import { useClockGate } from '@/components/clock-gate-provider';
+import {
+  AssignmentFocusCard,
+  type AssignmentFocusItem,
+} from '@/components/portal/assignment-focus-card';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
 import { hueFromId, TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constants';
 
@@ -171,6 +175,11 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
 
   const { data: assignments } = useEmployeeAssignments(role === 'employee' ? userId : undefined);
 
+  const employeeAssignments = useMemo<AssignmentFocusItem[]>(() => {
+    if (role !== 'employee') return [];
+    return ((assignments ?? []) as AssignmentFocusItem[]).filter((a) => a.project);
+  }, [assignments, role]);
+
   // Active projects: admin → flatten workspaces; employee → assignments.
   const activeProjects = useMemo(() => {
     if (role === 'admin' && workspaces) {
@@ -186,25 +195,16 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
           }))
       );
     }
-    type AssignmentRow = {
-      project: {
-        id: string;
-        name: string;
-        status: string | null;
-        logo_url: string | null;
-        client: { id: string; name: string } | null;
-      } | null;
-    };
-    return ((assignments ?? []) as AssignmentRow[])
+    return employeeAssignments
       .filter((a) => a.project && a.project.status === 'Active')
       .map((a) => ({
         id: a.project!.id,
         name: a.project!.name,
         clientName: a.project!.client?.name ?? 'No client',
-        logoUrl: a.project!.logo_url,
+        logoUrl: a.project!.logo_url ?? null,
         href: `/projects/${a.project!.id}/roadmap`,
       }));
-  }, [role, workspaces, assignments]);
+  }, [role, workspaces, employeeAssignments]);
 
   const nextShip = activeProjects[0] ?? null;
 
@@ -285,6 +285,8 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
         <EmployeeMainGrid
           tasks={employeeTasks}
           openTasksCount={openTasksCount}
+          assignments={employeeAssignments}
+          userId={userId}
           nextShip={nextShip}
           meetings={meetings}
           isGated={isGated}
@@ -445,6 +447,8 @@ function AdminMainGrid({
 function EmployeeMainGrid({
   tasks,
   openTasksCount,
+  assignments,
+  userId,
   nextShip,
   meetings,
   isGated,
@@ -458,6 +462,8 @@ function EmployeeMainGrid({
     project: { id: string; name: string } | null;
   }>;
   openTasksCount: number;
+  assignments: AssignmentFocusItem[];
+  userId?: string;
   nextShip: {
     id: string;
     name: string;
@@ -470,13 +476,20 @@ function EmployeeMainGrid({
 }) {
   return (
     <div className="stagger-2 grid min-h-0 flex-1 animate-fade-in gap-6 overflow-hidden lg:grid-cols-3">
-      {/* Tasks (left, 2/3) */}
-      <TasksCard
-        tasks={tasks}
-        openTasksCount={openTasksCount}
-        isGated={isGated}
-        className="min-h-0 lg:col-span-2"
-      />
+      <div className="flex min-h-0 flex-col overflow-hidden lg:col-span-2">
+        <AssignmentFocusCard
+          assignments={assignments}
+          employeeId={userId}
+          isGated={isGated}
+          compact
+        />
+        <TasksCard
+          tasks={tasks}
+          openTasksCount={openTasksCount}
+          isGated={isGated}
+          className="min-h-0 flex-1"
+        />
+      </div>
 
       {/* Right column — Today's Meetings + Next Ship */}
       <div className="flex min-h-0 flex-col gap-6 overflow-hidden">

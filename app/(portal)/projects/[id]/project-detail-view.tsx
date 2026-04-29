@@ -22,6 +22,8 @@ import {
   X,
   Smartphone,
   LineChart,
+  CalendarClock,
+  CheckCircle2,
 } from 'lucide-react';
 import { useProjectAssignments, invalidateProjectAssignments } from '@/lib/swr';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -49,7 +51,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { getProjectById, updateProject, deleteProject } from '@/app/actions/projects';
-import { assignEmployeeToProject, removeAssignment } from '@/app/actions/project-assignments';
+import {
+  assignEmployeeToProject,
+  completeProjectAssignment,
+  removeAssignment,
+} from '@/app/actions/project-assignments';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ProjectReportsPanel } from '@/components/project-reports-panel';
@@ -391,6 +397,7 @@ export function ProjectDetailView({
                 </div>
                 <AssignedEmployeesList
                   projectId={project.id}
+                  projectTargetDate={project.target_date}
                   userRole={staffRole}
                   profiles={profiles}
                 />
@@ -676,18 +683,53 @@ export function ProjectDetailView({
   );
 }
 
+function defaultAssignmentDeadline(projectTargetDate?: string | null): string {
+  const today = new Date().toISOString().slice(0, 10);
+  if (projectTargetDate && projectTargetDate >= today) return projectTargetDate;
+  const fallback = new Date();
+  fallback.setDate(fallback.getDate() + 7);
+  return fallback.toISOString().slice(0, 10);
+}
+
+function getAssignmentDeadlineState(
+  deadlineDate: string,
+  completionRequestedAt: string | null,
+  completedAt: string | null
+): { label: string; className: string } {
+  if (completedAt) {
+    return { label: 'Completed by', className: 'text-emerald-600 dark:text-emerald-400' };
+  }
+  if (completionRequestedAt) {
+    return { label: 'Review sent by', className: 'text-primary' };
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  if (deadlineDate < today) {
+    return { label: 'Overdue since', className: 'font-semibold text-destructive' };
+  }
+  if (deadlineDate === today) {
+    return { label: 'Due today', className: 'font-semibold text-amber-600 dark:text-amber-400' };
+  }
+  return { label: 'Due', className: 'text-muted-foreground' };
+}
+
 // Inline client component for assigned employees list
 function AssignedEmployeesList({
   projectId,
+  projectTargetDate,
   userRole = 'employee',
   profiles = [],
 }: {
   projectId: string;
+  projectTargetDate?: string | null;
   userRole?: 'admin' | 'employee';
   profiles?: Profile[];
 }) {
   const { data: assignments, isLoading } = useProjectAssignments(projectId);
   const [showAssignSelect, setShowAssignSelect] = useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
+  const [deadlineDate, setDeadlineDate] = useState(() =>
+    defaultAssignmentDeadline(projectTargetDate)
+  );
   const [assigning, setAssigning] = useState(false);
 
   const canManage = userRole === 'admin';
@@ -701,15 +743,26 @@ function AssignedEmployeesList({
     (p) => p.id && !assignedIds.has(p.id) && p.role !== 'client'
   );
 
-  async function handleAssign(employeeId: string) {
+  async function handleAssign() {
+    if (!selectedEmployeeId) {
+      toast.error('Choose an employee');
+      return;
+    }
+    if (!deadlineDate) {
+      toast.error('Set an assignment deadline');
+      return;
+    }
     setAssigning(true);
     const formData = new FormData();
     formData.set('project_id', projectId);
-    formData.set('employee_id', employeeId);
+    formData.set('employee_id', selectedEmployeeId);
+    formData.set('deadline_date', deadlineDate);
     const result = await assignEmployeeToProject(formData);
     if (result.success) {
       toast.success('Employee assigned');
       invalidateProjectAssignments(projectId, true);
+      setSelectedEmployeeId('');
+      setDeadlineDate(defaultAssignmentDeadline(projectTargetDate));
     } else {
       toast.error(result.error || 'Failed to assign');
     }
@@ -727,6 +780,16 @@ function AssignedEmployeesList({
     }
   }
 
+  async function handleComplete(assignmentId: string) {
+    const result = await completeProjectAssignment(assignmentId);
+    if (result.success) {
+      toast.success('Assignment completed');
+      invalidateProjectAssignments(projectId, true);
+    } else {
+      toast.error(result.error || 'Failed to complete assignment');
+    }
+  }
+
   if (isLoading) {
     return <p className="text-xs text-muted-foreground">Loading...</p>;
   }
@@ -736,38 +799,66 @@ function AssignedEmployeesList({
       {activeAssignments.length === 0 && !canManage && (
         <p className="text-xs text-muted-foreground">No employees assigned yet.</p>
       )}
-      {activeAssignments.map((assignment) => (
-        <div key={assignment.id} className="group flex items-center gap-2">
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={assignment.employee?.avatar_url || ''} />
-            <AvatarFallback className="text-[10px]">
-              {assignment.employee?.full_name?.[0] || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-foreground">
-              {assignment.employee?.full_name || assignment.employee?.email}
-            </p>
-            <p className="text-[10px] text-muted-foreground">
-              Since {formatDate(assignment.assigned_at, 'MMM d')}
-            </p>
+      {activeAssignments.map((assignment) => {
+        const deadlineState = getAssignmentDeadlineState(
+          assignment.deadline_date,
+          assignment.completion_requested_at,
+          assignment.completed_at
+        );
+        return (
+          <div key={assignment.id} className="group flex items-start gap-2">
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={assignment.employee?.avatar_url || ''} />
+              <AvatarFallback className="text-[10px]">
+                {assignment.employee?.full_name?.[0] || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-medium text-foreground">
+                {assignment.employee?.full_name || assignment.employee?.email}
+              </p>
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground">
+                <span>Since {formatDate(assignment.assigned_at, 'MMM d')}</span>
+                <span className={deadlineState.className}>
+                  {deadlineState.label} {formatDate(assignment.deadline_date, 'MMM d')}
+                </span>
+              </div>
+              {assignment.completion_note && (
+                <p className="mt-1 line-clamp-2 text-[10px] text-muted-foreground">
+                  {assignment.completion_note}
+                </p>
+              )}
+            </div>
+            {canManage && assignment.completion_requested_at && !assignment.completed_at && (
+              <button
+                onClick={() => handleComplete(assignment.id)}
+                className="rounded p-1 text-emerald-600 transition-colors hover:bg-emerald-500/10 dark:text-emerald-400"
+                title="Mark assignment complete"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {canManage && (
+              <button
+                onClick={() => handleRemove(assignment.id)}
+                className="hidden rounded p-0.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive group-hover:block"
+                title="Remove"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
           </div>
-          {canManage && (
-            <button
-              onClick={() => handleRemove(assignment.id)}
-              className="hidden rounded p-0.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive group-hover:block"
-              title="Remove"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          )}
-        </div>
-      ))}
+        );
+      })}
       {canManage && (
         <>
           {showAssignSelect ? (
-            <div className="space-y-1.5">
-              <Select onValueChange={handleAssign} disabled={assigning}>
+            <div className="space-y-2">
+              <Select
+                value={selectedEmployeeId}
+                onValueChange={setSelectedEmployeeId}
+                disabled={assigning}
+              >
                 <SelectTrigger className="h-7 text-xs">
                   <SelectValue placeholder={assigning ? 'Assigning...' : 'Select employee'} />
                 </SelectTrigger>
@@ -785,12 +876,33 @@ function AssignedEmployeesList({
                   )}
                 </SelectContent>
               </Select>
-              <button
-                onClick={() => setShowAssignSelect(false)}
-                className="text-[10px] text-muted-foreground hover:text-foreground"
-              >
-                Cancel
-              </button>
+              <div className="flex items-center gap-1.5">
+                <CalendarClock className="h-3 w-3 text-muted-foreground" />
+                <Input
+                  type="date"
+                  value={deadlineDate}
+                  onChange={(e) => setDeadlineDate(e.target.value)}
+                  min={new Date().toISOString().slice(0, 10)}
+                  className="h-7 text-xs"
+                  aria-label="Assignment deadline"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  disabled={assigning || !selectedEmployeeId || !deadlineDate}
+                  onClick={handleAssign}
+                >
+                  Assign
+                </Button>
+                <button
+                  onClick={() => setShowAssignSelect(false)}
+                  className="text-[10px] text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           ) : (
             <button

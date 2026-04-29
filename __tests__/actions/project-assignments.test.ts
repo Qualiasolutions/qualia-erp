@@ -13,6 +13,7 @@ const EMPLOYEE_ID = '4fcff947-9839-4b1a-9962-f9528d4c084b';
 const AUTH_USER_ID = '5fcff947-9839-4b1a-9962-f9528d4c084c';
 const WORKSPACE_ID = 'c8ec2ea1-325e-4ea9-9334-4590e88845f9';
 const ASSIGNMENT_ID = 'd9fe3fb2-436f-5fb0-a445-5601f9995600';
+const DEADLINE_DATE = '2099-12-31';
 
 // ---- Module mocks ----
 
@@ -122,6 +123,9 @@ function mockUnauthenticated() {
 
 function makeFormData(entries: Record<string, string>): FormData {
   const fd = new FormData();
+  if (!entries.deadline_date && (entries.project_id || entries.new_project_id)) {
+    fd.append('deadline_date', DEADLINE_DATE);
+  }
   for (const [key, val] of Object.entries(entries)) {
     fd.append(key, val);
   }

@@ -35,9 +35,14 @@ import { quickUpdateTask, createTask, deleteTask, type Task } from '@/app/action
 import {
   useTodaysTasks,
   useInboxTasks,
+  useEmployeeAssignments,
   invalidateInboxTasks,
   invalidateDailyFlow,
 } from '@/lib/swr';
+import {
+  AssignmentFocusCard,
+  type AssignmentFocusItem,
+} from '@/components/portal/assignment-focus-card';
 
 export type QualiaTasksMode = 'inbox' | 'all-tasks';
 
@@ -45,6 +50,7 @@ interface QualiaTasksViewProps {
   mode: QualiaTasksMode;
   initialTasks: Task[];
   userRole: 'admin' | 'employee';
+  currentUserId?: string | null;
   isAdmin?: boolean;
   missingFilter?: 'phase' | 'due_date';
 }
@@ -122,6 +128,7 @@ export function QualiaTasksView({
   mode,
   initialTasks,
   userRole,
+  currentUserId,
   isAdmin,
   missingFilter,
 }: QualiaTasksViewProps) {
@@ -135,6 +142,13 @@ export function QualiaTasksView({
   const [recentlyToggled, setRecentlyToggled] = useState<Set<string>>(new Set());
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Task | null>(null);
+  const { data: assignments } = useEmployeeAssignments(
+    userRole === 'employee' ? (currentUserId ?? undefined) : undefined
+  );
+  const employeeAssignments = useMemo(
+    () => ((assignments ?? []) as AssignmentFocusItem[]).filter((a) => a.project),
+    [assignments]
+  );
 
   // Pulse the row briefly so the user gets immediate visual confirmation.
   const flashRow = useCallback((id: string) => {
@@ -391,6 +405,14 @@ export function QualiaTasksView({
               Clear
             </Link>
           </div>
+        )}
+
+        {!missingFilter && userRole === 'employee' && (
+          <AssignmentFocusCard
+            assignments={employeeAssignments}
+            employeeId={currentUserId}
+            compact
+          />
         )}
 
         {/* Quick Add */}

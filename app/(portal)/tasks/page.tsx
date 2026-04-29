@@ -137,6 +137,7 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
       mode={mode}
       initialTasks={initialTasks}
       userRole={normalizedRole as 'admin' | 'employee'}
+      currentUserId={user.id}
       isAdmin={isAdmin}
       missingFilter={mode === 'all-tasks' ? missingFilter : undefined}
     />

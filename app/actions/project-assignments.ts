@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 import { parseFormData, assignEmployeeSchema, reassignEmployeeSchema } from '@/lib/validation';
@@ -18,6 +19,14 @@ import { sendProjectAssignmentNotification } from '@/lib/email';
 // Debounce window for auto-sync on assign: skip if a phase was synced within this many seconds.
 // Prevents spam when an admin assigns multiple people to the same project in quick succession.
 const AUTO_SYNC_DEBOUNCE_SECONDS = 60;
+
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isDateBeforeToday(date: string): boolean {
+  return date < todayKey();
+}
 
 /**
  * Best-effort: if the project has a GitHub integration, pull .planning/ from the
@@ -103,7 +112,11 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
     return { success: false, error: validation.error };
   }
 
-  const { project_id, employee_id, notes } = validation.data;
+  const { project_id, employee_id, deadline_date, notes } = validation.data;
+
+  if (isDateBeforeToday(deadline_date)) {
+    return { success: false, error: 'Assignment deadline cannot be in the past' };
+  }
 
   // Get project and employee to verify workspace match
   const { data: project } = await supabase
@@ -161,6 +174,7 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
       employee_id,
       assigned_by: user.id,
       workspace_id: project.workspace_id,
+      deadline_date,
       notes: notes || null,
     })
     .select()
@@ -184,6 +198,7 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
       action: 'employee_assigned',
       employee_name: employee.full_name || employee_id,
       project_name: project.name,
+      deadline_date,
     }
   );
 
@@ -256,7 +271,11 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
     return { success: false, error: validation.error };
   }
 
-  const { assignment_id, new_project_id, notes } = validation.data;
+  const { assignment_id, new_project_id, deadline_date, notes } = validation.data;
+
+  if (isDateBeforeToday(deadline_date)) {
+    return { success: false, error: 'Assignment deadline cannot be in the past' };
+  }
 
   // Get current assignment
   const { data: currentAssignment } = await supabase
@@ -324,6 +343,7 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
       employee_id: currentAssignment.employee_id,
       assigned_by: user.id,
       workspace_id: currentAssignment.workspace_id,
+      deadline_date,
       notes: notes || null,
     })
     .select()
@@ -362,7 +382,7 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
       project_id: new_project_id,
       workspace_id: currentAssignment.workspace_id,
     },
-    { action: 'employee_assigned', project_name: newProject.name }
+    { action: 'employee_assigned', project_name: newProject.name, deadline_date }
   );
 
   // Auto-sync planning from GitHub for the new project (best-effort, debounced)
@@ -496,6 +516,10 @@ export async function getProjectAssignments(projectId: string): Promise<ActionRe
       `
       id,
       assigned_at,
+      deadline_date,
+      completion_requested_at,
+      completion_note,
+      completed_at,
       notes,
       employee:profiles!project_assignments_employee_id_fkey (
         id,
@@ -555,12 +579,18 @@ export async function getEmployeeAssignments(employeeId: string): Promise<Action
       `
       id,
       assigned_at,
+      deadline_date,
+      completion_requested_at,
+      completion_note,
+      completed_at,
       notes,
       project:projects!project_assignments_project_id_fkey (
         id,
         name,
         status,
         project_type,
+        target_date,
+        progress,
         logo_url,
         client:clients (
           id,
@@ -624,6 +654,10 @@ export async function getAssignmentHistory(
       `
       id,
       assigned_at,
+      deadline_date,
+      completion_requested_at,
+      completion_note,
+      completed_at,
       removed_at,
       notes,
       employee:profiles!project_assignments_employee_id_fkey (
@@ -673,4 +707,189 @@ export async function getAssignmentHistory(
   }));
 
   return { success: true, data: normalized };
+}
+
+/**
+ * Employee submits an assigned project for manager review.
+ * This is the ERP-side finish path: the assignment stays visible until a
+ * manager reviews it, but it no longer relies on loose chat/report context.
+ */
+export async function requestAssignmentCompletion(
+  assignmentId: string,
+  note?: string
+): Promise<ActionResult> {
+  const imp = await assertNotImpersonating();
+  if (!imp.ok) return { success: false, error: imp.error };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const { data: assignment, error: fetchError } = await supabase
+    .from('project_assignments')
+    .select(
+      `
+      id,
+      project_id,
+      employee_id,
+      workspace_id,
+      deadline_date,
+      completed_at,
+      project:projects!project_assignments_project_id_fkey(name),
+      employee:profiles!project_assignments_employee_id_fkey(full_name)
+    `
+    )
+    .eq('id', assignmentId)
+    .is('removed_at', null)
+    .single();
+
+  if (fetchError || !assignment) {
+    return { success: false, error: 'Assignment not found' };
+  }
+
+  if (assignment.employee_id !== user.id) {
+    return { success: false, error: 'Only the assigned employee can submit this project' };
+  }
+
+  if (assignment.completed_at) {
+    return { success: false, error: 'Assignment is already complete' };
+  }
+
+  const submittedAt = new Date().toISOString();
+  const cleanNote = note?.trim().slice(0, 1000) || null;
+
+  const { data: updated, error } = await supabase
+    .from('project_assignments')
+    .update({
+      completion_requested_at: submittedAt,
+      completion_note: cleanNote,
+      updated_at: submittedAt,
+    })
+    .eq('id', assignmentId)
+    .is('removed_at', null)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[requestAssignmentCompletion] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  const project = normalizeFKResponse(assignment.project) as { name: string | null } | null;
+  const employee = normalizeFKResponse(assignment.employee) as { full_name: string | null } | null;
+
+  await createActivity(
+    supabase,
+    user.id,
+    'project_updated' as ActivityType,
+    {
+      project_id: assignment.project_id,
+      workspace_id: assignment.workspace_id,
+    },
+    {
+      action: 'assignment_completion_requested',
+      project_name: project?.name ?? null,
+      employee_name: employee?.full_name ?? null,
+      deadline_date: assignment.deadline_date,
+    }
+  );
+
+  revalidatePath('/');
+  revalidatePath('/tasks');
+  revalidatePath(`/projects/${assignment.project_id}`);
+
+  return { success: true, data: updated };
+}
+
+/**
+ * Manager marks an assignment complete after reviewing the employee submission.
+ */
+export async function completeProjectAssignment(assignmentId: string): Promise<ActionResult> {
+  const imp = await assertNotImpersonating();
+  if (!imp.ok) return { success: false, error: imp.error };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const isAdmin = await isUserManagerOrAbove(user.id);
+  if (!isAdmin) {
+    return { success: false, error: 'Only admins and managers can complete assignments' };
+  }
+
+  const { data: assignment, error: fetchError } = await supabase
+    .from('project_assignments')
+    .select(
+      `
+      id,
+      project_id,
+      workspace_id,
+      completed_at,
+      project:projects!project_assignments_project_id_fkey(name),
+      employee:profiles!project_assignments_employee_id_fkey(full_name)
+    `
+    )
+    .eq('id', assignmentId)
+    .is('removed_at', null)
+    .single();
+
+  if (fetchError || !assignment) {
+    return { success: false, error: 'Assignment not found' };
+  }
+
+  if (assignment.completed_at) {
+    return { success: true, data: assignment };
+  }
+
+  const completedAt = new Date().toISOString();
+  const { data: updated, error } = await supabase
+    .from('project_assignments')
+    .update({
+      completed_at: completedAt,
+      completed_by: user.id,
+      updated_at: completedAt,
+    })
+    .eq('id', assignmentId)
+    .is('removed_at', null)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[completeProjectAssignment] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  const project = normalizeFKResponse(assignment.project) as { name: string | null } | null;
+  const employee = normalizeFKResponse(assignment.employee) as { full_name: string | null } | null;
+
+  await createActivity(
+    supabase,
+    user.id,
+    'project_updated' as ActivityType,
+    {
+      project_id: assignment.project_id,
+      workspace_id: assignment.workspace_id,
+    },
+    {
+      action: 'assignment_completed',
+      project_name: project?.name ?? null,
+      employee_name: employee?.full_name ?? null,
+    }
+  );
+
+  revalidatePath('/');
+  revalidatePath('/tasks');
+  revalidatePath(`/projects/${assignment.project_id}`);
+
+  return { success: true, data: updated };
 }

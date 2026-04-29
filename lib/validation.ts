@@ -214,12 +214,14 @@ export const updateProjectProgressSchema = z.object({
 export const assignEmployeeSchema = z.object({
   project_id: z.string().uuid('Invalid project ID'),
   employee_id: z.string().uuid('Invalid employee ID'),
+  deadline_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Assignment deadline is required'),
   notes: z.string().max(500).optional().nullable(),
 });
 
 export const reassignEmployeeSchema = z.object({
   assignment_id: z.string().uuid('Invalid assignment ID'),
   new_project_id: z.string().uuid('Invalid project ID'),
+  deadline_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Assignment deadline is required'),
   notes: z.string().max(500).optional().nullable(),
 });
 

@@ -2638,7 +2638,12 @@ export type Database = {
         Row: {
           assigned_at: string;
           assigned_by: string;
+          completed_at: string | null;
+          completed_by: string | null;
+          completion_note: string | null;
+          completion_requested_at: string | null;
           created_at: string;
+          deadline_date: string;
           employee_id: string;
           id: string;
           notes: string | null;
@@ -2651,7 +2656,12 @@ export type Database = {
         Insert: {
           assigned_at?: string;
           assigned_by: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          completion_note?: string | null;
+          completion_requested_at?: string | null;
           created_at?: string;
+          deadline_date: string;
           employee_id: string;
           id?: string;
           notes?: string | null;
@@ -2664,7 +2674,12 @@ export type Database = {
         Update: {
           assigned_at?: string;
           assigned_by?: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          completion_note?: string | null;
+          completion_requested_at?: string | null;
           created_at?: string;
+          deadline_date?: string;
           employee_id?: string;
           id?: string;
           notes?: string | null;
@@ -2678,6 +2693,13 @@ export type Database = {
           {
             foreignKeyName: 'project_assignments_assigned_by_fkey';
             columns: ['assigned_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_assignments_completed_by_fkey';
+            columns: ['completed_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
