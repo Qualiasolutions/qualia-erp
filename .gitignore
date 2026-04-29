@@ -60,8 +60,10 @@ tsc_output.txt
 .claude/
 
 # Planning workflow (local state)
-.planning/
-# Allow tracked planning files the ERP and pre-push hook need to read/write.
+# Ignore everything under .planning/ EXCEPT the two files the ERP + pre-push
+# hook need (tracking.json, STATE.md). git can't re-include files under a
+# directory that is itself ignored, so we ignore contents pattern instead.
+.planning/*
 !.planning/tracking.json
 !.planning/STATE.md
 
