@@ -27,6 +27,7 @@ const ADMIN_ONLY_TOOLS = new Set([
   'bulkUpdateTasks',
   'createInvoice',
   'sendEmail',
+  'getFinancialSummary',
   // GitHub tools
   'mergeGitHubPR',
   // Vercel tools
