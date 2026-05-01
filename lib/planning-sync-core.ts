@@ -358,7 +358,7 @@ export async function syncPlanningFromGitHubWithServiceRole(
 
     // 8a. Upsert milestone record (phase_type = 'milestone')
     const msName = ms.number === 0 ? `Phase 0: ${ms.name}` : `Milestone ${ms.number}: ${ms.name}`;
-    const msStatus = getMilestoneStatusFromPhases(ms.phases, ms.status);
+    const msStatus = toDbPhaseStatus(getMilestoneStatusFromPhases(ms.phases, ms.status));
 
     const { data: existingMs } = await supabase
       .from('project_phases')
@@ -382,10 +382,16 @@ export async function syncPlanningFromGitHubWithServiceRole(
       github_synced_at: new Date().toISOString(),
     };
 
-    if (existingMs?.[0]) {
-      await supabase.from('project_phases').update(msData).eq('id', existingMs[0].id);
-    } else {
-      await supabase.from('project_phases').insert(msData);
+    const msUpsertError = existingMs?.[0]
+      ? (await supabase.from('project_phases').update(msData).eq('id', existingMs[0].id)).error
+      : (await supabase.from('project_phases').insert(msData)).error;
+    if (msUpsertError) {
+      console.error(
+        `[sync] milestone ${ms.number} upsert failed:`,
+        msUpsertError.message,
+        msUpsertError.details
+      );
+      continue;
     }
     milestonesUpserted++;
 
@@ -404,8 +410,10 @@ export async function syncPlanningFromGitHubWithServiceRole(
       const existing = existingList?.[0] || null;
 
       // Never downgrade a completed phase — DB is source of truth for status
-      const shouldPreserveStatus = existing?.status === 'completed' && phase.status !== 'completed';
-      const finalStatus = shouldPreserveStatus ? existing.status : phase.status;
+      const normalizedPhaseStatus = toDbPhaseStatus(phase.status);
+      const shouldPreserveStatus =
+        existing?.status === 'completed' && normalizedPhaseStatus !== 'completed';
+      const finalStatus = shouldPreserveStatus ? existing.status : normalizedPhaseStatus;
       const safeDate = (v: string | null): string | null => {
         if (!v) return null;
         const d = new Date(v);
@@ -434,16 +442,30 @@ export async function syncPlanningFromGitHubWithServiceRole(
       };
 
       let phaseRowId: string | null = null;
+      let phaseError: { message: string; details?: string | null } | null = null;
       if (existing) {
-        await supabase.from('project_phases').update(phaseData).eq('id', existing.id);
+        const { error } = await supabase
+          .from('project_phases')
+          .update(phaseData)
+          .eq('id', existing.id);
+        phaseError = error;
         phaseRowId = existing.id;
       } else {
-        const { data: inserted } = await supabase
+        const { data: inserted, error } = await supabase
           .from('project_phases')
           .insert(phaseData)
           .select('id')
           .single();
+        phaseError = error;
         phaseRowId = inserted?.id ?? null;
+      }
+      if (phaseError) {
+        console.error(
+          `[sync] phase ${phase.phaseNumber} upsert failed:`,
+          phaseError.message,
+          phaseError.details
+        );
+        continue;
       }
       phasesOnly++;
 
@@ -585,6 +607,23 @@ function getMilestoneStatusFromPhases(
   if (allDone) return 'completed';
   const anyInProgress = phases.some((p) => p.status === 'in_progress' || p.status === 'completed');
   if (anyInProgress) return 'in_progress';
+  return 'not_started';
+}
+
+/**
+ * The DB CHECK constraint on project_phases.status only allows
+ * ('not_started', 'in_progress', 'completed', 'skipped'). Parsers emit
+ * looser values like 'complete', 'pending', 'planned' — without this
+ * normaliser the INSERT fails silently and the milestone disappears,
+ * even though `milestonesUpserted` keeps incrementing (Sakani M0/M13/M14
+ * incident, 2026-04-30).
+ */
+function toDbPhaseStatus(raw: string | null | undefined): string {
+  const s = (raw ?? '').toLowerCase();
+  if (s === 'completed' || s === 'complete' || s === 'done' || s === 'shipped' || s === 'verified')
+    return 'completed';
+  if (s === 'in_progress' || s === 'current' || s === 'active' || s === 'wip') return 'in_progress';
+  if (s === 'skipped' || s === 'closed') return 'skipped';
   return 'not_started';
 }
 

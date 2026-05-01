@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Calendar, CheckSquare, FolderKanban, ExternalLink, Lock } from 'lucide-react';
+import { ArrowRight, ExternalLink, Lock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -296,7 +296,7 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
   );
 }
 
-/* ─────────────────────────── Admin layout (existing) ─────────────────────────── */
+/* ─────────────────────────── Admin layout ─────────────────────────── */
 
 function AdminMainGrid({
   teamMembers,
@@ -324,85 +324,7 @@ function AdminMainGrid({
   return (
     <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto lg:grid-cols-3">
       <div className="stagger-2 animate-fade-in lg:col-span-2">
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-6 py-4">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Team on Deck
-              </p>
-              <h2 className="mt-0.5 text-lg font-semibold">Who&apos;s doing what</h2>
-            </div>
-            <Link href="/tasks?scope=all">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-2 text-muted-foreground hover:text-primary"
-              >
-                All Tasks
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-
-          {teamMembers.length === 0 ? (
-            <div className="px-6 py-8 text-center text-sm text-muted-foreground">
-              No team activity yet.
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {teamMembers.map((member) => (
-                <div
-                  key={member.profileId}
-                  className="px-6 py-4 transition-colors hover:bg-muted/30"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="relative">
-                      <Avatar className="h-10 w-10">
-                        {member.avatarUrl ? (
-                          <AvatarImage src={member.avatarUrl} alt={member.fullName ?? ''} />
-                        ) : null}
-                        <AvatarFallback className={avatarTone(member.profileId)}>
-                          {initialsOf(member.fullName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      {member.isOnline && (
-                        <span
-                          className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-card"
-                          aria-label="online"
-                        />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{member.fullName ?? 'Unnamed'}</span>
-                        <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-                          {member.openTasksCount} open
-                        </Badge>
-                      </div>
-                      {member.topTasks.length > 0 ? (
-                        <div className="mt-2 space-y-1.5">
-                          {member.topTasks.slice(0, 3).map((task) => (
-                            <div key={task.id} className="flex items-center gap-2 text-sm">
-                              <span className="text-primary">→</span>
-                              <span className="truncate text-muted-foreground">{task.title}</span>
-                              {task.projectName && (
-                                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                  {task.projectName.toUpperCase()}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="mt-1 text-sm text-muted-foreground">Nothing open.</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <DailyBriefCard />
       </div>
 
       <div className="stagger-3 animate-fade-in space-y-6">
@@ -431,7 +353,7 @@ function AdminMainGrid({
 
         <TodayMeetingsCard meetings={meetings} isGated={false} />
 
-        <QuickActionsCard role="admin" isGated={false} />
+        <WhosDoingWhatCard members={teamMembers} />
 
         <div className="text-xs text-muted-foreground">
           {activeProjects.length} active {activeProjects.length === 1 ? 'project' : 'projects'} in
@@ -783,57 +705,247 @@ function TodayMeetingsCard({
   );
 }
 
-function QuickActionsCard({ role, isGated }: { role: QualiaHomeRole; isGated: boolean }) {
-  const actions: Array<{
-    href: string;
-    label: string;
-    icon: typeof CheckSquare;
-    showFor: QualiaHomeRole[];
-  }> = [
-    { href: '/tasks', label: 'New Task', icon: CheckSquare, showFor: ['admin'] },
-    { href: '/projects', label: 'Projects', icon: FolderKanban, showFor: ['admin', 'employee'] },
-    { href: '/schedule', label: 'Schedule', icon: Calendar, showFor: ['admin', 'employee'] },
-  ];
-  const visible = actions.filter((a) => a.showFor.includes(role));
+/* ─────────────────────────── Who's doing what (sidebar team snapshot) ─────────────────────────── */
+
+function WhosDoingWhatCard({
+  members,
+}: {
+  members: ReturnType<typeof useTeamTodaySnapshot>['members'];
+}) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Quick Actions
-        </p>
-        {isGated ? (
-          <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            <Lock className="h-3 w-3" />
-            Clock in
-          </span>
-        ) : null}
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Team on Deck
+          </p>
+          <h2 className="mt-0.5 text-base font-semibold">Who&apos;s doing what</h2>
+        </div>
+        <Link href="/tasks?scope=all">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
+          >
+            All
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        </Link>
       </div>
-      <div className="grid grid-cols-1 gap-2">
-        {visible.map(({ href, label, icon: Icon }) => {
-          const button = (
-            <Button
-              variant="secondary"
-              className="h-11 w-full justify-start gap-2"
-              disabled={isGated}
-              tabIndex={isGated ? -1 : undefined}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </Button>
-          );
-          if (isGated) {
-            return (
-              <div key={href} aria-disabled="true">
-                {button}
+
+      {members.length === 0 ? (
+        <div className="px-5 py-8 text-center text-sm text-muted-foreground">
+          No team activity yet.
+        </div>
+      ) : (
+        <div className="divide-y divide-border">
+          {members.map((member) => (
+            <div key={member.profileId} className="px-5 py-3.5 transition-colors hover:bg-muted/30">
+              <div className="flex items-start gap-3">
+                <div className="relative">
+                  <Avatar className="h-9 w-9">
+                    {member.avatarUrl ? (
+                      <AvatarImage src={member.avatarUrl} alt={member.fullName ?? ''} />
+                    ) : null}
+                    <AvatarFallback className={avatarTone(member.profileId)}>
+                      {initialsOf(member.fullName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {member.isOnline && (
+                    <span
+                      className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-card"
+                      aria-label="online"
+                    />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium">
+                      {member.fullName ?? 'Unnamed'}
+                    </span>
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                      {member.openTasksCount}
+                    </Badge>
+                  </div>
+                  {member.topTasks.length > 0 ? (
+                    <div className="mt-1.5 space-y-1">
+                      {member.topTasks.slice(0, 2).map((task) => (
+                        <div key={task.id} className="flex items-center gap-1.5 text-xs">
+                          <span className="text-primary">→</span>
+                          <span className="truncate text-muted-foreground">{task.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-xs text-muted-foreground">Nothing open.</p>
+                  )}
+                </div>
               </div>
-            );
-          }
-          return (
-            <Link key={href} href={href}>
-              {button}
-            </Link>
-          );
-        })}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────── Daily Brief ─────────────────────────── */
+
+type BriefItem = {
+  tag: string;
+  lead?: string;
+  body: string;
+};
+
+type BriefSection = {
+  heading: string;
+  items: BriefItem[];
+};
+
+// PLACEHOLDER content seeded from the screenshot. Wire to a data source in the next pass.
+const DAILY_BRIEF_SECTIONS: BriefSection[] = [
+  {
+    heading: 'Proposals to draft',
+    items: [
+      {
+        tag: 'OWNER',
+        lead: 'Catalina (Panther):',
+        body: ' Demo today went OK — prepare proposal.',
+      },
+      { tag: 'OWNER', lead: 'Viva website:', body: ' Adult content site — proposal requested.' },
+      { tag: 'OWNER', lead: 'Ophthalmos:', body: ' Prepare proposal ahead of their demo.' },
+    ],
+  },
+  {
+    heading: 'Tomorrow — Thursday 30 April',
+    items: [
+      {
+        tag: 'TEAM',
+        lead: '16:00 · Academy of Giulio',
+        body: ' goes live. All hands on support.',
+      },
+      { tag: 'ME', lead: '15:00 · Meeting with Andrea', body: ' re: the other expo.' },
+      { tag: 'ME', lead: '15:00 (2h block) · Meeting with Jay', body: '.' },
+      { tag: 'TEAM', body: 'Meeting booked with Peter.' },
+    ],
+  },
+  {
+    heading: 'Follow-ups — Hasan',
+    items: [{ tag: 'HASAN', lead: 'Finalise the payment matter', body: ' John sent through.' }],
+  },
+  {
+    heading: 'Follow-ups — Moayad',
+    items: [
+      { tag: 'MOAYAD', lead: 'Chase Futini', body: ' — she hasn’t filled in the form yet.' },
+      { tag: 'MOAYAD', lead: 'Follow up with BioPharma', body: ' contacts on his side.' },
+    ],
+  },
+  {
+    heading: 'Follow-ups — Me',
+    items: [
+      { tag: 'ME', lead: 'Aramex', body: ' — re: Vero Models.' },
+      {
+        tag: 'ME',
+        lead: 'Reply to Gio (Limassol)',
+        body: ' — confirm time after 1 PM Friday for the meet.',
+      },
+      { tag: 'ME', lead: 'Reply to Marco', body: '.' },
+      { tag: 'ME', lead: 'Reply to Mahmoud', body: ' re: construction website.' },
+      { tag: 'ME', lead: 'Push Oliver’s fixes', body: ' for Innervo.' },
+      { tag: 'ME', lead: 'Follow up with Buddy’s father', body: ' re: Kuwait project.' },
+      {
+        tag: 'ME',
+        lead: 'Message Lauren',
+        body: ' — schedule call to fix the missing tick on Sophia.',
+      },
+      { tag: 'ME', lead: 'Follow up re: the new Event Master', body: '.' },
+      { tag: 'ME', lead: 'Shufti Ashiya', body: ' — pending action.' },
+    ],
+  },
+  {
+    heading: 'Next week',
+    items: [
+      { tag: 'ME', lead: 'Monday · Meeting with Thomas (UK)', body: '.' },
+      { tag: 'ME', lead: 'Monday · Armenius', body: ' follow-up scheduled.' },
+    ],
+  },
+];
+
+const TAG_TONES: Record<string, string> = {
+  OWNER: 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  TEAM: 'border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-400',
+  ME: 'border-primary/25 bg-primary/10 text-primary',
+  HASAN: 'border-violet-500/25 bg-violet-500/10 text-violet-700 dark:text-violet-400',
+  MOAYAD: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+};
+
+function BriefTagPill({ tag }: { tag: string }) {
+  const tone = TAG_TONES[tag] ?? 'border-border bg-muted text-muted-foreground';
+  return (
+    <span
+      className={cn(
+        'inline-flex w-[68px] shrink-0 justify-center rounded-md border px-1.5 py-0.5',
+        'font-mono text-[9px] font-semibold uppercase tracking-[0.08em]',
+        tone
+      )}
+    >
+      {tag}
+    </span>
+  );
+}
+
+function BriefRow({ item }: { item: BriefItem }) {
+  return (
+    <div className="flex items-start gap-3 px-6 py-2.5">
+      <span className="mt-0.5">
+        <BriefTagPill tag={item.tag} />
+      </span>
+      <p className="flex-1 text-sm leading-relaxed text-foreground">
+        {item.lead ? <span className="font-semibold">{item.lead}</span> : null}
+        <span>{item.body}</span>
+      </p>
+    </div>
+  );
+}
+
+function DailyBriefCard() {
+  const today = new Date();
+  const dateLabel = today.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="border-b border-border px-6 py-5">
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Qualia Solutions
+        </p>
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight">Daily Brief</h2>
+        <p className="mt-1 text-xs text-muted-foreground">{dateLabel} · ERP entry</p>
+      </div>
+
+      <div className="pb-2">
+        {DAILY_BRIEF_SECTIONS.map((section) => (
+          <section key={section.heading} className="pt-5">
+            <div className="px-6 pb-2">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {section.heading}
+              </p>
+            </div>
+            <div>
+              {section.items.map((item, i) => (
+                <BriefRow key={`${section.heading}-${i}`} item={item} />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      <div className="border-t border-border bg-muted/30 px-6 py-3 text-[11px] italic text-muted-foreground">
+        Auto-generated brief. Saved to ERP. Update statuses as items close.
       </div>
     </div>
   );

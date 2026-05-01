@@ -2,6 +2,7 @@
 
 import { getFinancialSummary } from '@/app/actions/financials';
 import { getMrrSnapshot, type RecurringPaymentRow } from '@/app/actions/recurring-payments';
+import { getBillableClients, type BillableClient } from '@/app/actions/invoice-generation';
 
 export type FinanceKpi = { label: string; value: string; sub: string | null };
 
@@ -48,6 +49,8 @@ export type FinancePayload = {
   mrrCurrent: number;
   mrrNextMonth: number;
   expectedThisMonth: number;
+  /** Clients that have a Zoho contact_id linked — invoiceable via the template system. */
+  billableClients: BillableClient[];
 };
 
 const fmt = new Intl.NumberFormat('en-GB', {
@@ -80,7 +83,11 @@ function toRow(r: RecurringPaymentRow): FinanceRecurringRow {
 }
 
 export async function loadFinanceTab(): Promise<FinancePayload> {
-  const [summary, mrr] = await Promise.all([getFinancialSummary(), getMrrSnapshot()]);
+  const [summary, mrr, billableClients] = await Promise.all([
+    getFinancialSummary(),
+    getMrrSnapshot(),
+    getBillableClients(),
+  ]);
 
   const recurring = mrr.rows.map(toRow);
 
@@ -104,9 +111,7 @@ export async function loadFinanceTab(): Promise<FinancePayload> {
       label: 'Expected this month',
       value: fmt2.format(mrr.expectedThisMonth),
       sub:
-        oneOffsThisMonth > 0
-          ? `incl. ${fmt2.format(oneOffsThisMonth)} one-off`
-          : 'recurring only',
+        oneOffsThisMonth > 0 ? `incl. ${fmt2.format(oneOffsThisMonth)} one-off` : 'recurring only',
     },
   ];
 
@@ -158,5 +163,6 @@ export async function loadFinanceTab(): Promise<FinancePayload> {
     mrrCurrent: mrr.mrrCurrent,
     mrrNextMonth: mrr.mrrNextMonth,
     expectedThisMonth: mrr.expectedThisMonth,
+    billableClients,
   };
 }

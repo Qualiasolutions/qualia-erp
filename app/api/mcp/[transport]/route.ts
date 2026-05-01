@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/server';
 import { authenticateRequest, hasScope, type AuthResult } from '@/lib/api-auth';
 import { mcpRateLimiter } from '@/lib/rate-limit';
+import { generateInvoiceCore, generateInvoiceCoverEmailCore } from '@/lib/invoice-generation-core';
+import { INVOICE_TEMPLATES } from '@/lib/invoice-templates';
 
 /**
  * Qualia ERP — Remote MCP Server
@@ -414,9 +416,164 @@ const baseHandler = createMcpHandler(
         return jsonText({ count: data?.length ?? 0, reports: data ?? [] });
       }
     );
+
+    // ============ FINANCE TOOLS ============
+
+    server.tool(
+      'list_invoice_templates',
+      'List the invoice templates available for create_invoice_draft.',
+      {},
+      async () => {
+        return jsonText({
+          templates: Object.values(INVOICE_TEMPLATES).map((t) => ({
+            key: t.key,
+            label: t.label,
+            description: t.description,
+            requires_reference: t.requires_reference,
+            allow_extra_lines: t.allow_extra_lines,
+            line_count: t.line_items.length,
+          })),
+        });
+      }
+    );
+
+    server.tool(
+      'list_billable_clients',
+      'List clients in your workspace that are linked to a Zoho Books contact.',
+      {},
+      async (_args, { authInfo }) => {
+        const ctx = await getAuthContext(authInfo);
+        if ('error' in ctx) return errorText(ctx.error);
+
+        const supabase = createAdminClient();
+        const { data, error } = await supabase
+          .from('clients')
+          .select(
+            'id, display_name, name, zoho_contact_id, zoho_company_name, default_vat_treatment'
+          )
+          .eq('workspace_id', ctx.workspaceId)
+          .not('zoho_contact_id', 'is', null)
+          .order('display_name', { ascending: true });
+        if (error) return errorText(error.message);
+        return jsonText({
+          count: data?.length ?? 0,
+          clients: (data ?? []).map((c) => ({
+            id: c.id,
+            display_name: c.display_name ?? c.name,
+            zoho_contact_id: c.zoho_contact_id,
+            zoho_company_name: c.zoho_company_name,
+            default_vat_treatment: c.default_vat_treatment,
+          })),
+        });
+      }
+    );
+
+    server.tool(
+      'list_invoices',
+      "List cached invoices from the workspace's Zoho sync. Defaults to recent.",
+      {
+        status: z.enum(['draft', 'sent', 'overdue', 'paid', 'void', 'partially_paid']).optional(),
+        client_id: z.string().uuid().optional(),
+        limit: z.number().int().min(1).max(100).default(20),
+      },
+      async ({ status, client_id, limit }, { authInfo }) => {
+        const ctx = await getAuthContext(authInfo);
+        if ('error' in ctx) return errorText(ctx.error);
+
+        const supabase = createAdminClient();
+        let query = supabase
+          .from('financial_invoices')
+          .select(
+            'zoho_id, invoice_number, customer_name, status, date, due_date, total, balance, currency_code'
+          )
+          .order('date', { ascending: false })
+          .limit(limit);
+        if (status) query = query.eq('status', status);
+        if (client_id) query = query.eq('client_id', client_id);
+        const { data, error } = await query;
+        if (error) return errorText(error.message);
+        return jsonText({ count: data?.length ?? 0, invoices: data ?? [] });
+      }
+    );
+
+    server.tool(
+      'create_invoice_draft',
+      'Create a draft invoice in Zoho Books from a template. Requires mcp:write. The invoice is saved as draft — Fawzi or the user must review and send manually.',
+      {
+        template_key: z.enum([
+          'monthly_retainer',
+          'simple_service',
+          'project_deposit',
+          'project_balance',
+        ]),
+        client_id: z
+          .string()
+          .uuid()
+          .describe('ERP client UUID; must have a linked Zoho contact_id'),
+        line_items: z
+          .array(
+            z.object({
+              item_id: z.string().optional(),
+              name: z.string().min(1).max(200),
+              description: z.string().max(2000).optional(),
+              rate: z.number().nonnegative(),
+              quantity: z.number().positive().default(1),
+              vat: z.boolean().default(true),
+            })
+          )
+          .default([])
+          .describe('Empty array = use template defaults'),
+        reference_number: z.string().max(64).optional().describe('Required for project templates'),
+        invoice_date: z.string().date().optional(),
+        due_date: z.string().date().optional(),
+        terms_key: z.enum(['generic', 'sakani_pda']).default('generic'),
+        notes: z.string().max(2000).optional(),
+      },
+      async (args, { authInfo }) => {
+        const denied = requireWrite(authInfo);
+        if (denied) return errorText(denied);
+        const ctx = await getAuthContext(authInfo);
+        if ('error' in ctx) return errorText(ctx.error);
+
+        const supabase = createAdminClient();
+        const result = await generateInvoiceCore(supabase, ctx.workspaceId, args);
+        if (!result.success) return errorText(result.error);
+        return jsonText({ created: true, invoice: result.data });
+      }
+    );
+
+    server.tool(
+      'create_invoice_cover_email_draft',
+      'Save a cover-email draft in the workspace Zoho Mail account for an invoice that was just created. Requires mcp:write.',
+      {
+        template_key: z.enum([
+          'monthly_retainer',
+          'simple_service',
+          'project_deposit',
+          'project_balance',
+        ]),
+        client_id: z.string().uuid(),
+        invoice_number: z.string().min(1).max(64),
+        invoice_date: z.string().date(),
+        reference_number: z.string().max(64).optional(),
+        to: z.string().email(),
+        cc: z.array(z.string().email()).default([]),
+      },
+      async (args, { authInfo }) => {
+        const denied = requireWrite(authInfo);
+        if (denied) return errorText(denied);
+        const ctx = await getAuthContext(authInfo);
+        if ('error' in ctx) return errorText(ctx.error);
+
+        const supabase = createAdminClient();
+        const result = await generateInvoiceCoverEmailCore(supabase, ctx.workspaceId, args);
+        if (!result.success) return errorText(result.error);
+        return jsonText({ created: true, draft: result.data });
+      }
+    );
   },
   {
-    serverInfo: { name: 'qualia-erp', version: '1.0.0' },
+    serverInfo: { name: 'qualia-erp', version: '1.1.0' },
   },
   {
     basePath: '/api/mcp',
