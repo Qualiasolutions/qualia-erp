@@ -145,9 +145,9 @@ Always `vercel env pull` to sync locally — never create `.env` manually.
 
 ## Deployment
 
-- **Vercel team**: `qualiasolutionscy` (Qualia Solutions - Development)
+- **Vercel team**: `qualia-glluztech` (Qualia-Glluztech) — transferred 2026-05-02 from `qualiasolutionscy`. `.vercel/project.json` is bound to this team; do not relink elsewhere.
 - **Production**: https://portal.qualiasolutions.net
-- **Deploy**: `vercel --prod --yes` (default scope)
+- **Deploy**: `vercel --prod --yes` (uses scope from `.vercel/project.json`; do NOT pass `--scope qualiasolutionscy`)
 - **Supabase ref**: `vbpzaiqovffpsroxaulv`
 - Pre-commit: ESLint + Prettier via husky/lint-staged
 - Post-deploy checklist: HTTP 200, auth flow, console errors, API latency <500ms (see `~/.claude/rules/deployment.md`)
