@@ -30,7 +30,7 @@ npx tsc --noEmit         # Type check (run after multi-file TS changes)
 
 ### Server Actions Pattern
 
-All mutations live in `app/actions/*.ts` (53 domain modules). `app/actions.ts` is a re-export router. Every action returns:
+All mutations live in `app/actions/*.ts` (56 domain modules). `app/actions.ts` is a re-export router. Every action returns:
 
 ```typescript
 type ActionResult = { success: boolean; error?: string; data?: unknown };
@@ -40,18 +40,21 @@ Discover domain files via `ls app/actions/`. Auth helpers (`isUserAdmin`, `canDe
 
 ### Key Libraries
 
-| File                        | Purpose                                        |
-| --------------------------- | ---------------------------------------------- |
-| `lib/validation.ts`         | Zod schemas — use `parseFormData()`            |
-| `lib/swr.ts`                | 37 SWR hooks + 33 cache invalidation fns       |
-| `lib/server-utils.ts`       | `normalizeFKResponse()` for Supabase FK arrays |
-| `lib/supabase/server.ts`    | Server client — **use for ALL mutations**      |
-| `lib/supabase/client.ts`    | Browser client — read-only                     |
-| `lib/color-constants.ts`    | `ISSUE_STATUS_COLORS`, `ISSUE_PRIORITY_COLORS` |
-| `lib/rate-limit.ts`         | In-memory rate limiting (Redis TODO)           |
-| `lib/planning-sync-core.ts` | Sync `.planning/` from GitHub → DB             |
-| `lib/ai/tools/`             | Read/write tools for AI chat                   |
-| `types/database.ts`         | Auto-generated — run `npx supabase gen types`  |
+| File                             | Purpose                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------- |
+| `lib/validation.ts`              | Zod schemas — use `parseFormData()`                                             |
+| `lib/swr.ts`                     | 37 SWR hooks + 33 cache invalidation fns                                        |
+| `lib/server-utils.ts`            | `normalizeFKResponse()` for Supabase FK arrays                                  |
+| `lib/supabase/server.ts`         | Server client — **use for ALL mutations**                                       |
+| `lib/supabase/client.ts`         | Browser client — read-only                                                      |
+| `lib/color-constants.ts`         | `ISSUE_STATUS_COLORS`, `ISSUE_PRIORITY_COLORS`                                  |
+| `lib/rate-limit.ts`              | Upstash Redis rate limiting (`@upstash/ratelimit`)                              |
+| `lib/invoice-templates.ts`       | 4 invoice templates + 2 terms templates for finance system                      |
+| `lib/invoice-generation-core.ts` | Workspace-scoped invoice/email generation (callable from server actions or MCP) |
+| `lib/integrations/zoho.ts`       | Zoho Books + Zoho Mail client (OAuth, drafts, taxes, terms)                     |
+| `lib/planning-sync-core.ts`      | Sync `.planning/` from GitHub → DB                                              |
+| `lib/ai/tools/`                  | Read/write tools for AI chat                                                    |
+| `types/database.ts`              | Auto-generated — run `npx supabase gen types`                                   |
 
 ### Data Flow
 
@@ -167,6 +170,26 @@ Every engineer runs `/qualia-report` at clock-out; the qualia-framework POSTs a 
 - **Retention**: `app/api/cron/cleanup-dry-run-reports/route.ts` deletes `dry_run=true` rows older than 7 days (daily 03:00 UTC).
 - **Admin UI**: `app/(portal)/admin/reports/framework-reports-tab.tsx` — Framework Reports tab with `QS-REPORT-NN` column.
 
+## Finance / Invoicing System
+
+The Finance tab at `/admin?tab=finance` exposes a **"New invoice from template"** dialog that pushes drafts to Zoho Books + optionally drafts a cover email in Zoho Mail. Replaces hand-stitched Zoho calls.
+
+- **Templates** (`lib/invoice-templates.ts`): `monthly_retainer` (Underdog pattern — multi-line: retainer + SEO + usage credit), `simple_service` (single line — Maison Maud / Armenius), `project_deposit` (50% upfront, requires proposal ref), `project_balance` (final 50%).
+- **Terms templates**: `generic` (default), `sakani_pda` (Sakani-only — references Platform Development Agreement).
+- **Client linkage**: `clients.zoho_contact_id` + `clients.default_vat_treatment` (`cyprus_vat` / `eu_reverse` / `non_eu_zero`) drive everything. Backfilled for 13 clients in `20260501030000_finance_template_system.sql`.
+- **Bulk generation**: `generateMonthlyRetainerInvoices` iterates active monthly `recurring_payments` rows that have a `template_key` set.
+- **MCP exposure**: 5 tools at `/api/mcp/mcp` — `list_invoice_templates`, `list_billable_clients`, `list_invoices`, `create_invoice_draft`, `create_invoice_cover_email_draft`.
+- **Always drafts** — nothing is sent to clients automatically. Review in Zoho Books, then click Send.
+- **Runbook**: `docs/finance-runbook.md` — once-per-client setup, monthly workflow, common errors. Designed for non-engineer handoff.
+
+## MCP Server (`/api/mcp/mcp`)
+
+Exposes the ERP to Claude connectors and the qualia-framework. Auth via `qlt_*` bearer tokens with `mcp:read` / `mcp:write` scopes. Workspace-scoped — every read filters by token owner's workspace_id; mutations verify the target row's workspace_id before writing. Client-role tokens are rejected entirely.
+
+Current tools: `whoami`, `list_projects`, `list_tasks`, `list_clients`, `list_meetings`, `create_task`, `update_task_status`, `log_client_activity`, `get_session_reports` + 5 finance tools (above). Server version 1.1.0.
+
+When extending, the workspace-scoped core helpers in `lib/invoice-generation-core.ts` are the pattern: keep the orchestration in a non-server-action lib so both server-action wrappers (session auth) and MCP tools (token auth) can call it.
+
 ## File Storage
 
 Logos and project files use Supabase Storage bucket `project-files`. Pattern in `app/actions/logos.ts`:
@@ -199,7 +222,7 @@ Project uses Qualia `.planning/` structure:
 | P1       | Test coverage (1.68% → 50%) | Pending |
 | P2       | God-module splits           | Pending |
 
-DONE: P0 items (IDOR in file downloads, `deleteTask` auth, webhook secret). P2 N+1 in `getProjectById` (parallelized via `Promise.all`). Token encryption hardened + rotated (2026-04-19). v4.0.4 framework sync contract (`client_report_id`, `dry_run` + 7-day retention). Redis rate-limiting via `@upstash/ratelimit` + Vercel Marketplace Upstash integration (2026-04-19, commit `789b801`).
+DONE: P0 items (IDOR in file downloads, `deleteTask` auth, webhook secret). P2 N+1 in `getProjectById` (parallelized via `Promise.all`). Token encryption hardened + rotated (2026-04-19). v4.0.4 framework sync contract (`client_report_id`, `dry_run` + 7-day retention). Redis rate-limiting via `@upstash/ratelimit` + Vercel Marketplace Upstash integration (2026-04-19, commit `789b801`). Finance template system shipped (2026-05-01, PR #92): replaces manual Zoho stitching with a template-driven dialog + 5 MCP tools.
 
 ## Trainee Resources
 
