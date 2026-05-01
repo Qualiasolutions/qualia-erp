@@ -13,15 +13,37 @@ const ZOHO_API_BASE = 'https://www.zohoapis.com';
 // ============ TYPES ============
 
 export type CreateInvoiceParams = {
-  customer_name: string;
+  /** Preferred — a Zoho contact_id from the Books contacts API. */
+  customer_id?: string;
+  /** Fallback when customer_id is unknown. */
+  customer_name?: string;
   items: {
+    /** Optional Zoho item_id — pins to a catalog item when present. */
+    item_id?: string;
     name: string;
     description?: string;
     rate: number;
     quantity: number;
+    /** Zoho tax_id (e.g. VAT 19%). Pass empty string to force no tax on this line. */
+    tax_id?: string;
   }[];
+  /** YYYY-MM-DD. Defaults to today + 30d if omitted. */
+  date?: string;
   due_date?: string;
   notes?: string;
+  terms?: string;
+  reference_number?: string;
+  /** When true, save as draft (default). When false, send to customer immediately. */
+  draft?: boolean;
+};
+
+export type ZohoMailDraftParams = {
+  to: string;
+  subject: string;
+  /** HTML body. */
+  body: string;
+  cc?: string;
+  bcc?: string;
 };
 
 export type ZohoInvoice = {
@@ -311,28 +333,72 @@ export async function createZohoInvoice(
   workspaceId: string,
   params: CreateInvoiceParams
 ): Promise<ActionResult> {
-  const payload = {
-    customer_name: params.customer_name,
-    line_items: params.items.map((item) => ({
-      name: item.name,
-      description: item.description || '',
-      rate: item.rate,
-      quantity: item.quantity,
-    })),
-    due_date: params.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  if (!params.customer_id && !params.customer_name) {
+    return { success: false, error: 'Either customer_id or customer_name is required' };
+  }
+
+  const orgId = await getZohoOrganizationId(workspaceId);
+  if (!orgId) {
+    return { success: false, error: 'Zoho organization_id not configured for this workspace' };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const defaultDue = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  const payload: Record<string, unknown> = {
+    line_items: params.items.map((item) => {
+      const line: Record<string, unknown> = {
+        name: item.name,
+        description: item.description || '',
+        rate: item.rate,
+        quantity: item.quantity,
+      };
+      if (item.item_id) line.item_id = item.item_id;
+      if (item.tax_id !== undefined) line.tax_id = item.tax_id; // empty string = explicitly no tax
+      return line;
+    }),
+    date: params.date || today,
+    due_date: params.due_date || defaultDue,
     notes: params.notes || '',
   };
+  if (params.customer_id) payload.customer_id = params.customer_id;
+  if (params.customer_name) payload.customer_name = params.customer_name;
+  if (params.terms) payload.terms = params.terms;
+  if (params.reference_number) payload.reference_number = params.reference_number;
 
-  const result = await zohoRequest(workspaceId, '/books/v3/invoices', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
+  const send = params.draft === false ? 'true' : 'false';
+  const endpoint = `/books/v3/invoices?organization_id=${orgId}&send=${send}`;
+
+  const result = await zohoRequest<{ invoice: ZohoInvoiceDetail & { invoice_url?: string } }>(
+    workspaceId,
+    endpoint,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+  );
 
   if (!result.success) {
     return { success: false, error: result.error };
   }
 
-  return { success: true, data: result.data };
+  return { success: true, data: result.data?.invoice };
+}
+
+/**
+ * Read the Zoho organization_id for a workspace from the integration config.
+ */
+async function getZohoOrganizationId(workspaceId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('workspace_integrations')
+    .select('config')
+    .eq('workspace_id', workspaceId)
+    .eq('provider', 'zoho')
+    .single();
+
+  const cfg = (data?.config || {}) as ZohoTokenConfig;
+  return cfg.organization_id || process.env.ZOHO_ORGANIZATION_ID || null;
 }
 
 /**
@@ -386,6 +452,82 @@ export async function sendZohoEmail(
   }
 
   return { success: true, data: result.data };
+}
+
+/**
+ * Save a draft email in the user's Zoho Mail Drafts folder.
+ *
+ * Uses the Zoho Mail v1 messages endpoint with `mode: "draft"`. The endpoint
+ * needs the mail accountId, which we resolve via /mail/v1/accounts on first call.
+ */
+export async function createZohoMailDraft(
+  workspaceId: string,
+  params: ZohoMailDraftParams
+): Promise<ActionResult> {
+  const accountId = await getZohoMailAccountId(workspaceId);
+  if (!accountId) {
+    return { success: false, error: 'Zoho Mail account not found for this workspace' };
+  }
+
+  const fromAddress = await getZohoMailFromAddress(workspaceId);
+  if (!fromAddress) {
+    return { success: false, error: 'Zoho Mail primary address not found for this workspace' };
+  }
+
+  const payload: Record<string, unknown> = {
+    fromAddress,
+    toAddress: params.to,
+    subject: params.subject,
+    content: params.body,
+    mailFormat: 'html',
+    mode: 'draft',
+  };
+  if (params.cc) payload.ccAddress = params.cc;
+  if (params.bcc) payload.bccAddress = params.bcc;
+
+  const result = await zohoRequest<{ data: { messageId: string } }>(
+    workspaceId,
+    `/mail/v1/accounts/${accountId}/messages`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  return { success: true, data: result.data?.data };
+}
+
+// Cache mail accountId per workspace to avoid round-trips on each draft.
+const _mailAccountCache = new Map<string, { accountId: string; fromAddress: string }>();
+
+async function loadZohoMailAccount(
+  workspaceId: string
+): Promise<{ accountId: string; fromAddress: string } | null> {
+  const cached = _mailAccountCache.get(workspaceId);
+  if (cached) return cached;
+
+  const result = await zohoRequest<{
+    data: Array<{ accountId: string; primaryEmailAddress: string }>;
+  }>(workspaceId, '/mail/v1/accounts');
+
+  const account = result.data?.data?.[0];
+  if (!account?.accountId || !account.primaryEmailAddress) return null;
+
+  const value = { accountId: account.accountId, fromAddress: account.primaryEmailAddress };
+  _mailAccountCache.set(workspaceId, value);
+  return value;
+}
+
+async function getZohoMailAccountId(workspaceId: string): Promise<string | null> {
+  return (await loadZohoMailAccount(workspaceId))?.accountId ?? null;
+}
+
+async function getZohoMailFromAddress(workspaceId: string): Promise<string | null> {
+  return (await loadZohoMailAccount(workspaceId))?.fromAddress ?? null;
 }
 
 // ============ CRM / CONTACTS ============
@@ -460,4 +602,5 @@ const _zohoCache = new Map<string, boolean>();
  */
 export function clearZohoClientCache(workspaceId: string): void {
   _zohoCache.delete(workspaceId);
+  _mailAccountCache.delete(workspaceId);
 }

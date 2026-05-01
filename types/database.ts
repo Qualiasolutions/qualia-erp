@@ -835,54 +835,66 @@ export type Database = {
           billing_address: string | null;
           created_at: string | null;
           created_by: string | null;
+          default_vat_treatment: string | null;
           description: string | null;
           display_name: string | null;
           id: string;
           last_contacted_at: string | null;
           lead_status: Database['public']['Enums']['lead_status'] | null;
           logo_url: string | null;
+          memory_note_path: string | null;
           name: string;
           notes: string | null;
           phone: string | null;
           updated_at: string | null;
           website: string | null;
           workspace_id: string | null;
+          zoho_company_name: string | null;
+          zoho_contact_id: string | null;
         };
         Insert: {
           assigned_to?: string | null;
           billing_address?: string | null;
           created_at?: string | null;
           created_by?: string | null;
+          default_vat_treatment?: string | null;
           description?: string | null;
           display_name?: string | null;
           id?: string;
           last_contacted_at?: string | null;
           lead_status?: Database['public']['Enums']['lead_status'] | null;
           logo_url?: string | null;
+          memory_note_path?: string | null;
           name: string;
           notes?: string | null;
           phone?: string | null;
           updated_at?: string | null;
           website?: string | null;
           workspace_id?: string | null;
+          zoho_company_name?: string | null;
+          zoho_contact_id?: string | null;
         };
         Update: {
           assigned_to?: string | null;
           billing_address?: string | null;
           created_at?: string | null;
           created_by?: string | null;
+          default_vat_treatment?: string | null;
           description?: string | null;
           display_name?: string | null;
           id?: string;
           last_contacted_at?: string | null;
           lead_status?: Database['public']['Enums']['lead_status'] | null;
           logo_url?: string | null;
+          memory_note_path?: string | null;
           name?: string;
           notes?: string | null;
           phone?: string | null;
           updated_at?: string | null;
           website?: string | null;
           workspace_id?: string | null;
+          zoho_company_name?: string | null;
+          zoho_contact_id?: string | null;
         };
         Relationships: [
           {
@@ -2638,7 +2650,12 @@ export type Database = {
         Row: {
           assigned_at: string;
           assigned_by: string;
+          completed_at: string | null;
+          completed_by: string | null;
+          completion_note: string | null;
+          completion_requested_at: string | null;
           created_at: string;
+          deadline_date: string;
           employee_id: string;
           id: string;
           notes: string | null;
@@ -2651,7 +2668,12 @@ export type Database = {
         Insert: {
           assigned_at?: string;
           assigned_by: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          completion_note?: string | null;
+          completion_requested_at?: string | null;
           created_at?: string;
+          deadline_date: string;
           employee_id: string;
           id?: string;
           notes?: string | null;
@@ -2664,7 +2686,12 @@ export type Database = {
         Update: {
           assigned_at?: string;
           assigned_by?: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          completion_note?: string | null;
+          completion_requested_at?: string | null;
           created_at?: string;
+          deadline_date?: string;
           employee_id?: string;
           id?: string;
           notes?: string | null;
@@ -2678,6 +2705,13 @@ export type Database = {
           {
             foreignKeyName: 'project_assignments_assigned_by_fkey';
             columns: ['assigned_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_assignments_completed_by_fkey';
+            columns: ['completed_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
@@ -3372,6 +3406,97 @@ export type Database = {
             columns: ['meeting_id'];
             isOneToOne: false;
             referencedRelation: 'meetings';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      recurring_payments: {
+        Row: {
+          amount: number;
+          category: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          day_of_month: number | null;
+          description: string;
+          end_date: string | null;
+          frequency: string;
+          id: string;
+          is_active: boolean;
+          notes: string | null;
+          project_id: string | null;
+          start_date: string | null;
+          template_key: string | null;
+          type: string;
+          updated_at: string;
+          workspace_id: string;
+          zoho_line_items: Json | null;
+        };
+        Insert: {
+          amount: number;
+          category?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          day_of_month?: number | null;
+          description: string;
+          end_date?: string | null;
+          frequency?: string;
+          id?: string;
+          is_active?: boolean;
+          notes?: string | null;
+          project_id?: string | null;
+          start_date?: string | null;
+          template_key?: string | null;
+          type: string;
+          updated_at?: string;
+          workspace_id: string;
+          zoho_line_items?: Json | null;
+        };
+        Update: {
+          amount?: number;
+          category?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          day_of_month?: number | null;
+          description?: string;
+          end_date?: string | null;
+          frequency?: string;
+          id?: string;
+          is_active?: boolean;
+          notes?: string | null;
+          project_id?: string | null;
+          start_date?: string | null;
+          template_key?: string | null;
+          type?: string;
+          updated_at?: string;
+          workspace_id?: string;
+          zoho_line_items?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'recurring_payments_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'recurring_payments_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'recurring_payments_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -4343,6 +4468,7 @@ export type Database = {
       };
       work_sessions: {
         Row: {
+          clock_in_activities: string[] | null;
           clock_in_note: string | null;
           clock_in_reason: string | null;
           created_at: string;
@@ -4359,6 +4485,7 @@ export type Database = {
           workspace_id: string;
         };
         Insert: {
+          clock_in_activities?: string[] | null;
           clock_in_note?: string | null;
           clock_in_reason?: string | null;
           created_at?: string;
@@ -4375,6 +4502,7 @@ export type Database = {
           workspace_id: string;
         };
         Update: {
+          clock_in_activities?: string[] | null;
           clock_in_note?: string | null;
           clock_in_reason?: string | null;
           created_at?: string;
@@ -4624,6 +4752,7 @@ export type Database = {
       };
     };
     Functions: {
+      api_tokens_scope_is_valid: { Args: { p_scope: string }; Returns: boolean };
       batch_update_task_orders: { Args: { updates: Json }; Returns: undefined };
       calculate_phase_progress: {
         Args: { p_phase_id: string };
@@ -4646,7 +4775,23 @@ export type Database = {
         }[];
       };
       custom_access_token_hook: { Args: { event: Json }; Returns: Json };
+      get_latest_session_per_profile: {
+        Args: { p_profile_ids: string[]; p_workspace_id: string };
+        Returns: {
+          ended_at: string;
+          profile_id: string;
+        }[];
+      };
       get_my_workspace_ids: { Args: never; Returns: string[] };
+      get_per_client_project_stats: {
+        Args: never;
+        Returns: {
+          active_count: number;
+          client_id: string;
+          last_activity: string;
+          project_count: number;
+        }[];
+      };
       get_project_pipeline_stats: {
         Args: { p_workspace_id?: string };
         Returns: {

@@ -41,6 +41,7 @@ import type {
   FinanceInvoiceRow,
   FinanceRecurringRow,
 } from '@/app/actions/admin-control';
+import { FinanceTemplateInvoiceDialog } from './finance-template-invoice-dialog';
 
 /* ======================================================================
    ControlFinance — MRR, recurring, payments, invoices
@@ -67,12 +68,15 @@ export function ControlFinance({ data }: { data: FinancePayload | undefined }) {
             MRR, expected inflow, recurring contracts, and Zoho-synced payments.
           </p>
         </div>
-        <Link
-          href="/admin/reports"
-          className="font-mono text-[11px] text-primary underline-offset-4 hover:underline"
-        >
-          Full reports →
-        </Link>
+        <div className="flex items-center gap-3">
+          <FinanceTemplateInvoiceDialog clients={data.billableClients} />
+          <Link
+            href="/admin/reports"
+            className="font-mono text-[11px] text-primary underline-offset-4 hover:underline"
+          >
+            Full reports →
+          </Link>
+        </div>
       </div>
 
       {/* KPI row */}
@@ -119,20 +123,18 @@ function RecurringRevenueSection({ rows }: { rows: FinanceRecurringRow[] }) {
 
   const sorted = useMemo(
     () =>
-      rows
-        .slice()
-        .sort((a, b) => {
-          if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
-          if (a.frequency !== b.frequency) {
-            const order: Record<FinanceRecurringRow['frequency'], number> = {
-              monthly: 0,
-              yearly: 1,
-              one_off: 2,
-            };
-            return order[a.frequency] - order[b.frequency];
-          }
-          return b.amount - a.amount;
-        }),
+      rows.slice().sort((a, b) => {
+        if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
+        if (a.frequency !== b.frequency) {
+          const order: Record<FinanceRecurringRow['frequency'], number> = {
+            monthly: 0,
+            yearly: 1,
+            one_off: 2,
+          };
+          return order[a.frequency] - order[b.frequency];
+        }
+        return b.amount - a.amount;
+      }),
     [rows]
   );
 
@@ -187,9 +189,7 @@ function RecurringRevenueSection({ rows }: { rows: FinanceRecurringRow[] }) {
               style={{ gridTemplateColumns: '1fr 90px 110px 110px 70px' }}
             >
               <div className="min-w-0">
-                <div className="truncate text-xs font-medium text-foreground">
-                  {r.description}
-                </div>
+                <div className="truncate text-xs font-medium text-foreground">{r.description}</div>
                 <div className="truncate text-[10px] text-muted-foreground">
                   {r.client_name ?? 'No client'}
                   {r.notes ? ` · ${r.notes.slice(0, 60)}${r.notes.length > 60 ? '…' : ''}` : ''}
@@ -198,7 +198,7 @@ function RecurringRevenueSection({ rows }: { rows: FinanceRecurringRow[] }) {
               <Badge
                 variant="outline"
                 className={cn(
-                  'capitalize text-[10px]',
+                  'text-[10px] capitalize',
                   r.frequency === 'monthly' && 'border-primary/30 bg-primary/10 text-primary',
                   r.frequency === 'yearly' &&
                     'border-violet-500/30 bg-violet-500/10 text-violet-500',
@@ -222,7 +222,7 @@ function RecurringRevenueSection({ rows }: { rows: FinanceRecurringRow[] }) {
                 {r.type === 'outgoing' ? '−' : ''}
                 {formatEUR(r.amount)}
               </span>
-              <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+              <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -263,9 +263,7 @@ function RecurringRevenueSection({ rows }: { rows: FinanceRecurringRow[] }) {
         onOpenChange={(o) => !o && setPendingDelete(null)}
         title="Remove this recurring payment?"
         description={
-          pendingDelete
-            ? `"${pendingDelete.description}" will be permanently deleted.`
-            : ''
+          pendingDelete ? `"${pendingDelete.description}" will be permanently deleted.` : ''
         }
         confirmLabel="Delete"
         variant="destructive"
@@ -353,12 +351,8 @@ function RecurringEditDialog({
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>
-            {existing ? 'Edit recurring payment' : 'Add recurring payment'}
-          </DialogTitle>
-          <DialogDescription>
-            Used for MRR + expected inflow on the Finance tab.
-          </DialogDescription>
+          <DialogTitle>{existing ? 'Edit recurring payment' : 'Add recurring payment'}</DialogTitle>
+          <DialogDescription>Used for MRR + expected inflow on the Finance tab.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
