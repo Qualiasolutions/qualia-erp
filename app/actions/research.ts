@@ -1,6 +1,10 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { generateObject } from 'ai';
+import { z } from 'zod';
+import { geminiModel } from '@/lib/ai/gemini-client';
+import { RESEARCH_CATEGORIES } from '@/lib/research-constants';
 import type { ActionResult } from './shared';
 
 export interface ResearchEntry {
@@ -323,5 +327,69 @@ export async function deleteResearchEntry(id: string): Promise<ActionResult> {
   } catch (err) {
     console.error('[deleteResearchEntry] Unexpected error:', err);
     return { success: false, error: String(err) };
+  }
+}
+
+/**
+ * AI-powered paste-to-save: parse raw research text into a structured entry
+ */
+export async function createResearchFromPaste(
+  rawText: string
+): Promise<ActionResult & { data?: ResearchEntry }> {
+  try {
+    if (!rawText || rawText.trim().length < 20) {
+      return {
+        success: false,
+        error: 'Please paste at least a few sentences of research content.',
+      };
+    }
+
+    const categoryValues = RESEARCH_CATEGORIES.map((c) => c.value) as [string, ...string[]];
+
+    const ResearchExtractionSchema = z.object({
+      title: z.string().min(3).max(120),
+      category: z.enum(categoryValues),
+      summary: z.string().min(20).max(600),
+      key_findings: z.array(z.string()).min(2).max(8),
+      sources: z.array(z.string().url()).max(20),
+    });
+
+    const { object } = await generateObject({
+      model: geminiModel,
+      schema: ResearchExtractionSchema,
+      system: `You are a research parser. Given raw research text (from Gemini Deep Research, NotebookLM, ChatGPT, or any research dump), extract structured data.
+
+Rules:
+- title: A clean, concise title (no "Research on..." prefix). Max 120 chars.
+- category: Pick the closest match from the enum values provided in the schema.
+- summary: 2-3 plain English sentences summarizing the research. No bullet points.
+- key_findings: 3-7 actionable key findings. Each one should be self-contained and understandable on its own.
+- sources: Only include real URLs found in the text. If no URLs are present, return an empty array.`,
+      prompt: rawText.slice(0, 12000),
+    });
+
+    const parsed = ResearchExtractionSchema.safeParse(object);
+    if (!parsed.success) {
+      console.error('[createResearchFromPaste] Schema validation failed:', parsed.error);
+      return { success: false, error: 'AI could not parse valid research data from the input.' };
+    }
+
+    const { title, category, summary, key_findings, sources } = parsed.data;
+
+    const result = await createResearchEntry({
+      title,
+      topic: title,
+      category,
+      summary,
+      key_findings: key_findings.join('\n'),
+      sources: sources.join('\n'),
+      raw_content: rawText.slice(0, 50000),
+      research_date: new Date().toISOString().split('T')[0],
+    });
+
+    return result;
+  } catch (err) {
+    console.error('[createResearchFromPaste] Unexpected error:', err);
+    return { success: false, error: 'AI parsing failed. Please try again or use the manual form.' };
   }
 }
