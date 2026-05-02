@@ -26,6 +26,12 @@ Progress: ▓▓▓▓▓▓▓▓░░ 4 of 5 milestones complete (M1–M4 shi
 
 Full arc + per-milestone notes: `.planning/JOURNEY.md`.
 
+## Roadmap
+
+| #   | Phase          | Goal                                                | Status      |
+| --- | -------------- | --------------------------------------------------- | ----------- |
+| 1   | Rolling Polish | Direct-to-master ops + UX fixes (no phase ceremony) | in_progress |
+
 ## Milestone 5 — What's Shipped Since 2026-04-26 (no phase ceremony)
 
 ~25 feature commits on master, clustered:
