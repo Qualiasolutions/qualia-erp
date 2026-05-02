@@ -48,6 +48,9 @@ export function PresenceBroadcaster({
       void supabase.removeChannel(channel);
       channelRef.current = null;
     };
+    // pathname intentionally excluded — re-tracking on route change is
+    // handled by the dedicated effect below without re-subscribing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, userId, fullName, avatarUrl, role]);
 
   // Re-track on route change without re-subscribing — resets the "since" clock
