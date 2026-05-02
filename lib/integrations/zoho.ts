@@ -8,7 +8,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { decryptToken } from '@/lib/token-encryption';
 
-const ZOHO_API_BASE = 'https://www.zohoapis.com';
+const ZOHO_API_BASE = 'https://www.zohoapis.eu';
 
 // ============ TYPES ============
 
@@ -144,7 +144,7 @@ async function refreshAccessToken(
   }
 
   try {
-    const response = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+    const response = await fetch('https://accounts.zoho.eu/oauth/v2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
