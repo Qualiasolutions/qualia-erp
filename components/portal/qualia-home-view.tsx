@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, ExternalLink, Lock } from 'lucide-react';
+import { ArrowRight, Check, ExternalLink, Lock, RotateCcw } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -894,18 +894,69 @@ function BriefTagPill({ tag }: { tag: string }) {
   );
 }
 
-function BriefRow({ item }: { item: BriefItem }) {
+function BriefRow({
+  item,
+  done,
+  onToggle,
+}: {
+  item: BriefItem;
+  done: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <div className="flex items-start gap-3 px-6 py-2.5">
+    <div className={cn('flex items-start gap-3 px-6 py-2.5', done && 'opacity-50')}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-pressed={done}
+        aria-label={done ? 'Mark as not done' : 'Mark as done'}
+        className={cn(
+          'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+          done
+            ? 'border-primary bg-primary text-primary-foreground'
+            : 'border-border bg-background hover:border-primary/50'
+        )}
+      >
+        {done ? <Check className="h-3 w-3" strokeWidth={3} aria-hidden /> : null}
+      </button>
       <span className="mt-0.5">
         <BriefTagPill tag={item.tag} />
       </span>
-      <p className="flex-1 text-sm leading-relaxed text-foreground">
+      <p
+        className={cn(
+          'flex-1 text-sm leading-relaxed text-foreground',
+          done && 'line-through decoration-muted-foreground/60 decoration-1'
+        )}
+      >
         {item.lead ? <span className="font-semibold">{item.lead}</span> : null}
         <span>{item.body}</span>
       </p>
     </div>
   );
+}
+
+const BRIEF_DONE_STORAGE_KEY = 'qualia.dailyBrief.done.v1';
+
+function todayKey(): string {
+  return new Date().toLocaleDateString('en-CA');
+}
+
+function itemId(sectionHeading: string, index: number): string {
+  return `${sectionHeading}::${index}`;
+}
+
+function readDoneState(): { day: string; ids: string[] } | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(BRIEF_DONE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { day?: unknown; ids?: unknown };
+    if (typeof parsed.day !== 'string' || !Array.isArray(parsed.ids)) return null;
+    return { day: parsed.day, ids: parsed.ids.filter((x): x is string => typeof x === 'string') };
+  } catch {
+    return null;
+  }
 }
 
 function DailyBriefCard() {
@@ -917,35 +968,114 @@ function DailyBriefCard() {
     year: 'numeric',
   });
 
+  // Persist done items per-day in localStorage so the brief survives refreshes
+  // but resets when the day rolls over.
+  const [doneIds, setDoneIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const stored = readDoneState();
+    if (stored && stored.day === todayKey()) {
+      setDoneIds(new Set(stored.ids));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(
+      BRIEF_DONE_STORAGE_KEY,
+      JSON.stringify({ day: todayKey(), ids: Array.from(doneIds) })
+    );
+  }, [doneIds]);
+
+  const toggle = useCallback((id: string) => {
+    setDoneIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const totalItems = DAILY_BRIEF_SECTIONS.reduce((sum, s) => sum + s.items.length, 0);
+  const doneCount = doneIds.size;
+
+  const reset = useCallback(() => setDoneIds(new Set()), []);
+
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="border-b border-border px-6 py-5">
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Qualia Solutions
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight">Daily Brief</h2>
-        <p className="mt-1 text-xs text-muted-foreground">{dateLabel} · ERP entry</p>
+      <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+        <div>
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Qualia Solutions
+          </p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight">Daily Brief</h2>
+          <p className="mt-1 text-xs text-muted-foreground">{dateLabel} · ERP entry</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <span
+            className="rounded-md border border-border bg-muted/40 px-2 py-1 font-mono text-[10px] font-semibold uppercase tabular-nums tracking-[0.12em] text-muted-foreground"
+            aria-live="polite"
+          >
+            {doneCount}/{totalItems} done
+          </span>
+          {doneCount > 0 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={reset}
+              className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
+            >
+              <RotateCcw className="h-3 w-3" aria-hidden />
+              Reset
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <div className="pb-2">
-        {DAILY_BRIEF_SECTIONS.map((section) => (
-          <section key={section.heading} className="pt-5">
-            <div className="px-6 pb-2">
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {section.heading}
-              </p>
-            </div>
-            <div>
-              {section.items.map((item, i) => (
-                <BriefRow key={`${section.heading}-${i}`} item={item} />
-              ))}
-            </div>
-          </section>
-        ))}
+        {DAILY_BRIEF_SECTIONS.map((section) => {
+          const sectionDone = section.items.reduce(
+            (n, _item, i) => n + (doneIds.has(itemId(section.heading, i)) ? 1 : 0),
+            0
+          );
+          const allDone = sectionDone === section.items.length && section.items.length > 0;
+          return (
+            <section key={section.heading} className="pt-5">
+              <div className="flex items-center justify-between gap-3 px-6 pb-2">
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  {section.heading}
+                </p>
+                <p
+                  className={cn(
+                    'font-mono text-[10px] tabular-nums',
+                    allDone ? 'text-primary' : 'text-muted-foreground/70'
+                  )}
+                  aria-label={`${sectionDone} of ${section.items.length} done`}
+                >
+                  {sectionDone}/{section.items.length}
+                </p>
+              </div>
+              <div>
+                {section.items.map((item, i) => {
+                  const id = itemId(section.heading, i);
+                  return (
+                    <BriefRow
+                      key={id}
+                      item={item}
+                      done={doneIds.has(id)}
+                      onToggle={() => toggle(id)}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
       <div className="border-t border-border bg-muted/30 px-6 py-3 text-[11px] italic text-muted-foreground">
-        Auto-generated brief. Saved to ERP. Update statuses as items close.
+        Auto-generated brief. Saved to ERP. Tick items off as you close them — resets at midnight.
       </div>
     </div>
   );
