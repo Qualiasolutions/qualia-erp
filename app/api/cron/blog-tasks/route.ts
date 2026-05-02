@@ -9,10 +9,13 @@ export const maxDuration = 60;
  * Daily blog task creator cron job
  * Runs daily at 5:05 AM UTC (8:05 AM Cyprus) - configured in vercel.json
  *
- * Creates a blog-writing task for Moayad, rotating through:
- * Aquador, Qualia Solutions, ZNSO
+ * Creates a blog-writing task for Moayad, rotating daily through:
+ * Qualia Solutions, Innrvo, Underdog-Sales-Academy, Urban
  * Scheduled 8:40-9:20 AM Cyprus, weekdays only
  */
+
+// Brand rotation order — index by day-of-year % length for deterministic daily rotation
+const BLOG_BRANDS = ['Qualia Solutions', 'Innrvo', 'Underdog-Sales-Academy', 'Urban'] as const;
 
 function getSupabaseClient() {
   return createClient(
@@ -81,17 +84,32 @@ export async function GET(request: Request) {
 
     const workspaceId = membership.workspace_id;
 
-    // Get blog target projects: Aquador, Qualia Solutions, ZNSO only
+    // Get blog target projects — exact name match against rotation list
     const { data: seoProjects, error: projectsError } = await supabase
       .from('projects')
       .select('id, name, project_type')
       .eq('workspace_id', workspaceId)
-      .or('name.ilike.%Aquador%,name.ilike.%Qualia Solutions%,name.ilike.%ZNSO%')
-      .order('name');
+      .in('name', BLOG_BRANDS as unknown as string[]);
 
     if (projectsError || !seoProjects || seoProjects.length === 0) {
       console.error('[cron/blog-tasks] No SEO projects found:', projectsError);
       return NextResponse.json({ success: false, error: 'No SEO projects found' }, { status: 500 });
+    }
+
+    // Deterministic day-of-year rotation through BLOG_BRANDS
+    const startOfYear = new Date(now.getFullYear(), 0, 0);
+    const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+    const brandName = BLOG_BRANDS[dayOfYear % BLOG_BRANDS.length];
+    const todaysProject = seoProjects.find((p) => p.name === brandName);
+
+    if (!todaysProject) {
+      console.error(
+        `[cron/blog-tasks] Today's brand "${brandName}" not found in workspace projects`
+      );
+      return NextResponse.json(
+        { success: false, error: `Brand project "${brandName}" missing` },
+        { status: 500 }
+      );
     }
 
     const results: { employee: string; created: boolean; project?: string; reason?: string }[] = [];
@@ -118,34 +136,7 @@ export async function GET(request: Request) {
         continue;
       }
 
-      // Pick project with fewest blog tasks for this employee (round-robin)
-      const { data: taskCounts } = await supabase
-        .from('tasks')
-        .select('project_id')
-        .eq('workspace_id', workspaceId)
-        .eq('assignee_id', emp.id)
-        .ilike('title', '%blog post%')
-        .in(
-          'project_id',
-          seoProjects.map((p) => p.id)
-        );
-
-      const countsMap: Record<string, number> = {};
-      for (const project of seoProjects) {
-        countsMap[project.id] = 0;
-      }
-      if (taskCounts) {
-        for (const task of taskCounts) {
-          if (task.project_id && countsMap[task.project_id] !== undefined) {
-            countsMap[task.project_id]++;
-          }
-        }
-      }
-
-      const sortedProjects = [...seoProjects].sort(
-        (a, b) => (countsMap[a.id] || 0) - (countsMap[b.id] || 0)
-      );
-      const nextProject = sortedProjects[0];
+      const nextProject = todaysProject;
 
       // Get next sort order
       const { data: lastTask } = await supabase
