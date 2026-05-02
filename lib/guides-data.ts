@@ -926,8 +926,89 @@ export const guides: Guide[] = [
     },
   },
 
+  {
+    slug: 'design-integration',
+    title: 'Design Integration (v4.5.0)',
+    subtitle: 'Design woven into every agent: OKLCH, slop-detect, design contracts, rubric scoring',
+    category: 'operations',
+    projectType: 'workflow',
+    steps: [
+      {
+        id: 'di-1',
+        title: 'What Changed',
+        description:
+          'Previously design was Phase 1 of the Handoff milestone. Build everything ugly, polish at the end. That ordering produced late, expensive rework that never quite matched the brand. Starting with v4.5.0, the design substrate (PRODUCT.md, DESIGN.md, design rules) is loaded by every road agent from day one. Plans carry a design contract. Builders run an anti-slop scan before commit. Verifiers score 8 design dimensions alongside functional checks.',
+      },
+      {
+        id: 'di-2',
+        title: 'The Substrate (New Artifacts)',
+        description:
+          'Seven new or rewritten files power the integration. PRODUCT.md captures users, brand voice, register, and anti-references. DESIGN.md now includes OKLCH palette, color strategy commitment, scene sentence, typography hierarchy, component tokens, and motion rules. Three register-specific rule files (design-laws, design-brand, design-product) define universal bans and per-register standards. design-rubric.md defines 8 scoring dimensions. bin/slop-detect.mjs is a standalone CLI scanner with ~17 anti-pattern checks across critical / high / medium / low.',
+        tips: [
+          'PRODUCT.md is generated from ~5 design questions during /qualia-new.',
+          'design-brand.md is for marketing sites (distinctiveness bar). design-product.md is for app UI (familiarity bar).',
+          'slop-detect.mjs runs without AI and catches the absolute bans automatically.',
+        ],
+      },
+      {
+        id: 'di-3',
+        title: 'How Every Agent Changes',
+        description:
+          'Planner: frontend tasks carry a design contract per task (tokens, register, scope), reads PRODUCT + DESIGN as locked input. Plan-checker: validates every frontend task has a design contract, blocks plans that step on absolute bans. Builder: auto-runs slop-detect.mjs on its own output before commit, refuses commit on absolute-ban hits. Verifier: scores 8 design dimensions; any dimension below 3 fails the phase, same as a functional bug.',
+        isMilestone: true,
+      },
+      {
+        id: 'di-4',
+        title: '/qualia-polish Is Now Scope-Adaptive',
+        description:
+          'Instead of one mode, polish now adapts to scope. Component: ~30s (tokens, slop-detect, regenerate, verify). Section: ~3m (+ light direction, Lighthouse, axe). App (default): ~12m (all 7 stages, fan-out batches of 5). Redesign: ~30m (shape to craft, 2 vision iterations, drift audit). Critique: read-only scored report. Quick: ~1m, gates only.',
+        commands: [
+          '/qualia-polish src/components/Button.tsx   -- component (~30s)',
+          '/qualia-polish app/dashboard               -- section (~3m)',
+          '/qualia-polish                              -- full app (~12m)',
+          '/qualia-polish --redesign                   -- full redesign (~30m)',
+          '/qualia-polish --critique                   -- read-only report',
+          '/qualia-polish --quick                      -- gates only (~1m)',
+        ],
+      },
+      {
+        id: 'di-5',
+        title: 'The Non-Negotiables',
+        description:
+          'Always: OKLCH colors with neutrals tinted toward brand hue (no #000, no #fff). Commit to a color strategy first (Restrained / Committed / Full palette / Drenched). Write a scene sentence before deciding light vs dark theme. Vary spacing for rhythm. Pair Brand register with distinctiveness; Product register with familiarity. Trust slop-detect output.',
+        warning:
+          'Never: Inter, Roboto, Arial, system-ui, Space Grotesk. Purple-blue gradients. Side-stripe borders. Gradient text. Identical card grids of three items. Em dashes. Modal as first thought. Glassmorphism by default.',
+      },
+      {
+        id: 'di-6',
+        title: 'Your Role in the New Flow',
+        description:
+          'Bootstrapping (/qualia-new): answer ~5 design questions; the agent generates PRODUCT.md + DESIGN.md. Planning (/qualia-plan): review the design contract on each frontend task; catch register mismatches early. Building (/qualia-build): slop-detect runs automatically; you only see it if it fails. Verifying (/qualia-verify): read the rubric table; treat design FAILs the same as functional FAILs. Shipping (/qualia-ship): full polish gate runs; can be overridden with --skip-polish but do not make it a habit.',
+        tips: [
+          'Design problems caught at planning cost 1 minute. Caught at shipping cost 1 hour.',
+          'The rubric scores 8 dimensions: Typography, Color cohesion, Spatial rhythm, Layout originality, Shadow & depth, Motion intent, Microcopy specificity, Container depth.',
+          'If slop-detect fails during build, fix the issue; do not disable the scanner.',
+        ],
+        isMilestone: true,
+      },
+    ],
+    checklist: {
+      title: 'Design Integration Checklist',
+      items: [
+        'PRODUCT.md exists with brand voice, register, and anti-references',
+        'DESIGN.md has OKLCH palette, scene sentence, and color strategy commitment',
+        'Every frontend task in the plan has a design contract',
+        'No absolute bans in the codebase (slop-detect passes)',
+        'Verifier scores all 8 design dimensions at 3/5 or above',
+        'Correct register applied: Brand (distinctive) or Product (familiar)',
+        'No banned fonts (Inter, Roboto, Arial, system-ui, Space Grotesk)',
+        'OKLCH colors used throughout; no #000 or #fff',
+      ],
+    },
+  },
+
   // =====================================================================
-  // REFERENCE — Commands in one place
+  // REFERENCE -- Commands in one place
   // =====================================================================
 
   {

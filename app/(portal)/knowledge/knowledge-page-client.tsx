@@ -798,7 +798,7 @@ const CURRICULUM: CurriculumPart[] = [
   {
     title: 'Daily craft',
     subtitle: 'What every working day looks like.',
-    lessons: ['daily-routine', 'design-quality'],
+    lessons: ['daily-routine', 'design-quality', 'design-integration'],
   },
   {
     title: 'Ship it',

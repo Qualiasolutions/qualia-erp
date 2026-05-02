@@ -21,6 +21,7 @@ import {
   Copy,
   Lightbulb,
   PaperPlaneTilt,
+  Palette,
   Path,
   PuzzlePiece,
   StopCircle,
@@ -79,7 +80,7 @@ function newId(): string {
    Curated resources — hand-picked, beautiful, useful
    ────────────────────────────────────────────────────────────────── */
 
-type ResourceId = 'commands' | 'lifecycle' | 'playbook' | 'concepts';
+type ResourceId = 'commands' | 'lifecycle' | 'playbook' | 'concepts' | 'design-integration';
 
 interface ResourceMeta {
   id: ResourceId;
@@ -122,6 +123,14 @@ const RESOURCES: ResourceMeta[] = [
     icon: PuzzlePiece,
     accent: 'text-violet-500',
     ringClass: 'group-hover:ring-violet-500/30',
+  },
+  {
+    id: 'design-integration',
+    title: 'Design Integration (v4.5.0)',
+    subtitle: 'Design woven into every agent. OKLCH, slop-detect, rubric scoring.',
+    icon: Palette,
+    accent: 'text-rose-500',
+    ringClass: 'group-hover:ring-rose-500/30',
   },
 ];
 
@@ -690,7 +699,8 @@ function ResourceModal({ id, onClose }: { id: ResourceId; onClose: () => void })
             id === 'commands' && 'from-emerald-500/30',
             id === 'lifecycle' && 'from-blue-500/30',
             id === 'playbook' && 'from-amber-500/30',
-            id === 'concepts' && 'from-violet-500/30'
+            id === 'concepts' && 'from-violet-500/30',
+            id === 'design-integration' && 'from-rose-500/30'
           )}
           aria-hidden
         />
@@ -725,6 +735,7 @@ function ResourceModal({ id, onClose }: { id: ResourceId; onClose: () => void })
           {id === 'lifecycle' && <LifecycleContent />}
           {id === 'playbook' && <PlaybookContent />}
           {id === 'concepts' && <ConceptsContent />}
+          {id === 'design-integration' && <DesignIntegrationContent />}
         </div>
       </div>
 
@@ -1346,6 +1357,230 @@ function ConceptsContent() {
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------
+   Resource content -- Design Integration (v4.5.0)
+   ------------------------------------------------------------------ */
+
+interface DesignSection {
+  label: string;
+  tint: string;
+  items: Array<{ title: string; body: string; detail?: string[] }>;
+}
+
+const DESIGN_SECTIONS: DesignSection[] = [
+  {
+    label: 'What changed and why',
+    tint: 'text-rose-500',
+    items: [
+      {
+        title: 'Design is no longer a final phase',
+        body: 'Previously design was Phase 1 of the Handoff milestone. Build everything ugly, polish at the end. That ordering produced predictable problems: late rework, expensive changes, and results that never quite matched the brand. Starting with v4.5.0, the design substrate (PRODUCT.md, DESIGN.md, design rules) is loaded by every road agent from day one.',
+      },
+      {
+        title: 'Every agent is design-aware',
+        body: 'Plans carry a design contract per frontend task. Builders run an anti-slop scan before commit. Verifiers score 8 design dimensions alongside functional checks. The result: design quality is continuous, not bolted on.',
+      },
+    ],
+  },
+  {
+    label: 'New artifacts (the substrate)',
+    tint: 'text-blue-500',
+    items: [
+      {
+        title: 'PRODUCT.md (required at /qualia-new)',
+        body: 'Captures users, brand voice, register, anti-references, and strategic principles. Generated from ~5 design questions during project kickoff.',
+      },
+      {
+        title: 'DESIGN.md (rewritten)',
+        body: 'OKLCH palette, color strategy commitment, scene sentence, typography hierarchy, component tokens, and motion rules. Much deeper than the v4.4 version.',
+      },
+      {
+        title: 'rules/design-laws.md',
+        body: 'Universal rules both registers honor: OKLCH mandate, absolute bans, no em-dashes, second-order slop test.',
+      },
+      {
+        title: 'rules/design-brand.md',
+        body: 'Brand register for marketing, landing, and portfolio sites. The bar is distinctiveness. Memorable beats safe.',
+      },
+      {
+        title: 'rules/design-product.md',
+        body: 'Product register for app UI, admin panels, and dashboards. The bar is earned familiarity. Linear / Notion / Stripe fluency.',
+      },
+      {
+        title: 'rules/design-rubric.md',
+        body: '8 dimensions, anchored 1-5. Score of 3 means "ships". Below 3 means the phase fails.',
+      },
+      {
+        title: 'bin/slop-detect.mjs',
+        body: 'Standalone CLI scanner with ~17 anti-pattern checks across critical / high / medium / low. No AI required. Runs automatically during build.',
+      },
+    ],
+  },
+  {
+    label: 'How road agents change',
+    tint: 'text-emerald-500',
+    items: [
+      {
+        title: 'Planner',
+        body: 'Frontend tasks now carry a design contract per task (tokens, register, scope). Reads PRODUCT.md + DESIGN.md as locked input.',
+      },
+      {
+        title: 'Plan-checker',
+        body: 'Validates every frontend task has a design contract. Blocks plans that step on absolute bans.',
+      },
+      {
+        title: 'Builder',
+        body: 'Auto-runs slop-detect.mjs on its own output before commit. Refuses to commit on absolute-ban hits.',
+      },
+      {
+        title: 'Verifier',
+        body: 'Scores 8 design dimensions. Any dimension below 3 fails the phase, same as a functional bug.',
+      },
+    ],
+  },
+  {
+    label: '/qualia-polish is now scope-adaptive',
+    tint: 'text-amber-500',
+    items: [
+      {
+        title: 'Component scope',
+        body: '/qualia-polish src/components/Button.tsx',
+        detail: ['~30s runtime. Tokens, slop-detect, regenerate, verify.'],
+      },
+      {
+        title: 'Section scope',
+        body: '/qualia-polish app/dashboard',
+        detail: ['~3m runtime. Plus light direction, Lighthouse, axe audit.'],
+      },
+      {
+        title: 'App scope (default)',
+        body: '/qualia-polish',
+        detail: ['~12m runtime. All 7 stages, fan-out batches of 5.'],
+      },
+      {
+        title: 'Redesign scope',
+        body: '/qualia-polish --redesign',
+        detail: ['~30m runtime. Shape to craft, 2 vision iterations, drift audit.'],
+      },
+      {
+        title: 'Critique (read-only)',
+        body: '/qualia-polish --critique',
+        detail: ['Scored report. No changes made.'],
+      },
+      {
+        title: 'Quick',
+        body: '/qualia-polish --quick',
+        detail: ['~1m runtime. Gates only, no vision loop.'],
+      },
+    ],
+  },
+  {
+    label: 'The non-negotiables',
+    tint: 'text-violet-500',
+    items: [
+      {
+        title: 'Always do',
+        body: 'These are mandatory on every project.',
+        detail: [
+          'OKLCH colors with neutrals tinted toward brand hue (no #000, no #fff)',
+          'Commit to a color strategy first (Restrained / Committed / Full palette / Drenched)',
+          'Write a scene sentence before deciding light vs dark theme',
+          'Vary spacing for rhythm',
+          'Pair Brand register with distinctiveness; Product register with familiarity',
+          'Trust slop-detect output',
+        ],
+      },
+      {
+        title: 'Never do',
+        body: 'Absolute bans. Slop-detect catches these automatically.',
+        detail: [
+          'Inter, Roboto, Arial, system-ui, Space Grotesk',
+          'Purple-blue gradients on white or dark',
+          'Side-stripe borders (border-left: 4px as decoration)',
+          'Gradient text (background-clip: text)',
+          'Identical card grids of three items',
+          'Em dashes or --',
+          'Modal as first thought',
+          'Glassmorphism by default',
+        ],
+      },
+    ],
+  },
+  {
+    label: 'Role-specific cheat sheet',
+    tint: 'text-rose-500',
+    items: [
+      {
+        title: 'Bootstrapping (/qualia-new)',
+        body: 'Answer ~5 design questions. The agent generates PRODUCT.md + DESIGN.md.',
+      },
+      {
+        title: 'Planning (/qualia-plan)',
+        body: 'Review the design contract on each frontend task. Catch register mismatches early.',
+      },
+      {
+        title: 'Building (/qualia-build)',
+        body: 'slop-detect runs automatically. You only see it if it fails.',
+      },
+      {
+        title: 'Verifying (/qualia-verify)',
+        body: 'Read the rubric table. Treat design FAILs same as functional FAILs.',
+      },
+      {
+        title: 'Shipping (/qualia-ship)',
+        body: 'Full polish gate runs. Can be overridden with --skip-polish (do not make it a habit).',
+      },
+    ],
+  },
+];
+
+function DesignIntegrationContent() {
+  return (
+    <div className="qm-stagger space-y-6">
+      {DESIGN_SECTIONS.map((section) => (
+        <section key={section.label}>
+          <div className="mb-3 flex items-center gap-2">
+            <span className={cn('h-2 w-2 rounded-full bg-current', section.tint)} aria-hidden />
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
+              {section.label}
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {section.items.map((item) => (
+              <div
+                key={item.title}
+                className="rounded-xl border border-border bg-muted/20 p-3 transition-colors hover:bg-muted/40"
+              >
+                <p className="text-sm font-semibold leading-tight text-foreground">{item.title}</p>
+                <p className="mt-1.5 text-[12px] leading-snug text-muted-foreground">{item.body}</p>
+                {item.detail && (
+                  <ul className="mt-2 space-y-1">
+                    {item.detail.map((d, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-[11px] leading-snug text-muted-foreground"
+                      >
+                        <span
+                          className={cn(
+                            'mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-current',
+                            section.tint
+                          )}
+                          aria-hidden
+                        />
+                        <span>{d}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
