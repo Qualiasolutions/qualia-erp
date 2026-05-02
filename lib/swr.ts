@@ -23,6 +23,7 @@ import {
   getAssignmentHistory,
 } from '@/app/actions/project-assignments';
 import { getTaskAttachments } from '@/app/actions/task-attachments';
+import { getDailyBrief } from '@/app/actions/daily-brief';
 
 import type { TeamMemberStatus } from '@/app/actions/work-sessions';
 
@@ -106,6 +107,8 @@ export const cacheKeys = {
   requestComments: (requestId: string) => `request-comments-${requestId}`,
   phaseComments: (projectId: string, phaseName: string) =>
     `phase-comments-${projectId}-${phaseName}`,
+  dailyBrief: (forDate?: string) => ['daily-brief', forDate ?? 'today'] as const,
+  dailyBriefHistory: 'daily-brief-history',
 } as const;
 
 // ============================================================================
@@ -2296,5 +2299,39 @@ export function invalidatePhaseComments(projectId: string, phaseName: string, im
     });
   } else {
     mutate(cacheKeys.phaseComments(projectId, phaseName));
+  }
+}
+
+/**
+ * Hook for the auto-generated daily brief.
+ */
+export function useDailyBrief(forDate?: string) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(cacheKeys.dailyBrief(forDate), () => getDailyBrief(forDate), autoRefreshConfig);
+  return {
+    brief: data,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate the daily brief cache after a tick / add / regenerate.
+ */
+export function invalidateDailyBrief(immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.dailyBrief(), undefined, { revalidate: true });
+    mutate(cacheKeys.dailyBriefHistory, undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.dailyBrief());
+    mutate(cacheKeys.dailyBriefHistory);
   }
 }

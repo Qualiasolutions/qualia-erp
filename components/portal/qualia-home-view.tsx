@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Check, ExternalLink, Lock, RotateCcw } from 'lucide-react';
+import { ArrowRight, Check, ExternalLink, Lock, Plus, RefreshCw, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,16 @@ import {
   useTodaysMeetings,
   useTeamTodaySnapshot,
   useEmployeeAssignments,
+  useDailyBrief,
+  invalidateDailyBrief,
 } from '@/lib/swr';
+import {
+  dismissBriefItem,
+  undismissBriefItem,
+  createManualBriefItem,
+  regenerateMyDailyBrief,
+  type BriefItem,
+} from '@/app/actions/daily-brief';
 import { useClockGate } from '@/components/clock-gate-provider';
 import {
   AssignmentFocusCard,
@@ -791,92 +801,10 @@ function WhosDoingWhatCard({
 
 /* ─────────────────────────── Daily Brief ─────────────────────────── */
 
-type BriefItem = {
-  tag: string;
-  lead?: string;
-  body: string;
-};
-
-type BriefSection = {
-  heading: string;
-  items: BriefItem[];
-};
-
-// PLACEHOLDER content seeded from the screenshot. Wire to a data source in the next pass.
-const DAILY_BRIEF_SECTIONS: BriefSection[] = [
-  {
-    heading: 'Proposals to draft',
-    items: [
-      {
-        tag: 'OWNER',
-        lead: 'Catalina (Panther):',
-        body: ' Demo today went OK — prepare proposal.',
-      },
-      { tag: 'OWNER', lead: 'Viva website:', body: ' Adult content site — proposal requested.' },
-      { tag: 'OWNER', lead: 'Ophthalmos:', body: ' Prepare proposal ahead of their demo.' },
-    ],
-  },
-  {
-    heading: 'Tomorrow — Thursday 30 April',
-    items: [
-      {
-        tag: 'TEAM',
-        lead: '16:00 · Academy of Giulio',
-        body: ' goes live. All hands on support.',
-      },
-      { tag: 'ME', lead: '15:00 · Meeting with Andrea', body: ' re: the other expo.' },
-      { tag: 'ME', lead: '15:00 (2h block) · Meeting with Jay', body: '.' },
-      { tag: 'TEAM', body: 'Meeting booked with Peter.' },
-    ],
-  },
-  {
-    heading: 'Follow-ups — Hasan',
-    items: [{ tag: 'HASAN', lead: 'Finalise the payment matter', body: ' John sent through.' }],
-  },
-  {
-    heading: 'Follow-ups — Moayad',
-    items: [
-      { tag: 'MOAYAD', lead: 'Chase Futini', body: ' — she hasn’t filled in the form yet.' },
-      { tag: 'MOAYAD', lead: 'Follow up with BioPharma', body: ' contacts on his side.' },
-    ],
-  },
-  {
-    heading: 'Follow-ups — Me',
-    items: [
-      { tag: 'ME', lead: 'Aramex', body: ' — re: Vero Models.' },
-      {
-        tag: 'ME',
-        lead: 'Reply to Gio (Limassol)',
-        body: ' — confirm time after 1 PM Friday for the meet.',
-      },
-      { tag: 'ME', lead: 'Reply to Marco', body: '.' },
-      { tag: 'ME', lead: 'Reply to Mahmoud', body: ' re: construction website.' },
-      { tag: 'ME', lead: 'Push Oliver’s fixes', body: ' for Innervo.' },
-      { tag: 'ME', lead: 'Follow up with Buddy’s father', body: ' re: Kuwait project.' },
-      {
-        tag: 'ME',
-        lead: 'Message Lauren',
-        body: ' — schedule call to fix the missing tick on Sophia.',
-      },
-      { tag: 'ME', lead: 'Follow up re: the new Event Master', body: '.' },
-      { tag: 'ME', lead: 'Shufti Ashiya', body: ' — pending action.' },
-    ],
-  },
-  {
-    heading: 'Next week',
-    items: [
-      { tag: 'ME', lead: 'Monday · Meeting with Thomas (UK)', body: '.' },
-      { tag: 'ME', lead: 'Monday · Armenius', body: ' follow-up scheduled.' },
-    ],
-  },
-];
-
 const TAG_TONES: Record<string, string> = {
   OWNER: 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400',
   TEAM: 'border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-400',
   ME: 'border-primary/25 bg-primary/10 text-primary',
-  HASAN: 'border-violet-500/25 bg-violet-500/10 text-violet-700 dark:text-violet-400',
-  MOAYAD: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
 };
 
 function BriefTagPill({ tag }: { tag: string }) {
@@ -896,26 +824,34 @@ function BriefTagPill({ tag }: { tag: string }) {
 
 function BriefRow({
   item,
-  done,
+  pending,
   onToggle,
 }: {
   item: BriefItem;
-  done: boolean;
+  pending: boolean;
   onToggle: () => void;
 }) {
+  const done = item.dismissed_at !== null;
   return (
-    <div className={cn('flex items-start gap-3 px-6 py-2.5', done && 'opacity-50')}>
+    <div
+      className={cn(
+        'flex items-start gap-3 px-6 py-2.5 transition-opacity',
+        (done || pending) && 'opacity-50'
+      )}
+    >
       <button
         type="button"
         onClick={onToggle}
         aria-pressed={done}
         aria-label={done ? 'Mark as not done' : 'Mark as done'}
+        disabled={pending}
         className={cn(
           'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card',
           done
             ? 'border-primary bg-primary text-primary-foreground'
-            : 'border-border bg-background hover:border-primary/50'
+            : 'border-border bg-background hover:border-primary/50',
+          pending && 'cursor-not-allowed'
         )}
       >
         {done ? <Check className="h-3 w-3" strokeWidth={3} aria-hidden /> : null}
@@ -936,29 +872,6 @@ function BriefRow({
   );
 }
 
-const BRIEF_DONE_STORAGE_KEY = 'qualia.dailyBrief.done.v1';
-
-function todayKey(): string {
-  return new Date().toLocaleDateString('en-CA');
-}
-
-function itemId(sectionHeading: string, index: number): string {
-  return `${sectionHeading}::${index}`;
-}
-
-function readDoneState(): { day: string; ids: string[] } | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(BRIEF_DONE_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { day?: unknown; ids?: unknown };
-    if (typeof parsed.day !== 'string' || !Array.isArray(parsed.ids)) return null;
-    return { day: parsed.day, ids: parsed.ids.filter((x): x is string => typeof x === 'string') };
-  } catch {
-    return null;
-  }
-}
-
 function DailyBriefCard() {
   const today = new Date();
   const dateLabel = today.toLocaleDateString('en-GB', {
@@ -968,38 +881,74 @@ function DailyBriefCard() {
     year: 'numeric',
   });
 
-  // Persist done items per-day in localStorage so the brief survives refreshes
-  // but resets when the day rolls over.
-  const [doneIds, setDoneIds] = useState<Set<string>>(new Set());
+  const { brief, isLoading } = useDailyBrief();
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addBody, setAddBody] = useState('');
+  const [addLead, setAddLead] = useState('');
 
-  useEffect(() => {
-    const stored = readDoneState();
-    if (stored && stored.day === todayKey()) {
-      setDoneIds(new Set(stored.ids));
+  const handleToggle = useCallback(async (item: BriefItem) => {
+    setPendingIds((prev) => new Set(prev).add(item.id));
+    try {
+      const result =
+        item.dismissed_at === null
+          ? await dismissBriefItem(item.id)
+          : await undismissBriefItem(item.id);
+      if (!result.success) {
+        toast.error(result.error || 'Failed to update item');
+      } else {
+        invalidateDailyBrief();
+      }
+    } finally {
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
     }
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(
-      BRIEF_DONE_STORAGE_KEY,
-      JSON.stringify({ day: todayKey(), ids: Array.from(doneIds) })
-    );
-  }, [doneIds]);
-
-  const toggle = useCallback((id: string) => {
-    setDoneIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const handleRegenerate = useCallback(async () => {
+    setIsRegenerating(true);
+    try {
+      const result = await regenerateMyDailyBrief();
+      if (!result.success) {
+        toast.error(result.error || 'Failed to regenerate brief');
+      } else {
+        toast.success('Brief refreshed');
+        invalidateDailyBrief();
+      }
+    } finally {
+      setIsRegenerating(false);
+    }
   }, []);
 
-  const totalItems = DAILY_BRIEF_SECTIONS.reduce((sum, s) => sum + s.items.length, 0);
-  const doneCount = doneIds.size;
+  const handleAdd = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!addBody.trim()) return;
+      const result = await createManualBriefItem({
+        body: addBody.trim(),
+        lead: addLead.trim() || undefined,
+      });
+      if (!result.success) {
+        toast.error(result.error || 'Failed to add item');
+        return;
+      }
+      setAddBody('');
+      setAddLead('');
+      setShowAdd(false);
+      invalidateDailyBrief();
+    },
+    [addBody, addLead]
+  );
 
-  const reset = useCallback(() => setDoneIds(new Set()), []);
+  const sections = brief?.sections ?? [];
+  const activeCount = brief?.totals.active ?? 0;
+  const dismissedCount = brief?.totals.dismissed ?? 0;
+  const totalToday = activeCount + dismissedCount;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -1009,74 +958,192 @@ function DailyBriefCard() {
             Qualia Solutions
           </p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight">Daily Brief</h2>
-          <p className="mt-1 text-xs text-muted-foreground">{dateLabel} · ERP entry</p>
+          <p className="mt-1 text-xs text-muted-foreground">{dateLabel} · auto-generated</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span
             className="rounded-md border border-border bg-muted/40 px-2 py-1 font-mono text-[10px] font-semibold uppercase tabular-nums tracking-[0.12em] text-muted-foreground"
             aria-live="polite"
           >
-            {doneCount}/{totalItems} done
+            {dismissedCount}/{totalToday} done
           </span>
-          {doneCount > 0 ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowAdd((v) => !v)}
+            className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
+            aria-label="Add manual item"
+          >
+            <Plus className="h-3 w-3" aria-hidden />
+            Add
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleRegenerate}
+            disabled={isRegenerating}
+            className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
+            aria-label="Regenerate brief"
+          >
+            <RefreshCw className={cn('h-3 w-3', isRegenerating && 'animate-spin')} aria-hidden />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {showAdd ? (
+        <form
+          onSubmit={handleAdd}
+          className="flex flex-col gap-2 border-b border-border bg-muted/20 px-6 py-3"
+        >
+          <input
+            type="text"
+            value={addLead}
+            onChange={(e) => setAddLead(e.target.value)}
+            placeholder="Lead (optional, e.g. 'Chase Futini:')"
+            className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          />
+          <input
+            type="text"
+            value={addBody}
+            onChange={(e) => setAddBody(e.target.value)}
+            placeholder="What needs doing?"
+            className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            autoFocus
+          />
+          <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              onClick={reset}
-              className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
+              onClick={() => {
+                setShowAdd(false);
+                setAddBody('');
+                setAddLead('');
+              }}
             >
-              <RotateCcw className="h-3 w-3" aria-hidden />
-              Reset
+              Cancel
             </Button>
-          ) : null}
-        </div>
-      </div>
+            <Button type="submit" size="sm" disabled={!addBody.trim()}>
+              Add
+            </Button>
+          </div>
+        </form>
+      ) : null}
 
       <div className="pb-2">
-        {DAILY_BRIEF_SECTIONS.map((section) => {
-          const sectionDone = section.items.reduce(
-            (n, _item, i) => n + (doneIds.has(itemId(section.heading, i)) ? 1 : 0),
-            0
-          );
-          const allDone = sectionDone === section.items.length && section.items.length > 0;
-          return (
+        {isLoading && sections.length === 0 ? (
+          <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading brief…</div>
+        ) : sections.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <p className="text-sm font-medium text-foreground">All clear.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {dismissedCount > 0
+                ? `${dismissedCount} ticked today.`
+                : 'Press Refresh to regenerate, or add an item.'}
+            </p>
+          </div>
+        ) : (
+          sections.map((section) => (
             <section key={section.heading} className="pt-5">
               <div className="flex items-center justify-between gap-3 px-6 pb-2">
                 <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   {section.heading}
                 </p>
                 <p
-                  className={cn(
-                    'font-mono text-[10px] tabular-nums',
-                    allDone ? 'text-primary' : 'text-muted-foreground/70'
-                  )}
-                  aria-label={`${sectionDone} of ${section.items.length} done`}
+                  className="font-mono text-[10px] tabular-nums text-muted-foreground/70"
+                  aria-label={`${section.items.length} items`}
                 >
-                  {sectionDone}/{section.items.length}
+                  {section.items.length}
                 </p>
               </div>
               <div>
-                {section.items.map((item, i) => {
-                  const id = itemId(section.heading, i);
-                  return (
-                    <BriefRow
-                      key={id}
-                      item={item}
-                      done={doneIds.has(id)}
-                      onToggle={() => toggle(id)}
-                    />
-                  );
-                })}
+                {section.items.map((item) => (
+                  <BriefRow
+                    key={item.id}
+                    item={item}
+                    pending={pendingIds.has(item.id)}
+                    onToggle={() => handleToggle(item)}
+                  />
+                ))}
               </div>
             </section>
-          );
-        })}
+          ))
+        )}
       </div>
 
-      <div className="border-t border-border bg-muted/30 px-6 py-3 text-[11px] italic text-muted-foreground">
-        Auto-generated brief. Saved to ERP. Tick items off as you close them — resets at midnight.
-      </div>
+      {dismissedCount > 0 ? (
+        <div className="border-t border-border bg-muted/30">
+          <button
+            type="button"
+            onClick={() => setShowHistory((v) => !v)}
+            className="flex w-full items-center justify-between gap-2 px-6 py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-primary"
+          >
+            <span>Today&apos;s history · {dismissedCount} done</span>
+            <RotateCcw
+              className={cn('h-3 w-3 transition-transform', showHistory && 'rotate-180')}
+              aria-hidden
+            />
+          </button>
+          {showHistory ? <DismissedToday /> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function DismissedToday() {
+  const { brief } = useDailyBrief();
+  const [items, setItems] = useState<BriefItem[]>([]);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const { getDailyBriefHistory } = await import('@/app/actions/daily-brief');
+      const data = await getDailyBriefHistory(1);
+      if (!cancelled) {
+        // Only show items dismissed today
+        const today = brief?.forDate ?? new Date().toISOString().slice(0, 10);
+        setItems(data.filter((i) => i.for_date === today));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [brief?.forDate, brief?.totals.dismissed]);
+
+  const handleUndo = useCallback(async (item: BriefItem) => {
+    setPendingIds((prev) => new Set(prev).add(item.id));
+    try {
+      const result = await undismissBriefItem(item.id);
+      if (result.success) {
+        invalidateDailyBrief();
+      } else {
+        toast.error(result.error || 'Failed to undo');
+      }
+    } finally {
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
+    }
+  }, []);
+
+  if (items.length === 0) return null;
+  return (
+    <div className="border-t border-border bg-background/40 pb-2">
+      {items.map((item) => (
+        <BriefRow
+          key={item.id}
+          item={item}
+          pending={pendingIds.has(item.id)}
+          onToggle={() => handleUndo(item)}
+        />
+      ))}
     </div>
   );
 }

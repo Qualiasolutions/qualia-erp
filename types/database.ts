@@ -962,6 +962,88 @@ export type Database = {
           },
         ];
       };
+      daily_brief_items: {
+        Row: {
+          body: string;
+          created_at: string;
+          dismissed_at: string | null;
+          dismissed_by: string | null;
+          for_date: string;
+          generated_at: string;
+          id: string;
+          lead: string | null;
+          owner_id: string;
+          priority: number;
+          snoozed_until: string | null;
+          source_id: string | null;
+          source_metadata: Json;
+          source_type: string;
+          tag: string;
+          updated_at: string;
+          workspace_id: string | null;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          dismissed_at?: string | null;
+          dismissed_by?: string | null;
+          for_date: string;
+          generated_at?: string;
+          id?: string;
+          lead?: string | null;
+          owner_id: string;
+          priority?: number;
+          snoozed_until?: string | null;
+          source_id?: string | null;
+          source_metadata?: Json;
+          source_type: string;
+          tag: string;
+          updated_at?: string;
+          workspace_id?: string | null;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          dismissed_at?: string | null;
+          dismissed_by?: string | null;
+          for_date?: string;
+          generated_at?: string;
+          id?: string;
+          lead?: string | null;
+          owner_id?: string;
+          priority?: number;
+          snoozed_until?: string | null;
+          source_id?: string | null;
+          source_metadata?: Json;
+          source_type?: string;
+          tag?: string;
+          updated_at?: string;
+          workspace_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'daily_brief_items_dismissed_by_fkey';
+            columns: ['dismissed_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'daily_brief_items_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'daily_brief_items_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       daily_checkins: {
         Row: {
           actual_clock_out_time: string | null;
