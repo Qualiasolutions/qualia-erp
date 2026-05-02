@@ -8,7 +8,7 @@ Internal SaaS — **Qualia ERP / Portal v2** — live at https://portal.qualiaso
 ## Current Position
 
 **Milestone 5 — Operational Hardening + Polish** (open, rolling)
-Phase: rolling — no formal phase ceremony; small commits land directly on master
+Phase: 1 of 1 — Rolling Polish (direct-to-master, no phase ceremony)
 Status: in_progress
 Last activity: 2026-05-02 — Session report QS-REPORT-04 generated
 
