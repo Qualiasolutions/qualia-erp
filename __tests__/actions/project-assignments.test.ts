@@ -33,7 +33,7 @@ jest.mock('@/app/actions/shared', () => ({
 
 jest.mock('@/app/actions/auto-assign', () => ({
   getActiveMilestone: jest.fn(),
-  createTasksFromMilestone: jest.fn(),
+  createTasksFromMilestones: jest.fn(),
 }));
 
 jest.mock('@/app/actions/notifications', () => ({
@@ -154,69 +154,10 @@ afterAll(() => {
 
 describe('assignEmployeeToProject', () => {
   let assignEmployeeToProject: typeof import('@/app/actions/project-assignments').assignEmployeeToProject;
-  let getActiveMilestone: jest.Mock;
-  let createTasksFromMilestone: jest.Mock;
-  let createNotification: jest.Mock;
 
   beforeEach(async () => {
     ({ assignEmployeeToProject } = await import('@/app/actions/project-assignments'));
-    getActiveMilestone = jest.requireMock('@/app/actions/auto-assign').getActiveMilestone;
-    createTasksFromMilestone = jest.requireMock(
-      '@/app/actions/auto-assign'
-    ).createTasksFromMilestone;
-    createNotification = jest.requireMock('@/app/actions/notifications').createNotification;
   });
-
-  /**
-   * Sets up the standard happy-path mocks for assignEmployeeToProject.
-   * Tables queried in order:
-   *  1. projects (get project)
-   *  2. profiles (get employee)
-   *  3. workspace_members (verify membership)
-   *  4. project_assignments (check duplicate)
-   *  5. project_assignments (insert new)
-   *  6. activities (activity log)
-   *  7. tasks (check existing undone auto-tasks)
-   */
-  function setupAssignHappyPath(
-    overrides: {
-      existingUndoneTasks?: unknown[];
-      milestoneResult?: unknown;
-      autoResult?: { created: number; skipped: number; total: number };
-    } = {}
-  ) {
-    // 1. projects
-    enqueueTable('projects', { workspace_id: WORKSPACE_ID, name: 'Test Project' });
-    // 2. profiles
-    enqueueTable('profiles', { id: EMPLOYEE_ID, full_name: 'John Doe' });
-    // 3. workspace_members
-    enqueueTable('workspace_members', { id: 'membership-1' });
-    // 4. project_assignments (check duplicate) -- null means no duplicate
-    enqueueTable('project_assignments', null);
-    // 5. project_assignments (insert)
-    enqueueTable('project_assignments', {
-      id: ASSIGNMENT_ID,
-      project_id: PROJECT_ID,
-      employee_id: EMPLOYEE_ID,
-    });
-    // 6. activities
-    enqueueTable('activities', null);
-    // 7. tasks (check existing undone auto-tasks)
-    enqueueTable('tasks', overrides.existingUndoneTasks ?? []);
-
-    // Auto-assign mocks
-    if (overrides.milestoneResult !== undefined) {
-      getActiveMilestone.mockResolvedValue(overrides.milestoneResult);
-    } else {
-      getActiveMilestone.mockResolvedValue({ milestoneNumber: 1, phases: [] });
-    }
-
-    if (overrides.autoResult !== undefined) {
-      createTasksFromMilestone.mockResolvedValue(overrides.autoResult);
-    } else {
-      createTasksFromMilestone.mockResolvedValue({ created: 3, skipped: 0, total: 3 });
-    }
-  }
 
   // ----------- Auth & validation -----------
 
@@ -288,44 +229,6 @@ describe('assignEmployeeToProject', () => {
     expect(result.error).toBe('Employee is already assigned to this project');
   });
 
-  // ----------- Auto-assign on assignment: DISABLED per Fawzi (Phase 5, 2026-04-17) -----------
-  // The auto-task creation flow was removed from assignEmployeeToProject. Guard against regression.
-
-  it('does NOT call createTasksFromMilestone on assignment (auto-assign disabled)', async () => {
-    setupAssignHappyPath({
-      autoResult: { created: 5, skipped: 1, total: 6 },
-    });
-
-    const fd = makeFormData({ project_id: PROJECT_ID, employee_id: EMPLOYEE_ID });
-    const result = await assignEmployeeToProject(fd);
-
-    expect(result.success).toBe(true);
-    expect(getActiveMilestone).not.toHaveBeenCalled();
-    expect(createTasksFromMilestone).not.toHaveBeenCalled();
-    expect(createNotification).not.toHaveBeenCalled();
-  });
-
-  // ----------- Existing undone tasks: transfer path -----------
-
-  it('transfers existing undone auto-tasks instead of creating new ones', async () => {
-    setupAssignHappyPath({
-      existingUndoneTasks: [{ id: 'task-1' }, { id: 'task-2' }],
-    });
-    // When undone tasks exist, an additional tasks.update call happens
-    enqueueTable('tasks', [{ id: 'task-1' }, { id: 'task-2' }]);
-
-    const fd = makeFormData({ project_id: PROJECT_ID, employee_id: EMPLOYEE_ID });
-    const result = await assignEmployeeToProject(fd);
-
-    expect(result.success).toBe(true);
-    // Should NOT call the auto-assign engine since tasks already exist
-    expect(getActiveMilestone).not.toHaveBeenCalled();
-    expect(createTasksFromMilestone).not.toHaveBeenCalled();
-    expect(createNotification).not.toHaveBeenCalled();
-  });
-
-  // Auto-task resilience tests removed — auto-assign path no longer exists.
-
   // ----------- DB insert error -----------
 
   it('returns error when assignment insert fails', async () => {
@@ -353,16 +256,14 @@ describe('assignEmployeeToProject', () => {
 describe('reassignEmployee', () => {
   let reassignEmployee: typeof import('@/app/actions/project-assignments').reassignEmployee;
   let getActiveMilestone: jest.Mock;
-  let createTasksFromMilestone: jest.Mock;
-  let createNotification: jest.Mock;
+  let createTasksFromMilestones: jest.Mock;
 
   beforeEach(async () => {
     ({ reassignEmployee } = await import('@/app/actions/project-assignments'));
     getActiveMilestone = jest.requireMock('@/app/actions/auto-assign').getActiveMilestone;
-    createTasksFromMilestone = jest.requireMock(
+    createTasksFromMilestones = jest.requireMock(
       '@/app/actions/auto-assign'
-    ).createTasksFromMilestone;
-    createNotification = jest.requireMock('@/app/actions/notifications').createNotification;
+    ).createTasksFromMilestones;
   });
 
   /**
@@ -417,9 +318,9 @@ describe('reassignEmployee', () => {
     }
 
     if (overrides.autoResult !== undefined) {
-      createTasksFromMilestone.mockResolvedValue(overrides.autoResult);
+      createTasksFromMilestones.mockResolvedValue(overrides.autoResult);
     } else {
-      createTasksFromMilestone.mockResolvedValue({ created: 4, skipped: 0, total: 4 });
+      createTasksFromMilestones.mockResolvedValue({ created: 4, skipped: 0, total: 4 });
     }
   }
 
@@ -496,22 +397,6 @@ describe('reassignEmployee', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBe('Employee is already assigned to the new project');
-  });
-
-  // ----------- Auto-assign on reassignment: DISABLED per Fawzi (Phase 5) -----------
-
-  it('does NOT call createTasksFromMilestone on reassignment (auto-assign disabled)', async () => {
-    setupReassignHappyPath({
-      autoResult: { created: 4, skipped: 0, total: 4 },
-    });
-
-    const fd = makeFormData({ assignment_id: ASSIGNMENT_ID, new_project_id: NEW_PROJECT_ID });
-    const result = await reassignEmployee(fd);
-
-    expect(result.success).toBe(true);
-    expect(getActiveMilestone).not.toHaveBeenCalled();
-    expect(createTasksFromMilestone).not.toHaveBeenCalled();
-    expect(createNotification).not.toHaveBeenCalled();
   });
 
   // ----------- Rollback on insert failure -----------

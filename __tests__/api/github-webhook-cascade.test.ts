@@ -4,7 +4,7 @@
  * The cascade flow:
  * 1. Webhook detects phase(s) completed via VERIFICATION.md files
  * 2. Checks if ALL phases in the milestone are now completed
- * 3. If yes: markMilestoneTasksDone → find assignees → createTasksFromMilestone → notify
+ * 3. If yes: markMilestoneTasksDone → find assignees → notify
  *
  * These tests verify the auto-assign engine functions work correctly when
  * called with an external Supabase client (as the webhook does).
@@ -18,11 +18,8 @@ const PHASE_ID_1 = '02d60c07-f159-457e-a809-03c2aa5ba784';
 const PHASE_ID_2 = '12d60c07-f159-457e-a809-03c2aa5ba785';
 const PHASE_ID_3 = '22d60c07-f159-457e-a809-03c2aa5ba800';
 const ITEM_ID_1 = '22d60c07-f159-457e-a809-03c2aa5ba786';
-const ITEM_ID_2 = '32d60c07-f159-457e-a809-03c2aa5ba787';
 const TASK_ID_1 = '52d60c07-f159-457e-a809-03c2aa5ba789';
 const TASK_ID_2 = '62d60c07-f159-457e-a809-03c2aa5ba790';
-const USER_A = '4fcff947-9839-4b1a-9962-f9528d4c084b';
-const WORKSPACE_ID = 'c8ec2ea1-325e-4ea9-9334-4590e88845f9';
 
 // ---- Module mocks ----
 
@@ -113,11 +110,10 @@ function makePhaseItem(overrides: Record<string, unknown> = {}) {
 
 describe('auto-assign with external Supabase client', () => {
   let getActiveMilestone: typeof import('@/app/actions/auto-assign').getActiveMilestone;
-  let createTasksFromMilestone: typeof import('@/app/actions/auto-assign').createTasksFromMilestone;
   let markMilestoneTasksDone: typeof import('@/app/actions/auto-assign').markMilestoneTasksDone;
 
   beforeEach(async () => {
-    ({ getActiveMilestone, createTasksFromMilestone, markMilestoneTasksDone } =
+    ({ getActiveMilestone, markMilestoneTasksDone } =
       await import('@/app/actions/auto-assign'));
   });
 
@@ -163,54 +159,6 @@ describe('auto-assign with external Supabase client', () => {
     });
   });
 
-  describe('createTasksFromMilestone with external client (milestone_cascade trigger)', () => {
-    it('creates tasks with milestone_cascade trigger', async () => {
-      const items = [
-        makePhaseItem({ id: ITEM_ID_1 }),
-        makePhaseItem({ id: ITEM_ID_2, title: 'Write tests', display_order: 1 }),
-      ];
-
-      mockTable('projects', { workspace_id: WORKSPACE_ID });
-      mockTable('project_phases', [makePhase()]);
-      mockTable('phase_items', items);
-      mockTable('tasks', []);
-
-      const result = await createTasksFromMilestone(
-        PROJECT_ID,
-        1,
-        USER_A,
-        'milestone_cascade',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        mockSupabase as any
-      );
-
-      expect(result.total).toBe(2);
-      expect(mockSupabase.from).toHaveBeenCalledWith('tasks');
-    });
-
-    it('is idempotent — does not create duplicates when all items have tasks', async () => {
-      const items = [makePhaseItem({ id: ITEM_ID_1 })];
-
-      mockTable('projects', { workspace_id: WORKSPACE_ID });
-      mockTable('project_phases', [makePhase()]);
-      mockTable('phase_items', items);
-      // Existing task already covers this item
-      mockTable('tasks', [{ source_phase_item_id: ITEM_ID_1 }]);
-
-      const result = await createTasksFromMilestone(
-        PROJECT_ID,
-        1,
-        USER_A,
-        'milestone_cascade',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        mockSupabase as any
-      );
-
-      expect(result.total).toBe(1);
-      expect(result.skipped).toBe(1);
-      expect(result.created).toBe(0);
-    });
-  });
 });
 
 // ============================================================================

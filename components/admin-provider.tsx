@@ -17,8 +17,6 @@ const SUPER_ADMIN_EMAIL = 'info@qualiasolutions.net';
 interface AdminContextType {
   isAdmin: boolean;
   isSuperAdmin: boolean;
-  /** @deprecated Manager role removed — use isAdmin instead */
-  isManagerOrAbove: boolean;
   userRole: string | null;
   userEmail: string | null;
   userId: string | null;
@@ -38,7 +36,6 @@ interface AdminContextType {
 const AdminContext = createContext<AdminContextType>({
   isAdmin: false,
   isSuperAdmin: false,
-  isManagerOrAbove: false,
   userRole: null,
   userEmail: null,
   userId: null,
@@ -162,12 +159,10 @@ export function AdminProvider({ children }: AdminProviderProps) {
   const effectiveRole = isViewingAs ? viewAsRole : realRole;
 
   const isAdmin = effectiveRole === 'admin' || (baseState.isSuperAdmin && !isViewingAs);
-  const isManagerOrAbove = isAdmin;
 
   const contextValue: AdminContextType = {
     isAdmin,
     isSuperAdmin: baseState.isSuperAdmin && !isViewingAs,
-    isManagerOrAbove,
     userRole: effectiveRole,
     userEmail: baseState.userEmail,
     userId: baseState.userId,

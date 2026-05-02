@@ -24,7 +24,7 @@ export default async function PortalBillingPage() {
     redirect('/');
   }
 
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'manager';
+  const isAdmin = profile?.role === 'admin';
 
   // App Library guard: block clients if the "billing" app is disabled
   if (profile?.role === 'client') {

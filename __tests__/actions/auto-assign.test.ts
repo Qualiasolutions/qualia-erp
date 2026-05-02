@@ -2,7 +2,7 @@ export {};
 
 /**
  * Tests for app/actions/auto-assign.ts
- * Covers: getActiveMilestone, createTasksFromMilestone,
+ * Covers: getActiveMilestone,
  *         handleReassignment, markMilestoneTasksDone
  */
 
@@ -11,7 +11,6 @@ const PROJECT_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const PHASE_ID_1 = '02d60c07-f159-457e-a809-03c2aa5ba784';
 const PHASE_ID_2 = '12d60c07-f159-457e-a809-03c2aa5ba785';
 const ITEM_ID_1 = '22d60c07-f159-457e-a809-03c2aa5ba786';
-const ITEM_ID_2 = '32d60c07-f159-457e-a809-03c2aa5ba787';
 const TASK_ID_1 = '52d60c07-f159-457e-a809-03c2aa5ba789';
 const TASK_ID_2 = '62d60c07-f159-457e-a809-03c2aa5ba790';
 const USER_A = '4fcff947-9839-4b1a-9962-f9528d4c084b';
@@ -165,82 +164,6 @@ describe('getActiveMilestone', () => {
 
     const result = await getActiveMilestone(PROJECT_ID);
     expect(result).toBeNull();
-  });
-});
-
-// ============================================================================
-// createTasksFromMilestone
-// ============================================================================
-
-describe('createTasksFromMilestone', () => {
-  let createTasksFromMilestone: typeof import('@/app/actions/auto-assign').createTasksFromMilestone;
-
-  beforeEach(async () => {
-    ({ createTasksFromMilestone } = await import('@/app/actions/auto-assign'));
-  });
-
-  it('returns zeros when project not found', async () => {
-    mockTable('projects', null, { message: 'Not found' });
-
-    const result = await createTasksFromMilestone(PROJECT_ID, 1, USER_A, 'assignment');
-    expect(result).toEqual({ created: 0, skipped: 0, total: 0 });
-  });
-
-  it('returns zeros when no phases exist for milestone', async () => {
-    mockTable('projects', { workspace_id: WORKSPACE_ID });
-    mockTable('project_phases', []);
-
-    const result = await createTasksFromMilestone(PROJECT_ID, 1, USER_A, 'assignment');
-    expect(result).toEqual({ created: 0, skipped: 0, total: 0 });
-  });
-
-  it('returns zeros when no phase items exist', async () => {
-    mockTable('projects', { workspace_id: WORKSPACE_ID });
-    mockTable('project_phases', [makePhase()]);
-    mockTable('phase_items', []);
-
-    const result = await createTasksFromMilestone(PROJECT_ID, 1, USER_A, 'assignment');
-    expect(result).toEqual({ created: 0, skipped: 0, total: 0 });
-  });
-
-  it('creates tasks for phase items and returns accurate counts', async () => {
-    const items = [
-      makePhaseItem({ id: ITEM_ID_1 }),
-      makePhaseItem({ id: ITEM_ID_2, title: 'Write tests', display_order: 1 }),
-    ];
-
-    mockTable('projects', { workspace_id: WORKSPACE_ID });
-    mockTable('project_phases', [makePhase()]);
-    mockTable('phase_items', items);
-    // No existing tasks
-    mockTable('tasks', []);
-
-    const result = await createTasksFromMilestone(PROJECT_ID, 1, USER_A, 'assignment');
-
-    // The upsert was called on the tasks table
-    expect(mockSupabase.from).toHaveBeenCalledWith('tasks');
-    // Should report 2 created (upsert returns the inserted rows)
-    // Note: with our mock, upsert resolves with the mocked data (empty array)
-    // The real test is that no errors occurred
-    expect(result.total).toBe(2);
-  });
-
-  it('skips items that already have tasks (idempotency)', async () => {
-    const items = [
-      makePhaseItem({ id: ITEM_ID_1 }),
-      makePhaseItem({ id: ITEM_ID_2, title: 'Write tests', display_order: 1 }),
-    ];
-
-    mockTable('projects', { workspace_id: WORKSPACE_ID });
-    mockTable('project_phases', [makePhase()]);
-    mockTable('phase_items', items);
-    // One item already has a task
-    mockTable('tasks', [{ source_phase_item_id: ITEM_ID_1 }]);
-
-    const result = await createTasksFromMilestone(PROJECT_ID, 1, USER_A, 'assignment');
-
-    // 2 total items, 1 already exists
-    expect(result.total).toBe(2);
   });
 });
 
