@@ -68,7 +68,6 @@ tsc_output.txt
 .planning/*
 .planning/archive/*
 .planning/phases/*
-.planning/reports/*
 !.planning/tracking.json
 !.planning/STATE.md
 !.planning/JOURNEY.md
@@ -77,6 +76,8 @@ tsc_output.txt
 !.planning/REQUIREMENTS.md
 !.planning/REVIEW.md
 !.planning/DESIGN.md
+!.planning/reports/
+!.planning/reports/*.md
 
 # Playwright MCP logs
 .playwright-mcp/
