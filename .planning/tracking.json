@@ -6,9 +6,50 @@
   "team_id": "",
   "project_id": "",
   "git_remote": "",
-  "milestone": 1,
-  "milestone_name": "Between milestones",
-  "milestones": [],
+  "milestone": 5,
+  "milestone_name": "Operational Hardening + Polish",
+  "milestones": [
+    {
+      "num": 1,
+      "name": "Foundation + Core Portal",
+      "total_phases": 13,
+      "phases_completed": 13,
+      "tasks_completed": 0,
+      "shipped_url": "",
+      "closed_at": "",
+      "backfilled": true
+    },
+    {
+      "num": 2,
+      "name": "UI Remake",
+      "total_phases": 8,
+      "phases_completed": 8,
+      "tasks_completed": 0,
+      "shipped_url": "",
+      "closed_at": "2026-04-20T00:00:00.000Z",
+      "backfilled": true
+    },
+    {
+      "num": 3,
+      "name": "Remaining Surfaces",
+      "total_phases": 4,
+      "phases_completed": 4,
+      "tasks_completed": 0,
+      "shipped_url": "",
+      "closed_at": "2026-04-25T00:00:00.000Z",
+      "backfilled": true
+    },
+    {
+      "num": 4,
+      "name": "Polish + Hardening",
+      "total_phases": 7,
+      "phases_completed": 7,
+      "tasks_completed": 0,
+      "shipped_url": "",
+      "closed_at": "2026-04-26T00:00:00.000Z",
+      "backfilled": true
+    }
+  ],
   "phase": 1,
   "phase_name": "TBD",
   "total_phases": 1,
@@ -20,20 +61,20 @@
   "gap_cycles": {},
   "blockers": [],
   "session_started_at": "2026-04-26T14:53:53.986Z",
-  "last_updated": "2026-05-01T20:21:00Z",
-  "last_pushed_at": "2026-05-01T20:21:00Z",
-  "last_commit": "34d88fc2",
+  "last_updated": "2026-05-02T06:36:29Z",
+  "last_pushed_at": "2026-05-02T06:36:29Z",
+  "last_commit": "1eb07a4a",
   "build_count": 0,
   "deploy_count": 0,
   "deployed_url": "",
-  "notes": "Session report QS-REPORT-03 generated",
+  "notes": "Session report QS-REPORT-04 generated",
   "submitted_by": "",
   "lifetime": {
     "tasks_completed": 0,
     "phases_completed": 0,
-    "milestones_completed": 0,
-    "total_phases": 0,
-    "last_closed_milestone": 0
+    "milestones_completed": 4,
+    "total_phases": 32,
+    "last_closed_milestone": 4
   },
   "report_seq": 4
 }
