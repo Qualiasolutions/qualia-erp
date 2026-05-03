@@ -5,7 +5,7 @@
  * Handles OAuth token management, API calls, and data transformations
  */
 
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { decryptToken } from '@/lib/token-encryption';
 
 const ZOHO_API_BASE = 'https://www.zohoapis.eu';
@@ -91,7 +91,10 @@ type ZohoTokenConfig = {
  * Refreshes token if expired
  */
 async function getAccessToken(workspaceId: string): Promise<string | null> {
-  const supabase = await createClient();
+  // Service-role client: integration tokens are server-only secrets, and this
+  // path runs from cron jobs (no user session) and from server actions alike.
+  // RLS on `workspace_integrations` would otherwise reject session-less reads.
+  const supabase = createAdminClient();
 
   const { data: integration } = await supabase
     .from('workspace_integrations')
@@ -133,7 +136,7 @@ async function refreshAccessToken(
   refreshToken: string,
   existingConfig: ZohoTokenConfig = {}
 ): Promise<string | null> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const clientId = process.env.ZOHO_CLIENT_ID;
   const clientSecret = process.env.ZOHO_CLIENT_SECRET;
@@ -389,7 +392,7 @@ export async function createZohoInvoice(
  * Read the Zoho organization_id for a workspace from the integration config.
  */
 async function getZohoOrganizationId(workspaceId: string): Promise<string | null> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from('workspace_integrations')
     .select('config')
@@ -556,7 +559,7 @@ export async function getZohoContacts(workspaceId: string, search?: string): Pro
  * Check if workspace has Zoho integration enabled
  */
 export async function isZohoConnected(workspaceId: string): Promise<boolean> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data } = await supabase
     .from('workspace_integrations')
