@@ -3,227 +3,269 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>May 2026 — How we work now · Qualia Solutions</title>
-<meta name="description" content="The team update for May 2026. New ways of working, new framework version, mandatory clock-in. Easy explainer." />
+<title>May 2026 · Qualia Solutions</title>
+<meta name="description" content="The May 2026 team brief: how we work now, plus the Framework v5 release notes. One link, two tabs." />
 <link rel="preconnect" href="https://api.fontshare.com" />
 <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700,900&f[]=clash-display@500,600,700&f[]=jetbrains-mono@400,500&display=swap" rel="stylesheet" />
 <style>
   /* ============================================================
-     QUALIA BRAND TOKENS — from /Qualia_Solutions_Brand_Guidelines
+     QUALIA BRAND TOKENS — from Brand Guidelines v1.0
      ============================================================ */
   :root {
     --teal: #00FFD1;
-    --teal-deep: #00D9B3;
-    --teal-brand: #00a4ac;
+    --teal-dark: #00D9B3;
+    --teal-deep: #00a4ac;
     --purple: #8B5CF6;
     --pink: #EC4899;
     --emerald: #10B981;
     --amber: #f59e0b;
-    --red: #ef4444;
 
     --bg: #050505;
-    --bg-elev: #0f0f0f;
-    --bg-card: #141414;
-    --bg-slate: #1e293b;
+    --elevated: #0f0f0f;
+    --card: #141414;
+    --slate: #1e293b;
 
     --text: #EDEDED;
-    --text-mute: #A1A1AA;
+    --text-dim: #A1A1AA;
     --text-faint: #71717A;
 
-    --glass-bg: rgba(255,255,255,0.04);
-    --glass-bg-hover: rgba(255,255,255,0.07);
-    --glass-border: rgba(255,255,255,0.1);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --glass: rgba(255, 255, 255, 0.03);
+    --glass-hover: rgba(255, 255, 255, 0.06);
 
-    --radius-sm: 8px;
-    --radius: 16px;
-    --radius-lg: 24px;
-    --radius-xl: 32px;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
 
-    --shadow-glow: 0 0 60px rgba(0, 255, 209, 0.12);
-    --shadow-card: 0 24px 48px -24px rgba(0,0,0,0.6);
-
-    --maxw: 1120px;
+    --maxw: 1240px;
     --pad-x: clamp(1.25rem, 4vw, 3rem);
   }
 
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
-
   body {
     background: var(--bg);
     color: var(--text);
     font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     font-size: 16px;
-    line-height: 1.65;
+    line-height: 1.6;
     overflow-x: hidden;
     min-height: 100vh;
-    background-image:
-      radial-gradient(ellipse 80% 60% at 50% -20%, rgba(0,255,209,0.08) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 100% 100%, rgba(139,92,246,0.04) 0%, transparent 50%);
-    background-attachment: fixed;
   }
 
-  ::selection { background: rgba(0, 255, 209, 0.25); color: var(--text); }
+  /* Background gradient + subtle grid */
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(0,255,209,0.04) 0%, transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(139,92,246,0.03) 0%, transparent 40%);
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+  main { position: relative; z-index: 1; }
+  ::selection { background: rgba(0,255,209,0.25); color: var(--text); }
 
-  /* Display font — strong identity */
-  .display, h1, h2, h3 {
-    font-family: 'Clash Display', 'Satoshi', system-ui, sans-serif;
+  /* Typography */
+  h1, h2, h3, h4 {
+    font-family: 'Clash Display', sans-serif;
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.1;
-    margin: 0;
+    color: var(--text);
   }
-  h1 { font-size: clamp(2.5rem, 1.5rem + 4vw, 5rem); }
-  h2 { font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.75rem); letter-spacing: -0.025em; }
-  h3 { font-size: clamp(1.15rem, 0.95rem + 0.8vw, 1.5rem); font-weight: 500; }
-  p  { margin: 0; }
+  h1 { font-size: clamp(2.25rem, 1.4rem + 4vw, 4.5rem); font-weight: 700; }
+  h2 { font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.5rem); margin-bottom: 0.5em; }
+  h3 { font-size: clamp(1.15rem, 0.95rem + 0.8vw, 1.4rem); margin-bottom: 0.35em; }
+  h4 { font-size: 1.0625rem; font-weight: 700; letter-spacing: 0; }
 
-  .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.875em; }
+  p { color: var(--text-dim); }
+  p.lead { color: var(--text); font-size: 1.0625rem; line-height: 1.65; }
 
-  /* Layout shell */
-  .shell { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--pad-x); }
-
-  /* ============================================================
-     TOPBAR
-     ============================================================ */
-  .topbar {
-    position: sticky; top: 0; z-index: 50;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    background: rgba(5,5,5,0.7);
-    border-bottom: 1px solid var(--glass-border);
-  }
-  .topbar-inner {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 0;
-  }
-  .brand {
-    display: flex; align-items: center; gap: 10px;
-    font-family: 'Clash Display', sans-serif; font-weight: 600; letter-spacing: -0.01em;
-    font-size: 1.05rem;
-  }
-  .brand-q {
-    width: 30px; height: 30px;
-    display: inline-flex; align-items: center; justify-content: center;
-    border: 1px solid var(--glass-border);
-    border-radius: 9px;
+  code, .mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.9em;
     color: var(--teal);
-    font-family: 'Clash Display', serif; font-weight: 700;
-    font-size: 1.1rem;
-    background: linear-gradient(135deg, rgba(0,255,209,0.08), transparent);
+    background: rgba(0,255,209,0.07);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    border: 1px solid rgba(0,255,209,0.12);
   }
-  .topbar-meta {
-    color: var(--text-faint); font-size: 0.75rem;
-    font-family: 'JetBrains Mono', monospace;
-    letter-spacing: 0.04em;
-    display: flex; align-items: center; gap: 12px;
+  a { color: var(--teal); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .container {
+    width: 100%;
+    max-width: var(--maxw);
+    margin-inline: auto;
+    padding-inline: var(--pad-x);
   }
-  .pulse-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--teal); box-shadow: 0 0 10px var(--teal);
-    animation: pulse 2s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.85); }
+  section { padding-block: clamp(3.5rem, 7vw, 6rem); position: relative; }
+
+  /* Reveal animation */
+  .reveal { opacity: 0; transform: translateY(20px); transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out); }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
 
   /* ============================================================
-     HERO
+     TOP HERO (shared across both tabs)
      ============================================================ */
-  .hero {
-    padding: clamp(80px, 12vw, 160px) 0 clamp(64px, 10vw, 120px);
-    position: relative;
+  .hero-shell {
+    padding-block: clamp(4.5rem, 9vw, 7rem) clamp(2rem, 4vw, 3rem);
   }
   .hero-eyebrow {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 6px 14px;
-    border: 1px solid var(--glass-border);
-    border-radius: 999px;
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    display: inline-flex; align-items: center; gap: 0.75rem;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--text-mute);
-    margin-bottom: 28px;
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.18em;
+    color: var(--teal);
+    margin-bottom: 1.75rem;
   }
-  .hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
-  .hero h1 {
-    max-width: 18ch;
-    margin-bottom: 28px;
+  .hero-eyebrow::before {
+    content: ''; width: 32px; height: 1px; background: var(--teal);
   }
-  .gradient-text {
-    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.65) 100%);
-    -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent;
+  .hero-shell h1 {
+    max-width: 16ch;
+    margin-bottom: 1.25rem;
   }
-  .teal-text {
-    background: linear-gradient(135deg, var(--teal) 0%, var(--teal-deep) 100%);
-    -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent;
+  .hero-shell h1 .accent {
+    background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   }
-  .hero-sub {
-    font-size: clamp(1.05rem, 0.9rem + 0.6vw, 1.35rem);
-    color: var(--text-mute);
+  .hero-shell p.lead {
     max-width: 56ch;
-    line-height: 1.55;
+    color: var(--text-dim);
+    font-size: clamp(1.05rem, 0.9rem + 0.6vw, 1.3rem);
+    margin-bottom: 2.5rem;
   }
   .hero-meta {
-    margin-top: 36px;
-    display: flex; flex-wrap: wrap; gap: 20px;
-    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    display: flex; flex-wrap: wrap; gap: 0.875rem 2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
     color: var(--text-faint);
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--border);
   }
-  .hero-meta span strong { color: var(--text); font-weight: 500; }
+  .hero-meta span strong { color: var(--text); font-weight: 500; margin-left: 0.4em; }
 
   /* ============================================================
-     SECTION FRAME
+     TAB NAV (sticky)
      ============================================================ */
-  section.block {
-    padding: clamp(48px, 7vw, 96px) 0;
-    border-top: 1px solid var(--glass-border);
-    position: relative;
+  .tabs-nav {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: rgba(5,5,5,0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-block: 1px solid var(--border);
   }
-  .section-eyebrow {
-    display: inline-block;
-    width: 64px; height: 2px; background: var(--teal);
-    margin-bottom: 18px;
-    border-radius: 2px;
+  .tabs-nav-inner {
+    display: flex; align-items: stretch;
+    gap: 0;
+    padding-block: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs-nav-inner::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0;
+    background: transparent;
+    color: var(--text-faint);
+    border: none;
+    padding: 1.1rem 1.5rem;
+    font-family: 'Satoshi', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+    position: relative;
+    transition: color 180ms var(--ease);
+    display: inline-flex; align-items: center; gap: 0.6rem;
+  }
+  .tab-btn:hover { color: var(--text-dim); }
+  .tab-btn[aria-selected="true"] {
+    color: var(--text);
+  }
+  .tab-btn[aria-selected="true"]::after {
+    content: '';
+    position: absolute;
+    left: 1.5rem; right: 1.5rem; bottom: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--teal), var(--teal-dark));
+    border-radius: 2px 2px 0 0;
+    box-shadow: 0 0 12px rgba(0,255,209,0.4);
+  }
+  .tab-btn .tab-label-mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--text-faint);
+    margin-right: 0.4rem;
+  }
+  .tab-btn[aria-selected="true"] .tab-label-mono { color: var(--teal); }
+
+  /* ============================================================
+     TAB PANELS
+     ============================================================ */
+  .tab-panel {
+    display: none;
+    animation: fade-in 400ms var(--ease-out);
+  }
+  .tab-panel.active { display: block; }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* ============================================================
+     OPERATIONS TAB — section blocks
+     ============================================================ */
+  .accent-bar {
+    width: 56px; height: 3px;
+    background: var(--teal); border-radius: 2px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0 20px rgba(0,255,209,0.4);
   }
   .section-tag {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--teal-brand);
-    margin-bottom: 8px;
+    font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 0.75rem;
+    display: block;
   }
   .section-lead {
-    color: var(--text-mute);
+    color: var(--text-dim);
     max-width: 68ch;
-    margin-top: 16px;
+    margin-top: 1rem;
     font-size: 1.05rem;
   }
 
-  /* ============================================================
-     BIG SHIFT BANNER
-     ============================================================ */
+  /* The big shift banner */
   .shift-banner {
-    margin-top: 28px;
-    padding: clamp(28px, 4vw, 44px);
-    border-radius: var(--radius-lg);
+    margin-top: 2rem;
+    padding: clamp(1.75rem, 3vw, 2.5rem);
+    border-radius: 24px;
     background: linear-gradient(135deg, rgba(0,255,209,0.08) 0%, rgba(0,217,179,0.04) 100%);
     border: 1px solid rgba(0,255,209,0.2);
     position: relative; overflow: hidden;
   }
   .shift-banner::before {
-    content: ""; position: absolute; inset: 0;
+    content: ''; position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(circle at 80% 50%, rgba(0,255,209,0.15) 0%, transparent 50%);
-    pointer-events: none;
   }
   .shift-grid {
-    display: grid; gap: 24px;
+    display: grid; gap: 1.5rem;
     grid-template-columns: 1fr;
     position: relative; z-index: 1;
   }
@@ -231,72 +273,53 @@
   .shift-date {
     font-family: 'Clash Display', sans-serif;
     font-size: clamp(2.5rem, 6vw, 4.5rem);
-    font-weight: 700;
-    line-height: 1;
-    color: var(--teal);
+    font-weight: 700; line-height: 1; color: var(--teal);
     letter-spacing: -0.02em;
   }
-  .shift-date small { display: block; font-size: 0.28em; letter-spacing: 0.18em; color: var(--text-mute); margin-top: 6px; text-transform: uppercase; font-weight: 500; }
-  .shift-text h2 { margin-bottom: 12px; }
-  .shift-text p { color: var(--text-mute); max-width: 50ch; }
+  .shift-date small { display: block; font-size: 0.28em; letter-spacing: 0.18em; color: var(--text-dim); margin-top: 6px; text-transform: uppercase; font-weight: 500; }
+  .shift-text h2 { margin-bottom: 0.6em; }
+  .shift-text p { color: var(--text-dim); max-width: 50ch; }
 
-  /* ============================================================
-     CARD GRID
-     ============================================================ */
+  /* Card grid */
   .card-grid {
-    display: grid; gap: 16px;
+    display: grid; gap: 1rem;
     grid-template-columns: 1fr;
-    margin-top: 32px;
+    margin-top: 2rem;
   }
   @media (min-width: 720px) { .card-grid.cols-2 { grid-template-columns: 1fr 1fr; } }
   @media (min-width: 980px) { .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); } }
-
   .card {
-    padding: clamp(20px, 2.5vw, 28px);
-    border-radius: var(--radius);
-    background: var(--bg-card);
-    border: 1px solid var(--glass-border);
-    transition: border-color 200ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    padding: clamp(1.25rem, 2.5vw, 1.75rem);
+    border-radius: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    transition: border-color 200ms var(--ease), transform 200ms var(--ease);
   }
   .card:hover { border-color: rgba(0,255,209,0.25); transform: translateY(-2px); }
   .card-num {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem; letter-spacing: 0.1em;
-    color: var(--teal-brand);
-    margin-bottom: 12px;
+    color: var(--teal-deep);
+    margin-bottom: 0.75em;
   }
-  .card h3 { margin-bottom: 8px; }
-  .card p { color: var(--text-mute); font-size: 0.95rem; }
+  .card h3 { margin-bottom: 0.4em; }
+  .card p { color: var(--text-dim); font-size: 0.95rem; }
 
-  /* ============================================================
-     WORKFLOW STEPS
-     ============================================================ */
+  /* Workflow steps */
   .flow {
-    margin-top: 36px;
-    display: grid; gap: 14px;
+    margin-top: 2.25rem;
+    display: grid; gap: 0.875rem;
     grid-template-columns: 1fr;
   }
-  @media (min-width: 980px) {
-    .flow { grid-template-columns: repeat(5, 1fr); align-items: stretch; }
-  }
+  @media (min-width: 980px) { .flow { grid-template-columns: repeat(5, 1fr); } }
   .flow-step {
-    position: relative;
-    padding: 22px;
-    border-radius: var(--radius);
-    background: var(--bg-card);
-    border: 1px solid var(--glass-border);
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 1.4rem;
+    border-radius: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    transition: all 200ms var(--ease);
   }
-  .flow-step:hover { border-color: rgba(0,255,209,0.3); }
-  .flow-step::after {
-    content: ""; display: none;
-    position: absolute; right: -14px; top: 50%;
-    width: 24px; height: 1px; background: linear-gradient(90deg, var(--teal-brand), transparent);
-    transform: translateY(-50%);
-  }
-  @media (min-width: 980px) {
-    .flow-step:not(:last-child)::after { display: block; }
-  }
+  .flow-step:hover { border-color: rgba(0,255,209,0.3); transform: translateY(-2px); }
   .flow-num {
     width: 26px; height: 26px;
     display: flex; align-items: center; justify-content: center;
@@ -305,19 +328,19 @@
     color: var(--teal);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.78rem; font-weight: 600;
-    margin-bottom: 14px;
+    margin-bottom: 0.875em;
   }
   .flow-step h4 {
     font-family: 'Clash Display', sans-serif;
     font-size: 1.05rem; font-weight: 600;
-    margin: 0 0 6px;
+    margin: 0 0 0.4em;
     letter-spacing: -0.015em;
   }
-  .flow-step p { color: var(--text-mute); font-size: 0.85rem; line-height: 1.5; }
-  .flow-step .cmd {
-    margin-top: 12px;
+  .flow-step p { color: var(--text-dim); font-size: 0.85rem; line-height: 1.5; }
+  .flow-step .cmd-pill {
+    margin-top: 0.875em;
     display: inline-block;
-    padding: 4px 10px;
+    padding: 0.25em 0.7em;
     border-radius: 6px;
     background: rgba(0,255,209,0.06);
     border: 1px solid rgba(0,255,209,0.18);
@@ -326,50 +349,47 @@
     font-size: 0.78rem;
   }
 
-  /* ============================================================
-     COMMANDS TABLE
-     ============================================================ */
+  /* Commands list */
   .cmd-list {
-    margin-top: 32px;
-    display: grid; gap: 10px;
+    margin-top: 2rem;
+    display: grid; gap: 0.625rem;
   }
   .cmd-row {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 4px;
-    padding: 18px 20px;
-    border-radius: var(--radius);
-    background: var(--bg-card);
-    border: 1px solid var(--glass-border);
-    transition: all 180ms ease;
+    gap: 0.25rem;
+    padding: 1.1rem 1.3rem;
+    border-radius: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    transition: all 180ms var(--ease);
   }
-  @media (min-width: 720px) {
-    .cmd-row { grid-template-columns: 220px 1fr; gap: 24px; align-items: baseline; padding: 18px 24px; }
-  }
+  @media (min-width: 720px) { .cmd-row { grid-template-columns: 220px 1fr; gap: 1.5rem; align-items: baseline; } }
   .cmd-row:hover { border-color: rgba(0,255,209,0.2); background: rgba(0,255,209,0.02); }
   .cmd-row code {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.95rem;
     color: var(--teal);
     font-weight: 500;
+    background: transparent;
+    border: none;
+    padding: 0;
   }
-  .cmd-row p { color: var(--text-mute); font-size: 0.92rem; }
+  .cmd-row p { color: var(--text-dim); font-size: 0.92rem; }
 
-  /* ============================================================
-     CHECKLIST
-     ============================================================ */
+  /* Checklist */
   .checklist {
-    margin-top: 32px;
-    display: grid; gap: 12px;
+    margin-top: 2rem;
+    display: grid; gap: 0.75rem;
   }
   .check {
     display: grid;
     grid-template-columns: 32px 1fr;
-    gap: 16px;
-    padding: 18px 22px;
-    border-radius: var(--radius);
-    background: var(--bg-card);
-    border: 1px solid var(--glass-border);
+    gap: 1rem;
+    padding: 1.1rem 1.4rem;
+    border-radius: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
     align-items: start;
   }
   .check-mark {
@@ -383,476 +403,1074 @@
     margin-top: 2px;
   }
   .check-mark svg { width: 14px; height: 14px; }
-  .check-body strong { display: block; color: var(--text); font-weight: 500; margin-bottom: 4px; font-size: 0.98rem; }
-  .check-body p { color: var(--text-mute); font-size: 0.88rem; line-height: 1.55; }
+  .check-body strong { display: block; color: var(--text); font-weight: 500; margin-bottom: 0.25em; font-size: 0.98rem; }
+  .check-body p { color: var(--text-dim); font-size: 0.88rem; line-height: 1.55; }
 
-  /* ============================================================
-     BEFORE / AFTER
-     ============================================================ */
+  /* Before / After */
   .ba-grid {
-    display: grid; gap: 16px;
+    display: grid; gap: 1rem;
     grid-template-columns: 1fr;
-    margin-top: 32px;
+    margin-top: 2rem;
   }
-  @media (min-width: 720px) { .ba-grid { grid-template-columns: 1fr 1fr; gap: 18px; } }
+  @media (min-width: 720px) { .ba-grid { grid-template-columns: 1fr 1fr; gap: 1.125rem; } }
   .ba-col {
-    padding: 24px 26px;
-    border-radius: var(--radius);
-    border: 1px solid var(--glass-border);
-    background: var(--bg-card);
+    padding: 1.5rem 1.6rem;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--card);
   }
   .ba-col.before { opacity: 0.7; }
   .ba-col.after { border-color: rgba(0,255,209,0.25); }
   .ba-col h4 {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase;
-    color: var(--text-faint); margin: 0 0 14px;
+    color: var(--text-faint); margin: 0 0 0.875em;
   }
-  .ba-col.after h4 { color: var(--teal-brand); }
-  .ba-col ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .ba-col.after h4 { color: var(--teal-deep); }
+  .ba-col ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.625rem; }
   .ba-col li {
-    color: var(--text-mute);
+    color: var(--text-dim);
     font-size: 0.95rem;
-    padding-left: 22px;
+    padding-left: 1.4rem;
     position: relative;
   }
-  .ba-col.before li::before {
-    content: "—"; position: absolute; left: 0; color: var(--text-faint);
+  .ba-col.before li::before { content: "—"; position: absolute; left: 0; color: var(--text-faint); }
+  .ba-col.after li::before { content: "→"; position: absolute; left: 0; color: var(--teal); }
+
+  /* Cross-link box */
+  .cross-link {
+    margin-top: 2.5rem;
+    padding: 1.5rem 1.75rem;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(0,255,209,0.04));
+    border: 1px solid rgba(139,92,246,0.2);
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;
   }
-  .ba-col.after li::before {
-    content: "→"; position: absolute; left: 0; color: var(--teal);
+  .cross-link-text strong { color: var(--text); font-weight: 500; display: block; margin-bottom: 0.25em; }
+  .cross-link-text p { color: var(--text-dim); font-size: 0.9rem; margin: 0; }
+  .cross-link-btn {
+    padding: 0.65rem 1.1rem;
+    border-radius: 10px;
+    background: var(--teal);
+    color: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem; font-weight: 500;
+    border: 0;
+    cursor: pointer;
+    text-decoration: none !important;
+    transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+  }
+  .cross-link-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px -8px rgba(0,255,209,0.5);
   }
 
   /* ============================================================
-     CTA / CLOSING
+     V5 TAB — feature grid, upgrades, safety, flow, cheat sheet
+     ============================================================ */
+  .tldr {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    border-block: 1px solid var(--border);
+    background: rgba(255,255,255,0.015);
+    margin-top: 2rem;
+  }
+  .tldr-item {
+    padding: 1.75rem clamp(1.25rem, 3vw, 2.5rem);
+    border-right: 1px solid var(--border);
+    transition: background 200ms var(--ease);
+  }
+  .tldr-item:last-child { border-right: none; }
+  .tldr-item:hover { background: var(--glass-hover); }
+  .tldr-num {
+    font-family: 'Clash Display', sans-serif;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    font-weight: 700; color: var(--teal); line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .tldr-label { font-size: 0.78rem; color: var(--text-faint); margin-top: 0.4rem; letter-spacing: 0.02em; }
+
+  .big-idea h2 { max-width: 18ch; }
+  .big-idea .body { display: grid; grid-template-columns: 1fr; gap: clamp(1.5rem, 4vw, 3rem); margin-top: 1.5rem; }
+  @media (min-width: 880px) { .big-idea .body { grid-template-columns: 4fr 5fr; } }
+  .big-idea .body p { font-size: 1rem; line-height: 1.7; max-width: 60ch; }
+  .big-idea .body p + p { margin-top: 1rem; }
+  .big-idea .quote {
+    border-left: 3px solid var(--teal);
+    padding: 0.5rem 0 0.5rem 1.25rem;
+    font-family: 'Clash Display', sans-serif;
+    font-style: italic;
+    font-size: clamp(1.15rem, 1.8vw, 1.5rem);
+    color: var(--text); line-height: 1.4;
+    max-width: 24ch; align-self: center;
+  }
+
+  .feature-grid {
+    display: grid; grid-template-columns: 1fr; gap: 1rem;
+  }
+  @media (min-width: 720px) { .feature-grid { grid-template-columns: repeat(6, 1fr); gap: 1.125rem; } }
+  .feature-card {
+    background: var(--glass);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: clamp(1.25rem, 2.5vw, 1.75rem);
+    display: flex; flex-direction: column;
+    grid-column: span 1;
+    transition: border-color 200ms var(--ease), background 200ms var(--ease), transform 200ms var(--ease);
+  }
+  @media (min-width: 720px) {
+    .feature-card { grid-column: span 3; }
+    .feature-card.wide { grid-column: span 6; }
+  }
+  .feature-card:hover { background: var(--glass-hover); border-color: var(--border-strong); transform: translateY(-2px); }
+  .feature-card .badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    color: var(--teal); margin-bottom: 1rem;
+    text-transform: uppercase; letter-spacing: 0.12em;
+  }
+  .feature-card .badge .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal); box-shadow: 0 0 10px rgba(0,255,209,0.6);
+  }
+  .feature-card.experimental .badge { color: var(--pink); }
+  .feature-card.experimental .badge .dot { background: var(--pink); box-shadow: 0 0 10px rgba(236,72,153,0.6); }
+  .feature-card .cmd-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(1rem, 1.4vw, 1.2rem);
+    font-weight: 500;
+    color: var(--teal);
+    margin-bottom: 0.875rem;
+    word-break: break-all;
+  }
+  .feature-card h3 { font-size: clamp(1.15rem, 1.5vw, 1.3rem); margin-bottom: 0.5rem; line-height: 1.2; }
+  .feature-card p { font-size: 0.92rem; flex: 1; }
+  .feature-card .when {
+    margin-top: 1rem; padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+    font-size: 0.85rem; color: var(--text-faint);
+  }
+  .feature-card .when strong { color: var(--text); font-weight: 500; }
+
+  .upgrade-list { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 1.5rem; }
+  .upgrade-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
+    padding: 1.6rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .upgrade-row:last-child { border-bottom: none; }
+  @media (min-width: 880px) { .upgrade-row { grid-template-columns: 1.2fr 1fr 1fr; gap: 2rem; align-items: center; } }
+  .upgrade-row .cmd-box .cmd-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem; color: var(--teal); margin-bottom: 0.4rem;
+  }
+  .upgrade-row .cmd-box .what { color: var(--text-dim); font-size: 0.92rem; }
+  .upgrade-row .col h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .upgrade-row .before h4 { color: var(--text-faint); }
+  .upgrade-row .after h4 { color: var(--teal); }
+  .upgrade-row .col p { font-size: 0.92rem; line-height: 1.55; }
+  .upgrade-row .before p { color: var(--text-faint); }
+  .upgrade-row .after p { color: var(--text); }
+
+  .safety-grid {
+    display: grid; grid-template-columns: 1fr; gap: 1rem;
+    margin-top: 2rem;
+  }
+  @media (min-width: 720px) { .safety-grid { grid-template-columns: 5fr 4fr 3fr; align-items: start; } }
+  .safety-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.5rem; position: relative;
+  }
+  .safety-card::before {
+    content: ''; position: absolute; left: 0; top: 18%; bottom: 18%;
+    width: 3px; background: var(--accent, var(--teal));
+    border-radius: 0 2px 2px 0;
+  }
+  .safety-card.guards-account { --accent: var(--teal); }
+  .safety-card.guards-env { --accent: var(--purple); }
+  .safety-card.guards-db { --accent: var(--pink); }
+  .safety-card .stop {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--text-faint); margin-bottom: 0.5rem;
+  }
+  .safety-card h3 { font-size: 1.08rem; margin-bottom: 0.5rem; }
+  .safety-card p { font-size: 0.92rem; }
+  .safety-card .example {
+    margin-top: 0.875rem; padding: 0.7rem;
+    background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: var(--text-dim);
+    overflow-x: auto;
+  }
+  .safety-card .example .blocked { color: #ef4444; }
+
+  .safety-extras {
+    margin-top: 2rem; padding: 1.1rem 1.4rem;
+    background: var(--glass); border: 1px solid var(--border);
+    border-radius: 12px; font-size: 0.88rem; color: var(--text-dim);
+  }
+  .safety-extras strong { color: var(--text); font-weight: 500; }
+
+  .flow-line {
+    display: flex; flex-direction: column; gap: 0.625rem; margin-top: 1.5rem;
+  }
+  @media (min-width: 980px) { .flow-line { flex-direction: row; flex-wrap: wrap; align-items: stretch; gap: 0.625rem; } }
+  .flow-line-step {
+    flex: 1; min-width: 0;
+    padding: 1.25rem;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: transform 200ms var(--ease), border-color 200ms var(--ease);
+  }
+  .flow-line-step:hover { transform: translateY(-2px); border-color: var(--teal); }
+  .flow-line-step .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; color: var(--teal);
+    letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  .flow-line-step .cmd-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.92rem; color: var(--text); font-weight: 500;
+    margin-block: 0.4rem 0.5rem; word-break: break-all;
+  }
+  .flow-line-step p { font-size: 0.83rem; line-height: 1.5; color: var(--text-faint); }
+  .flow-loop-note {
+    margin-top: 1.75rem; padding: 1.1rem 1.4rem;
+    background: rgba(139,92,246,0.05); border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 12px; color: var(--text-dim); font-size: 0.92rem;
+  }
+  .flow-loop-note strong { color: var(--purple); font-weight: 500; }
+
+  .cheat-grid {
+    display: grid; grid-template-columns: 1fr; gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  @media (min-width: 760px) { .cheat-grid { grid-template-columns: repeat(2, 1fr); gap: 1.125rem; } }
+  .cheat-block {
+    background: var(--glass); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.4rem 1.6rem;
+  }
+  .cheat-block h4 {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-dim); font-weight: 600;
+    margin-bottom: 1.1rem;
+  }
+  .cheat-row {
+    display: grid;
+    grid-template-columns: minmax(0, max-content) 1fr;
+    column-gap: 1.25rem;
+    align-items: baseline;
+    padding: 0.5rem 0;
+    border-top: 1px dashed var(--border);
+  }
+  .cheat-row:first-of-type { border-top: none; padding-top: 0; }
+  .cheat-row .cmd-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem; color: var(--teal); white-space: nowrap;
+  }
+  .cheat-row .desc { font-size: 0.85rem; color: var(--text-dim); }
+
+  .unchanged {
+    background: rgba(16,185,129,0.025);
+    border-block: 1px solid rgba(16,185,129,0.15);
+  }
+  .unchanged-list {
+    columns: 1; column-gap: 2rem; margin-top: 1.25rem;
+  }
+  @media (min-width: 720px) { .unchanged-list { columns: 2; } }
+  .unchanged-list li {
+    list-style: none; padding: 0.5rem 0 0.5rem 1.75rem;
+    position: relative; font-size: 0.92rem; color: var(--text-dim);
+    break-inside: avoid;
+  }
+  .unchanged-list li::before {
+    content: '✓'; position: absolute; left: 0;
+    color: var(--emerald); font-weight: 700;
+  }
+  .unchanged-list li strong { color: var(--text); font-weight: 500; }
+
+  /* ============================================================
+     CLOSING
      ============================================================ */
   .closing {
     text-align: center;
-    padding: clamp(80px, 10vw, 140px) 0;
-    border-top: 1px solid var(--glass-border);
+    padding-block: clamp(4rem, 8vw, 7rem);
+    border-top: 1px solid var(--border);
     position: relative; overflow: hidden;
   }
   .closing::before {
-    content: ""; position: absolute; inset: 0;
+    content: ''; position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0,255,209,0.08) 0%, transparent 60%);
-    pointer-events: none;
   }
   .closing-q {
     font-family: 'Clash Display', serif; font-weight: 700;
-    font-size: clamp(4rem, 12vw, 9rem);
+    font-size: clamp(3.5rem, 10vw, 7rem);
     color: var(--teal);
-    line-height: 1;
-    letter-spacing: -0.04em;
-    margin: 0 0 16px;
+    line-height: 1; letter-spacing: -0.04em;
+    margin: 0 0 1rem;
     filter: drop-shadow(0 0 40px rgba(0,255,209,0.4));
     position: relative; z-index: 1;
   }
   .closing-line {
     font-family: 'Clash Display', sans-serif;
     font-style: italic;
-    font-size: clamp(1.05rem, 0.9rem + 0.6vw, 1.4rem);
-    color: var(--text-mute);
+    font-size: clamp(1rem, 0.9rem + 0.5vw, 1.3rem);
+    color: var(--text-dim);
     margin: 0 auto;
     max-width: 50ch;
     position: relative; z-index: 1;
   }
   .closing-meta {
-    margin-top: 40px;
+    margin-top: 2rem;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--text-faint);
+    font-size: 0.7rem; color: var(--text-faint);
     letter-spacing: 0.06em;
     position: relative; z-index: 1;
   }
 
-  /* ============================================================
-     SCROLL REVEAL
-     ============================================================ */
-  .reveal {
-    opacity: 0; transform: translateY(20px);
-    transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .reveal.in { opacity: 1; transform: translateY(0); }
-
-  @media (prefers-reduced-motion: reduce) {
-    .reveal { opacity: 1; transform: none; transition: none; }
-    .pulse-dot { animation: none; }
-    * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
-  }
-
-  /* ============================================================
-     PILL
-     ============================================================ */
-  .pill {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 10px; border-radius: 999px;
-    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
-    letter-spacing: 0.06em;
-    background: rgba(0,255,209,0.08); color: var(--teal-brand);
-    border: 1px solid rgba(0,255,209,0.2);
-  }
-  .pill.amber {
-    background: rgba(245,158,11,0.08); color: var(--amber);
-    border-color: rgba(245,158,11,0.2);
-  }
-  .pill.purple {
-    background: rgba(139,92,246,0.1); color: var(--purple);
-    border-color: rgba(139,92,246,0.25);
-  }
-
-  /* ============================================================
-     FOOTER
-     ============================================================ */
-  .foot {
-    padding: 28px 0;
+  footer {
+    padding: 2rem 0;
     color: var(--text-faint);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.72rem;
     text-align: center;
-    border-top: 1px solid var(--glass-border);
+    border-top: 1px solid var(--border);
+  }
+
+  .q-mark {
+    width: 56px; height: 56px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  .q-mark svg path { fill: var(--teal); }
+
+  @media print {
+    body { background: white; color: black; }
+    body::before, body::after { display: none; }
+    .tabs-nav { display: none; }
+    .tab-panel { display: block !important; page-break-before: always; }
+    .feature-card, .safety-card, .flow-step, .cheat-block { break-inside: avoid; }
   }
 </style>
 </head>
 <body>
+<main>
 
   <!-- ============================================================
-       TOPBAR
+       SHARED HERO
        ============================================================ -->
-  <header class="topbar">
-    <div class="shell topbar-inner">
-      <div class="brand">
-        <span class="brand-q" aria-hidden>Q</span>
-        <span>Qualia Solutions</span>
+  <section class="hero-shell">
+    <div class="container">
+      <div class="q-mark reveal">
+        <svg viewBox="0 0 64 64" width="56" height="56" aria-label="Qualia Q">
+          <path d="M32 6c-8.8 0-16 7.2-16 16 0 7.2 4.8 13.3 11.3 15.3l-1 5.7c-.3 1.6.4 3.2 1.7 4l8.8 5.4c1.5.9 3.4.5 4.4-.9.9-1.4.6-3.2-.7-4.3l-7.5-6.3c.6-.1 1.2-.3 1.8-.5l1.6 1.4c1.5 1.3 3.7.7 4.5-1.1.6-1.4.1-3-1.1-3.9l-1.6-1.1C44 33.7 48 28.3 48 22c0-8.8-7.2-16-16-16zm0 4c6.6 0 12 5.4 12 12s-5.4 12-12 12-12-5.4-12-12 5.4-12 12-12z"/>
+        </svg>
       </div>
-      <div class="topbar-meta">
-        <span class="pulse-dot" aria-hidden></span>
-        <span>MAY · 2026 · TEAM UPDATE</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- ============================================================
-       HERO
-       ============================================================ -->
-  <section class="hero shell">
-    <span class="hero-eyebrow reveal">
-      <span class="dot" aria-hidden></span>
-      Read this once. Keep working.
-    </span>
-    <h1 class="reveal">
-      <span class="gradient-text">How we work</span><br/>
-      <span class="teal-text">starting May 1.</span>
-    </h1>
-    <p class="hero-sub reveal">
-      Short, honest, no jargon. Three things change. The framework levels up.
-      Clocking in becomes mandatory. Reports replace tasks. Read the page once and
-      we&rsquo;re aligned for the month.
-    </p>
-    <div class="hero-meta reveal">
-      <span><strong>Effective:</strong> 1 May 2026</span>
-      <span><strong>For:</strong> Hasan · Moayad</span>
-      <span><strong>From:</strong> Fawzi</span>
-    </div>
-  </section>
-
-  <!-- ============================================================
-       THE BIG SHIFT
-       ============================================================ -->
-  <section class="block">
-    <div class="shell">
-      <span class="section-eyebrow reveal" aria-hidden></span>
-      <p class="section-tag reveal">01 · The big shift</p>
-      <h2 class="reveal">From tasks to projects.</h2>
-      <p class="section-lead reveal">
-        We are done with inbox-task soup auto-spawning from every &lt;code&gt;.planning&lt;/code&gt; checklist.
-        Tasks created chaos and made it look like work was happening when it wasn&rsquo;t. From now on,
-        you own <em>projects</em> for the month, with deadlines we agree on together.
+      <div class="hero-eyebrow reveal">May · 2026 · Team brief</div>
+      <h1 class="reveal">
+        How we work,<br/>
+        <span class="accent">starting May 1.</span>
+      </h1>
+      <p class="lead reveal">
+        Two things to read, one link. Tab one is the operations brief — what changes
+        in your day. Tab two is the Framework v5 release notes — what changes in your
+        tools. Pick a tab below, scroll, and you&rsquo;re ready for May.
       </p>
-
-      <div class="shift-banner reveal">
-        <div class="shift-grid">
-          <div class="shift-date">
-            01.05.26
-            <small>Effective</small>
-          </div>
-          <div class="shift-text">
-            <h2>Mandatory clock&#8209;in & clock&#8209;out</h2>
-            <p>
-              Every working day, you clock in when you start, you clock out when you finish.
-              No exceptions, no &ldquo;forgot.&rdquo; The portal will guide you through both.
-              Hasan: 6 days a week. Moayad: 5 days a week. We agreed on this.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="card-grid cols-3">
-        <div class="card reveal">
-          <p class="card-num">01</p>
-          <h3>You get projects</h3>
-          <p>At the start of the month, you and Fawzi agree on the projects you&rsquo;ll deliver. Not tasks. Whole projects, with deadlines.</p>
-        </div>
-        <div class="card reveal">
-          <p class="card-num">02</p>
-          <h3>You report sessions</h3>
-          <p>Every session you finish, you run <span class="mono">/qualia-report</span>. The framework writes everything to the ERP automatically.</p>
-        </div>
-        <div class="card reveal">
-          <p class="card-num">03</p>
-          <h3>You own the outcome</h3>
-          <p>When the project ships, you submit it. Deploy URL, handoff doc, done. That&rsquo;s the unit of accountability.</p>
-        </div>
+      <div class="hero-meta reveal">
+        <span><strong>Effective:</strong> 1 May 2026</span>
+        <span><strong>For:</strong> Hasan · Moayad · Rama · Sally</span>
+        <span><strong>From:</strong> Fawzi</span>
       </div>
     </div>
   </section>
 
   <!-- ============================================================
-       DAILY WORKFLOW
+       STICKY TAB NAV
        ============================================================ -->
-  <section class="block">
-    <div class="shell">
-      <span class="section-eyebrow reveal" aria-hidden></span>
-      <p class="section-tag reveal">02 · Your day, step by step</p>
-      <h2 class="reveal">Five steps. Same shape every day.</h2>
-      <p class="section-lead reveal">
-        This is the only flow you need to memorise. Open the portal, follow the prompts,
-        ship work, log it, go home.
-      </p>
-
-      <div class="flow">
-        <div class="flow-step reveal">
-          <span class="flow-num">01</span>
-          <h4>Clock in</h4>
-          <p>Open the portal. Pick the project. Write what you plan to ship today and how long you think it&rsquo;ll take.</p>
-          <span class="cmd">portal.qualiasolutions.net</span>
-        </div>
-        <div class="flow-step reveal">
-          <span class="flow-num">02</span>
-          <h4>Run the framework</h4>
-          <p>Open Claude Code in the project folder. Use <span class="mono">/qualia</span> to know what&rsquo;s next, then build.</p>
-          <span class="cmd">/qualia</span>
-        </div>
-        <div class="flow-step reveal">
-          <span class="flow-num">03</span>
-          <h4>Build & ship</h4>
-          <p>Plan, build, verify. Use <span class="mono">/qualia-build</span> for phases or <span class="mono">/qualia-quick</span> for small fixes.</p>
-          <span class="cmd">/qualia-build</span>
-        </div>
-        <div class="flow-step reveal">
-          <span class="flow-num">04</span>
-          <h4>Submit report</h4>
-          <p>End of session, run <span class="mono">/qualia-report</span>. It writes a structured report straight to the ERP.</p>
-          <span class="cmd">/qualia-report</span>
-        </div>
-        <div class="flow-step reveal">
-          <span class="flow-num">05</span>
-          <h4>Clock out</h4>
-          <p>Back in the portal. Confirm what you actually shipped. Paste the report URL. Out.</p>
-          <span class="cmd">portal · clock&nbsp;out</span>
-        </div>
-      </div>
+  <nav class="tabs-nav" role="tablist" aria-label="Page sections">
+    <div class="container tabs-nav-inner">
+      <button
+        class="tab-btn"
+        type="button"
+        role="tab"
+        id="tab-ops"
+        aria-controls="panel-ops"
+        aria-selected="true"
+        data-tab="ops"
+      >
+        <span class="tab-label-mono">01</span>
+        How we work
+      </button>
+      <button
+        class="tab-btn"
+        type="button"
+        role="tab"
+        id="tab-v5"
+        aria-controls="panel-v5"
+        aria-selected="false"
+        data-tab="v5"
+      >
+        <span class="tab-label-mono">02</span>
+        Framework v5
+      </button>
     </div>
-  </section>
+  </nav>
 
   <!-- ============================================================
-       NEW COMMANDS
+       TAB 1 · OPERATIONS
        ============================================================ -->
-  <section class="block">
-    <div class="shell">
-      <span class="section-eyebrow reveal" aria-hidden></span>
-      <p class="section-tag reveal">03 · Framework commands</p>
-      <h2 class="reveal">The handful you&rsquo;ll use every day.</h2>
-      <p class="section-lead reveal">
-        The framework has many commands. You don&rsquo;t need to memorise all of them. Memorise these six.
-        For everything else, type <span class="mono">/qualia-help</span>.
-      </p>
+  <div
+    class="tab-panel active"
+    id="panel-ops"
+    role="tabpanel"
+    aria-labelledby="tab-ops"
+    tabindex="0"
+  >
 
-      <div class="cmd-list">
-        <div class="cmd-row reveal">
-          <code>/qualia</code>
-          <p>The smart router. Don&rsquo;t know what&rsquo;s next? Type this. It tells you the exact command for your situation.</p>
-        </div>
-        <div class="cmd-row reveal">
-          <code>/qualia-new</code>
-          <p>Start a brand new project. Asks you the right questions, runs research, builds the journey from scratch.</p>
-        </div>
-        <div class="cmd-row reveal">
-          <code>/qualia-plan</code>
-          <p>Plan the current phase. The framework spawns a planner, validates the plan, gives you something concrete to build.</p>
-        </div>
-        <div class="cmd-row reveal">
-          <code>/qualia-build</code>
-          <p>Execute the current phase. Wave-based subagents run in parallel. You watch, you intervene if needed.</p>
-        </div>
-        <div class="cmd-row reveal">
-          <code>/qualia-report</code>
-          <p><strong style="color:var(--teal)">Mandatory at end of every session.</strong> Generates the report and posts it to the ERP. No report = session not counted.</p>
-        </div>
-        <div class="cmd-row reveal">
-          <code>/qualia-ship</code>
-          <p>Deploy to production. Full quality gates, then <span class="mono">vercel --prod</span>. Use this when a project is genuinely done.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+    <!-- The big shift -->
+    <section>
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <span class="section-tag reveal">01 · The big shift</span>
+        <h2 class="reveal">From tasks to projects.</h2>
+        <p class="section-lead reveal">
+          We&rsquo;re done with inbox-task soup auto-spawning from every <code>.planning</code>
+          checklist. Tasks made it look like work was happening when it wasn&rsquo;t. From now
+          on, you own <em>projects</em> for the month, with deadlines we agree on together.
+        </p>
 
-  <!-- ============================================================
-       BEFORE / AFTER
-       ============================================================ -->
-  <section class="block">
-    <div class="shell">
-      <span class="section-eyebrow reveal" aria-hidden></span>
-      <p class="section-tag reveal">04 · What changed</p>
-      <h2 class="reveal">Before April · After May.</h2>
-      <p class="section-lead reveal">
-        If you&rsquo;re used to the old way, this is what&rsquo;s different now. None of this is criticism &mdash; it&rsquo;s the system levelling up.
-      </p>
-
-      <div class="ba-grid">
-        <div class="ba-col before reveal">
-          <h4>Before · April</h4>
-          <ul>
-            <li>422 inbox tasks auto-generated from <span class="mono">.planning/</span> checklists</li>
-            <li>Clock-in optional &mdash; many sessions never recorded</li>
-            <li>Report submitted &ldquo;when remembered&rdquo;, often missed</li>
-            <li>Project assignments without deadlines</li>
-            <li>No clear unit of accountability</li>
-            <li>Admin had no single page to see &ldquo;what needs attention today&rdquo;</li>
-          </ul>
-        </div>
-        <div class="ba-col after reveal">
-          <h4>After · May</h4>
-          <ul>
-            <li>Tasks archived. Project is the unit. We agree on May projects together</li>
-            <li>Mandatory clock-in & clock-out, every working day</li>
-            <li><span class="mono">/qualia-report</span> is part of the clock-out flow, not optional</li>
-            <li>Every project has a deadline you helped set</li>
-            <li>You own the project end-to-end. Deploy URL is the proof</li>
-            <li>The new Command Center shows everyone&rsquo;s status in one glance</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================
-       WHAT YOU NEED TO DO
-       ============================================================ -->
-  <section class="block">
-    <div class="shell">
-      <span class="section-eyebrow reveal" aria-hidden></span>
-      <p class="section-tag reveal">05 · Your action list</p>
-      <h2 class="reveal">Six things, do them this week.</h2>
-      <p class="section-lead reveal">
-        Concrete, ordered. If you finish all six by Friday, you&rsquo;re ready for May.
-      </p>
-
-      <div class="checklist">
-        <div class="check reveal">
-          <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
-          <div class="check-body">
-            <strong>Open the portal and clock in tomorrow morning</strong>
-            <p>Just do it once to make sure it works. Pick a project. Write a planned outcome. Tap clock-in.</p>
+        <div class="shift-banner reveal">
+          <div class="shift-grid">
+            <div class="shift-date">
+              01.05.26
+              <small>Effective</small>
+            </div>
+            <div class="shift-text">
+              <h2>Mandatory clock&#8209;in &amp; clock&#8209;out</h2>
+              <p>
+                Every working day, you clock in when you start, you clock out when you finish.
+                No exceptions. The portal will guide you through both. Hasan: 6 days a week. Moayad: 5 days a week.
+              </p>
+            </div>
           </div>
         </div>
-        <div class="check reveal">
-          <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
-          <div class="check-body">
-            <strong>Update your Qualia Framework version</strong>
-            <p>Run <span class="mono">qualia upgrade</span> in any project folder. Make sure <span class="mono">/qualia</span> works.</p>
+
+        <div class="card-grid cols-3">
+          <div class="card reveal">
+            <p class="card-num">01</p>
+            <h3>You get projects</h3>
+            <p>At the start of the month, you and Fawzi agree on the projects you&rsquo;ll deliver. Not tasks. Whole projects, with deadlines.</p>
           </div>
-        </div>
-        <div class="check reveal">
-          <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
-          <div class="check-body">
-            <strong>Run <span class="mono">/qualia-report</span> at the end of one session this week</strong>
-            <p>Make sure your token works and the report shows up in the ERP. If it doesn&rsquo;t, message Fawzi immediately.</p>
+          <div class="card reveal">
+            <p class="card-num">02</p>
+            <h3>You report sessions</h3>
+            <p>Every session you finish, you run <code>/qualia-report</code>. The framework writes everything to the ERP automatically.</p>
           </div>
-        </div>
-        <div class="check reveal">
-          <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
-          <div class="check-body">
-            <strong>Block your interview slot with Fawzi</strong>
-            <p>15 minutes. He&rsquo;ll walk you through the assessment so we can agree on May scope, schedule, and project archetypes.</p>
-          </div>
-        </div>
-        <div class="check reveal">
-          <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
-          <div class="check-body">
-            <strong>Read the changelog above twice</strong>
-            <p>Especially the &ldquo;Before April / After May&rdquo; section. If anything is unclear, ask Fawzi before May 1.</p>
-          </div>
-        </div>
-        <div class="check reveal">
-          <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
-          <div class="check-body">
-            <strong>Set your working hours in your head &mdash; commit to them</strong>
-            <p>What time do you start? What time do you finish? You&rsquo;ll commit to this in the assessment. Pick something realistic.</p>
+          <div class="card reveal">
+            <p class="card-num">03</p>
+            <h3>You own the outcome</h3>
+            <p>When the project ships, you submit it. Deploy URL, handoff doc, done. That&rsquo;s the unit of accountability.</p>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+
+    <!-- Daily workflow -->
+    <section>
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <span class="section-tag reveal">02 · Your day, step by step</span>
+        <h2 class="reveal">Five steps. Same shape every day.</h2>
+        <p class="section-lead reveal">
+          This is the only flow you need to memorise. Open the portal, follow the prompts,
+          ship work, log it, go home.
+        </p>
+
+        <div class="flow">
+          <div class="flow-step reveal">
+            <span class="flow-num">01</span>
+            <h4>Clock in</h4>
+            <p>Open the portal. Pick a project. Write what you plan to ship today and how long you think it&rsquo;ll take.</p>
+            <span class="cmd-pill">portal · clock in</span>
+          </div>
+          <div class="flow-step reveal">
+            <span class="flow-num">02</span>
+            <h4>Run the framework</h4>
+            <p>Open Claude Code in the project folder. Use <code>/qualia</code> to know what&rsquo;s next, then build.</p>
+            <span class="cmd-pill">/qualia</span>
+          </div>
+          <div class="flow-step reveal">
+            <span class="flow-num">03</span>
+            <h4>Build &amp; ship</h4>
+            <p>Plan, build, verify. Use <code>/qualia-build</code> for phases or <code>/qualia-quick</code> for small fixes.</p>
+            <span class="cmd-pill">/qualia-build</span>
+          </div>
+          <div class="flow-step reveal">
+            <span class="flow-num">04</span>
+            <h4>Submit report</h4>
+            <p>End of session, run <code>/qualia-report</code>. It writes a structured report straight to the ERP.</p>
+            <span class="cmd-pill">/qualia-report</span>
+          </div>
+          <div class="flow-step reveal">
+            <span class="flow-num">05</span>
+            <h4>Clock out</h4>
+            <p>Back in the portal. Confirm what you actually shipped. Paste the report URL. Out.</p>
+            <span class="cmd-pill">portal · clock out</span>
+          </div>
+        </div>
+
+        <div class="cross-link reveal">
+          <div class="cross-link-text">
+            <strong>Want the full v5 details?</strong>
+            <p>The other tab covers every new and upgraded command, plus the three new safety hooks.</p>
+          </div>
+          <button type="button" class="cross-link-btn" data-jump="v5">Open Framework v5 →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- The six commands -->
+    <section>
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <span class="section-tag reveal">03 · Daily commands</span>
+        <h2 class="reveal">Six you&rsquo;ll use every day.</h2>
+        <p class="section-lead reveal">
+          The framework has many commands. You don&rsquo;t need to memorise them all. Memorise these
+          six. For everything else, type <code>/qualia-road</code> or check the v5 cheat sheet in tab two.
+        </p>
+
+        <div class="cmd-list">
+          <div class="cmd-row reveal"><code>/qualia</code><p>The smart router. Don&rsquo;t know what&rsquo;s next? Type this. It tells you the exact command for your situation.</p></div>
+          <div class="cmd-row reveal"><code>/qualia-new</code><p>Start a brand new project. Asks you the right questions, runs research, builds the journey from scratch.</p></div>
+          <div class="cmd-row reveal"><code>/qualia-plan</code><p>Plan the current phase. The framework spawns a planner, validates the plan, gives you something concrete to build.</p></div>
+          <div class="cmd-row reveal"><code>/qualia-build</code><p>Execute the current phase. Wave-based subagents run in parallel. You watch, you intervene if needed.</p></div>
+          <div class="cmd-row reveal"><code>/qualia-report</code><p><strong style="color:var(--teal)">Mandatory at end of every session.</strong> Generates the report and posts it to the ERP. No report = session not counted.</p></div>
+          <div class="cmd-row reveal"><code>/qualia-ship</code><p>Deploy to production. Full quality gates, then <code>vercel --prod</code>. Use this when a project is genuinely done.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Before / After -->
+    <section>
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <span class="section-tag reveal">04 · What changed</span>
+        <h2 class="reveal">Before April · After May.</h2>
+        <p class="section-lead reveal">
+          If you&rsquo;re used to the old way, this is what&rsquo;s different now. None of this is criticism — it&rsquo;s the system levelling up.
+        </p>
+
+        <div class="ba-grid">
+          <div class="ba-col before reveal">
+            <h4>Before · April</h4>
+            <ul>
+              <li>422 inbox tasks auto-generated from <code>.planning</code> checklists</li>
+              <li>Clock-in optional — many sessions never recorded</li>
+              <li>Report submitted &ldquo;when remembered&rdquo;, often missed</li>
+              <li>Project assignments without deadlines</li>
+              <li>No clear unit of accountability</li>
+              <li>Admin had no single page to see &ldquo;what needs attention today&rdquo;</li>
+            </ul>
+          </div>
+          <div class="ba-col after reveal">
+            <h4>After · May</h4>
+            <ul>
+              <li>Tasks archived. Project is the unit. We agree on May projects together</li>
+              <li>Mandatory clock-in &amp; clock-out, every working day</li>
+              <li><code>/qualia-report</code> is part of the clock-out flow, not optional</li>
+              <li>Every project has a deadline you helped set</li>
+              <li>You own the project end-to-end. Deploy URL is the proof</li>
+              <li>The new Command Center shows everyone&rsquo;s status in one glance</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Action list -->
+    <section>
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <span class="section-tag reveal">05 · Your action list</span>
+        <h2 class="reveal">Six things, do them this week.</h2>
+        <p class="section-lead reveal">Concrete, ordered. If you finish all six by Friday, you&rsquo;re ready for May.</p>
+
+        <div class="checklist">
+          <div class="check reveal">
+            <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
+            <div class="check-body">
+              <strong>Open the portal and clock in tomorrow morning</strong>
+              <p>Just do it once to make sure it works. Pick a project. Write a planned outcome. Tap clock-in.</p>
+            </div>
+          </div>
+          <div class="check reveal">
+            <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
+            <div class="check-body">
+              <strong>Update your Qualia Framework version</strong>
+              <p>Run <code>npx qualia-framework@latest install</code>. Make sure <code>/qualia</code> works and you have v5 commands.</p>
+            </div>
+          </div>
+          <div class="check reveal">
+            <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
+            <div class="check-body">
+              <strong>Read tab two of this page</strong>
+              <p>The v5 changelog. Pay attention to <code>/qualia-zoom</code>, <code>/qualia-issues</code>, and the safety hooks. They will save you hours.</p>
+            </div>
+          </div>
+          <div class="check reveal">
+            <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
+            <div class="check-body">
+              <strong>Run <code>/qualia-report</code> at the end of one session this week</strong>
+              <p>Make sure your token works and the report shows up in the ERP. If it doesn&rsquo;t, message Fawzi immediately.</p>
+            </div>
+          </div>
+          <div class="check reveal">
+            <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
+            <div class="check-body">
+              <strong>Block your interview slot with Fawzi</strong>
+              <p>15 minutes. He&rsquo;ll walk you through the assessment so we can agree on May scope, schedule, and project archetypes.</p>
+            </div>
+          </div>
+          <div class="check reveal">
+            <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
+            <div class="check-body">
+              <strong>Set your working hours — commit to them</strong>
+              <p>What time do you start? What time do you finish? You&rsquo;ll commit to this in the assessment. Pick something realistic.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why -->
+    <section>
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <span class="section-tag reveal">06 · The honest part</span>
+        <h2 class="reveal">Why we&rsquo;re doing this.</h2>
+        <p class="section-lead reveal" style="font-size: 1.05rem; line-height: 1.7;">
+          We&rsquo;ve been a small team running on goodwill. That&rsquo;s how startups start. But Qualia
+          won 5 awards this year, we&rsquo;re in 7 countries, and clients are paying us serious money to ship serious work.
+          Goodwill isn&rsquo;t enough anymore — we need a system. This is the system.
+        </p>
+        <p class="section-lead reveal" style="font-size: 1.05rem; margin-top: 1.5rem;">
+          It&rsquo;s not surveillance. It&rsquo;s structure. The clock-in tells me the company is alive.
+          The reports tell the framework what&rsquo;s shipping. The projects tell you what you&rsquo;re accountable for.
+          Three signals, one system.
+        </p>
+        <p class="section-lead reveal" style="font-size: 1.05rem; margin-top: 1.5rem;">
+          Do this well and we grow. We hire. You lead a team. That&rsquo;s the actual goal — and this is how we get there.
+        </p>
+      </div>
+    </section>
+  </div>
 
   <!-- ============================================================
-       WHY THIS MATTERS
+       TAB 2 · FRAMEWORK V5
        ============================================================ -->
-  <section class="block">
-    <div class="shell">
-      <span class="section-eyebrow reveal" aria-hidden></span>
-      <p class="section-tag reveal">06 · The honest part</p>
-      <h2 class="reveal">Why we&rsquo;re doing this.</h2>
-      <p class="section-lead reveal" style="font-size: 1.1rem; line-height: 1.7;">
-        We&rsquo;ve been a small team running on goodwill. That&rsquo;s how startups start. But Qualia
-        won 5 awards this year, we&rsquo;re in 7 countries, and clients are paying us serious money to ship serious work.
-        Goodwill isn&rsquo;t enough anymore &mdash; we need a system. This is the system.
-      </p>
-      <p class="section-lead reveal" style="font-size: 1.1rem; margin-top: 24px;">
-        It&rsquo;s not surveillance. It&rsquo;s structure. The clock-in tells me the company is alive.
-        The reports tell the framework what&rsquo;s shipping. The projects tell you what you&rsquo;re accountable for.
-        Three signals, one system. That&rsquo;s it.
-      </p>
-      <p class="section-lead reveal" style="font-size: 1.1rem; margin-top: 24px;">
-        Do this well and we grow. We hire. You lead a team. That&rsquo;s the actual goal &mdash; and this is how we get there.
-      </p>
+  <div
+    class="tab-panel"
+    id="panel-v5"
+    role="tabpanel"
+    aria-labelledby="tab-v5"
+    tabindex="0"
+    hidden
+  >
+
+    <!-- TLDR strip -->
+    <div class="tldr">
+      <div class="tldr-item"><div class="tldr-num">5</div><div class="tldr-label">brand-new commands</div></div>
+      <div class="tldr-item"><div class="tldr-num">5</div><div class="tldr-label">commands got smarter</div></div>
+      <div class="tldr-item"><div class="tldr-num">3</div><div class="tldr-label">new safety hooks</div></div>
+      <div class="tldr-item"><div class="tldr-num">0</div><div class="tldr-label">commands you have to relearn</div></div>
     </div>
-  </section>
+
+    <!-- Big idea -->
+    <section class="big-idea">
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <h2 class="reveal">The big idea, in one sentence.</h2>
+        <div class="body reveal">
+          <div>
+            <p>v5 makes the framework <strong style="color:var(--text)">remember what your project means</strong> and <strong style="color:var(--text)">prevent the dumb mistakes</strong> that wasted hours before.</p>
+            <p>When you start a project, Qualia now writes a small glossary of your domain words. Every agent reads it before doing anything, so nobody ever again confuses a &ldquo;user&rdquo; for a &ldquo;customer&rdquo;, or builds an &ldquo;Ophthalmos&rdquo; page when the client is &ldquo;Ophthemous.&rdquo; Decisions get written down once, honored everywhere.</p>
+            <p>On top of that, three new safety hooks block the most painful mistakes deterministically — wrong Vercel team, empty env vars on prod, accidental database wipes. You don&rsquo;t have to remember; the framework remembers for you.</p>
+          </div>
+          <div class="quote">Misalignment is the #1 reason AI work goes sideways. v5 fixes it at the root.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 new commands -->
+    <section>
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <span class="section-tag reveal">01 · What&rsquo;s new</span>
+        <h2 class="reveal">Five commands you didn&rsquo;t have before.</h2>
+        <p class="section-lead reveal">Each one solves a specific friction. You don&rsquo;t need all of them every day, but knowing they exist saves you from reinventing the workaround.</p>
+
+        <div class="feature-grid reveal" style="margin-top: 2rem;">
+          <article class="feature-card">
+            <div class="badge"><span class="dot"></span>Reference</div>
+            <div class="cmd-display">/qualia-zoom</div>
+            <h3>I don&rsquo;t know this code</h3>
+            <p>Staring at a file you&rsquo;ve never seen? Type <code>/qualia-zoom</code> and the agent gives you a 30-second map: what these files do, who calls them, what the safe edit zone is. Read-only. User-fired only — never auto.</p>
+            <div class="when"><strong>Use when:</strong> picking up a project mid-flight, before editing unfamiliar code.</div>
+          </article>
+
+          <article class="feature-card">
+            <div class="badge"><span class="dot"></span>Workflow</div>
+            <div class="cmd-display">/qualia-issues</div>
+            <h3>Externalize the plan</h3>
+            <p>Take a phase plan and turn it into independent vertical-slice GitHub issues. Each one demoable on its own, dependency-ordered. Now another teammate, another session, or an autonomous agent can pull from the queue.</p>
+            <div class="when"><strong>Use when:</strong> the work needs more than one person, or you want to hand off to autonomous build.</div>
+          </article>
+
+          <article class="feature-card">
+            <div class="badge"><span class="dot"></span>Workflow</div>
+            <div class="cmd-display">/qualia-triage</div>
+            <h3>Route the queue</h3>
+            <p>Walks every open issue and labels it: ready-for-agent, ready-for-human, needs-info, or wontfix. Optionally pulls ready-for-agent issues into autonomous <code>/qualia-build</code>. Pairs with /qualia-issues.</p>
+            <div class="when"><strong>Use when:</strong> the issue queue is overflowing or you want autonomous building from the backlog.</div>
+          </article>
+
+          <article class="feature-card">
+            <div class="badge"><span class="dot"></span>Reference</div>
+            <div class="cmd-display">/qualia-road</div>
+            <h3>Built-in cheat sheet</h3>
+            <p>The full workflow map, every command, when to use each one — in your terminal. No need to open the docs. Drier than a tutorial; quicker than asking.</p>
+            <div class="when"><strong>Use when:</strong> you forget which command does what. Type it, scan, move on.</div>
+          </article>
+
+          <article class="feature-card experimental wide">
+            <div class="badge"><span class="dot"></span>Experimental · flagship</div>
+            <div class="cmd-display">/qualia-polish-loop {url}</div>
+            <h3>Claude finally sees the page.</h3>
+            <p style="max-width: 70ch;"><strong style="color: var(--pink)">⚠ Test on a non-critical page before relying on it for a client deploy.</strong> The biggest thing in v5. Until now, design quality was scored by reading your CSS. v5 introduces a loop that <em>actually screenshots your page</em> at three viewports (mobile, tablet, desktop), evaluates against the rubric using vision, fixes the top issues, redeploys to a preview, and repeats — until every dimension scores 3 or higher, or a kill-switch stops the loop. Per-iteration commits with <code>qpl-N:</code> prefix so any iteration is revertable.</p>
+            <div class="when"><strong>Use when:</strong> hero videos broken on mobile, layout looks off and you can&rsquo;t tell why, design review needed before ship.</div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 commands smarter -->
+    <section style="background: var(--elevated); border-block: 1px solid var(--border);">
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <span class="section-tag reveal">02 · Upgraded</span>
+        <h2 class="reveal">Five commands that got smarter.</h2>
+        <p class="section-lead reveal">Same names, same triggers. The behavior underneath levels up.</p>
+
+        <div class="upgrade-list reveal">
+          <div class="upgrade-row">
+            <div class="cmd-box"><div class="cmd-display">/qualia-discuss</div><div class="what">Phase context capture</div></div>
+            <div class="col before"><h4>Before</h4><p>Open-ended interview. Asked broad questions. You did most of the work figuring out what to lock in.</p></div>
+            <div class="col after"><h4>Now</h4><p>Relentless one-question-at-a-time grilling. Proposes a recommended answer for each. Walks every branch. Updates CONTEXT.md inline as terms get resolved.</p></div>
+          </div>
+          <div class="upgrade-row">
+            <div class="cmd-box"><div class="cmd-display">/qualia-optimize</div><div class="what">Codebase quality sweep</div></div>
+            <div class="col before"><h4>Before</h4><p>Six dimensions: perf, design, UI, backend, frontend, alignment. Found surface-level issues.</p></div>
+            <div class="col after"><h4>Now</h4><p>Adds <code>--deepen</code> mode. Ousterhout-style architecture audit. Finds shallow modules. Refuses &ldquo;extract a helper&rdquo; candidates that don&rsquo;t pass the deletion test.</p></div>
+          </div>
+          <div class="upgrade-row">
+            <div class="cmd-box"><div class="cmd-display">/qualia-test</div><div class="what">Test generation + run</div></div>
+            <div class="col before"><h4>Before</h4><p>Generated tests after the code was written. Ran tests. Reported coverage.</p></div>
+            <div class="col after"><h4>Now</h4><p>Adds <code>--tdd</code> mode. Drives a feature test-first via vertical-slice red-green-refactor. One test, one minimal impl, repeat. Bans horizontal slicing.</p></div>
+          </div>
+          <div class="upgrade-row">
+            <div class="cmd-box"><div class="cmd-display">/qualia-map</div><div class="what">Brownfield codebase mapping</div></div>
+            <div class="col before"><h4>Before</h4><p>Four parallel agents scanned architecture, stack, conventions, concerns.</p></div>
+            <div class="col after"><h4>Now</h4><p>Five parallel agents. The fifth detects existing GitHub/GitLab issue tracker, label conventions, glossary location, existing CLAUDE.md. Adapts Qualia to the repo&rsquo;s process instead of overwriting.</p></div>
+          </div>
+          <div class="upgrade-row">
+            <div class="cmd-box"><div class="cmd-display">/qualia-report</div><div class="what">End-of-session clock-out</div></div>
+            <div class="col before"><h4>Before</h4><p>Forced a report even on empty days. Vague synthesis template. Could leave you stuck on errors with no fix path.</p></div>
+            <div class="col after"><h4>Now</h4><p>Empty-day handling — asks gracefully if you didn&rsquo;t commit. Structured synthesis template. Encouraging closing message. Self-service common-errors table. Full ERP integration preserved.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 safety hooks -->
+    <section style="background: linear-gradient(180deg, transparent 0%, rgba(0,255,209,0.02) 50%, transparent 100%);">
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <span class="section-tag reveal">03 · Safety nets</span>
+        <h2 class="reveal">Three new hooks. The framework remembers so you don&rsquo;t have to.</h2>
+        <p class="section-lead reveal">Every one of these is something Fawzi has been bitten by. v5 makes them impossible to do by accident.</p>
+
+        <div class="safety-grid">
+          <div class="safety-card guards-account reveal">
+            <div class="stop">Pre-deploy</div>
+            <h3>Wrong Vercel team? Blocked.</h3>
+            <p>Before <code>vercel --prod</code> runs, the guard checks <code>vercel whoami</code> against your allowed teams list. If it doesn&rsquo;t match, the deploy stops before it starts.</p>
+            <div class="example">$ vercel --prod
+<span class="blocked">✗ BLOCKED: Wrong Vercel team. Active: 'random-team'.</span>
+<span class="blocked">  Run vercel switch &lt;team&gt; first.</span></div>
+          </div>
+          <div class="safety-card guards-env reveal">
+            <div class="stop">Pre-env-write</div>
+            <h3>Empty env var on prod? Blocked.</h3>
+            <p>Detects <code>vercel env add NAME ""</code> patterns before they ship. Empty string on production has crashed real apps. Bypass with <code>QUALIA_ALLOW_EMPTY_ENV=1</code> if intentional.</p>
+            <div class="example">$ vercel env add API_KEY ""
+<span class="blocked">✗ BLOCKED: empty env var value detected.</span></div>
+          </div>
+          <div class="safety-card guards-db reveal">
+            <div class="stop">Pre-supabase</div>
+            <h3>Database wipe? Blocked.</h3>
+            <p>Stops <code>supabase db reset</code>, <code>db push --force</code>, and <code>migration repair</code> from running by accident. Bypass with <code>QUALIA_ALLOW_DESTRUCTIVE=1</code> when sure.</p>
+            <div class="example">$ supabase db reset
+<span class="blocked">✗ BLOCKED: destructive Supabase command.</span></div>
+          </div>
+        </div>
+
+        <div class="safety-extras reveal">
+          <strong>Plus two smaller guards:</strong>
+          Suspicious project names (<code>test</code>, <code>tmp</code>, <code>scratch</code>) need <code>--force</code> to create.
+          And <code>QUALIA_SKIP_LINT=1</code> lets you ship past pre-existing lint errors in an emergency, while keeping all other quality gates active.
+        </div>
+      </div>
+    </section>
+
+    <!-- Daily flow (v5 version) -->
+    <section style="background: var(--elevated); border-block: 1px solid var(--border);">
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <span class="section-tag reveal">04 · Daily flow</span>
+        <h2 class="reveal">Your day, redrawn.</h2>
+        <p class="section-lead reveal">Same shape as before. Same commands at each step. Each one is a little smarter underneath.</p>
+
+        <div class="flow-line reveal">
+          <div class="flow-line-step"><div class="num">01 · Kickoff</div><div class="cmd-display">/qualia-new</div><p>Ask deeply. Run research. Seed the domain glossary. Map the journey.</p></div>
+          <div class="flow-line-step"><div class="num">02 · Plan</div><div class="cmd-display">/qualia-plan {N}</div><p>Spawn planner + plan-checker, fresh context. Output: phase-N-plan.md.</p></div>
+          <div class="flow-line-step"><div class="num">03 · Build</div><div class="cmd-display">/qualia-build</div><p>Wave-based parallel builders. One commit per task. Verify each.</p></div>
+          <div class="flow-line-step"><div class="num">04 · Verify</div><div class="cmd-display">/qualia-verify</div><p>Goal-backward check. PASS or FAIL with evidence.</p></div>
+          <div class="flow-line-step"><div class="num">05 · Milestone</div><div class="cmd-display">/qualia-milestone</div><p>Close milestone. Archive. Open next from JOURNEY.md.</p></div>
+          <div class="flow-line-step"><div class="num">06 · Ship</div><div class="cmd-display">/qualia-ship</div><p>Quality gates → deploy → verify. Three new safety hooks now run here.</p></div>
+          <div class="flow-line-step"><div class="num">07 · Handoff</div><div class="cmd-display">/qualia-handoff</div><p>Four mandatory deliverables. Client takes over.</p></div>
+          <div class="flow-line-step"><div class="num">08 · Clock out</div><div class="cmd-display">/qualia-report</div><p>End-of-session report. Empty-day friendly. ERP-integrated.</p></div>
+        </div>
+
+        <div class="flow-loop-note reveal">
+          <strong>New in v5 (optional):</strong> after Plan, you can break the phase into GitHub issues (<code>/qualia-issues</code>) and route them (<code>/qualia-triage</code>) — for parallel work, autonomous build, or handing off to another teammate. The classic Plan → Build → Verify still works exactly the same.
+        </div>
+      </div>
+    </section>
+
+    <!-- What did NOT change -->
+    <section class="unchanged">
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <span class="section-tag reveal">05 · Reassurance</span>
+        <h2 class="reveal">What did <em>not</em> change.</h2>
+        <p class="section-lead reveal">v5 is additive. Everything you already do still works exactly the same.</p>
+
+        <ul class="unchanged-list reveal">
+          <li><strong>The hierarchy:</strong> Project → Journey → Milestones → Phases → Tasks. Identical.</li>
+          <li><strong>Every existing command name.</strong> No renames, no removals.</li>
+          <li><strong>Your install code.</strong> Still the same QS-NAME-NN format.</li>
+          <li><strong>Branch protection rules.</strong> Feature branches only.</li>
+          <li><strong>The ERP clock-out flow.</strong> Same endpoint, same payload.</li>
+          <li><strong>tracking.json</strong> hooks still update it on every push.</li>
+          <li><strong>Quality gates</strong> (tsc + lint + tests + build) still mandatory before deploy.</li>
+          <li><strong>The smart router</strong> <code>/qualia</code> still tells you the next command.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Cheat sheet -->
+    <section>
+      <div class="container">
+        <div class="reveal"><div class="accent-bar"></div></div>
+        <span class="section-tag reveal">06 · Quick reference</span>
+        <h2 class="reveal">The cheat sheet.</h2>
+        <p class="section-lead reveal">Pin this. Refer back. Type these commands when the situation matches.</p>
+
+        <div class="cheat-grid reveal">
+          <div class="cheat-block">
+            <h4>Daily flow</h4>
+            <div class="cheat-row"><div class="cmd-display">/qualia</div><div class="desc">What should I do next?</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-new</div><div class="desc">Start a new client project</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-plan {N}</div><div class="desc">Plan phase N</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-build</div><div class="desc">Build the planned phase</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-verify</div><div class="desc">Verify the phase actually works</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-milestone</div><div class="desc">Close milestone, open next</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-ship</div><div class="desc">Deploy to production</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-report</div><div class="desc">End of session. Mandatory.</div></div>
+          </div>
+          <div class="cheat-block">
+            <h4>When you&rsquo;re stuck</h4>
+            <div class="cheat-row"><div class="cmd-display">/qualia-zoom</div><div class="desc">Map an unfamiliar code area</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-idk</div><div class="desc">&ldquo;I don&rsquo;t know what&rsquo;s going on&rdquo;</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-debug</div><div class="desc">Find a bug, feedback-loop first</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-discuss</div><div class="desc">Grill before high-stakes phases</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-resume</div><div class="desc">Pick up where you left off</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-pause</div><div class="desc">Save context before stopping</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-road</div><div class="desc">Show the workflow map</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-help</div><div class="desc">Open the visual reference</div></div>
+          </div>
+          <div class="cheat-block">
+            <h4>Quality + design</h4>
+            <div class="cheat-row"><div class="cmd-display">/qualia-polish</div><div class="desc">Design pass on a component or section</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-polish-loop</div><div class="desc">Autonomous visual loop (experimental)</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-optimize</div><div class="desc">Full codebase quality sweep</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-optimize --deepen</div><div class="desc">Architecture-only deepening</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-test</div><div class="desc">Generate or run tests</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-test --tdd</div><div class="desc">Test-first vertical slices</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-review</div><div class="desc">Production audit, scored</div></div>
+          </div>
+          <div class="cheat-block">
+            <h4>Scaling out</h4>
+            <div class="cheat-row"><div class="cmd-display">/qualia-issues</div><div class="desc">Phase plan → GH issues</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-triage</div><div class="desc">Route the issue queue</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-map</div><div class="desc">Map a brownfield codebase</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-research</div><div class="desc">Deep-research a domain</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-task</div><div class="desc">Build one focused task</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-quick</div><div class="desc">Skip planning for small fixes</div></div>
+            <div class="cheat-row"><div class="cmd-display">/qualia-handoff</div><div class="desc">Final client delivery</div></div>
+          </div>
+        </div>
+
+        <div class="cross-link reveal" style="margin-top: 3rem;">
+          <div class="cross-link-text">
+            <strong>Now run <code>/qualia-road</code></strong>
+            <p>You&rsquo;ve read the changelog. Type the command. Start the day.</p>
+          </div>
+          <button type="button" class="cross-link-btn" data-jump="ops">← Back to operations brief</button>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <!-- ============================================================
-       CLOSING
+       SHARED CLOSING
        ============================================================ -->
   <section class="closing">
-    <div class="shell">
+    <div class="container">
       <div class="closing-q">Q</div>
       <p class="closing-line reveal">&ldquo;Where Consciousness Meets Technology&rdquo;</p>
-      <p class="closing-meta reveal">QUALIA SOLUTIONS · NICOSIA · MAY 2026</p>
+      <p class="closing-meta reveal">QUALIA SOLUTIONS · NICOSIA · MAY 2026 · v5.0.0</p>
     </div>
   </section>
 
-  <footer class="foot">
-    <div class="shell">
-      v5 framework · portal.qualiasolutions.net · questions → Fawzi
-    </div>
-  </footer>
+</main>
+
+<footer>
+  <div class="container">
+    portal.qualiasolutions.net · questions → Fawzi
+  </div>
+</footer>
 
 <script>
-  // Scroll-reveal: fade-up as elements enter viewport.
-  const obs = new IntersectionObserver((entries) => {
-    entries.forEach((e, i) => {
-      if (e.isIntersecting) {
-        // Tiny stagger when multiple reveal at once
-        setTimeout(() => e.target.classList.add('in'), i * 30);
-        obs.unobserve(e.target);
+  // ─── Tab switcher ────────────────────────────────────
+  const tabs = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.tab-panel');
+
+  function activate(tabId, { scroll = true, push = true } = {}) {
+    tabs.forEach((t) => {
+      const isActive = t.dataset.tab === tabId;
+      t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      t.tabIndex = isActive ? 0 : -1;
+    });
+    panels.forEach((p) => {
+      const isActive = p.id === 'panel-' + tabId;
+      p.classList.toggle('active', isActive);
+      if (isActive) p.removeAttribute('hidden');
+      else p.setAttribute('hidden', '');
+    });
+    if (push && history.replaceState) {
+      history.replaceState(null, '', '#' + tabId);
+    }
+    if (scroll) {
+      // Scroll to just below the sticky tab bar
+      const nav = document.querySelector('.tabs-nav');
+      const offset = nav ? nav.getBoundingClientRect().bottom + window.scrollY : 0;
+      window.scrollTo({ top: offset - 8, behavior: 'smooth' });
+    }
+    // Re-trigger reveal for newly visible elements that haven't fired yet
+    runReveal();
+  }
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => activate(tab.dataset.tab));
+    tab.addEventListener('keydown', (e) => {
+      const order = ['ops', 'v5'];
+      const idx = order.indexOf(tab.dataset.tab);
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        activate(order[(idx + 1) % order.length]);
+        document.getElementById('tab-' + order[(idx + 1) % order.length]).focus();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        activate(order[(idx - 1 + order.length) % order.length]);
+        document.getElementById('tab-' + order[(idx - 1 + order.length) % order.length]).focus();
       }
     });
-  }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+  });
 
-  document.querySelectorAll('.reveal').forEach((el) => obs.observe(el));
+  // Cross-link buttons
+  document.querySelectorAll('[data-jump]').forEach((btn) => {
+    btn.addEventListener('click', () => activate(btn.dataset.jump));
+  });
 
-  // Fallback: reveal after 1.5s if user has weird browser
+  // Honor URL hash on load
+  const initial = window.location.hash.replace('#', '');
+  if (initial === 'v5' || initial === 'ops') {
+    activate(initial, { scroll: false, push: false });
+  }
+
+  // Respond to hash changes
+  window.addEventListener('hashchange', () => {
+    const h = window.location.hash.replace('#', '');
+    if (h === 'v5' || h === 'ops') activate(h, { scroll: false, push: false });
+  });
+
+  // ─── Reveal-on-scroll ────────────────────────────────
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let observer;
+
+  function runReveal() {
+    const items = document.querySelectorAll('.tab-panel.active .reveal:not(.in), .hero-shell .reveal:not(.in), .closing .reveal:not(.in)');
+    if (reduce || !('IntersectionObserver' in window)) {
+      items.forEach((el) => el.classList.add('in'));
+      return;
+    }
+    if (!observer) {
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach((e, i) => {
+          if (e.isIntersecting) {
+            setTimeout(() => e.target.classList.add('in'), i * 30);
+            observer.unobserve(e.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+    }
+    items.forEach((el) => observer.observe(el));
+  }
+
+  // Hero items animate in immediately
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.hero-shell .reveal').forEach((el, i) => {
+      setTimeout(() => el.classList.add('in'), 60 * (i + 1));
+    });
+    runReveal();
+  });
+
+  // Fallback
   setTimeout(() => {
     document.querySelectorAll('.reveal:not(.in)').forEach((el) => el.classList.add('in'));
-  }, 1500);
+  }, 2500);
 </script>
 
 </body>
