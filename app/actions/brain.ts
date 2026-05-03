@@ -14,6 +14,12 @@ import { getCurrentWorkspaceId } from '@/app/actions/workspace';
  *
  * V1 is keyword (ilike) search, not semantic. Future: embed corpus into
  * `documents` (pgvector) for semantic ranking.
+ *
+ * Multi-tenancy note: `session_reports` and `client_activities` lack a
+ * `workspace_id` column, so the queries below do not filter by workspace.
+ * Today this is a non-issue — Qualia is single-tenant. If multi-tenancy
+ * ever lands, scope `session_reports` via `erp_project_id` (joined to
+ * workspace-filtered projects) and `client_activities` via `client_id`.
  */
 
 export type BrainHit = {

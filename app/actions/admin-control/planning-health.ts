@@ -36,6 +36,16 @@ const ACTIVE_PROJECT_STATUSES = ['Active', 'Demos', 'Launched', 'Delayed'] as co
 const ACTIVE_PHASE_STATUSES = ['not_started', 'in_progress'] as const;
 const OPEN_TASK_STATUSES_BLACKLIST = ['Done', 'Canceled'] as const;
 
+/**
+ * Internal variant — when the caller has already verified admin auth and
+ * resolved the workspace, skip the redundant getUser/isUserAdmin/workspace
+ * round trips. Public callers should use {@link loadPlanningHealth} instead.
+ */
+export async function loadPlanningHealthFor(workspaceId: string): Promise<PlanningHealthPayload> {
+  const supabase = await createClient();
+  return loadPlanningHealthInternal(supabase, workspaceId);
+}
+
 export async function loadPlanningHealth(): Promise<PlanningHealthPayload> {
   const supabase = await createClient();
   const {
@@ -49,7 +59,13 @@ export async function loadPlanningHealth(): Promise<PlanningHealthPayload> {
   if (!workspaceId) {
     return { rows: [], totalIssues: 0 };
   }
+  return loadPlanningHealthInternal(supabase, workspaceId);
+}
 
+async function loadPlanningHealthInternal(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  workspaceId: string
+): Promise<PlanningHealthPayload> {
   // All four checks fan out in parallel — each is a head-only count so the
   // payload is tiny.
   const [projectsRes, phasesRes, tasksNoPhaseRes, tasksNoDueRes] = await Promise.all([

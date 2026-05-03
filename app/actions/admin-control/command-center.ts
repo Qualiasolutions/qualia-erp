@@ -164,6 +164,21 @@ function classifyHealth(
   return 'green';
 }
 
+/**
+ * Internal variant — caller has already verified admin auth and resolved
+ * workspace. Skips redundant DB round trips. Use this when called from
+ * another server action that already authenticated.
+ *
+ * Multi-tenancy note: `session_reports` and `client_activities` lack a
+ * `workspace_id` column. Today, single-tenant deployment makes this a
+ * non-issue. If tenancy is ever added, scope these via `erp_project_id`
+ * and `client_id` joins respectively.
+ */
+export async function loadCommandCenterFor(workspaceId: string): Promise<CommandCenterPayload> {
+  const supabase = await createClient();
+  return loadCommandCenterInternal(supabase, workspaceId);
+}
+
 export async function loadCommandCenter(): Promise<CommandCenterPayload> {
   const supabase = await createClient();
   const {
@@ -173,7 +188,13 @@ export async function loadCommandCenter(): Promise<CommandCenterPayload> {
 
   const workspaceId = await getCurrentWorkspaceId();
   if (!workspaceId) return EMPTY;
+  return loadCommandCenterInternal(supabase, workspaceId);
+}
 
+async function loadCommandCenterInternal(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  workspaceId: string
+): Promise<CommandCenterPayload> {
   const todayISO = startOfDayISO();
   const monthStartISO = startOfMonthISO();
   const staleThresholdISO = new Date(

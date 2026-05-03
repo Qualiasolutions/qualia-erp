@@ -251,6 +251,11 @@ function BrainHitCard({ hit, query }: { hit: BrainHit; query: string }) {
   );
 }
 
+// SAFETY: Order matters. We MUST escapeHtml(text) BEFORE running the regex
+// replace, so the only HTML in the output is the literal <mark> tags we
+// inject. The query is regex-escaped; it cannot inject HTML because
+// $1 captures from the already-escaped text. Do not reorder these steps,
+// do not skip escapeHtml — doing either turns this into an XSS sink.
 function highlight(text: string, query: string): string {
   if (!query) return escapeHtml(text);
   const escaped = escapeHtml(text);

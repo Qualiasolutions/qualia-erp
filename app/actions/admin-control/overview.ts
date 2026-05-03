@@ -4,8 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 import { getFinancialSummary } from '@/app/actions/financials';
 import { isUserAdmin } from '@/app/actions/shared';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
-import { loadPlanningHealth, type PlanningHealthPayload } from './planning-health';
-import { loadCommandCenter, type CommandCenterPayload } from './command-center';
+import { loadPlanningHealthFor, type PlanningHealthPayload } from './planning-health';
+import { loadCommandCenterFor, type CommandCenterPayload } from './command-center';
 
 export type OverviewKpi = {
   label: string;
@@ -64,8 +64,11 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
   }
 
   const workspaceId = await getCurrentWorkspaceId();
+  const safeWorkspaceId = workspaceId ?? '';
 
-  // PH-H1: Merged two sequential Promise.all batches into one
+  // PH-H1: Merged two sequential Promise.all batches into one.
+  // The internal *For variants below skip redundant getUser/isUserAdmin/
+  // getCurrentWorkspaceId calls — we already verified all three above.
   const weekStart = new Date();
   weekStart.setDate(weekStart.getDate() - 7);
 
@@ -126,8 +129,8 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
       .select('duration_seconds')
       .gte('started_at', weekStart.toISOString()),
     supabase.from('activity_log').select('action_type').gte('created_at', weekStart.toISOString()),
-    loadPlanningHealth(),
-    loadCommandCenter(),
+    loadPlanningHealthFor(safeWorkspaceId),
+    loadCommandCenterFor(safeWorkspaceId),
   ]);
 
   const activeProjectsCount = projectsRes.data?.length ?? 0;
