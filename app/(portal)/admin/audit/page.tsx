@@ -60,9 +60,15 @@ export default async function AuditIndexPage() {
                       </span>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-5 gap-y-1 text-[12px] text-muted-foreground">
-                      <Stat label="Hours logged" value={`${row.totalHours.toFixed(1)}h`} />
-                      <Stat label="Tasks done" value={row.tasksDone.toString()} />
-                      <Stat label="Reports" value={row.reportsTotal.toString()} />
+                      <Stat label="Projects worked" value={row.projectsWorked.toString()} />
+                      <Stat
+                        label={`Attendance · ${row.expectedDaysPerWeek}d/wk`}
+                        value={`${row.attendancePct}%`}
+                      />
+                      <Stat
+                        label="Reports / sessions"
+                        value={`${row.reportsTotal} · ${row.reportRatePct}%`}
+                      />
                       <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-0.5">
                         {row.hasAssessment ? (
                           <>

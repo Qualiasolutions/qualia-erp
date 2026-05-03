@@ -513,10 +513,21 @@ function Field({
    ====================================================================== */
 
 export function AuditDetailView({ audit }: { audit: EmployeeAuditPayload }) {
-  const { overview, attendance, sessions, reports, tasks, projects } = audit;
+  const { overview, attendance, sessions, reports, projects } = audit;
 
   const reportRate =
     sessions.totalSessions > 0 ? Math.round((reports.total / sessions.totalSessions) * 100) : 0;
+
+  // Project-derived metrics (the focus)
+  const projectsWithHours = projects.filter((p) => p.hoursLogged > 0).length;
+  const totalProjectHours = projects.reduce((sum, p) => sum + p.hoursLogged, 0);
+  const avgHoursPerProject =
+    projectsWithHours > 0 ? Math.round((totalProjectHours / projectsWithHours) * 10) / 10 : 0;
+  const heaviestProject = projects[0]; // already sorted by hours desc
+  const heaviestShare =
+    totalProjectHours > 0 && heaviestProject
+      ? Math.round((heaviestProject.hoursLogged / totalProjectHours) * 100)
+      : 0;
 
   return (
     <div className="flex flex-col gap-8">
@@ -535,27 +546,32 @@ export function AuditDetailView({ audit }: { audit: EmployeeAuditPayload }) {
           {overview.fullName}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {overview.email} · {overview.daysInCompany} days in company ·{' '}
+          {overview.email} · {overview.daysInCompany} days in company · expected{' '}
+          {attendance.expectedDaysPerWeek}-day week ·{' '}
           {overview.firstSession
             ? `first session ${new Date(overview.firstSession).toLocaleDateString('en-IE', { month: 'short', day: 'numeric' })}`
             : 'no sessions yet'}
         </p>
       </motion.header>
 
-      {/* Headline metrics */}
+      {/* Headline metrics — projects + framework discipline, not vanity hours */}
       <Section title="Snapshot" icon={Sparkles} index={1}>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <MetricCard
-            label="Hours logged"
-            value={`${sessions.totalHours.toFixed(1)}h`}
-            sub={`across ${sessions.totalSessions} sessions`}
+            label="Projects worked"
+            value={projects.length.toString()}
+            sub={
+              projectsWithHours === projects.length
+                ? 'all with logged time'
+                : `${projectsWithHours} with logged time`
+            }
             tone="neutral"
             index={0}
           />
           <MetricCard
-            label="Workdays"
-            value={sessions.distinctWorkdays.toString()}
-            sub={`${attendance.attendancePct}% of expected`}
+            label={`Attendance · ${attendance.expectedDaysPerWeek}d/wk`}
+            value={`${attendance.attendancePct}%`}
+            sub={`${attendance.attendedWeekdays}/${attendance.expectedWeekdays} days`}
             tone={
               attendance.attendancePct >= 90
                 ? 'good'
@@ -566,27 +582,36 @@ export function AuditDetailView({ audit }: { audit: EmployeeAuditPayload }) {
             index={1}
           />
           <MetricCard
-            label="Tasks completed"
-            value={`${tasks.completed}/${tasks.totalAssigned}`}
-            sub={`${tasks.onTimePct}% on-time`}
-            tone={tasks.onTimePct >= 70 ? 'good' : tasks.onTimePct >= 50 ? 'warn' : 'bad'}
+            label="Reports / sessions"
+            value={`${reports.total} / ${sessions.totalSessions}`}
+            sub={`${reportRate}% report rate`}
+            tone={reportRate >= 70 ? 'good' : reportRate >= 40 ? 'warn' : 'bad'}
             index={2}
           />
           <MetricCard
-            label="Framework reports"
-            value={reports.total.toString()}
-            sub={`${reportRate}% of sessions`}
-            tone={reportRate >= 70 ? 'good' : reportRate >= 40 ? 'warn' : 'bad'}
+            label="Avg hrs / project"
+            value={`${avgHoursPerProject.toFixed(1)}h`}
+            sub={
+              heaviestProject
+                ? `${heaviestProject.projectName.slice(0, 18)} = ${heaviestShare}%`
+                : '—'
+            }
+            tone="neutral"
             index={3}
           />
         </div>
       </Section>
 
       {/* Attendance */}
-      <Section title="Attendance" icon={Clock} subtitle="Cyprus timezone" index={2}>
+      <Section
+        title="Attendance"
+        icon={Clock}
+        subtitle={`${attendance.expectedDaysPerWeek}-day week · Cyprus TZ`}
+        index={2}
+      >
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <MetricCard
-            label="Expected weekdays"
+            label="Expected days"
             value={attendance.expectedWeekdays.toString()}
             sub="since first session"
             index={0}
@@ -811,106 +836,116 @@ function ObservationList({ audit }: { audit: EmployeeAuditPayload }) {
     icon: React.ComponentType<{ className?: string }>;
   }> = [];
 
-  // Strengths first — be fair
-  if (audit.tasks.completed > 0 && audit.tasks.completed === audit.tasks.totalAssigned) {
-    items.push({
-      tone: 'good',
-      icon: CheckCircle2,
-      text: `Completes work that's assigned: ${audit.tasks.completed}/${audit.tasks.totalAssigned} tasks closed.`,
-    });
-  } else if (audit.tasks.completed > 0) {
-    const closeRate = Math.round((audit.tasks.completed / audit.tasks.totalAssigned) * 100);
-    if (closeRate >= 90) {
-      items.push({
-        tone: 'good',
-        icon: CheckCircle2,
-        text: `Closes ${closeRate}% of assigned tasks.`,
-      });
-    }
-  }
-
-  if (audit.attendance.attendancePct >= 90) {
-    items.push({
-      tone: 'good',
-      icon: TrendingUp,
-      text: `Shows up: ${audit.attendance.attendancePct}% weekday attendance.`,
-    });
-  }
-
-  if (audit.sessions.totalHours >= 200) {
-    items.push({
-      tone: 'good',
-      icon: Clock,
-      text: `Logged ${audit.sessions.totalHours.toFixed(0)} hours — committed time.`,
-    });
-  }
-
-  // Then fair concerns
-  if (audit.attendance.veryLateAfterNoon / Math.max(audit.attendance.attendedWeekdays, 1) > 0.4) {
-    items.push({
-      tone: 'warn',
-      icon: TrendingDown,
-      text: `Started after noon on ${audit.attendance.veryLateAfterNoon} of ${audit.attendance.attendedWeekdays} attended days. Worth a conversation about a fixed start time.`,
-    });
-  }
-
-  if (audit.attendance.attendancePct < 80 && audit.attendance.expectedWeekdays >= 15) {
-    items.push({
-      tone: 'warn',
-      icon: TrendingDown,
-      text: `Missed ${audit.attendance.missedWeekdays} weekdays of ${audit.attendance.expectedWeekdays} (${100 - audit.attendance.attendancePct}% gap). Mandatory clock-in starting May 1 should help — but worth understanding why.`,
-    });
-  }
-
-  if (audit.tasks.onTimePct < 60 && audit.tasks.completed >= 10) {
-    items.push({
-      tone: 'warn',
-      icon: TrendingDown,
-      text: `On-time delivery: ${audit.tasks.onTimePct}% (${audit.tasks.doneOnTime}/${audit.tasks.completed}). Suggests scope or estimate is off — not effort.`,
-    });
-  }
-
   const reportRate =
     audit.sessions.totalSessions > 0
       ? Math.round((audit.reports.total / audit.sessions.totalSessions) * 100)
       : 0;
+
+  const projectsWithRealHours = audit.projects.filter((p) => p.hoursLogged >= 1);
+  const projectsTouchedNoHours = audit.projects.filter((p) => p.hoursLogged < 1).length;
+  const totalProjectHours = audit.projects.reduce((sum, p) => sum + p.hoursLogged, 0);
+  const heaviest = audit.projects[0];
+  const heaviestShare =
+    totalProjectHours > 0 && heaviest
+      ? Math.round((heaviest.hoursLogged / totalProjectHours) * 100)
+      : 0;
+
+  /* ---------------- Strengths first ---------------- */
+
+  if (audit.attendance.attendancePct >= 90 && audit.attendance.expectedWeekdays >= 15) {
+    items.push({
+      tone: 'good',
+      icon: TrendingUp,
+      text: `Reliable attendance: ${audit.attendance.attendancePct}% on a ${audit.attendance.expectedDaysPerWeek}-day week (${audit.attendance.attendedWeekdays}/${audit.attendance.expectedWeekdays}).`,
+    });
+  }
+
+  if (audit.projects.length >= 3 && projectsWithRealHours.length >= 2) {
+    items.push({
+      tone: 'good',
+      icon: CheckCircle2,
+      text: `Worked on ${audit.projects.length} projects total, ${projectsWithRealHours.length} with substantial logged time.`,
+    });
+  }
+
+  if (heaviest && heaviestShare >= 60 && totalProjectHours > 50) {
+    items.push({
+      tone: 'good',
+      icon: CheckCircle2,
+      text: `Specialist pattern: ${heaviestShare}% of logged time on ${heaviest.projectName} (${heaviest.hoursLogged.toFixed(0)}h). Deep on one thing, not scattered.`,
+    });
+  }
+
+  /* ---------------- Concerns, project + framework focused ---------------- */
+
+  // Reports vs sessions — the central framework discipline metric
   if (reportRate < 50 && audit.sessions.totalSessions >= 10) {
     items.push({
       tone: 'warn',
       icon: TrendingDown,
-      text: `Framework reports cover only ${reportRate}% of work sessions. Either /qualia-report friction or habit gap — the form below asks which.`,
+      text: `Reports cover only ${reportRate}% of sessions (${audit.reports.total} reports / ${audit.sessions.totalSessions} sessions). The framework's data on what was actually shipped is missing for half the work.`,
+    });
+  } else if (reportRate >= 50 && reportRate < 80 && audit.sessions.totalSessions >= 10) {
+    items.push({
+      tone: 'warn',
+      icon: TrendingDown,
+      text: `Reports cover ${reportRate}% of sessions (${audit.reports.total}/${audit.sessions.totalSessions}). Decent — but every clock-out should produce a report.`,
     });
   }
 
+  // Project breadth without depth
+  if (projectsTouchedNoHours >= 4) {
+    items.push({
+      tone: 'warn',
+      icon: TrendingDown,
+      text: `${projectsTouchedNoHours} projects on the list with no logged hours — assigned but never properly worked. Either scope creep on assignments or they were dropped without being formally removed.`,
+    });
+  }
+
+  // Time per project — where it goes
+  if (heaviest && heaviestShare >= 75 && audit.projects.length >= 3) {
+    items.push({
+      tone: 'warn',
+      icon: TrendingDown,
+      text: `${heaviestShare}% of logged time on a single project (${heaviest.projectName}). Heavy concentration — fine if intentional, risky if it means other assignments aren't getting touched.`,
+    });
+  }
+
+  // Attendance — work-week-aware
+  if (audit.attendance.attendancePct < 80 && audit.attendance.expectedWeekdays >= 15) {
+    items.push({
+      tone: 'warn',
+      icon: TrendingDown,
+      text: `Missed ${audit.attendance.missedWeekdays} of ${audit.attendance.expectedWeekdays} expected days (${audit.attendance.expectedDaysPerWeek}-day week, ${100 - audit.attendance.attendancePct}% gap). Mandatory clock-in starting May 1 raises the floor — worth understanding the cause before then.`,
+    });
+  }
+
+  if (
+    audit.attendance.veryLateAfterNoon / Math.max(audit.attendance.attendedWeekdays, 1) > 0.4 &&
+    audit.attendance.attendedWeekdays >= 10
+  ) {
+    items.push({
+      tone: 'warn',
+      icon: TrendingDown,
+      text: `Started after noon on ${audit.attendance.veryLateAfterNoon} of ${audit.attendance.attendedWeekdays} attended days. Body's there — morning isn't. Worth agreeing a real start time for May.`,
+    });
+  }
+
+  // Report content quality (not just count)
   if (audit.reports.noDeployUrl > audit.reports.total / 2 && audit.reports.total >= 5) {
     items.push({
       tone: 'warn',
       icon: TrendingDown,
-      text: `${audit.reports.noDeployUrl}/${audit.reports.total} reports have no deploy URL. We can't audit "shipped" without that field.`,
+      text: `${audit.reports.noDeployUrl}/${audit.reports.total} reports have no deploy URL. Without it, "shipped" is a claim, not evidence.`,
     });
   }
 
+  // Session-to-project linkage
   if (audit.sessions.noProject / Math.max(audit.sessions.totalSessions, 1) > 0.25) {
     items.push({
       tone: 'warn',
       icon: TrendingDown,
-      text: `${audit.sessions.noProject} of ${audit.sessions.totalSessions} sessions had no project linked. Time-tracking can't be billed if we don't know which client.`,
-    });
-  }
-
-  if (audit.assignments.missedDeadlines > 5 && audit.assignments.totalAssignments > 0) {
-    items.push({
-      tone: 'warn',
-      icon: TrendingDown,
-      text: `${audit.assignments.missedDeadlines} of ${audit.assignments.totalAssignments} project assignments hit deadline without completion mark. May be data hygiene (assignments not closed) more than missed work — check before scoping.`,
-    });
-  }
-
-  if (audit.tasks.avgDaysToDone && audit.tasks.avgDaysToDone > 30) {
-    items.push({
-      tone: 'warn',
-      icon: TrendingDown,
-      text: `Average task lifetime: ${audit.tasks.avgDaysToDone.toFixed(0)} days. Long tail suggests tasks are oversized — break them down at assignment time.`,
+      text: `${audit.sessions.noProject}/${audit.sessions.totalSessions} sessions had no project linked. Time on those days exists but can't be attributed to a client or deliverable.`,
     });
   }
 

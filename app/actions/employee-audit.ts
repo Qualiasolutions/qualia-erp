@@ -23,6 +23,7 @@ export type AuditOverview = {
 };
 
 export type AuditAttendance = {
+  expectedDaysPerWeek: number;
   expectedWeekdays: number;
   attendedWeekdays: number;
   missedWeekdays: number;
@@ -108,10 +109,11 @@ export type AuditIndexRow = {
   profileId: string;
   fullName: string | null;
   email: string | null;
-  totalHours: number;
+  projectsWorked: number;
   attendancePct: number;
+  expectedDaysPerWeek: number;
   reportsTotal: number;
-  tasksDone: number;
+  reportRatePct: number;
   hasAssessment: boolean;
 };
 
@@ -120,9 +122,33 @@ const REPORT_AUTHOR_ALIASES: Record<string, string[]> = {
   'moayad@qualiasolutions.net': ['Moayad', 'Moayad Alqam'],
 };
 
+/**
+ * Per-employee work-week shape, set by Fawzi.
+ * 5 = Mon-Fri, 6 = Mon-Sat. Default 5 for new hires.
+ * TODO: move to a profiles.expected_days_per_week column when more than 2 employees.
+ */
+const EXPECTED_DAYS_PER_WEEK: Record<string, number> = {
+  'hasan@qualiasolutions.net': 6,
+  'moayad@qualiasolutions.net': 5,
+};
+
 function aliasesFor(email: string | null): string[] {
   if (!email) return [];
   return REPORT_AUTHOR_ALIASES[email.toLowerCase()] ?? [];
+}
+
+function expectedDaysPerWeekFor(email: string | null): number {
+  if (!email) return 5;
+  return EXPECTED_DAYS_PER_WEEK[email.toLowerCase()] ?? 5;
+}
+
+/** Returns true if this DOW (0=Sun..6=Sat) is an expected work day. */
+function isExpectedDay(dow: number, daysPerWeek: number): boolean {
+  if (daysPerWeek >= 7) return true;
+  if (daysPerWeek === 6) return dow >= 1 && dow <= 6; // Mon-Sat
+  if (daysPerWeek === 5) return dow >= 1 && dow <= 5; // Mon-Fri
+  if (daysPerWeek === 4) return dow >= 1 && dow <= 4; // Mon-Thu
+  return dow !== 0 && dow !== 6; // fallback
 }
 
 async function authorizeAdmin(): Promise<
@@ -151,11 +177,22 @@ export async function getAuditIndex(): Promise<AuditIndexRow[]> {
 
   const rows = await Promise.all(
     employees.map(async (emp) => {
-      const [sessionsRes, assessmentRes] = await Promise.all([
+      const aliases = aliasesFor(emp.email);
+      const expectedDaysPerWeek = expectedDaysPerWeekFor(emp.email);
+
+      const [sessionsRes, assignmentsRes, reportsRes, assessmentRes] = await Promise.all([
         supabase
           .from('work_sessions')
-          .select('duration_minutes, started_at')
-          .eq('profile_id', emp.id),
+          .select('started_at')
+          .eq('profile_id', emp.id)
+          .order('started_at', { ascending: true }),
+        supabase.from('project_assignments').select('project_id').eq('employee_id', emp.id),
+        aliases.length
+          ? supabase
+              .from('session_reports')
+              .select('id', { count: 'exact', head: true })
+              .in('submitted_by', aliases)
+          : Promise.resolve({ count: 0 }),
         supabase
           .from('employee_self_assessments')
           .select('id')
@@ -165,50 +202,76 @@ export async function getAuditIndex(): Promise<AuditIndexRow[]> {
           .maybeSingle(),
       ]);
 
-      const totalMinutes = (sessionsRes.data ?? []).reduce(
-        (sum, s) => sum + (s.duration_minutes ?? 0),
-        0
+      const sessions = (sessionsRes.data ?? []) as Array<{ started_at: string }>;
+      const dayMap = sessionPerDayMap(sessions);
+      const expectedWorkdays = countExpectedDays(
+        sessions[0]?.started_at ?? null,
+        expectedDaysPerWeek
       );
-      const distinctDays = new Set(
-        (sessionsRes.data ?? []).map((s) => new Date(s.started_at as string).toDateString())
+      const attended = dayMap.size;
+      const attendancePct =
+        expectedWorkdays > 0 ? Math.min(100, Math.round((attended / expectedWorkdays) * 100)) : 0;
+
+      const projectsWorked = new Set(
+        ((assignmentsRes.data ?? []) as Array<{ project_id: string | null }>)
+          .map((r) => r.project_id)
+          .filter(Boolean)
       ).size;
 
-      // Light attendance proxy
-      const aliases = aliasesFor(emp.email);
-      const reportsCountQuery = aliases.length
-        ? supabase
-            .from('session_reports')
-            .select('id', { count: 'exact', head: true })
-            .in('submitted_by', aliases)
-        : null;
-      const tasksDoneQuery = supabase
-        .from('tasks')
-        .select('id', { count: 'exact', head: true })
-        .eq('assignee_id', emp.id)
-        .not('completed_at', 'is', null);
-
-      const [reportsRes, tasksRes] = await Promise.all([
-        reportsCountQuery ?? Promise.resolve({ count: 0 }),
-        tasksDoneQuery,
-      ]);
-
-      const expectedWorkdays = Math.max(distinctDays, 1);
-      const attendancePct = Math.min(100, Math.round((distinctDays / expectedWorkdays) * 100));
+      const totalSessions = sessions.length;
+      const reportsTotal = reportsRes.count ?? 0;
+      const reportRatePct =
+        totalSessions > 0 ? Math.round((reportsTotal / totalSessions) * 100) : 0;
 
       return {
         profileId: emp.id,
         fullName: emp.full_name,
         email: emp.email,
-        totalHours: Math.round((totalMinutes / 60) * 10) / 10,
+        projectsWorked,
         attendancePct,
-        reportsTotal: reportsRes.count ?? 0,
-        tasksDone: tasksRes.count ?? 0,
+        expectedDaysPerWeek,
+        reportsTotal,
+        reportRatePct,
         hasAssessment: Boolean(assessmentRes.data),
       } satisfies AuditIndexRow;
     })
   );
 
   return rows;
+}
+
+const TZ = 'Europe/Nicosia';
+const dayKey = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d);
+
+function sessionPerDayMap(
+  sessions: Array<{ started_at: string }>
+): Map<string, { earliestHour: number }> {
+  const map = new Map<string, { earliestHour: number }>();
+  for (const s of sessions) {
+    const d = new Date(s.started_at);
+    const key = dayKey(d);
+    const hour = parseInt(
+      new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', hour12: false }).format(d),
+      10
+    );
+    const prev = map.get(key);
+    if (!prev || hour < prev.earliestHour) map.set(key, { earliestHour: hour });
+  }
+  return map;
+}
+
+function countExpectedDays(firstSessionISO: string | null, daysPerWeek: number): number {
+  if (!firstSessionISO) return 0;
+  const start = new Date(firstSessionISO);
+  const end = new Date();
+  const cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
+  const stop = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
+  let count = 0;
+  while (cur <= stop) {
+    if (isExpectedDay(cur.getUTCDay(), daysPerWeek)) count += 1;
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return count;
 }
 
 export async function getEmployeeAudit(profileId: string): Promise<EmployeeAuditPayload | null> {
@@ -310,42 +373,16 @@ export async function getEmployeeAudit(profileId: string): Promise<EmployeeAudit
     )
   );
 
-  /* ATTENDANCE — derived in JS so we can be timezone-aware (Cyprus) */
-  const TZ = 'Europe/Nicosia';
-  const dayKey = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d);
-
-  const dayMap = new Map<string, { earliestHour: number }>();
-  for (const s of sessions) {
-    const d = new Date(s.started_at);
-    const key = dayKey(d);
-    const hour = parseInt(
-      new Intl.DateTimeFormat('en-GB', {
-        timeZone: TZ,
-        hour: '2-digit',
-        hour12: false,
-      }).format(d),
-      10
-    );
-    const prev = dayMap.get(key);
-    if (!prev || hour < prev.earliestHour) dayMap.set(key, { earliestHour: hour });
-  }
-
-  let expectedWeekdays = 0;
-  if (firstSession) {
-    const start = new Date(firstSession);
-    const end = new Date();
-    const cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
-    const stop = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
-    while (cur <= stop) {
-      const dow = cur.getUTCDay();
-      if (dow !== 0 && dow !== 6) expectedWeekdays += 1;
-      cur.setUTCDate(cur.getUTCDate() + 1);
-    }
-  }
+  /* ATTENDANCE — per-employee work-week shape */
+  const expectedDaysPerWeek = expectedDaysPerWeekFor(profile.email);
+  const dayMap = sessionPerDayMap(sessions);
+  const expectedWeekdays = countExpectedDays(firstSession, expectedDaysPerWeek);
   const attendedWeekdays = dayMap.size;
   const missedWeekdays = Math.max(0, expectedWeekdays - attendedWeekdays);
   const attendancePct =
-    expectedWeekdays > 0 ? Math.round((attendedWeekdays / expectedWeekdays) * 100) : 0;
+    expectedWeekdays > 0
+      ? Math.min(100, Math.round((attendedWeekdays / expectedWeekdays) * 100))
+      : 0;
   let lateAfter10 = 0;
   let veryLateAfterNoon = 0;
   for (const { earliestHour } of dayMap.values()) {
@@ -561,6 +598,7 @@ export async function getEmployeeAudit(profileId: string): Promise<EmployeeAudit
   return {
     overview,
     attendance: {
+      expectedDaysPerWeek,
       expectedWeekdays,
       attendedWeekdays,
       missedWeekdays,
