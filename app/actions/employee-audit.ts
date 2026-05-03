@@ -794,25 +794,32 @@ export async function submitSelfAssessment(
 
   if (error) return { success: false, error: error.message };
 
+  // Email is best-effort — DB write is the source of truth. If notification
+  // fails (Resend unconfigured, transient network, etc.), the assessment is
+  // still saved and the user should still see success. Log the email
+  // failure so admins can investigate without blocking the submission UX.
   const audit = await getEmployeeAudit(profileId);
   if (audit) {
-    const email = buildAuditResultEmail({
-      audit,
-      responses,
-      notes: auth.isAdmin ? notes : null,
-    });
-    const emailResult = await sendInternalEmail({
-      to: AUDIT_RESULT_RECIPIENT,
-      subject: email.subject,
-      html: email.html,
-      text: email.text,
-    });
-
-    if (!emailResult.success) {
-      return {
-        success: false,
-        error: `Assessment saved, but the result email was not sent: ${emailResult.error ?? 'Unknown email error'}`,
-      };
+    try {
+      const email = buildAuditResultEmail({
+        audit,
+        responses,
+        notes: auth.isAdmin ? notes : null,
+      });
+      const emailResult = await sendInternalEmail({
+        to: AUDIT_RESULT_RECIPIENT,
+        subject: email.subject,
+        html: email.html,
+        text: email.text,
+      });
+      if (!emailResult.success) {
+        console.warn(
+          '[submitSelfAssessment] result email skipped:',
+          emailResult.error ?? 'unknown'
+        );
+      }
+    } catch (e) {
+      console.warn('[submitSelfAssessment] result email threw:', e);
     }
   }
 
