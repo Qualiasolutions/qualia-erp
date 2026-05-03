@@ -46,7 +46,7 @@ export default async function AuditIndexPage() {
           {rows.map((row) => (
             <li key={row.profileId}>
               <Link
-                href={`/admin/audit/${row.profileId}`}
+                href={`/audit/${row.profileId}`}
                 className="group block rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-card/80"
               >
                 <div className="flex items-center justify-between gap-4">

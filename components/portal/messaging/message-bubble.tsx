@@ -89,7 +89,7 @@ export function MessageBubble({
 
 /**
  * Renders simple inline markdown: **bold**, *italic*, [text](url)
- * No dangerouslySetInnerHTML — builds React elements safely.
+ * Builds React elements safely instead of injecting HTML.
  */
 function renderMarkdown(text: string): React.ReactNode[] {
   // Process bold, italic, and links via regex replacement

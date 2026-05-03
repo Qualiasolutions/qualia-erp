@@ -232,10 +232,9 @@ function BrainHitCard({ hit, query }: { hit: BrainHit; query: string }) {
       {hit.context ? (
         <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">{hit.context}</p>
       ) : null}
-      <p
-        className="mt-2 text-sm leading-relaxed text-foreground/85"
-        dangerouslySetInnerHTML={{ __html: highlight(hit.snippet, query) }}
-      />
+      <p className="mt-2 text-sm leading-relaxed text-foreground/85">
+        <HighlightedSnippet text={hit.snippet} query={query} />
+      </p>
     </>
   );
   return (
@@ -251,26 +250,24 @@ function BrainHitCard({ hit, query }: { hit: BrainHit; query: string }) {
   );
 }
 
-// SAFETY: Order matters. We MUST escapeHtml(text) BEFORE running the regex
-// replace, so the only HTML in the output is the literal <mark> tags we
-// inject. The query is regex-escaped; it cannot inject HTML because
-// $1 captures from the already-escaped text. Do not reorder these steps,
-// do not skip escapeHtml — doing either turns this into an XSS sink.
-function highlight(text: string, query: string): string {
-  if (!query) return escapeHtml(text);
-  const escaped = escapeHtml(text);
-  const pattern = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return escaped.replace(
-    new RegExp(`(${pattern})`, 'gi'),
-    '<mark class="rounded bg-primary/20 px-0.5 text-foreground">$1</mark>'
-  );
-}
+function HighlightedSnippet({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  const pattern = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(${pattern})`, 'gi');
+  const parts = text.split(re);
+
+  return (
+    <>
+      {parts.map((part, index) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <mark key={`${part}:${index}`} className="rounded bg-primary/20 px-0.5 text-foreground">
+            {part}
+          </mark>
+        ) : (
+          <span key={`${part}:${index}`}>{part}</span>
+        )
+      )}
+    </>
+  );
 }

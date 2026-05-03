@@ -31,6 +31,11 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
+        source: '/admin/audit/:id',
+        destination: '/audit/:id',
+        permanent: false,
+      },
+      {
         source: '/inbox',
         destination: '/tasks',
         permanent: false,

@@ -1,15 +1,17 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { isUserAdmin } from '@/app/actions/shared';
+import { sendInternalEmail } from '@/lib/email';
 
 /**
  * Employee performance audit — pulls every measurable signal we have
  * about an employee (work sessions, framework reports, project assignments,
  * task completion, attendance) into one shape suitable for an interview.
  *
- * Hidden page consumer at /admin/audit/[id]. Admin-only.
+ * Hidden page consumer at /audit/[id]. Admins can open every employee; employees
+ * can open only their own audit.
  */
 
 export type AuditOverview = {
@@ -132,6 +134,8 @@ const EXPECTED_DAYS_PER_WEEK: Record<string, number> = {
   'moayad@qualiasolutions.net': 5,
 };
 
+const AUDIT_RESULT_RECIPIENT = 'info@qualiasolutions.net';
+
 function aliasesFor(email: string | null): string[] {
   if (!email) return [];
   return REPORT_AUTHOR_ALIASES[email.toLowerCase()] ?? [];
@@ -162,10 +166,36 @@ async function authorizeAdmin(): Promise<
   return { ok: true, client: supabase };
 }
 
+async function authorizeAuditAccess(profileId: string): Promise<
+  | { ok: false }
+  | {
+      ok: true;
+      client: ReturnType<typeof createAdminClient>;
+      isAdmin: boolean;
+      userId: string;
+    }
+> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+
+  const isAdmin = await isUserAdmin(user.id);
+  if (!isAdmin && user.id !== profileId) return { ok: false };
+
+  return {
+    ok: true,
+    client: createAdminClient(),
+    isAdmin,
+    userId: user.id,
+  };
+}
+
 export async function getAuditIndex(): Promise<AuditIndexRow[]> {
   const auth = await authorizeAdmin();
   if (!auth.ok) return [];
-  const supabase = auth.client;
+  const supabase = createAdminClient();
 
   const { data: employees } = await supabase
     .from('profiles')
@@ -275,7 +305,7 @@ function countExpectedDays(firstSessionISO: string | null, daysPerWeek: number):
 }
 
 export async function getEmployeeAudit(profileId: string): Promise<EmployeeAuditPayload | null> {
-  const auth = await authorizeAdmin();
+  const auth = await authorizeAuditAccess(profileId);
   if (!auth.ok) return null;
   const supabase = auth.client;
 
@@ -615,10 +645,135 @@ export async function getEmployeeAudit(profileId: string): Promise<EmployeeAudit
       ? {
           submittedAt: assessmentRes.data.submitted_at as string,
           responses: (assessmentRes.data.responses ?? {}) as Record<string, unknown>,
-          notes: (assessmentRes.data.notes ?? null) as string | null,
+          notes: auth.isAdmin ? ((assessmentRes.data.notes ?? null) as string | null) : null,
         }
       : null,
   };
+}
+
+function asText(value: unknown): string {
+  if (value == null || value === '') return 'Not answered';
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value);
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatResponseBlock(responses: Record<string, unknown>): string {
+  const rows: Array<[string, string]> = [
+    ['Capacity projects', asText(responses.capacityProjects)],
+    ['Realistic time for similar project', asText(responses.realisticTime)],
+    ['May schedule start', asText(responses.scheduleStart)],
+    ['May schedule end', asText(responses.scheduleEnd)],
+    ['Days per week', asText(responses.daysPerWeek)],
+    ['Framework blocker', asText(responses.frameworkBlocker)],
+    ['Top blocker', asText(responses.topBlocker)],
+    ['Goals for May', asText(responses.goalsForMay)],
+    ['Known limits', asText(responses.knownLimits)],
+  ];
+
+  const archetypes = responses.archetypes as Record<string, unknown> | undefined;
+  if (archetypes && typeof archetypes === 'object') {
+    rows.push(['Project type confidence', JSON.stringify(archetypes, null, 2)]);
+  }
+
+  const domainConfidence = responses.domainConfidence as Record<string, unknown> | undefined;
+  if (domainConfidence && typeof domainConfidence === 'object') {
+    rows.push(['Domain confidence', JSON.stringify(domainConfidence, null, 2)]);
+  }
+
+  return rows.map(([label, value]) => `${label}: ${value}`).join('\n');
+}
+
+function buildAuditResultEmail(params: {
+  audit: EmployeeAuditPayload;
+  responses: Record<string, unknown>;
+  notes: string | null;
+}): { subject: string; html: string; text: string } {
+  const { audit, responses, notes } = params;
+  const name = audit.overview.fullName ?? audit.overview.email ?? 'Employee';
+  const capacity = asText(responses.capacityProjects);
+  const reportRate =
+    audit.sessions.totalSessions > 0
+      ? Math.round((audit.reports.total / audit.sessions.totalSessions) * 100)
+      : 0;
+  const topProjects = audit.projects
+    .slice(0, 5)
+    .map((project) => `${project.projectName} (${project.hoursLogged.toFixed(1)}h)`)
+    .join(', ');
+  const responseBlock = formatResponseBlock(responses);
+
+  const subject = `${name} May scope audit result`;
+  const text = [
+    `${name} May scope audit result`,
+    '',
+    `Email: ${audit.overview.email ?? 'Unknown'}`,
+    `Recommended project capacity from self-assessment: ${capacity}`,
+    `Attendance: ${audit.attendance.attendancePct}% (${audit.attendance.attendedWeekdays}/${audit.attendance.expectedWeekdays} expected days)`,
+    `Reports: ${audit.reports.total}/${audit.sessions.totalSessions} sessions (${reportRate}%)`,
+    `Projects worked: ${audit.projects.length}`,
+    topProjects
+      ? `Top projects by logged time: ${topProjects}`
+      : 'Top projects by logged time: none',
+    '',
+    'May reality / next steps from the assessment:',
+    responseBlock,
+    '',
+    notes ? `Private notes:\n${notes}` : 'Private notes: none',
+    '',
+    `Open the ERP Knowledge agent: ${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net'}/knowledge`,
+  ].join('\n');
+
+  const htmlRows = [
+    ['Recommended project capacity', capacity],
+    [
+      'Attendance',
+      `${audit.attendance.attendancePct}% (${audit.attendance.attendedWeekdays}/${audit.attendance.expectedWeekdays} expected days)`,
+    ],
+    ['Reports', `${audit.reports.total}/${audit.sessions.totalSessions} sessions (${reportRate}%)`],
+    ['Projects worked', audit.projects.length.toString()],
+    ['Top projects by logged time', topProjects || 'None'],
+  ]
+    .map(
+      ([label, value]) =>
+        `<tr><td style="padding:8px 0;color:#667085;">${escapeHtml(label)}</td><td style="padding:8px 0;color:#101828;font-weight:600;">${escapeHtml(value)}</td></tr>`
+    )
+    .join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:0;background:#f6f7f8;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#101828;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;background:#f6f7f8;">
+    <tr><td align="center">
+      <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #eaecf0;border-radius:12px;overflow:hidden;">
+        <tr><td style="padding:28px 32px;border-bottom:1px solid #eaecf0;">
+          <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#667085;font-weight:700;">Qualia ERP</div>
+          <h1 style="margin:8px 0 0;font-size:22px;line-height:1.25;">${escapeHtml(name)} May scope audit result</h1>
+          <p style="margin:8px 0 0;color:#667085;font-size:14px;">${escapeHtml(audit.overview.email ?? 'Unknown email')}</p>
+        </td></tr>
+        <tr><td style="padding:24px 32px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${htmlRows}</table>
+          <h2 style="margin:28px 0 10px;font-size:15px;">Assessment answers</h2>
+          <pre style="white-space:pre-wrap;margin:0;padding:16px;background:#f9fafb;border:1px solid #eaecf0;border-radius:8px;color:#344054;font-size:13px;line-height:1.55;">${escapeHtml(responseBlock)}</pre>
+          <h2 style="margin:28px 0 10px;font-size:15px;">Private notes</h2>
+          <pre style="white-space:pre-wrap;margin:0;padding:16px;background:#f9fafb;border:1px solid #eaecf0;border-radius:8px;color:#344054;font-size:13px;line-height:1.55;">${escapeHtml(notes || 'None')}</pre>
+          <p style="margin:24px 0 0;color:#667085;font-size:13px;">ERP Knowledge agent: <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net'}/knowledge" style="color:#008b95;">open knowledge page</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  return { subject, html, text };
 }
 
 export async function submitSelfAssessment(
@@ -626,24 +781,42 @@ export async function submitSelfAssessment(
   responses: Record<string, unknown>,
   notes: string | null
 ): Promise<{ success: boolean; error?: string }> {
-  const auth = await authorizeAdmin();
-  if (!auth.ok) return { success: false, error: 'Admin only.' };
+  const auth = await authorizeAuditAccess(profileId);
+  if (!auth.ok) return { success: false, error: 'You can only submit your own assessment.' };
   const supabase = auth.client;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Not signed in.' };
 
   const { error } = await supabase.from('employee_self_assessments').insert({
     profile_id: profileId,
     responses,
-    notes,
-    submitted_by: user.id,
+    notes: auth.isAdmin ? notes : null,
+    submitted_by: auth.userId,
   });
 
   if (error) return { success: false, error: error.message };
 
+  const audit = await getEmployeeAudit(profileId);
+  if (audit) {
+    const email = buildAuditResultEmail({
+      audit,
+      responses,
+      notes: auth.isAdmin ? notes : null,
+    });
+    const emailResult = await sendInternalEmail({
+      to: AUDIT_RESULT_RECIPIENT,
+      subject: email.subject,
+      html: email.html,
+      text: email.text,
+    });
+
+    if (!emailResult.success) {
+      return {
+        success: false,
+        error: `Assessment saved, but the result email was not sent: ${emailResult.error ?? 'Unknown email error'}`,
+      };
+    }
+  }
+
+  revalidatePath(`/audit/${profileId}`);
   revalidatePath(`/admin/audit/${profileId}`);
   revalidatePath('/admin/audit');
   return { success: true };
