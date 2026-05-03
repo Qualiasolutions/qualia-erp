@@ -17,6 +17,39 @@ function getResendClient(): Resend | null {
 const FROM_EMAIL = 'Qualia Platform <notifications@qualiasolutions.net>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net';
 
+export async function sendInternalEmail(params: {
+  to: string | string[];
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[sendInternalEmail] Resend not configured, skipping email');
+      return { success: false, error: 'Resend is not configured.' };
+    }
+
+    const { error } = await resendClient.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
+      text: params.text,
+    });
+
+    if (error) {
+      console.error('[sendInternalEmail] Failed to send email:', error);
+      return { success: false, error: String(error.message ?? error) };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[sendInternalEmail] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
 // Types for notification data
 type NotificationData = {
   creatorName: string;

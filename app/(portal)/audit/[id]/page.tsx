@@ -1,0 +1,42 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
+import { ArrowLeft } from 'lucide-react';
+
+import { getEmployeeAudit } from '@/app/actions/employee-audit';
+import { isUserAdmin } from '@/app/actions/shared';
+import { AuditDetailView } from '@/components/employee-audit/audit-detail-client';
+import { getPortalAuthUser } from '@/lib/portal-cache';
+
+export const metadata: Metadata = {
+  title: 'Performance audit | Qualia',
+};
+
+export default async function EmployeeAuditPage({ params }: { params: Promise<{ id: string }> }) {
+  await connection();
+
+  const user = await getPortalAuthUser();
+  if (!user) redirect('/auth/login');
+
+  const { id } = await params;
+  const audit = await getEmployeeAudit(id);
+  if (!audit) notFound();
+
+  const canWritePrivateNotes = await isUserAdmin(user.id);
+
+  return (
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 md:px-8 md:py-10">
+      {canWritePrivateNotes ? (
+        <Link
+          href="/admin/audit"
+          className="inline-flex items-center gap-2 self-start text-[12px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden />
+          Back to audit index
+        </Link>
+      ) : null}
+      <AuditDetailView audit={audit} canWritePrivateNotes={canWritePrivateNotes} />
+    </div>
+  );
+}

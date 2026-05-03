@@ -223,11 +223,13 @@ function SelfAssessmentForm({
   fullName,
   initial,
   pastProjects,
+  canWritePrivateNotes,
 }: {
   profileId: string;
   fullName: string;
   initial?: Record<string, unknown>;
   pastProjects: string[];
+  canWritePrivateNotes: boolean;
 }) {
   const [form, setForm] = useState<FormState>(() => defaultForm(initial));
   const [notes, setNotes] = useState('');
@@ -447,7 +449,7 @@ function SelfAssessmentForm({
 
       <Field
         label="What do you want to learn or own in May?"
-        help="Pick 1–2 things. We'll align scope to push you there."
+        help="Pick 1-2 things. We'll align scope to push you there."
       >
         <Textarea
           rows={2}
@@ -467,14 +469,16 @@ function SelfAssessmentForm({
         />
       </Field>
 
-      <Field label="Fawzi's notes (private — not shown to employee)">
-        <Textarea
-          rows={3}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="What you observed during the conversation."
-        />
-      </Field>
+      {canWritePrivateNotes ? (
+        <Field label="Fawzi's notes (private - not shown to employee)">
+          <Textarea
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="What you observed during the conversation."
+          />
+        </Field>
+      ) : null}
 
       <div className="flex items-center justify-end gap-3">
         <Button type="submit" disabled={isPending} className="gap-2">
@@ -512,7 +516,13 @@ function Field({
    Main view
    ====================================================================== */
 
-export function AuditDetailView({ audit }: { audit: EmployeeAuditPayload }) {
+export function AuditDetailView({
+  audit,
+  canWritePrivateNotes = false,
+}: {
+  audit: EmployeeAuditPayload;
+  canWritePrivateNotes?: boolean;
+}) {
   const { overview, attendance, sessions, reports, projects } = audit;
 
   const reportRate =
@@ -540,7 +550,7 @@ export function AuditDetailView({ audit }: { audit: EmployeeAuditPayload }) {
         className="flex flex-col gap-2"
       >
         <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          Performance audit · hidden surface · admin only
+          Performance audit · May scope planning
         </span>
         <h1 className="text-[clamp(1.75rem,1.4rem+1.7vw,2.5rem)] font-semibold tracking-tight">
           {overview.fullName}
@@ -823,6 +833,7 @@ export function AuditDetailView({ audit }: { audit: EmployeeAuditPayload }) {
           fullName={overview.fullName ?? 'Employee'}
           initial={audit.latestAssessment?.responses}
           pastProjects={projects.slice(0, 3).map((p) => p.projectName)}
+          canWritePrivateNotes={canWritePrivateNotes}
         />
       </motion.div>
     </div>
