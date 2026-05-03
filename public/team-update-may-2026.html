@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>May 2026 — How we work now · Qualia Solutions</title>
+<meta name="description" content="The team update for May 2026. New ways of working, new framework version, mandatory clock-in. Easy explainer." />
+<link rel="preconnect" href="https://api.fontshare.com" />
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700,900&f[]=clash-display@500,600,700&f[]=jetbrains-mono@400,500&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     QUALIA BRAND TOKENS — from /Qualia_Solutions_Brand_Guidelines
+     ============================================================ */
+  :root {
+    --teal: #00FFD1;
+    --teal-deep: #00D9B3;
+    --teal-brand: #00a4ac;
+    --purple: #8B5CF6;
+    --pink: #EC4899;
+    --emerald: #10B981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+
+    --bg: #050505;
+    --bg-elev: #0f0f0f;
+    --bg-card: #141414;
+    --bg-slate: #1e293b;
+
+    --text: #EDEDED;
+    --text-mute: #A1A1AA;
+    --text-faint: #71717A;
+
+    --glass-bg: rgba(255,255,255,0.04);
+    --glass-bg-hover: rgba(255,255,255,0.07);
+    --glass-border: rgba(255,255,255,0.1);
+
+    --radius-sm: 8px;
+    --radius: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
+
+    --shadow-glow: 0 0 60px rgba(0, 255, 209, 0.12);
+    --shadow-card: 0 24px 48px -24px rgba(0,0,0,0.6);
+
+    --maxw: 1120px;
+    --pad-x: clamp(1.25rem, 4vw, 3rem);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    overflow-x: hidden;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -20%, rgba(0,255,209,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 100% 100%, rgba(139,92,246,0.04) 0%, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  ::selection { background: rgba(0, 255, 209, 0.25); color: var(--text); }
+
+  /* Display font — strong identity */
+  .display, h1, h2, h3 {
+    font-family: 'Clash Display', 'Satoshi', system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0;
+  }
+  h1 { font-size: clamp(2.5rem, 1.5rem + 4vw, 5rem); }
+  h2 { font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.75rem); letter-spacing: -0.025em; }
+  h3 { font-size: clamp(1.15rem, 0.95rem + 0.8vw, 1.5rem); font-weight: 500; }
+  p  { margin: 0; }
+
+  .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.875em; }
+
+  /* Layout shell */
+  .shell { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--pad-x); }
+
+  /* ============================================================
+     TOPBAR
+     ============================================================ */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(5,5,5,0.7);
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .topbar-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Clash Display', sans-serif; font-weight: 600; letter-spacing: -0.01em;
+    font-size: 1.05rem;
+  }
+  .brand-q {
+    width: 30px; height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--glass-border);
+    border-radius: 9px;
+    color: var(--teal);
+    font-family: 'Clash Display', serif; font-weight: 700;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg, rgba(0,255,209,0.08), transparent);
+  }
+  .topbar-meta {
+    color: var(--text-faint); font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.04em;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .pulse-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal); box-shadow: 0 0 10px var(--teal);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  /* ============================================================
+     HERO
+     ============================================================ */
+  .hero {
+    padding: clamp(80px, 12vw, 160px) 0 clamp(64px, 10vw, 120px);
+    position: relative;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px;
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-mute);
+    margin-bottom: 28px;
+  }
+  .hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
+  .hero h1 {
+    max-width: 18ch;
+    margin-bottom: 28px;
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.65) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .teal-text {
+    background: linear-gradient(135deg, var(--teal) 0%, var(--teal-deep) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero-sub {
+    font-size: clamp(1.05rem, 0.9rem + 0.6vw, 1.35rem);
+    color: var(--text-mute);
+    max-width: 56ch;
+    line-height: 1.55;
+  }
+  .hero-meta {
+    margin-top: 36px;
+    display: flex; flex-wrap: wrap; gap: 20px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    color: var(--text-faint);
+  }
+  .hero-meta span strong { color: var(--text); font-weight: 500; }
+
+  /* ============================================================
+     SECTION FRAME
+     ============================================================ */
+  section.block {
+    padding: clamp(48px, 7vw, 96px) 0;
+    border-top: 1px solid var(--glass-border);
+    position: relative;
+  }
+  .section-eyebrow {
+    display: inline-block;
+    width: 64px; height: 2px; background: var(--teal);
+    margin-bottom: 18px;
+    border-radius: 2px;
+  }
+  .section-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--teal-brand);
+    margin-bottom: 8px;
+  }
+  .section-lead {
+    color: var(--text-mute);
+    max-width: 68ch;
+    margin-top: 16px;
+    font-size: 1.05rem;
+  }
+
+  /* ============================================================
+     BIG SHIFT BANNER
+     ============================================================ */
+  .shift-banner {
+    margin-top: 28px;
+    padding: clamp(28px, 4vw, 44px);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, rgba(0,255,209,0.08) 0%, rgba(0,217,179,0.04) 100%);
+    border: 1px solid rgba(0,255,209,0.2);
+    position: relative; overflow: hidden;
+  }
+  .shift-banner::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 80% 50%, rgba(0,255,209,0.15) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .shift-grid {
+    display: grid; gap: 24px;
+    grid-template-columns: 1fr;
+    position: relative; z-index: 1;
+  }
+  @media (min-width: 720px) { .shift-grid { grid-template-columns: auto 1fr; align-items: center; } }
+  .shift-date {
+    font-family: 'Clash Display', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--teal);
+    letter-spacing: -0.02em;
+  }
+  .shift-date small { display: block; font-size: 0.28em; letter-spacing: 0.18em; color: var(--text-mute); margin-top: 6px; text-transform: uppercase; font-weight: 500; }
+  .shift-text h2 { margin-bottom: 12px; }
+  .shift-text p { color: var(--text-mute); max-width: 50ch; }
+
+  /* ============================================================
+     CARD GRID
+     ============================================================ */
+  .card-grid {
+    display: grid; gap: 16px;
+    grid-template-columns: 1fr;
+    margin-top: 32px;
+  }
+  @media (min-width: 720px) { .card-grid.cols-2 { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 980px) { .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); } }
+
+  .card {
+    padding: clamp(20px, 2.5vw, 28px);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    transition: border-color 200ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card:hover { border-color: rgba(0,255,209,0.25); transform: translateY(-2px); }
+  .card-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.1em;
+    color: var(--teal-brand);
+    margin-bottom: 12px;
+  }
+  .card h3 { margin-bottom: 8px; }
+  .card p { color: var(--text-mute); font-size: 0.95rem; }
+
+  /* ============================================================
+     WORKFLOW STEPS
+     ============================================================ */
+  .flow {
+    margin-top: 36px;
+    display: grid; gap: 14px;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 980px) {
+    .flow { grid-template-columns: repeat(5, 1fr); align-items: stretch; }
+  }
+  .flow-step {
+    position: relative;
+    padding: 22px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .flow-step:hover { border-color: rgba(0,255,209,0.3); }
+  .flow-step::after {
+    content: ""; display: none;
+    position: absolute; right: -14px; top: 50%;
+    width: 24px; height: 1px; background: linear-gradient(90deg, var(--teal-brand), transparent);
+    transform: translateY(-50%);
+  }
+  @media (min-width: 980px) {
+    .flow-step:not(:last-child)::after { display: block; }
+  }
+  .flow-num {
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    background: rgba(0,255,209,0.1);
+    color: var(--teal);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .flow-step h4 {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 1.05rem; font-weight: 600;
+    margin: 0 0 6px;
+    letter-spacing: -0.015em;
+  }
+  .flow-step p { color: var(--text-mute); font-size: 0.85rem; line-height: 1.5; }
+  .flow-step .cmd {
+    margin-top: 12px;
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(0,255,209,0.06);
+    border: 1px solid rgba(0,255,209,0.18);
+    color: var(--teal);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+  }
+
+  /* ============================================================
+     COMMANDS TABLE
+     ============================================================ */
+  .cmd-list {
+    margin-top: 32px;
+    display: grid; gap: 10px;
+  }
+  .cmd-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 18px 20px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    transition: all 180ms ease;
+  }
+  @media (min-width: 720px) {
+    .cmd-row { grid-template-columns: 220px 1fr; gap: 24px; align-items: baseline; padding: 18px 24px; }
+  }
+  .cmd-row:hover { border-color: rgba(0,255,209,0.2); background: rgba(0,255,209,0.02); }
+  .cmd-row code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    color: var(--teal);
+    font-weight: 500;
+  }
+  .cmd-row p { color: var(--text-mute); font-size: 0.92rem; }
+
+  /* ============================================================
+     CHECKLIST
+     ============================================================ */
+  .checklist {
+    margin-top: 32px;
+    display: grid; gap: 12px;
+  }
+  .check {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 16px;
+    padding: 18px 22px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    align-items: start;
+  }
+  .check-mark {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--teal);
+    background: rgba(0,255,209,0.08);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--teal);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .check-mark svg { width: 14px; height: 14px; }
+  .check-body strong { display: block; color: var(--text); font-weight: 500; margin-bottom: 4px; font-size: 0.98rem; }
+  .check-body p { color: var(--text-mute); font-size: 0.88rem; line-height: 1.55; }
+
+  /* ============================================================
+     BEFORE / AFTER
+     ============================================================ */
+  .ba-grid {
+    display: grid; gap: 16px;
+    grid-template-columns: 1fr;
+    margin-top: 32px;
+  }
+  @media (min-width: 720px) { .ba-grid { grid-template-columns: 1fr 1fr; gap: 18px; } }
+  .ba-col {
+    padding: 24px 26px;
+    border-radius: var(--radius);
+    border: 1px solid var(--glass-border);
+    background: var(--bg-card);
+  }
+  .ba-col.before { opacity: 0.7; }
+  .ba-col.after { border-color: rgba(0,255,209,0.25); }
+  .ba-col h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--text-faint); margin: 0 0 14px;
+  }
+  .ba-col.after h4 { color: var(--teal-brand); }
+  .ba-col ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .ba-col li {
+    color: var(--text-mute);
+    font-size: 0.95rem;
+    padding-left: 22px;
+    position: relative;
+  }
+  .ba-col.before li::before {
+    content: "—"; position: absolute; left: 0; color: var(--text-faint);
+  }
+  .ba-col.after li::before {
+    content: "→"; position: absolute; left: 0; color: var(--teal);
+  }
+
+  /* ============================================================
+     CTA / CLOSING
+     ============================================================ */
+  .closing {
+    text-align: center;
+    padding: clamp(80px, 10vw, 140px) 0;
+    border-top: 1px solid var(--glass-border);
+    position: relative; overflow: hidden;
+  }
+  .closing::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0,255,209,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .closing-q {
+    font-family: 'Clash Display', serif; font-weight: 700;
+    font-size: clamp(4rem, 12vw, 9rem);
+    color: var(--teal);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    margin: 0 0 16px;
+    filter: drop-shadow(0 0 40px rgba(0,255,209,0.4));
+    position: relative; z-index: 1;
+  }
+  .closing-line {
+    font-family: 'Clash Display', sans-serif;
+    font-style: italic;
+    font-size: clamp(1.05rem, 0.9rem + 0.6vw, 1.4rem);
+    color: var(--text-mute);
+    margin: 0 auto;
+    max-width: 50ch;
+    position: relative; z-index: 1;
+  }
+  .closing-meta {
+    margin-top: 40px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+    position: relative; z-index: 1;
+  }
+
+  /* ============================================================
+     SCROLL REVEAL
+     ============================================================ */
+  .reveal {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .pulse-dot { animation: none; }
+    * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
+
+  /* ============================================================
+     PILL
+     ============================================================ */
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    background: rgba(0,255,209,0.08); color: var(--teal-brand);
+    border: 1px solid rgba(0,255,209,0.2);
+  }
+  .pill.amber {
+    background: rgba(245,158,11,0.08); color: var(--amber);
+    border-color: rgba(245,158,11,0.2);
+  }
+  .pill.purple {
+    background: rgba(139,92,246,0.1); color: var(--purple);
+    border-color: rgba(139,92,246,0.25);
+  }
+
+  /* ============================================================
+     FOOTER
+     ============================================================ */
+  .foot {
+    padding: 28px 0;
+    color: var(--text-faint);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    text-align: center;
+    border-top: 1px solid var(--glass-border);
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============================================================
+       TOPBAR
+       ============================================================ -->
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <div class="brand">
+        <span class="brand-q" aria-hidden>Q</span>
+        <span>Qualia Solutions</span>
+      </div>
+      <div class="topbar-meta">
+        <span class="pulse-dot" aria-hidden></span>
+        <span>MAY · 2026 · TEAM UPDATE</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       HERO
+       ============================================================ -->
+  <section class="hero shell">
+    <span class="hero-eyebrow reveal">
+      <span class="dot" aria-hidden></span>
+      Read this once. Keep working.
+    </span>
+    <h1 class="reveal">
+      <span class="gradient-text">How we work</span><br/>
+      <span class="teal-text">starting May 1.</span>
+    </h1>
+    <p class="hero-sub reveal">
+      Short, honest, no jargon. Three things change. The framework levels up.
+      Clocking in becomes mandatory. Reports replace tasks. Read the page once and
+      we&rsquo;re aligned for the month.
+    </p>
+    <div class="hero-meta reveal">
+      <span><strong>Effective:</strong> 1 May 2026</span>
+      <span><strong>For:</strong> Hasan · Moayad</span>
+      <span><strong>From:</strong> Fawzi</span>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       THE BIG SHIFT
+       ============================================================ -->
+  <section class="block">
+    <div class="shell">
+      <span class="section-eyebrow reveal" aria-hidden></span>
+      <p class="section-tag reveal">01 · The big shift</p>
+      <h2 class="reveal">From tasks to projects.</h2>
+      <p class="section-lead reveal">
+        We are done with inbox-task soup auto-spawning from every &lt;code&gt;.planning&lt;/code&gt; checklist.
+        Tasks created chaos and made it look like work was happening when it wasn&rsquo;t. From now on,
+        you own <em>projects</em> for the month, with deadlines we agree on together.
+      </p>
+
+      <div class="shift-banner reveal">
+        <div class="shift-grid">
+          <div class="shift-date">
+            01.05.26
+            <small>Effective</small>
+          </div>
+          <div class="shift-text">
+            <h2>Mandatory clock&#8209;in & clock&#8209;out</h2>
+            <p>
+              Every working day, you clock in when you start, you clock out when you finish.
+              No exceptions, no &ldquo;forgot.&rdquo; The portal will guide you through both.
+              Hasan: 6 days a week. Moayad: 5 days a week. We agreed on this.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid cols-3">
+        <div class="card reveal">
+          <p class="card-num">01</p>
+          <h3>You get projects</h3>
+          <p>At the start of the month, you and Fawzi agree on the projects you&rsquo;ll deliver. Not tasks. Whole projects, with deadlines.</p>
+        </div>
+        <div class="card reveal">
+          <p class="card-num">02</p>
+          <h3>You report sessions</h3>
+          <p>Every session you finish, you run <span class="mono">/qualia-report</span>. The framework writes everything to the ERP automatically.</p>
+        </div>
+        <div class="card reveal">
+          <p class="card-num">03</p>
+          <h3>You own the outcome</h3>
+          <p>When the project ships, you submit it. Deploy URL, handoff doc, done. That&rsquo;s the unit of accountability.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       DAILY WORKFLOW
+       ============================================================ -->
+  <section class="block">
+    <div class="shell">
+      <span class="section-eyebrow reveal" aria-hidden></span>
+      <p class="section-tag reveal">02 · Your day, step by step</p>
+      <h2 class="reveal">Five steps. Same shape every day.</h2>
+      <p class="section-lead reveal">
+        This is the only flow you need to memorise. Open the portal, follow the prompts,
+        ship work, log it, go home.
+      </p>
+
+      <div class="flow">
+        <div class="flow-step reveal">
+          <span class="flow-num">01</span>
+          <h4>Clock in</h4>
+          <p>Open the portal. Pick the project. Write what you plan to ship today and how long you think it&rsquo;ll take.</p>
+          <span class="cmd">portal.qualiasolutions.net</span>
+        </div>
+        <div class="flow-step reveal">
+          <span class="flow-num">02</span>
+          <h4>Run the framework</h4>
+          <p>Open Claude Code in the project folder. Use <span class="mono">/qualia</span> to know what&rsquo;s next, then build.</p>
+          <span class="cmd">/qualia</span>
+        </div>
+        <div class="flow-step reveal">
+          <span class="flow-num">03</span>
+          <h4>Build & ship</h4>
+          <p>Plan, build, verify. Use <span class="mono">/qualia-build</span> for phases or <span class="mono">/qualia-quick</span> for small fixes.</p>
+          <span class="cmd">/qualia-build</span>
+        </div>
+        <div class="flow-step reveal">
+          <span class="flow-num">04</span>
+          <h4>Submit report</h4>
+          <p>End of session, run <span class="mono">/qualia-report</span>. It writes a structured report straight to the ERP.</p>
+          <span class="cmd">/qualia-report</span>
+        </div>
+        <div class="flow-step reveal">
+          <span class="flow-num">05</span>
+          <h4>Clock out</h4>
+          <p>Back in the portal. Confirm what you actually shipped. Paste the report URL. Out.</p>
+          <span class="cmd">portal · clock&nbsp;out</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       NEW COMMANDS
+       ============================================================ -->
+  <section class="block">
+    <div class="shell">
+      <span class="section-eyebrow reveal" aria-hidden></span>
+      <p class="section-tag reveal">03 · Framework commands</p>
+      <h2 class="reveal">The handful you&rsquo;ll use every day.</h2>
+      <p class="section-lead reveal">
+        The framework has many commands. You don&rsquo;t need to memorise all of them. Memorise these six.
+        For everything else, type <span class="mono">/qualia-help</span>.
+      </p>
+
+      <div class="cmd-list">
+        <div class="cmd-row reveal">
+          <code>/qualia</code>
+          <p>The smart router. Don&rsquo;t know what&rsquo;s next? Type this. It tells you the exact command for your situation.</p>
+        </div>
+        <div class="cmd-row reveal">
+          <code>/qualia-new</code>
+          <p>Start a brand new project. Asks you the right questions, runs research, builds the journey from scratch.</p>
+        </div>
+        <div class="cmd-row reveal">
+          <code>/qualia-plan</code>
+          <p>Plan the current phase. The framework spawns a planner, validates the plan, gives you something concrete to build.</p>
+        </div>
+        <div class="cmd-row reveal">
+          <code>/qualia-build</code>
+          <p>Execute the current phase. Wave-based subagents run in parallel. You watch, you intervene if needed.</p>
+        </div>
+        <div class="cmd-row reveal">
+          <code>/qualia-report</code>
+          <p><strong style="color:var(--teal)">Mandatory at end of every session.</strong> Generates the report and posts it to the ERP. No report = session not counted.</p>
+        </div>
+        <div class="cmd-row reveal">
+          <code>/qualia-ship</code>
+          <p>Deploy to production. Full quality gates, then <span class="mono">vercel --prod</span>. Use this when a project is genuinely done.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       BEFORE / AFTER
+       ============================================================ -->
+  <section class="block">
+    <div class="shell">
+      <span class="section-eyebrow reveal" aria-hidden></span>
+      <p class="section-tag reveal">04 · What changed</p>
+      <h2 class="reveal">Before April · After May.</h2>
+      <p class="section-lead reveal">
+        If you&rsquo;re used to the old way, this is what&rsquo;s different now. None of this is criticism &mdash; it&rsquo;s the system levelling up.
+      </p>
+
+      <div class="ba-grid">
+        <div class="ba-col before reveal">
+          <h4>Before · April</h4>
+          <ul>
+            <li>422 inbox tasks auto-generated from <span class="mono">.planning/</span> checklists</li>
+            <li>Clock-in optional &mdash; many sessions never recorded</li>
+            <li>Report submitted &ldquo;when remembered&rdquo;, often missed</li>
+            <li>Project assignments without deadlines</li>
+            <li>No clear unit of accountability</li>
+            <li>Admin had no single page to see &ldquo;what needs attention today&rdquo;</li>
+          </ul>
+        </div>
+        <div class="ba-col after reveal">
+          <h4>After · May</h4>
+          <ul>
+            <li>Tasks archived. Project is the unit. We agree on May projects together</li>
+            <li>Mandatory clock-in & clock-out, every working day</li>
+            <li><span class="mono">/qualia-report</span> is part of the clock-out flow, not optional</li>
+            <li>Every project has a deadline you helped set</li>
+            <li>You own the project end-to-end. Deploy URL is the proof</li>
+            <li>The new Command Center shows everyone&rsquo;s status in one glance</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       WHAT YOU NEED TO DO
+       ============================================================ -->
+  <section class="block">
+    <div class="shell">
+      <span class="section-eyebrow reveal" aria-hidden></span>
+      <p class="section-tag reveal">05 · Your action list</p>
+      <h2 class="reveal">Six things, do them this week.</h2>
+      <p class="section-lead reveal">
+        Concrete, ordered. If you finish all six by Friday, you&rsquo;re ready for May.
+      </p>
+
+      <div class="checklist">
+        <div class="check reveal">
+          <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
+          <div class="check-body">
+            <strong>Open the portal and clock in tomorrow morning</strong>
+            <p>Just do it once to make sure it works. Pick a project. Write a planned outcome. Tap clock-in.</p>
+          </div>
+        </div>
+        <div class="check reveal">
+          <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
+          <div class="check-body">
+            <strong>Update your Qualia Framework version</strong>
+            <p>Run <span class="mono">qualia upgrade</span> in any project folder. Make sure <span class="mono">/qualia</span> works.</p>
+          </div>
+        </div>
+        <div class="check reveal">
+          <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
+          <div class="check-body">
+            <strong>Run <span class="mono">/qualia-report</span> at the end of one session this week</strong>
+            <p>Make sure your token works and the report shows up in the ERP. If it doesn&rsquo;t, message Fawzi immediately.</p>
+          </div>
+        </div>
+        <div class="check reveal">
+          <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
+          <div class="check-body">
+            <strong>Block your interview slot with Fawzi</strong>
+            <p>15 minutes. He&rsquo;ll walk you through the assessment so we can agree on May scope, schedule, and project archetypes.</p>
+          </div>
+        </div>
+        <div class="check reveal">
+          <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
+          <div class="check-body">
+            <strong>Read the changelog above twice</strong>
+            <p>Especially the &ldquo;Before April / After May&rdquo; section. If anything is unclear, ask Fawzi before May 1.</p>
+          </div>
+        </div>
+        <div class="check reveal">
+          <span class="check-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg></span>
+          <div class="check-body">
+            <strong>Set your working hours in your head &mdash; commit to them</strong>
+            <p>What time do you start? What time do you finish? You&rsquo;ll commit to this in the assessment. Pick something realistic.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       WHY THIS MATTERS
+       ============================================================ -->
+  <section class="block">
+    <div class="shell">
+      <span class="section-eyebrow reveal" aria-hidden></span>
+      <p class="section-tag reveal">06 · The honest part</p>
+      <h2 class="reveal">Why we&rsquo;re doing this.</h2>
+      <p class="section-lead reveal" style="font-size: 1.1rem; line-height: 1.7;">
+        We&rsquo;ve been a small team running on goodwill. That&rsquo;s how startups start. But Qualia
+        won 5 awards this year, we&rsquo;re in 7 countries, and clients are paying us serious money to ship serious work.
+        Goodwill isn&rsquo;t enough anymore &mdash; we need a system. This is the system.
+      </p>
+      <p class="section-lead reveal" style="font-size: 1.1rem; margin-top: 24px;">
+        It&rsquo;s not surveillance. It&rsquo;s structure. The clock-in tells me the company is alive.
+        The reports tell the framework what&rsquo;s shipping. The projects tell you what you&rsquo;re accountable for.
+        Three signals, one system. That&rsquo;s it.
+      </p>
+      <p class="section-lead reveal" style="font-size: 1.1rem; margin-top: 24px;">
+        Do this well and we grow. We hire. You lead a team. That&rsquo;s the actual goal &mdash; and this is how we get there.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       CLOSING
+       ============================================================ -->
+  <section class="closing">
+    <div class="shell">
+      <div class="closing-q">Q</div>
+      <p class="closing-line reveal">&ldquo;Where Consciousness Meets Technology&rdquo;</p>
+      <p class="closing-meta reveal">QUALIA SOLUTIONS · NICOSIA · MAY 2026</p>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="shell">
+      v5 framework · portal.qualiasolutions.net · questions → Fawzi
+    </div>
+  </footer>
+
+<script>
+  // Scroll-reveal: fade-up as elements enter viewport.
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        // Tiny stagger when multiple reveal at once
+        setTimeout(() => e.target.classList.add('in'), i * 30);
+        obs.unobserve(e.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+
+  document.querySelectorAll('.reveal').forEach((el) => obs.observe(el));
+
+  // Fallback: reveal after 1.5s if user has weird browser
+  setTimeout(() => {
+    document.querySelectorAll('.reveal:not(.in)').forEach((el) => el.classList.add('in'));
+  }, 1500);
+</script>
+
+</body>
+</html>
