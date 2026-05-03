@@ -5,6 +5,7 @@ import { getFinancialSummary } from '@/app/actions/financials';
 import { isUserAdmin } from '@/app/actions/shared';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { loadPlanningHealth, type PlanningHealthPayload } from './planning-health';
+import { loadCommandCenter, type CommandCenterPayload } from './command-center';
 
 export type OverviewKpi = {
   label: string;
@@ -25,6 +26,7 @@ export type OverviewPayload = {
     created_at: string;
   }>;
   planningHealth: PlanningHealthPayload;
+  commandCenter: CommandCenterPayload;
 };
 
 function eurCompact(amount: number): string {
@@ -43,7 +45,22 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await isUserAdmin(user.id))) {
-    return { kpis: [], week: [], activity: [], planningHealth: { rows: [], totalIssues: 0 } };
+    return {
+      kpis: [],
+      week: [],
+      activity: [],
+      planningHealth: { rows: [], totalIssues: 0 },
+      commandCenter: {
+        today: { clockedIn: [], notIn: [], todaysReports: [], blockers: [] },
+        thisMonth: { summary: { total: 0, onTrack: 0, atRisk: 0, overdue: 0 }, projects: [] },
+        moneyRisk: {
+          overdueInvoices: [],
+          projectsNoDeadline: [],
+          staleClientActions: [],
+          unbilledHours: { totalHours: 0, sessionCount: 0 },
+        },
+      },
+    };
   }
 
   const workspaceId = await getCurrentWorkspaceId();
@@ -64,6 +81,7 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
     sessionsRes,
     activityWeekRes,
     planningHealth,
+    commandCenter,
   ] = await Promise.all([
     getFinancialSummary(),
     // Activity feed: recent task completions — the activity_log table is not
@@ -109,6 +127,7 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
       .gte('started_at', weekStart.toISOString()),
     supabase.from('activity_log').select('action_type').gte('created_at', weekStart.toISOString()),
     loadPlanningHealth(),
+    loadCommandCenter(),
   ]);
 
   const activeProjectsCount = projectsRes.data?.length ?? 0;
@@ -210,5 +229,5 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
     };
   });
 
-  return { kpis, week, activity: activityList, planningHealth };
+  return { kpis, week, activity: activityList, planningHealth, commandCenter };
 }

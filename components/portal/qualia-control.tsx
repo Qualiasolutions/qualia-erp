@@ -18,6 +18,7 @@ import type {
 import { ControlTeam } from './control-team';
 import { ControlFinance } from './control-finance';
 import { ControlSystem } from './control-system';
+import { CommandCenter } from './control-command-center';
 
 /* ======================================================================
    Types
@@ -71,41 +72,14 @@ const ControlOverview = memo(function ControlOverview({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* KPI row */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {data.kpis.map((k) => (
-          <div key={k.label} className="rounded-xl border border-border bg-card p-5">
-            <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-              {k.label}
-            </div>
-            <div className="mt-2 text-[26px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
-              {k.value}
-            </div>
-            {k.delta ? (
-              <div
-                className={cn(
-                  'mt-1.5 font-mono text-[11px] tabular-nums',
-                  k.positive
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-red-600 dark:text-red-400'
-                )}
-              >
-                {k.delta}
-              </div>
-            ) : (
-              <div className="mt-1.5 font-mono text-[11px] tabular-nums text-muted-foreground/70">
-                no change
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+      {/* Command center — the operations bridge */}
+      <CommandCenter data={data.commandCenter} />
 
-      {/* Planning health — admin visibility for missing deadlines / orphan tasks */}
+      {/* Planning health — orphan deadlines / missing dates */}
       <PlanningHealth data={data.planningHealth} />
 
-      {/* This week + Activity */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Pulse: this week + recent completions (secondary) */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="rounded-xl border border-border bg-card p-5">
           <header className="mb-3 flex items-baseline justify-between">
             <h3 className="text-sm font-semibold tracking-tight">This week</h3>
@@ -146,17 +120,17 @@ const ControlOverview = memo(function ControlOverview({
           </header>
           {data.activity.length === 0 ? (
             <p className="py-4 text-center text-xs italic text-muted-foreground">
-              No tasks completed yet — get the team shipping!
+              No tasks completed yet.
             </p>
           ) : (
             <ul className="flex flex-col">
-              {data.activity.map((a) => (
+              {data.activity.slice(0, 6).map((a) => (
                 <li
                   key={a.id}
                   className="flex items-center gap-3 border-b border-dashed border-border py-2 last:border-b-0"
                 >
                   <span
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground"
                     aria-hidden
                   >
                     {(a.actor_name ?? '??')
