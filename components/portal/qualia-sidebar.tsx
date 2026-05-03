@@ -124,6 +124,15 @@ const PAGES: PageDef[] = [
     appKey: 'research',
     section: 'knowledge',
   },
+  {
+    id: 'brain',
+    label: 'Brain',
+    icon: 'sparkle',
+    href: '/brain',
+    roles: ['admin'],
+    appKey: 'brain',
+    section: 'knowledge',
+  },
   // Admin
   {
     id: 'clients',

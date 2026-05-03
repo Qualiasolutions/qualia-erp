@@ -3,17 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNowStrict } from 'date-fns';
-import {
-  Plus,
-  Search,
-  Users,
-  X,
-  Phone,
-  Globe,
-  LayoutGrid,
-  List,
-  ArrowUpDown,
-} from 'lucide-react';
+import { Plus, Search, Users, X, Phone, Globe, LayoutGrid, List, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -160,7 +150,7 @@ export function QualiaClientsView({ clients }: QualiaClientsViewProps) {
     <div className="flex flex-1 flex-col overflow-hidden p-6 lg:p-8">
       {/* Header */}
       <div className="mb-5 flex flex-shrink-0 items-center justify-between">
-        <div className="animate-fade-in flex items-center gap-3">
+        <div className="flex animate-fade-in items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
             <Users className="h-4 w-4 text-primary" />
           </div>
@@ -173,14 +163,11 @@ export function QualiaClientsView({ clients }: QualiaClientsViewProps) {
       </div>
 
       {/* Stats Badges */}
-      <div className="stagger-1 mb-6 flex flex-wrap items-center gap-2 animate-fade-in">
+      <div className="stagger-1 mb-6 flex animate-fade-in flex-wrap items-center gap-2">
         <Badge variant="secondary" className="h-8 bg-muted/50 px-3 text-sm">
           {counts.total} <span className="ml-1 text-muted-foreground">total</span>
         </Badge>
-        <Badge
-          variant="secondary"
-          className="h-8 bg-emerald-500/10 px-3 text-sm text-emerald-500"
-        >
+        <Badge variant="secondary" className="h-8 bg-emerald-500/10 px-3 text-sm text-emerald-500">
           <span className="mr-2 h-2 w-2 rounded-full bg-emerald-500" />
           {counts.active} <span className="ml-1 text-emerald-500/70">active</span>
         </Badge>
@@ -197,7 +184,7 @@ export function QualiaClientsView({ clients }: QualiaClientsViewProps) {
       </div>
 
       {/* Filters */}
-      <div className="stagger-2 mb-6 flex flex-wrap items-center gap-3 animate-fade-in">
+      <div className="stagger-2 mb-6 flex animate-fade-in flex-wrap items-center gap-3">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -207,10 +194,7 @@ export function QualiaClientsView({ clients }: QualiaClientsViewProps) {
             className="h-11 rounded-xl border-transparent bg-muted/30 pl-10 focus:border-primary/30"
           />
         </div>
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => setStatusFilter(v as StatusFilter)}
-        >
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
           <SelectTrigger className="h-11 w-32 rounded-xl border-transparent bg-muted/30">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -282,7 +266,7 @@ export function QualiaClientsView({ clients }: QualiaClientsViewProps) {
       </div>
 
       {/* Body */}
-      <div className="stagger-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card animate-fade-in">
+      <div className="stagger-3 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
         {filteredClients.length === 0 ? (
           <div className="flex flex-1 items-center justify-center p-10 text-center">
             <p className="text-sm text-muted-foreground">
@@ -350,8 +334,8 @@ function ClientsTable({
   onSort: (f: SortField) => void;
 }) {
   return (
-    <div className="h-full overflow-y-auto">
-      <table className="w-full">
+    <div className="h-full overflow-x-auto overflow-y-auto">
+      <table className="w-full min-w-[640px]">
         <thead className="sticky top-0 border-b border-border bg-card">
           <tr className="text-left">
             <th className="w-12 px-6 py-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -416,9 +400,7 @@ function ClientsTable({
                   window.location.assign(`/clients/${c.id}`);
                 }}
               >
-                <td className="px-6 py-4 text-sm tabular-nums text-muted-foreground">
-                  {idx + 1}
-                </td>
+                <td className="px-6 py-4 text-sm tabular-nums text-muted-foreground">{idx + 1}</td>
                 <td className="px-6 py-4">
                   <Link
                     href={`/clients/${c.id}`}
@@ -533,9 +515,7 @@ function ClientsGrid({ clients }: { clients: Client[] }) {
               {c.display_name ?? 'Untitled'}
             </h3>
             {c.billing_address && (
-              <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                {c.billing_address}
-              </p>
+              <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{c.billing_address}</p>
             )}
             <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
               <span>{c.projects?.length ?? 0} projects</span>

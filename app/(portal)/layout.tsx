@@ -132,6 +132,7 @@ export default async function PortalLayout({ children }: { children: React.React
     'schedule',
     'knowledge',
     'research',
+    'brain', // admin-only corpus search
     'clients',
     'status',
     'control', // phase 15: admin-only Control surface (currently routes to /admin)

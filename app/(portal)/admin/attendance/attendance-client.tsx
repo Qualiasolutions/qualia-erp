@@ -237,7 +237,7 @@ export function AdminAttendanceClient() {
           <p className="text-sm text-muted-foreground">No sessions found for this period.</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
