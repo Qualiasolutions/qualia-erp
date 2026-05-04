@@ -304,6 +304,51 @@ function countExpectedDays(firstSessionISO: string | null, daysPerWeek: number):
   return count;
 }
 
+export type AuditExamPayload = {
+  profileId: string;
+  fullName: string | null;
+  email: string | null;
+  latestAssessment: {
+    submittedAt: string;
+    responses: Record<string, unknown>;
+  } | null;
+};
+
+/**
+ * Lightweight loader for the standalone /audit/[id] exam page.
+ * Returns just what the questionnaire needs — no metrics, no projects,
+ * no attendance data — so the page renders fast and stays focused.
+ */
+export async function getAuditExam(profileId: string): Promise<AuditExamPayload | null> {
+  const auth = await authorizeAuditAccess(profileId);
+  if (!auth.ok) return null;
+  const supabase = auth.client;
+
+  const [profileRes, assessmentRes] = await Promise.all([
+    supabase.from('profiles').select('id, full_name, email').eq('id', profileId).maybeSingle(),
+    supabase
+      .from('employee_self_assessments')
+      .select('submitted_at, responses')
+      .eq('profile_id', profileId)
+      .order('submitted_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  if (!profileRes.data) return null;
+  return {
+    profileId: profileRes.data.id,
+    fullName: profileRes.data.full_name,
+    email: profileRes.data.email,
+    latestAssessment: assessmentRes.data
+      ? {
+          submittedAt: assessmentRes.data.submitted_at as string,
+          responses: (assessmentRes.data.responses ?? {}) as Record<string, unknown>,
+        }
+      : null,
+  };
+}
+
 export async function getEmployeeAudit(profileId: string): Promise<EmployeeAuditPayload | null> {
   const auth = await authorizeAuditAccess(profileId);
   if (!auth.ok) return null;

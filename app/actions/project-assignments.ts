@@ -583,6 +583,7 @@ export async function getEmployeeAssignments(employeeId: string): Promise<Action
       completion_requested_at,
       completion_note,
       completed_at,
+      promised_delivery_date,
       notes,
       project:projects!project_assignments_project_id_fkey (
         id,
@@ -716,7 +717,8 @@ export async function getAssignmentHistory(
  */
 export async function requestAssignmentCompletion(
   assignmentId: string,
-  note?: string
+  note?: string,
+  promisedDeliveryDate?: string
 ): Promise<ActionResult> {
   const imp = await assertNotImpersonating();
   if (!imp.ok) return { success: false, error: imp.error };
@@ -763,11 +765,26 @@ export async function requestAssignmentCompletion(
   const submittedAt = new Date().toISOString();
   const cleanNote = note?.trim().slice(0, 1000) || null;
 
+  // Promised delivery date is required (the employee commits to a date when
+  // submitting). YYYY-MM-DD; must parse and not be in the past.
+  const trimmedDate = promisedDeliveryDate?.trim();
+  if (!trimmedDate || !/^\d{4}-\d{2}-\d{2}$/.test(trimmedDate)) {
+    return {
+      success: false,
+      error: 'A promised delivery date is required to submit for review.',
+    };
+  }
+  const todayKey = new Date().toISOString().slice(0, 10);
+  if (trimmedDate < todayKey) {
+    return { success: false, error: 'Promised delivery date cannot be in the past.' };
+  }
+
   const { data: updated, error } = await supabase
     .from('project_assignments')
     .update({
       completion_requested_at: submittedAt,
       completion_note: cleanNote,
+      promised_delivery_date: trimmedDate,
       updated_at: submittedAt,
     })
     .eq('id', assignmentId)
@@ -796,6 +813,7 @@ export async function requestAssignmentCompletion(
       project_name: project?.name ?? null,
       employee_name: employee?.full_name ?? null,
       deadline_date: assignment.deadline_date,
+      promised_delivery_date: trimmedDate,
     }
   );
 

@@ -2742,6 +2742,7 @@ export type Database = {
           id: string;
           notes: string | null;
           project_id: string;
+          promised_delivery_date: string | null;
           removed_at: string | null;
           removed_by: string | null;
           updated_at: string;
@@ -2760,6 +2761,7 @@ export type Database = {
           id?: string;
           notes?: string | null;
           project_id: string;
+          promised_delivery_date?: string | null;
           removed_at?: string | null;
           removed_by?: string | null;
           updated_at?: string;
@@ -2778,6 +2780,7 @@ export type Database = {
           id?: string;
           notes?: string | null;
           project_id?: string;
+          promised_delivery_date?: string | null;
           removed_at?: string | null;
           removed_by?: string | null;
           updated_at?: string;
