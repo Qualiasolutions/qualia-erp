@@ -33,6 +33,15 @@ export type AbsentEmployeeRow = {
   avatarUrl: string | null;
 };
 
+export type DoneTodayRow = {
+  id: string;
+  name: string | null;
+  avatarUrl: string | null;
+  lastEndedAt: string;
+  totalMinutes: number;
+  projectName: string | null;
+};
+
 export type TodayReportRow = {
   id: string;
   projectName: string;
@@ -93,6 +102,7 @@ export type CommandCenterPayload = {
   today: {
     clockedIn: ClockedInRow[];
     notIn: AbsentEmployeeRow[];
+    doneToday: DoneTodayRow[];
     todaysReports: TodayReportRow[];
     blockers: BlockerRow[];
   };
@@ -112,7 +122,7 @@ const STALE_DAYS_THRESHOLD = 7;
 const ACTIVE_PROJECT_STATUSES = ['Active', 'Demos', 'Launched', 'Delayed'];
 
 const EMPTY: CommandCenterPayload = {
-  today: { clockedIn: [], notIn: [], todaysReports: [], blockers: [] },
+  today: { clockedIn: [], notIn: [], doneToday: [], todaysReports: [], blockers: [] },
   thisMonth: { summary: { total: 0, onTrack: 0, atRisk: 0, overdue: 0 }, projects: [] },
   moneyRisk: {
     overdueInvoices: [],
@@ -228,10 +238,15 @@ async function loadCommandCenterInternal(
       .is('ended_at', null)
       .order('started_at', { ascending: true }),
 
-    // All work sessions today (for "did clock in" derivation)
+    // All work sessions today (for "did clock in" + "done today" derivation)
     supabase
       .from('work_sessions')
-      .select('profile_id')
+      .select(
+        `
+        profile_id, started_at, ended_at, duration_minutes,
+        project:projects!work_sessions_project_id_fkey (id, name)
+      `
+      )
       .eq('workspace_id', workspaceId)
       .gte('started_at', todayISO),
 
@@ -366,18 +381,68 @@ async function loadCommandCenterInternal(
     }
   );
 
-  const clockedInProfileIds = new Set(
-    (todaysSessionsRes.data ?? []).map((r: { profile_id: string | null }) => r.profile_id)
+  // Profiles currently on the clock (active session right now).
+  const currentlyClockedInIds = new Set<string>(
+    ((clockedInRes.data as ClockedInRaw[] | null) ?? [])
+      .map((r) => (Array.isArray(r.profile) ? r.profile[0]?.id : r.profile?.id))
+      .filter((id): id is string => Boolean(id))
   );
-  const notIn: AbsentEmployeeRow[] = (
-    (employeesRes.data as Array<{
-      id: string;
-      full_name: string | null;
-      avatar_url: string | null;
-    }> | null) ?? []
-  )
-    .filter((emp) => !clockedInProfileIds.has(emp.id))
+
+  // Aggregate today's sessions per profile so we can split absent vs done-today.
+  type TodaySessionRaw = {
+    profile_id: string | null;
+    started_at: string | null;
+    ended_at: string | null;
+    duration_minutes: number | null;
+    project:
+      | { id: string; name: string | null }
+      | Array<{ id: string; name: string | null }>
+      | null;
+  };
+  const sessionsTodayRaw = (todaysSessionsRes.data as TodaySessionRaw[] | null) ?? [];
+  const allTodayProfileIds = new Set<string>(
+    sessionsTodayRaw.map((s) => s.profile_id).filter((id): id is string => Boolean(id))
+  );
+
+  const doneTodayAgg = new Map<
+    string,
+    { lastEndedAt: string; totalMinutes: number; projectName: string | null }
+  >();
+  for (const s of sessionsTodayRaw) {
+    if (!s.profile_id || !s.ended_at) continue;
+    if (currentlyClockedInIds.has(s.profile_id)) continue;
+    const project = Array.isArray(s.project) ? s.project[0] : s.project;
+    const existing = doneTodayAgg.get(s.profile_id);
+    const totalMinutes = (existing?.totalMinutes ?? 0) + (s.duration_minutes ?? 0);
+    const isLater = !existing || new Date(s.ended_at) > new Date(existing.lastEndedAt);
+    doneTodayAgg.set(s.profile_id, {
+      lastEndedAt: isLater ? s.ended_at : existing!.lastEndedAt,
+      totalMinutes,
+      projectName: isLater ? (project?.name ?? null) : (existing?.projectName ?? null),
+    });
+  }
+
+  type EmployeeRow = { id: string; full_name: string | null; avatar_url: string | null };
+  const employees = (employeesRes.data as EmployeeRow[] | null) ?? [];
+
+  const notIn: AbsentEmployeeRow[] = employees
+    .filter((emp) => !allTodayProfileIds.has(emp.id))
     .map((emp) => ({ id: emp.id, name: emp.full_name, avatarUrl: emp.avatar_url }));
+
+  const doneToday: DoneTodayRow[] = employees
+    .filter((emp) => doneTodayAgg.has(emp.id))
+    .map((emp) => {
+      const agg = doneTodayAgg.get(emp.id)!;
+      return {
+        id: emp.id,
+        name: emp.full_name,
+        avatarUrl: emp.avatar_url,
+        lastEndedAt: agg.lastEndedAt,
+        totalMinutes: agg.totalMinutes,
+        projectName: agg.projectName,
+      };
+    })
+    .sort((a, b) => new Date(b.lastEndedAt).getTime() - new Date(a.lastEndedAt).getTime());
 
   type ReportRaw = {
     id: string;
@@ -566,7 +631,7 @@ async function loadCommandCenterInternal(
   ).reduce((sum, s) => sum + (s.duration_minutes ?? 0), 0);
 
   return {
-    today: { clockedIn, notIn, todaysReports, blockers },
+    today: { clockedIn, notIn, doneToday, todaysReports, blockers },
     thisMonth: { summary, projects: monthProjects },
     moneyRisk: {
       overdueInvoices,

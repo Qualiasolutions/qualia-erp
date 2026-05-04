@@ -175,8 +175,20 @@ function Row({
    TODAY column
    ====================================================================== */
 
+function fmtDuration(min: number): string {
+  if (min < 60) return `${min}m`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+function fmtTimeShort(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
 function TodayColumn({ data }: { data: CommandCenterPayload['today'] }) {
-  const total = data.clockedIn.length + data.notIn.length;
+  const total = data.clockedIn.length + data.notIn.length + data.doneToday.length;
   return (
     <Section title="Today" icon={UserCheck} badge={`${data.clockedIn.length}/${total} in`}>
       <Group
@@ -225,6 +237,37 @@ function TodayColumn({ data }: { data: CommandCenterPayload['today'] }) {
             </Row>
           );
         })}
+      </Group>
+
+      <Group
+        title="Done today"
+        count={data.doneToday.length}
+        emptyText="No one has clocked out yet today."
+      >
+        {data.doneToday.map((row) => (
+          <Row key={row.id} href={`/admin/attendance?profile=${row.id}`} severity="neutral">
+            <span
+              className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground"
+              aria-hidden
+            >
+              {initials(row.name)}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="truncate font-semibold">{shortName(row.name)}</span>
+                {row.projectName ? (
+                  <span className="truncate text-muted-foreground">· {row.projectName}</span>
+                ) : null}
+              </div>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Out at {fmtTimeShort(row.lastEndedAt)} · {fmtDuration(row.totalMinutes)} today
+              </p>
+            </div>
+            <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/70">
+              done
+            </span>
+          </Row>
+        ))}
       </Group>
 
       <Group title="Not in yet" count={data.notIn.length} emptyText="Whole team is clocked in.">

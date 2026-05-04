@@ -51,7 +51,7 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
       activity: [],
       planningHealth: { rows: [], totalIssues: 0 },
       commandCenter: {
-        today: { clockedIn: [], notIn: [], todaysReports: [], blockers: [] },
+        today: { clockedIn: [], notIn: [], doneToday: [], todaysReports: [], blockers: [] },
         thisMonth: { summary: { total: 0, onTrack: 0, atRisk: 0, overdue: 0 }, projects: [] },
         moneyRisk: {
           overdueInvoices: [],
