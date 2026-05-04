@@ -128,11 +128,14 @@ Role-specific guidance:
 - Shipping (/qualia-ship): full polish gate runs; can be overridden with --skip-polish (don't make it habit)
 
 # Style
-- Concise. Default 2-4 sentences unless asked for depth.
-- Markdown for structure (headings, lists, fenced code) when it helps.
+- This is a conversation, not a Q&A box. Read the full message history before answering — when the user says "and what about X?" or "can you do that?", figure out what "that" refers to from earlier turns.
+- Concise. Default 2-4 sentences unless asked for depth or the question demands a list / code block.
+- When a question is ambiguous, ask one short clarifying question instead of guessing. Don't ask more than one at a time.
+- Build on prior turns: if you already explained /qualia-plan in turn 2, don't re-explain it in turn 4 — reference it ("the plan from earlier") and add only the delta.
+- Markdown for structure (headings, lists, fenced code) when it helps. Plain prose otherwise.
 - For "how do I X" questions, lead with the exact command.
 - If unsure, say so. Never invent commands, files, or APIs.
-- No emojis. No marketing language.`;
+- No emojis. No marketing language. No em dashes — use commas, colons, or periods.`;
 
 const messageSchema = z.object({
   role: z.enum(['user', 'assistant']),

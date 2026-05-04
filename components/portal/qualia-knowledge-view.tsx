@@ -138,16 +138,51 @@ const RESOURCES: ResourceMeta[] = [
    Main view
    ────────────────────────────────────────────────────────────────── */
 
+const CHAT_STORAGE_KEY = 'qualia.knowledge.chat.v1';
+const CHAT_STORAGE_LIMIT = 30; // matches server-side cap
+
 export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openResource, setOpenResource] = useState<ResourceId | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Hydrate persisted conversation on mount
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CHAT_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as ChatMessage[];
+        if (Array.isArray(parsed)) setMessages(parsed.slice(-CHAT_STORAGE_LIMIT));
+      }
+    } catch {
+      // corrupt storage — ignore
+    }
+    setHydrated(true);
+  }, []);
+
+  // Persist on every change (after hydration to avoid clobbering on first paint)
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      if (messages.length === 0) {
+        window.localStorage.removeItem(CHAT_STORAGE_KEY);
+      } else {
+        window.localStorage.setItem(
+          CHAT_STORAGE_KEY,
+          JSON.stringify(messages.slice(-CHAT_STORAGE_LIMIT))
+        );
+      }
+    } catch {
+      // quota / private mode — ignore
+    }
+  }, [messages, hydrated]);
 
   useEffect(() => {
     if (!scrollRef.current) return;
@@ -178,7 +213,9 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: history.map((m) => ({ role: m.role, content: m.content })),
+            messages: history
+              .slice(-CHAT_STORAGE_LIMIT)
+              .map((m) => ({ role: m.role, content: m.content })),
           }),
           signal: controller.signal,
         });
