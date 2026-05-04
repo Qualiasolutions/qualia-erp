@@ -666,28 +666,72 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
+const TEN_MILESTONE_LABELS: Record<string, string> = {
+  '<2w': 'Under 2 weeks',
+  '2-4w': '2–4 weeks',
+  '1-2m': '1–2 months',
+  '2-3m': '2–3 months',
+  '3m+': '3+ months',
+  never: 'Never done one',
+};
+
+const CLIENT_COMMS_LABELS: Record<string, string> = {
+  confident: 'Yes — confidently, kickoff to handoff',
+  light_review: 'Yes, with light review on emails / scope',
+  partial: 'Partial — mid-project only, not kickoff or handoff',
+  no: 'No — needs full support on client comms',
+};
+
+const FREQ_LABELS: Record<string, string> = {
+  always: 'Always / Full',
+  usually: 'Usually',
+  sometimes: 'Sometimes',
+  no: 'No / Escalates first',
+};
+
+const SOLO_COUNT_LABELS: Record<string, string> = {
+  many: 'Yes, many times',
+  few: 'A few times',
+  once: 'Once',
+  never: 'Never',
+};
+
+function asList(value: unknown): string {
+  if (!Array.isArray(value) || value.length === 0) return 'None ticked';
+  return value.map(String).join(', ');
+}
+
+function asScale(value: unknown): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'Not answered';
+  return `${value} / 10`;
+}
+
+function asLabeled(value: unknown, labels: Record<string, string>): string {
+  if (typeof value !== 'string' || value === '') return 'Not answered';
+  return labels[value] ?? value;
+}
+
 function formatResponseBlock(responses: Record<string, unknown>): string {
   const rows: Array<[string, string]> = [
-    ['Capacity projects', asText(responses.capacityProjects)],
-    ['Realistic time for similar project', asText(responses.realisticTime)],
-    ['May schedule start', asText(responses.scheduleStart)],
-    ['May schedule end', asText(responses.scheduleEnd)],
-    ['Days per week', asText(responses.daysPerWeek)],
-    ['Framework blocker', asText(responses.frameworkBlocker)],
-    ['Top blocker', asText(responses.topBlocker)],
-    ['Goals for May', asText(responses.goalsForMay)],
-    ['Known limits', asText(responses.knownLimits)],
+    ['Framework commands mastered', asList(responses.frameworkCommandsMastered)],
+    ['Solo-capable project types', asList(responses.soloCapableProjectTypes)],
+    [
+      '10-milestone V5 project completion time',
+      asLabeled(responses.tenMilestoneTime, TEN_MILESTONE_LABELS),
+    ],
+    ['Client comms 0 → handoff alone', asLabeled(responses.clientCommsAlone, CLIENT_COMMS_LABELS)],
+    ['Closes /qualia-verify gaps alone', asLabeled(responses.gapClosureAlone, FREQ_LABELS)],
+    ['Shipped a phase to prod solo', asLabeled(responses.shippedSoloCount, SOLO_COUNT_LABELS)],
+    ['Production debug default move', asLabeled(responses.debugComfort, FREQ_LABELS)],
+    ['Framework add-on / extension fluency', asScale(responses.frameworkAddonScore)],
+    ['Overall V5 mastery (self-rated)', asScale(responses.overallMastery)],
+    ['Client handoff confidence', asScale(responses.clientHandoffConfidence)],
+    ['Weak spots (not yet for solo)', asList(responses.weakSpots)],
+    ['Last solo project', asText(responses.lastSoloProject)],
+    ['Wished-for command', asText(responses.wishedCommand)],
+    ['What feels broken / unclear', asText(responses.unclearOrBroken)],
+    ['"Yes, give me solo" project type', asText(responses.yesGiveMeSolo)],
   ];
-
-  const archetypes = responses.archetypes as Record<string, unknown> | undefined;
-  if (archetypes && typeof archetypes === 'object') {
-    rows.push(['Project type confidence', JSON.stringify(archetypes, null, 2)]);
-  }
-
-  const domainConfidence = responses.domainConfidence as Record<string, unknown> | undefined;
-  if (domainConfidence && typeof domainConfidence === 'object') {
-    rows.push(['Domain confidence', JSON.stringify(domainConfidence, null, 2)]);
-  }
 
   return rows.map(([label, value]) => `${label}: ${value}`).join('\n');
 }
@@ -699,7 +743,6 @@ function buildAuditResultEmail(params: {
 }): { subject: string; html: string; text: string } {
   const { audit, responses, notes } = params;
   const name = audit.overview.fullName ?? audit.overview.email ?? 'Employee';
-  const capacity = asText(responses.capacityProjects);
   const reportRate =
     audit.sessions.totalSessions > 0
       ? Math.round((audit.reports.total / audit.sessions.totalSessions) * 100)
@@ -710,12 +753,26 @@ function buildAuditResultEmail(params: {
     .join(', ');
   const responseBlock = formatResponseBlock(responses);
 
-  const subject = `${name} May scope audit result`;
+  const overallMastery = asScale(responses.overallMastery);
+  const addonFluency = asScale(responses.frameworkAddonScore);
+  const handoffConfidence = asScale(responses.clientHandoffConfidence);
+  const commandsMastered = Array.isArray(responses.frameworkCommandsMastered)
+    ? `${responses.frameworkCommandsMastered.length} commands`
+    : '0 commands';
+  const soloProjectTypes = Array.isArray(responses.soloCapableProjectTypes)
+    ? `${responses.soloCapableProjectTypes.length} project types`
+    : '0 project types';
+
+  const subject = `${name} — Framework V5 capability audit`;
   const text = [
-    `${name} May scope audit result`,
+    `${name} — Qualia Framework V5 capability audit`,
     '',
     `Email: ${audit.overview.email ?? 'Unknown'}`,
-    `Recommended project capacity from self-assessment: ${capacity}`,
+    `Self-rated overall V5 mastery: ${overallMastery}`,
+    `Framework add-on / extension fluency: ${addonFluency}`,
+    `Client handoff confidence: ${handoffConfidence}`,
+    `Commands marked mastered: ${commandsMastered}`,
+    `Project types takeable solo: ${soloProjectTypes}`,
     `Attendance: ${audit.attendance.attendancePct}% (${audit.attendance.attendedWeekdays}/${audit.attendance.expectedWeekdays} expected days)`,
     `Reports: ${audit.reports.total}/${audit.sessions.totalSessions} sessions (${reportRate}%)`,
     `Projects worked: ${audit.projects.length}`,
@@ -723,7 +780,7 @@ function buildAuditResultEmail(params: {
       ? `Top projects by logged time: ${topProjects}`
       : 'Top projects by logged time: none',
     '',
-    'May reality / next steps from the assessment:',
+    'Self-assessment answers:',
     responseBlock,
     '',
     notes ? `Private notes:\n${notes}` : 'Private notes: none',
@@ -732,7 +789,11 @@ function buildAuditResultEmail(params: {
   ].join('\n');
 
   const htmlRows = [
-    ['Recommended project capacity', capacity],
+    ['Overall V5 mastery (self-rated)', overallMastery],
+    ['Framework add-on / extension fluency', addonFluency],
+    ['Client handoff confidence', handoffConfidence],
+    ['Commands marked mastered', commandsMastered],
+    ['Project types takeable solo', soloProjectTypes],
     [
       'Attendance',
       `${audit.attendance.attendancePct}% (${audit.attendance.attendedWeekdays}/${audit.attendance.expectedWeekdays} expected days)`,
@@ -756,7 +817,7 @@ function buildAuditResultEmail(params: {
       <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #eaecf0;border-radius:12px;overflow:hidden;">
         <tr><td style="padding:28px 32px;border-bottom:1px solid #eaecf0;">
           <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#667085;font-weight:700;">Qualia ERP</div>
-          <h1 style="margin:8px 0 0;font-size:22px;line-height:1.25;">${escapeHtml(name)} May scope audit result</h1>
+          <h1 style="margin:8px 0 0;font-size:22px;line-height:1.25;">${escapeHtml(name)} — Framework V5 capability audit</h1>
           <p style="margin:8px 0 0;color:#667085;font-size:14px;">${escapeHtml(audit.overview.email ?? 'Unknown email')}</p>
         </td></tr>
         <tr><td style="padding:24px 32px;">

@@ -141,25 +141,62 @@ function Section({
    Self-assessment form
    ====================================================================== */
 
-type Confidence = 1 | 2 | 3 | 4 | 5;
+type RadioChoice<T extends string> = { value: T; label: string; help?: string };
 
-type ProjectArchetypeAnswer = 'solo' | 'review' | 'pair' | 'no';
+type TenMilestoneTime = '<2w' | '2-4w' | '1-2m' | '2-3m' | '3m+' | 'never';
+type Confidence4 = 'confident' | 'light_review' | 'partial' | 'no';
+type Frequency4 = 'always' | 'usually' | 'sometimes' | 'no';
+type SoloCount = 'many' | 'few' | 'once' | 'never';
 
 type FormState = {
-  capacityProjects: string;
-  archetypes: Record<string, ProjectArchetypeAnswer | ''>;
-  domainConfidence: Record<string, Confidence | ''>;
-  realisticTime: string;
-  scheduleStart: string;
-  scheduleEnd: string;
-  daysPerWeek: string;
-  frameworkBlocker: string;
-  topBlocker: string;
-  goalsForMay: string;
-  knownLimits: string;
+  // Multi-select tick boxes
+  frameworkCommandsMastered: string[];
+  soloCapableProjectTypes: string[];
+  weakSpots: string[];
+
+  // Single-choice radios
+  tenMilestoneTime: TenMilestoneTime | '';
+  clientCommsAlone: Confidence4 | '';
+  gapClosureAlone: Frequency4 | '';
+  shippedSoloCount: SoloCount | '';
+  debugComfort: Frequency4 | '';
+
+  // Scales (1-10)
+  frameworkAddonScore: number | null;
+  overallMastery: number | null;
+  clientHandoffConfidence: number | null;
+
+  // Written
+  lastSoloProject: string;
+  wishedCommand: string;
+  unclearOrBroken: string;
+  yesGiveMeSolo: string;
 };
 
-const ARCHETYPES: Array<{ key: string; label: string; help: string }> = [
+const FRAMEWORK_COMMANDS: Array<{ key: string; label: string; help: string }> = [
+  { key: 'qualia', label: '/qualia', help: 'state router' },
+  { key: 'qualia-new', label: '/qualia-new', help: 'set up a project from scratch' },
+  { key: 'qualia-plan', label: '/qualia-plan', help: 'break a phase into tasks' },
+  { key: 'qualia-build', label: '/qualia-build', help: 'execute planned tasks in waves' },
+  { key: 'qualia-verify', label: '/qualia-verify', help: 'goal-backward verification' },
+  { key: 'qualia-polish', label: '/qualia-polish', help: 'design pass · critique · fix' },
+  { key: 'qualia-ship', label: '/qualia-ship', help: 'deploy + post-deploy verify' },
+  { key: 'qualia-handoff', label: '/qualia-handoff', help: 'archive phase · update STATE' },
+  { key: 'qualia-report', label: '/qualia-report', help: 'clock-out + ERP sync' },
+  { key: 'qualia-debug', label: '/qualia-debug', help: 'investigative debugging' },
+  { key: 'qualia-quick', label: '/qualia-quick', help: 'small fixes / tweaks' },
+  { key: 'qualia-task', label: '/qualia-task', help: 'single focused task' },
+  { key: 'qualia-test', label: '/qualia-test', help: 'tests + TDD loop' },
+  { key: 'qualia-review', label: '/qualia-review', help: 'production audit' },
+  { key: 'qualia-optimize', label: '/qualia-optimize', help: 'deep optimization pass' },
+  { key: 'qualia-discuss', label: '/qualia-discuss', help: 'alignment interview before plan' },
+  { key: 'qualia-research', label: '/qualia-research', help: 'deep research a domain' },
+  { key: 'qualia-milestone', label: '/qualia-milestone', help: 'close + open milestones' },
+  { key: 'qualia-pause', label: '/qualia-pause', help: 'save context + handoff' },
+  { key: 'qualia-resume', label: '/qualia-resume', help: 'restore prior session context' },
+];
+
+const PROJECT_TYPES: Array<{ key: string; label: string; help: string }> = [
   { key: 'one_pager', label: 'Single-page marketing site', help: 'hero · features · contact' },
   { key: 'multi_page_site', label: 'Multi-page marketing site', help: '5–10 pages · CMS-light' },
   { key: 'dashboard', label: 'Web app with auth + dashboard', help: 'Supabase · Next.js' },
@@ -170,32 +207,57 @@ const ARCHETYPES: Array<{ key: string; label: string; help: string }> = [
   { key: 'mobile_expo', label: 'React Native / Expo', help: 'iOS / Android' },
 ];
 
-const DOMAINS: Array<{ key: string; label: string }> = [
-  { key: 'frontend', label: 'Frontend (React, Tailwind)' },
-  { key: 'backend', label: 'Backend (Node / server actions)' },
-  { key: 'database', label: 'Database (Supabase / SQL / RLS)' },
-  { key: 'integrations', label: 'Third-party integrations' },
-  { key: 'ai', label: 'AI / LLM features' },
-  { key: 'design', label: 'UI/UX design' },
-  { key: 'content', label: 'Copy / content writing' },
-  { key: 'deploy', label: 'Deploy / DevOps (Vercel, env)' },
-  { key: 'qa', label: 'QA / manual testing' },
-  { key: 'framework', label: 'Qualia framework / qualia-report' },
+const WEAK_SPOTS: Array<{ key: string; label: string }> = [
+  { key: 'rls', label: 'Supabase RLS / auth policies' },
+  { key: 'migrations', label: 'Schema migrations' },
+  { key: 'rag', label: 'RAG / embeddings / pgvector' },
+  { key: 'ai_tools', label: 'AI tool-use / function calling' },
+  { key: 'voice', label: 'Voice agent integrations' },
+  { key: 'payments', label: 'Stripe / billing flows' },
+  { key: 'animations', label: 'Animations / motion design' },
+  { key: 'responsive', label: 'Responsive / mobile layouts' },
+  { key: 'a11y', label: 'Accessibility (WCAG, keyboard nav)' },
+  { key: 'devops', label: 'DevOps / Vercel / env management' },
+  { key: 'testing', label: 'Tests (unit / e2e)' },
+  { key: 'client_comms', label: 'Talking to clients directly' },
 ];
 
-const ARCHETYPE_LABELS: Record<ProjectArchetypeAnswer, string> = {
-  solo: 'Solo end-to-end',
-  review: 'Solo + your code review',
-  pair: 'Pair with you',
-  no: "Don't try yet",
-};
+const TEN_MILESTONE_CHOICES: RadioChoice<TenMilestoneTime>[] = [
+  { value: '<2w', label: 'Under 2 weeks' },
+  { value: '2-4w', label: '2–4 weeks' },
+  { value: '1-2m', label: '1–2 months' },
+  { value: '2-3m', label: '2–3 months' },
+  { value: '3m+', label: '3+ months' },
+  { value: 'never', label: 'Never done one' },
+];
 
-const ARCHETYPE_TONES: Record<ProjectArchetypeAnswer, string> = {
-  solo: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-  review: 'border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300',
-  pair: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-  no: 'border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300',
-};
+const CLIENT_COMMS_CHOICES: RadioChoice<Confidence4>[] = [
+  { value: 'confident', label: 'Yes — confidently, kickoff to handoff' },
+  { value: 'light_review', label: 'Yes, but I want light review on emails / scope' },
+  { value: 'partial', label: 'Partial — I can do mid-project, not kickoff or handoff' },
+  { value: 'no', label: 'No — I need full support on client comms' },
+];
+
+const GAP_CLOSURE_CHOICES: RadioChoice<Frequency4>[] = [
+  { value: 'always', label: 'Always — I close gaps without help' },
+  { value: 'usually', label: 'Usually — sometimes I get stuck' },
+  { value: 'sometimes', label: 'Sometimes — I often need a hand' },
+  { value: 'no', label: 'No — I escalate as soon as it fails' },
+];
+
+const SHIPPED_SOLO_CHOICES: RadioChoice<SoloCount>[] = [
+  { value: 'many', label: 'Yes, many times' },
+  { value: 'few', label: 'A few times' },
+  { value: 'once', label: 'Once' },
+  { value: 'never', label: 'Never' },
+];
+
+const DEBUG_COMFORT_CHOICES: RadioChoice<Frequency4>[] = [
+  { value: 'always', label: 'Full — I open /qualia-debug and root-cause it' },
+  { value: 'usually', label: 'Usually — I get there with one or two prompts' },
+  { value: 'sometimes', label: 'Sometimes — depends on the bug' },
+  { value: 'no', label: 'I escalate before debugging' },
+];
 
 function defaultForm(initial?: Record<string, unknown>): FormState {
   const get = <T,>(key: string, fallback: T): T => {
@@ -204,17 +266,21 @@ function defaultForm(initial?: Record<string, unknown>): FormState {
     return v === undefined ? fallback : (v as T);
   };
   return {
-    capacityProjects: get('capacityProjects', ''),
-    archetypes: get('archetypes', {} as Record<string, ProjectArchetypeAnswer | ''>),
-    domainConfidence: get('domainConfidence', {} as Record<string, Confidence | ''>),
-    realisticTime: get('realisticTime', ''),
-    scheduleStart: get('scheduleStart', ''),
-    scheduleEnd: get('scheduleEnd', ''),
-    daysPerWeek: get('daysPerWeek', ''),
-    frameworkBlocker: get('frameworkBlocker', ''),
-    topBlocker: get('topBlocker', ''),
-    goalsForMay: get('goalsForMay', ''),
-    knownLimits: get('knownLimits', ''),
+    frameworkCommandsMastered: get('frameworkCommandsMastered', [] as string[]),
+    soloCapableProjectTypes: get('soloCapableProjectTypes', [] as string[]),
+    weakSpots: get('weakSpots', [] as string[]),
+    tenMilestoneTime: get('tenMilestoneTime', '' as TenMilestoneTime | ''),
+    clientCommsAlone: get('clientCommsAlone', '' as Confidence4 | ''),
+    gapClosureAlone: get('gapClosureAlone', '' as Frequency4 | ''),
+    shippedSoloCount: get('shippedSoloCount', '' as SoloCount | ''),
+    debugComfort: get('debugComfort', '' as Frequency4 | ''),
+    frameworkAddonScore: get('frameworkAddonScore', null as number | null),
+    overallMastery: get('overallMastery', null as number | null),
+    clientHandoffConfidence: get('clientHandoffConfidence', null as number | null),
+    lastSoloProject: get('lastSoloProject', ''),
+    wishedCommand: get('wishedCommand', ''),
+    unclearOrBroken: get('unclearOrBroken', ''),
+    yesGiveMeSolo: get('yesGiveMeSolo', ''),
   };
 }
 
@@ -222,13 +288,11 @@ function SelfAssessmentForm({
   profileId,
   fullName,
   initial,
-  pastProjects,
   canWritePrivateNotes,
 }: {
   profileId: string;
   fullName: string;
   initial?: Record<string, unknown>;
-  pastProjects: string[];
   canWritePrivateNotes: boolean;
 }) {
   const [form, setForm] = useState<FormState>(() => defaultForm(initial));
@@ -238,11 +302,15 @@ function SelfAssessmentForm({
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  const updateArchetype = (key: string, value: ProjectArchetypeAnswer) =>
-    setForm((prev) => ({ ...prev, archetypes: { ...prev.archetypes, [key]: value } }));
-
-  const updateDomain = (key: string, value: Confidence) =>
-    setForm((prev) => ({ ...prev, domainConfidence: { ...prev.domainConfidence, [key]: value } }));
+  const toggleInList = (
+    key: 'frameworkCommandsMastered' | 'soloCapableProjectTypes' | 'weakSpots',
+    item: string
+  ) =>
+    setForm((prev) => {
+      const list = prev[key];
+      const next = list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
+      return { ...prev, [key]: next };
+    });
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,216 +334,248 @@ function SelfAssessmentForm({
       className="flex flex-col gap-6 rounded-xl border border-border bg-card p-5 md:p-6"
     >
       <div className="flex flex-col gap-1">
-        <h2 className="text-base font-semibold tracking-tight">Interview · {fullName}</h2>
+        <h2 className="text-base font-semibold tracking-tight">
+          Capability audit · Qualia Framework V5 · {fullName}
+        </h2>
         <p className="text-[12px] text-muted-foreground">
-          Walk through these together. Honest answers only &mdash; this shapes the May scope, it
-          isn&apos;t a test.
+          Honest answers — we use this to figure out what you can own solo, what you need backup on,
+          and where the framework is failing you. There&apos;s no wrong answer.
         </p>
       </div>
 
-      {/* Capacity */}
+      {/* Framework commands mastered — multi-select */}
       <Field
-        label="How many parallel projects can you confidently deliver in a month?"
-        help="Be honest. 1 fully delivered beats 4 half-delivered."
+        label="Which framework commands have you mastered?"
+        help='"Mastered" = you reach for it without checking docs and it works. Tick all that apply.'
+      >
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          {FRAMEWORK_COMMANDS.map((cmd) => {
+            const active = form.frameworkCommandsMastered.includes(cmd.key);
+            return (
+              <button
+                key={cmd.key}
+                type="button"
+                onClick={() => toggleInList('frameworkCommandsMastered', cmd.key)}
+                className={cn(
+                  'flex items-start gap-2 rounded-lg border px-3 py-2 text-left transition-colors',
+                  active
+                    ? 'border-primary/60 bg-primary/10 text-foreground'
+                    : 'border-border bg-background hover:border-primary/30'
+                )}
+              >
+                <span
+                  className={cn(
+                    'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border',
+                    active ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
+                  )}
+                  aria-hidden
+                >
+                  {active ? <CheckCircle2 className="size-3" /> : null}
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-mono text-[12px] font-semibold">{cmd.label}</span>
+                  <span className="block text-[11px] text-muted-foreground">{cmd.help}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+
+      {/* Project types you can take solo — multi-select */}
+      <Field
+        label="Which project types can you take from 0 → handoff alone?"
+        help="Tick all that apply. Solo means: kickoff, build, deploy, handoff — without me stepping in."
+      >
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          {PROJECT_TYPES.map((pt) => {
+            const active = form.soloCapableProjectTypes.includes(pt.key);
+            return (
+              <button
+                key={pt.key}
+                type="button"
+                onClick={() => toggleInList('soloCapableProjectTypes', pt.key)}
+                className={cn(
+                  'flex items-start gap-2 rounded-lg border px-3 py-2 text-left transition-colors',
+                  active
+                    ? 'border-emerald-500/50 bg-emerald-500/10 text-foreground'
+                    : 'border-border bg-background hover:border-emerald-500/30'
+                )}
+              >
+                <span
+                  className={cn(
+                    'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border',
+                    active ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-border'
+                  )}
+                  aria-hidden
+                >
+                  {active ? <CheckCircle2 className="size-3" /> : null}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[12px] font-medium">{pt.label}</span>
+                  <span className="block text-[11px] text-muted-foreground">{pt.help}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+
+      {/* Time to complete a 10-milestone project on V5 — single choice */}
+      <RadioField
+        label="With Qualia V5, how long would you need to complete a 10-milestone project from scratch?"
+        help="Be realistic. Include planning, building, polish, verify, ship, handoff."
+        choices={TEN_MILESTONE_CHOICES}
+        value={form.tenMilestoneTime}
+        onChange={(v) => update('tenMilestoneTime', v)}
+      />
+
+      {/* Client communication — single choice */}
+      <RadioField
+        label="If you're assigned a project from 0 → handoff, can you handle client communication without backup?"
+        help="Kickoff calls, scope discussions, status updates, handoff."
+        choices={CLIENT_COMMS_CHOICES}
+        value={form.clientCommsAlone}
+        onChange={(v) => update('clientCommsAlone', v)}
+      />
+
+      {/* Gap closure — single choice */}
+      <RadioField
+        label="When /qualia-verify returns FAIL, can you close the gaps without help?"
+        choices={GAP_CLOSURE_CHOICES}
+        value={form.gapClosureAlone}
+        onChange={(v) => update('gapClosureAlone', v)}
+      />
+
+      {/* Shipped solo — single choice */}
+      <RadioField
+        label="Have you ever shipped a phase to production solo (no review)?"
+        choices={SHIPPED_SOLO_CHOICES}
+        value={form.shippedSoloCount}
+        onChange={(v) => update('shippedSoloCount', v)}
+      />
+
+      {/* Debug comfort — single choice */}
+      <RadioField
+        label="When something breaks in production, what's your default move?"
+        choices={DEBUG_COMFORT_CHOICES}
+        value={form.debugComfort}
+        onChange={(v) => update('debugComfort', v)}
+      />
+
+      {/* 1-10 scales */}
+      <ScaleField
+        label="From 1 to 10, how well can you talk to the framework to extend a project beyond the planned milestones?"
+        help="Add-ons, design polish outside the milestone scope, refactors, bonus features. 1 = no idea, 10 = I improvise freely and the framework cooperates."
+        value={form.frameworkAddonScore}
+        onChange={(v) => update('frameworkAddonScore', v)}
+      />
+
+      <ScaleField
+        label="From 1 to 10, your overall mastery of Qualia Framework V5 right now"
+        help="1 = I copy commands without understanding. 10 = I know what each command does, when to skip it, and how to recover when it goes wrong."
+        value={form.overallMastery}
+        onChange={(v) => update('overallMastery', v)}
+      />
+
+      <ScaleField
+        label="From 1 to 10, your confidence handing a finished project to a real client"
+        help="Walking them through what was built, answering their questions, taking responsibility if something breaks."
+        value={form.clientHandoffConfidence}
+        onChange={(v) => update('clientHandoffConfidence', v)}
+      />
+
+      {/* Weak spots — multi-select */}
+      <Field
+        label="Where do you NOT want to be assigned solo yet? Tick all that apply."
+        help="Knowing the gaps now means we don't drop you in blind. There's no penalty for ticking these."
+      >
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          {WEAK_SPOTS.map((w) => {
+            const active = form.weakSpots.includes(w.key);
+            return (
+              <button
+                key={w.key}
+                type="button"
+                onClick={() => toggleInList('weakSpots', w.key)}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-[12px] transition-colors',
+                  active
+                    ? 'border-amber-500/50 bg-amber-500/10 text-foreground'
+                    : 'border-border bg-background hover:border-amber-500/30'
+                )}
+              >
+                <span
+                  className={cn(
+                    'flex size-4 shrink-0 items-center justify-center rounded border',
+                    active ? 'border-amber-500 bg-amber-500 text-white' : 'border-border'
+                  )}
+                  aria-hidden
+                >
+                  {active ? <CheckCircle2 className="size-3" /> : null}
+                </span>
+                <span>{w.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+
+      {/* Open-text */}
+      <Field
+        label="Last project you took 0 → handoff alone (or closest)"
+        help="Project name + a sentence on the result. If none yet, write 'none'."
       >
         <Input
-          inputMode="numeric"
-          placeholder="e.g. 2"
-          value={form.capacityProjects}
-          onChange={(e) => update('capacityProjects', e.target.value)}
-          className="max-w-[140px]"
-        />
-      </Field>
-
-      {/* Archetypes */}
-      <Field
-        label="For each project type — what's your honest delivery confidence?"
-        help='"Solo end-to-end" means: I deliver, Fawzi only sees the final result.'
-      >
-        <div className="flex flex-col gap-2">
-          {ARCHETYPES.map((a) => (
-            <div
-              key={a.key}
-              className="grid grid-cols-1 gap-2 rounded-lg border border-border bg-background p-3 sm:grid-cols-[1fr_auto] sm:items-center"
-            >
-              <div>
-                <div className="text-[13px] font-medium">{a.label}</div>
-                <div className="text-[11px] text-muted-foreground">{a.help}</div>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {(['solo', 'review', 'pair', 'no'] as const).map((opt) => {
-                  const active = form.archetypes[a.key] === opt;
-                  return (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => updateArchetype(a.key, opt)}
-                      className={cn(
-                        'rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors',
-                        active
-                          ? ARCHETYPE_TONES[opt]
-                          : 'border-border bg-card text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      {ARCHETYPE_LABELS[opt]}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Field>
-
-      {/* Domain confidence */}
-      <Field
-        label="Self-rate independence by domain (1 = need handholding, 5 = own it)"
-        help="There's no penalty for low scores. We'd rather know."
-      >
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {DOMAINS.map((d) => (
-            <div
-              key={d.key}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2"
-            >
-              <span className="min-w-0 flex-1 truncate text-[13px]">{d.label}</span>
-              <div className="flex shrink-0 gap-0.5">
-                {([1, 2, 3, 4, 5] as const).map((n) => {
-                  const active = form.domainConfidence[d.key] === n;
-                  return (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => updateDomain(d.key, n)}
-                      className={cn(
-                        'flex h-7 w-7 items-center justify-center rounded font-mono text-[11px] tabular-nums transition-colors',
-                        active
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground hover:bg-muted/70'
-                      )}
-                      aria-label={`${d.label} ${n} of 5`}
-                    >
-                      {n}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Field>
-
-      {/* Time estimation grounded in real past projects */}
-      {pastProjects.length > 0 ? (
-        <Field
-          label={`Based on what you delivered (${pastProjects.slice(0, 3).join(', ')}), how long would a similar project take you next time — start to deploy?`}
-          help="Days. Be realistic, include reviews and revisions."
-        >
-          <Input
-            placeholder="e.g. 7 days"
-            value={form.realisticTime}
-            onChange={(e) => update('realisticTime', e.target.value)}
-            className="max-w-xs"
-          />
-        </Field>
-      ) : null}
-
-      {/* Schedule */}
-      <Field
-        label="What's a realistic working schedule for May?"
-        help="Mandatory clock-in/out starts May 1. Set a schedule you'll actually keep."
-      >
-        <div className="flex flex-wrap gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-              Start
-            </label>
-            <Input
-              type="time"
-              value={form.scheduleStart}
-              onChange={(e) => update('scheduleStart', e.target.value)}
-              className="w-[120px]"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-              End
-            </label>
-            <Input
-              type="time"
-              value={form.scheduleEnd}
-              onChange={(e) => update('scheduleEnd', e.target.value)}
-              className="w-[120px]"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-              Days per week
-            </label>
-            <Input
-              inputMode="numeric"
-              placeholder="5"
-              value={form.daysPerWeek}
-              onChange={(e) => update('daysPerWeek', e.target.value)}
-              className="w-[80px]"
-            />
-          </div>
-        </div>
-      </Field>
-
-      {/* Framework + blockers + goals */}
-      <Field
-        label="What stops you from running /qualia-report after every session?"
-        help="Friction we should remove vs habit we should build."
-      >
-        <Textarea
-          rows={2}
-          value={form.frameworkBlocker}
-          onChange={(e) => update('frameworkBlocker', e.target.value)}
-          placeholder="forget · slow · don't understand fields · too many prompts · …"
+          value={form.lastSoloProject}
+          onChange={(e) => update('lastSoloProject', e.target.value)}
+          placeholder="e.g. Velicor Consulting — shipped, M3 closed, awaiting client DNS cutover"
         />
       </Field>
 
       <Field
-        label="What was the #1 thing that slowed you down last month?"
-        help="Tooling, scope churn, unclear requirements, your own focus, anything."
+        label="One framework command you wish existed"
+        help="Something you keep needing that no /qualia-* command does today."
       >
         <Textarea
           rows={2}
-          value={form.topBlocker}
-          onChange={(e) => update('topBlocker', e.target.value)}
+          value={form.wishedCommand}
+          onChange={(e) => update('wishedCommand', e.target.value)}
+          placeholder="e.g. /qualia-translate to swap the project to a new language"
         />
       </Field>
 
       <Field
-        label="What do you want to learn or own in May?"
-        help="Pick 1-2 things. We'll align scope to push you there."
+        label="What in the framework feels broken, unclear, or slows you down?"
+        help="Be specific. This is how we improve V6."
       >
         <Textarea
-          rows={2}
-          value={form.goalsForMay}
-          onChange={(e) => update('goalsForMay', e.target.value)}
+          rows={3}
+          value={form.unclearOrBroken}
+          onChange={(e) => update('unclearOrBroken', e.target.value)}
+          placeholder="e.g. /qualia-verify gap-cycle limit triggers too early on design phases"
         />
       </Field>
 
       <Field
-        label="What's outside your zone right now? Where do you NOT want to be assigned solo yet?"
-        help="Saying it now means we don't put you there blind."
+        label="If I gave you a brand-new client tomorrow, what kind of project would you say 'yes, give me solo'?"
+        help="One concrete example. This is the kind of work we'll route to you first."
       >
         <Textarea
           rows={2}
-          value={form.knownLimits}
-          onChange={(e) => update('knownLimits', e.target.value)}
+          value={form.yesGiveMeSolo}
+          onChange={(e) => update('yesGiveMeSolo', e.target.value)}
+          placeholder="e.g. A multi-page marketing site with a contact form and Calendly booking, EN-only, deploy to Vercel"
         />
       </Field>
 
       {canWritePrivateNotes ? (
-        <Field label="Fawzi's notes (private - not shown to employee)">
+        <Field label="Private notes (admin only — not shown to employee)">
           <Textarea
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="What you observed during the conversation."
+            placeholder="Observations from the conversation."
           />
         </Field>
       ) : null}
@@ -491,6 +591,92 @@ function SelfAssessmentForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+function RadioField<T extends string>({
+  label,
+  help,
+  choices,
+  value,
+  onChange,
+}: {
+  label: string;
+  help?: string;
+  choices: RadioChoice<T>[];
+  value: T | '';
+  onChange: (v: T) => void;
+}) {
+  return (
+    <Field label={label} help={help}>
+      <div className="flex flex-col gap-1.5">
+        {choices.map((c) => {
+          const active = value === c.value;
+          return (
+            <button
+              key={c.value}
+              type="button"
+              onClick={() => onChange(c.value)}
+              className={cn(
+                'flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-[13px] transition-colors',
+                active
+                  ? 'border-primary/60 bg-primary/10 text-foreground'
+                  : 'border-border bg-background hover:border-primary/30'
+              )}
+            >
+              <span
+                className={cn(
+                  'flex size-4 shrink-0 items-center justify-center rounded-full border',
+                  active ? 'border-primary' : 'border-border'
+                )}
+                aria-hidden
+              >
+                {active ? <span className="size-2 rounded-full bg-primary" /> : null}
+              </span>
+              <span className="flex-1">{c.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </Field>
+  );
+}
+
+function ScaleField({
+  label,
+  help,
+  value,
+  onChange,
+}: {
+  label: string;
+  help?: string;
+  value: number | null;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <Field label={label} help={help}>
+      <div className="flex flex-wrap gap-1.5">
+        {([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const).map((n) => {
+          const active = value === n;
+          return (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange(n)}
+              className={cn(
+                'flex h-9 w-9 items-center justify-center rounded-md border font-mono text-[12px] tabular-nums transition-colors',
+                active
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
+              )}
+              aria-label={`${n} of 10`}
+            >
+              {n}
+            </button>
+          );
+        })}
+      </div>
+    </Field>
   );
 }
 
@@ -550,7 +736,7 @@ export function AuditDetailView({
         className="flex flex-col gap-2"
       >
         <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          Performance audit · May scope planning
+          Capability audit · Qualia Framework V5
         </span>
         <h1 className="text-[clamp(1.75rem,1.4rem+1.7vw,2.5rem)] font-semibold tracking-tight">
           {overview.fullName}
@@ -832,7 +1018,6 @@ export function AuditDetailView({
           profileId={overview.profileId}
           fullName={overview.fullName ?? 'Employee'}
           initial={audit.latestAssessment?.responses}
-          pastProjects={projects.slice(0, 3).map((p) => p.projectName)}
           canWritePrivateNotes={canWritePrivateNotes}
         />
       </motion.div>
