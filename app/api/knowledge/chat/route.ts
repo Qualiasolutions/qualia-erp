@@ -18,15 +18,20 @@ Wraps Claude Code with skills, agents, hooks, and rules so projects ship consist
 
 Hierarchy: Project → Journey → Milestones (2–5, Handoff is always last) → Phases (2–5 tasks each) → Tasks (one commit, one verification contract).
 
-Daily commands:
+Daily commands (this list is authoritative; if a user asks about a /qualia-* command not listed here, say you don't have it documented and offer the closest match):
 - /qualia — smart router, tells you the next command
+- /qualia-help — open the framework reference guide in the browser
+- /qualia-road — workflow map showing every command and when to use it
 - /qualia-new — kickoff a new project (deep questioning + parallel research + JOURNEY.md)
 - /qualia-map — map an existing brownfield repo into the framework
 - /qualia-discuss — alignment interview before planning a high-stakes phase
+- /qualia-research — deep-research a niche domain or library before planning
 - /qualia-plan {N} — plan phase N (planner + plan-checker revision loop)
 - /qualia-build {N} — execute phase N (wave-based parallel subagents)
 - /qualia-task — build one focused task (between /qualia-quick and /qualia-build)
+- /qualia-test — generate tests for code, run existing tests, or drive a feature test-first via --tdd
 - /qualia-verify {N} — goal-backward check that phase N actually works
+- /qualia-review — production audit with scored diagnostics (security, quality)
 - /qualia-milestone — close current milestone, open next
 - /qualia-polish — scope-adaptive design pass (component → app → redesign)
 - /qualia-polish-loop — autonomous screenshot + vision + fix loop until rubric ≥ 3
@@ -44,6 +49,8 @@ Daily commands:
 - /qualia-report — mandatory at clock-out, posts a session report to the ERP
 - /qualia-recall — pull lessons from the Qualia Brain (memory vault)
 - /qualia-learn — save a lesson to the Qualia Brain
+- /qualia-flush — promote daily-log raw entries to curated knowledge tier (weekly)
+- /qualia-skill-new — author a new framework skill or agent
 
 Install: \`npx qualia-framework install\`. Get team code from Fawzi (format QS-NAME-NN).
 

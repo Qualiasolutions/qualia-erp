@@ -238,6 +238,12 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
             prev.map((m) => (m.id === assistantMsg.id ? { ...m, content: acc } : m))
           );
         }
+
+        // Stream finished cleanly but produced nothing — surface it instead of leaving a blank bubble
+        if (!acc.trim()) {
+          setMessages((prev) => prev.filter((m) => m.id !== assistantMsg.id));
+          setError("No response from the assistant. Try rephrasing or click 'New chat'.");
+        }
       } catch (e: unknown) {
         if ((e as { name?: string }).name === 'AbortError') {
           // user-initiated stop
