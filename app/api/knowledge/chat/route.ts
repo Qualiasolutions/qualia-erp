@@ -1,5 +1,4 @@
-import { streamText } from 'ai';
-import { z } from 'zod';
+import { streamText, convertToModelMessages, type UIMessage } from 'ai';
 import { knowledgeAssistantModel } from '@/lib/ai/gemini-client';
 import { createClient } from '@/lib/supabase/server';
 import { chatRateLimiter } from '@/lib/rate-limit';
@@ -144,14 +143,7 @@ Role-specific guidance:
 - If unsure, say so. Never invent commands, files, or APIs.
 - No emojis. No marketing language. No em dashes — use commas, colons, or periods.`;
 
-const messageSchema = z.object({
-  role: z.enum(['user', 'assistant']),
-  content: z.string().min(1).max(8000),
-});
-
-const requestSchema = z.object({
-  messages: z.array(messageSchema).min(1).max(30),
-});
+const MAX_TURNS = 30;
 
 export async function POST(req: Request) {
   if (!process.env.OPENROUTER_API_KEY) {
@@ -169,24 +161,26 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Too many requests. Try again in a minute.' }, { status: 429 });
   }
 
-  let body: unknown;
+  let body: { messages?: UIMessage[] };
   try {
     body = await req.json();
   } catch {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const parsed = requestSchema.safeParse(body);
-  if (!parsed.success) {
-    return Response.json({ error: 'Invalid request' }, { status: 400 });
+  const messages = body.messages;
+  if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_TURNS) {
+    return Response.json({ error: 'Invalid messages' }, { status: 400 });
   }
+
+  const modelMessages = await convertToModelMessages(messages);
 
   const result = streamText({
     model: knowledgeAssistantModel,
     system: KNOWLEDGE_SYSTEM_PROMPT,
-    messages: parsed.data.messages,
+    messages: modelMessages,
     maxOutputTokens: 1500,
   });
 
-  return result.toTextStreamResponse();
+  return result.toUIMessageStreamResponse();
 }

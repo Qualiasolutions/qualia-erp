@@ -16,7 +16,6 @@ import {
   Books,
   CaretRight,
   CheckCircle,
-  CircleNotch,
   Compass,
   Copy,
   Lightbulb,
@@ -32,6 +31,8 @@ import {
   X,
   type Icon as PhosphorIcon,
 } from '@phosphor-icons/react';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport, type UIMessage } from 'ai';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { Guide } from '@/lib/guides-data';
@@ -41,12 +42,6 @@ interface QualiaKnowledgeViewProps {
   // more — superseded by the curated Resources panel below.
   guides: Guide[];
 }
-
-type ChatMessage = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-};
 
 const QUALIA_LOGO = '/logo.webp';
 
@@ -67,13 +62,15 @@ function QualiaMark({ size, className }: { size: number; className?: string }) {
 
 const SUGGESTED_QUESTIONS = [
   'What does /qualia-plan do?',
+  'When should I use /qualia-test --tdd?',
   'How does the Milestone → Phase → Task hierarchy work?',
   'How do I clock out and submit my session report?',
-  'When should I use /qualia-debug vs /qualia-quick?',
+  'When should I use /qualia-debug vs /qualia-idk?',
+  'What is the Qualia Brain?',
 ];
 
-function newId(): string {
-  return Math.random().toString(36).slice(2, 10);
+function uiMessageText(message: UIMessage): string {
+  return message.parts.map((p) => (p.type === 'text' ? p.text : '')).join('');
 }
 
 /* ──────────────────────────────────────────────────────────────────
@@ -138,36 +135,41 @@ const RESOURCES: ResourceMeta[] = [
    Main view
    ────────────────────────────────────────────────────────────────── */
 
-const CHAT_STORAGE_KEY = 'qualia.knowledge.chat.v1';
+const CHAT_STORAGE_KEY = 'qualia.knowledge.chat.v2';
 const CHAT_STORAGE_LIMIT = 30; // matches server-side cap
 
 export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [openResource, setOpenResource] = useState<ResourceId | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
-  const abortRef = useRef<AbortController | null>(null);
+  const transport = useMemo(() => new DefaultChatTransport({ api: '/api/knowledge/chat' }), []);
+
+  const { messages, sendMessage, status, stop, error, setMessages, clearError } = useChat({
+    transport,
+  });
+
+  const isStreaming = status === 'submitted' || status === 'streaming';
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Hydrate persisted conversation on mount
+  // Hydrate persisted conversation on mount (one-shot)
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(CHAT_STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as ChatMessage[];
-        if (Array.isArray(parsed)) setMessages(parsed.slice(-CHAT_STORAGE_LIMIT));
+        const parsed = JSON.parse(raw) as UIMessage[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed.slice(-CHAT_STORAGE_LIMIT));
+        }
       }
     } catch {
       // corrupt storage — ignore
     }
     setHydrated(true);
-  }, []);
+  }, [setMessages]);
 
-  // Persist on every change (after hydration to avoid clobbering on first paint)
+  // Persist on change (after hydration to avoid clobbering)
   useEffect(() => {
     if (!hydrated) return;
     try {
@@ -189,98 +191,36 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
     scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  useEffect(() => () => abortRef.current?.abort(), []);
-
-  const sendMessage = useCallback(
-    async (text: string) => {
+  const submit = useCallback(
+    (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || isStreaming) return;
-
-      setError(null);
-      const userMsg: ChatMessage = { id: newId(), role: 'user', content: trimmed };
-      const assistantMsg: ChatMessage = { id: newId(), role: 'assistant', content: '' };
-
-      const history = [...messages, userMsg];
-      setMessages([...history, assistantMsg]);
+      clearError();
+      void sendMessage({ text: trimmed });
       setInput('');
-      setIsStreaming(true);
-
-      const controller = new AbortController();
-      abortRef.current = controller;
-
-      try {
-        const res = await fetch('/api/knowledge/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: history
-              .slice(-CHAT_STORAGE_LIMIT)
-              .map((m) => ({ role: m.role, content: m.content })),
-          }),
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => null);
-          throw new Error(err?.error || `Request failed (${res.status})`);
-        }
-        if (!res.body) throw new Error('No response body');
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let acc = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          acc += decoder.decode(value, { stream: true });
-          setMessages((prev) =>
-            prev.map((m) => (m.id === assistantMsg.id ? { ...m, content: acc } : m))
-          );
-        }
-
-        // Stream finished cleanly but produced nothing — surface it instead of leaving a blank bubble
-        if (!acc.trim()) {
-          setMessages((prev) => prev.filter((m) => m.id !== assistantMsg.id));
-          setError("No response from the assistant. Try rephrasing or click 'New chat'.");
-        }
-      } catch (e: unknown) {
-        if ((e as { name?: string }).name === 'AbortError') {
-          // user-initiated stop
-        } else {
-          const msg = e instanceof Error ? e.message : 'Failed to send message';
-          setError(msg);
-          setMessages((prev) => prev.filter((m) => m.id !== assistantMsg.id));
-        }
-      } finally {
-        setIsStreaming(false);
-        abortRef.current = null;
-      }
     },
-    [messages, isStreaming]
+    [isStreaming, sendMessage, clearError]
   );
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    void sendMessage(input);
+    submit(input);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      void sendMessage(input);
+      submit(input);
     }
   };
 
-  const stopStreaming = () => abortRef.current?.abort();
-
-  const resetChat = () => {
-    abortRef.current?.abort();
+  const resetChat = useCallback(() => {
+    stop();
     setMessages([]);
-    setError(null);
+    clearError();
     setInput('');
     inputRef.current?.focus();
-  };
+  }, [stop, setMessages, clearError]);
 
   const hasMessages = messages.length > 0;
 
@@ -319,22 +259,28 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
           className="flex-1 overflow-y-auto rounded-2xl border border-border bg-card/40 p-3 lg:p-4"
         >
           {!hasMessages ? (
-            <EmptyChatState onPick={(q) => sendMessage(q)} />
+            <EmptyChatState onPick={submit} />
           ) : (
             <div className="mx-auto flex max-w-3xl flex-col gap-4">
-              {messages.map((m) => (
+              {messages.map((m, idx) => (
                 <MessageBubble
                   key={m.id}
                   message={m}
-                  isStreaming={
-                    isStreaming && m.role === 'assistant' && m === messages[messages.length - 1]
-                  }
+                  isStreaming={isStreaming && m.role === 'assistant' && idx === messages.length - 1}
                 />
               ))}
               {error && (
                 <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
                   <Warning size={16} weight="duotone" className="mt-0.5 flex-shrink-0" />
-                  <span>{error}</span>
+                  <span className="flex-1">{error.message || 'Something went wrong.'}</span>
+                  <button
+                    type="button"
+                    onClick={clearError}
+                    aria-label="Dismiss error"
+                    className="cursor-pointer rounded p-0.5 text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <X size={14} weight="bold" />
+                  </button>
                 </div>
               )}
             </div>
@@ -358,7 +304,7 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
               {isStreaming ? (
                 <button
                   type="button"
-                  onClick={stopStreaming}
+                  onClick={stop}
                   aria-label="Stop generating"
                   className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl bg-foreground text-background transition-transform hover:scale-105"
                 >
@@ -376,6 +322,16 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
               )}
             </div>
           </div>
+          <p className="mt-1.5 px-1 text-[11px] text-muted-foreground">
+            <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">
+              Enter
+            </kbd>{' '}
+            to send ·{' '}
+            <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">
+              Shift+Enter
+            </kbd>{' '}
+            for newline
+          </p>
         </form>
       </section>
 
@@ -460,29 +416,32 @@ function EmptyChatState({ onPick }: { onPick: (q: string) => void }) {
    Message bubble + markdown
    ────────────────────────────────────────────────────────────────── */
 
-function MessageBubble({ message, isStreaming }: { message: ChatMessage; isStreaming: boolean }) {
+function MessageBubble({ message, isStreaming }: { message: UIMessage; isStreaming: boolean }) {
   const [copied, setCopied] = useState(false);
+  const text = useMemo(() => uiMessageText(message), [message]);
 
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(message.content);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       toast.success('Copied');
       setTimeout(() => setCopied(false), 1500);
     } catch {
       toast.error('Could not copy');
     }
-  }, [message.content]);
+  }, [text]);
 
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground shadow-sm">
-          {message.content}
+        <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground shadow-sm">
+          {text}
         </div>
       </div>
     );
   }
+
+  const isWaiting = isStreaming && text.length === 0;
 
   return (
     <div className="group flex flex-col gap-2">
@@ -492,15 +451,20 @@ function MessageBubble({ message, isStreaming }: { message: ChatMessage; isStrea
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm leading-relaxed text-foreground">
-            <FormattedMarkdown text={message.content} />
-            {isStreaming && message.content.length === 0 && (
-              <CircleNotch size={14} weight="bold" className="animate-spin text-muted-foreground" />
+            {isWaiting ? (
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <span className="qa-dot qa-dot-1" />
+                <span className="qa-dot qa-dot-2" />
+                <span className="qa-dot qa-dot-3" />
+              </span>
+            ) : (
+              <FormattedMarkdown text={text} />
             )}
-            {isStreaming && message.content.length > 0 && (
+            {isStreaming && text.length > 0 && (
               <span className="ml-0.5 inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse bg-foreground/60" />
             )}
           </div>
-          {!isStreaming && message.content && (
+          {!isStreaming && text && (
             <button
               type="button"
               onClick={handleCopy}
@@ -516,6 +480,23 @@ function MessageBubble({ message, isStreaming }: { message: ChatMessage; isStrea
           )}
         </div>
       </div>
+      <style>{`
+        .qa-dot {
+          display: inline-block;
+          width: 5px;
+          height: 5px;
+          border-radius: 999px;
+          background: currentColor;
+          animation: qa-dot-bounce 1.1s infinite ease-in-out both;
+        }
+        .qa-dot-1 { animation-delay: -0.32s; }
+        .qa-dot-2 { animation-delay: -0.16s; }
+        .qa-dot-3 { animation-delay: 0s; }
+        @keyframes qa-dot-bounce {
+          0%, 80%, 100% { transform: scale(0.5); opacity: 0.4; }
+          40%           { transform: scale(1);   opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }
