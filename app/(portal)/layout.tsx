@@ -10,7 +10,7 @@ import {
 } from '@/lib/portal-cache';
 import { QualiaSidebar } from '@/components/portal/qualia-sidebar';
 import { PageTransition } from '@/components/page-transition';
-import { PresenceBroadcaster } from '@/components/portal/presence-broadcaster';
+import { PresenceProvider } from '@/components/portal/presence-broadcaster';
 import { LivePresenceWidget } from '@/components/portal/live-presence-widget';
 import { ViewAsBanner } from '@/components/portal/view-as-banner';
 import { ClockGateProvider } from '@/components/clock-gate-provider';
@@ -211,18 +211,15 @@ export default async function PortalLayout({ children }: { children: React.React
           </main>
         </div>
         {workspaceId ? (
-          <>
-            <PresenceBroadcaster
-              workspaceId={workspaceId}
-              userId={effectiveUserId}
-              fullName={profile?.full_name ?? null}
-              avatarUrl={profile?.avatar_url ?? null}
-              role={effectiveRole}
-            />
-            {effectiveRole === 'admin' && (
-              <LivePresenceWidget workspaceId={workspaceId} selfUserId={effectiveUserId} />
-            )}
-          </>
+          <PresenceProvider
+            workspaceId={workspaceId}
+            userId={effectiveUserId}
+            fullName={profile?.full_name ?? null}
+            avatarUrl={profile?.avatar_url ?? null}
+            role={effectiveRole}
+          >
+            {effectiveRole === 'admin' && <LivePresenceWidget selfUserId={effectiveUserId} />}
+          </PresenceProvider>
         ) : null}
         {/* One-shot announcement for internal users — clients never see it */}
         {effectiveIsInternal && <FrameworkUpdateNotice />}

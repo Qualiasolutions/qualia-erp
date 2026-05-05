@@ -3,23 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-
-interface PresenceEntry {
-  user_id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  role: string;
-  pathname: string;
-  since: number;
-}
+import { usePresence, type PresenceEntry } from '@/components/portal/presence-broadcaster';
 
 interface LivePresenceWidgetProps {
-  workspaceId: string;
   selfUserId: string;
 }
 
@@ -59,49 +49,9 @@ const MAX_VISIBLE_AVATARS = 3;
  * (admin-only) so presence is one glance away on every page. Click to open
  * a popover with the same per-page grouping the old panel exposed.
  */
-export function LivePresenceWidget({ workspaceId, selfUserId }: LivePresenceWidgetProps) {
-  const [entries, setEntries] = useState<PresenceEntry[]>([]);
+export function LivePresenceWidget({ selfUserId }: LivePresenceWidgetProps) {
+  const entries = usePresence();
   const [, forceTick] = useState(0);
-
-  useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase.channel(`presence:workspace:${workspaceId}`, {
-      config: { presence: { key: `widget-viewer:${selfUserId}` } },
-    });
-
-    const sync = () => {
-      const state = channel.presenceState<PresenceEntry>();
-      const latestByUser = new Map<string, PresenceEntry>();
-      for (const metas of Object.values(state)) {
-        for (const meta of metas) {
-          if (!meta.user_id) continue;
-          const prev = latestByUser.get(meta.user_id);
-          if (!prev || meta.since > prev.since) latestByUser.set(meta.user_id, meta);
-        }
-      }
-      setEntries(
-        Array.from(latestByUser.values()).sort((a, b) =>
-          (a.full_name || '').localeCompare(b.full_name || '')
-        )
-      );
-    };
-
-    channel
-      .on('presence', { event: 'sync' }, sync)
-      .on('presence', { event: 'join' }, sync)
-      .on('presence', { event: 'leave' }, sync)
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          // Empty viewer record so the channel starts emitting our own events.
-          // Distinct presence key from PresenceBroadcaster — they coexist.
-          await channel.track({ viewer: true });
-        }
-      });
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [workspaceId, selfUserId]);
 
   // 1Hz tick so duration labels in the popover stay current.
   useEffect(() => {
