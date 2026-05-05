@@ -48,12 +48,20 @@ const STALE_CAP_MS = 8 * 60 * 60 * 1000;
 
 /**
  * Clock in: create a new work session.
- * Rejects if the user already has an open session (any age under STALE_SESSION_MS).
- * Sessions older than STALE_SESSION_MS are auto-closed with an 8h cap first.
+ *
+ * Multi-project: pass at least one project id. The first one is stored on
+ * `work_sessions.project_id` as the "primary" for legacy display sites
+ * ("Working on X" badges, attendance views), and ALL chosen projects are
+ * mirrored into the `work_session_projects` join table — that's what the
+ * clock-out check loops over to require one /qualia-report per project.
+ *
+ * Rejects if the user already has an open session (any age under
+ * STALE_SESSION_MS). Sessions older than STALE_SESSION_MS are auto-closed
+ * with an 8h cap first.
  */
 export async function clockIn(
   workspaceId: string,
-  projectId: string | null,
+  projectIds: string[],
   clockInNote?: string,
   plannedDurationMinutes?: number,
   clockInReason?: string,
@@ -66,6 +74,23 @@ export async function clockIn(
 
   if (!user) {
     return { success: false, error: 'Not authenticated' };
+  }
+
+  // At least one project is required — "Other" sessions were retired in the
+  // 2026-05-05 multi-project change. If no work fits an existing project,
+  // ask an admin to create one.
+  const cleanedProjectIds = Array.from(
+    new Set(
+      (Array.isArray(projectIds) ? projectIds : [])
+        .map((id) => (typeof id === 'string' ? id.trim() : ''))
+        .filter(Boolean)
+    )
+  );
+  if (cleanedProjectIds.length === 0) {
+    return {
+      success: false,
+      error: 'Pick at least one project — every session must be linked to project work.',
+    };
   }
 
   // Date-agnostic: previously used UTC midnight as the stale boundary, which
@@ -102,26 +127,24 @@ export async function clockIn(
     return { success: false, error: 'You already have an active session. Clock out first.' };
   }
 
-  // Both project and non-project sessions now require a planned outcome and a
-  // planned duration — the 2026-04-28 ops diagnosis flagged loose project
-  // clock-ins as a root cause of unaccountable session work.
   if (!clockInNote?.trim()) {
-    return {
-      success: false,
-      error: projectId
-        ? 'Tell the team what you plan to ship this session.'
-        : 'Please describe what you will be working on.',
-    };
+    return { success: false, error: 'Tell the team what you plan to ship this session.' };
   }
 
   if (!plannedDurationMinutes) {
     return { success: false, error: 'Please select how long you plan to work.' };
   }
 
-  // Reason is still required only for non-project sessions, where it's the
-  // primary explanation. Project sessions can rely on the project itself.
-  if (!projectId && !clockInReason?.trim()) {
-    return { success: false, error: 'Please provide a reason for this session.' };
+  // Verify every chosen project actually exists in this workspace before
+  // inserting — bad ids would slip past the clock-in modal otherwise.
+  const { data: validProjects } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('workspace_id', workspaceId)
+    .in('id', cleanedProjectIds);
+  const validIds = new Set((validProjects ?? []).map((p) => p.id));
+  if (validIds.size !== cleanedProjectIds.length) {
+    return { success: false, error: 'One or more selected projects are invalid.' };
   }
 
   // Normalize activities: trim, drop empties, dedupe, cap at 10.
@@ -135,12 +158,15 @@ export async function clockIn(
       ).slice(0, 10)
     : [];
 
+  // First-picked id is the "primary" — drives legacy display sites.
+  const primaryProjectId = cleanedProjectIds[0];
+
   const { data, error } = await supabase
     .from('work_sessions')
     .insert({
       workspace_id: workspaceId,
       profile_id: user.id,
-      project_id: projectId,
+      project_id: primaryProjectId,
       started_at: new Date().toISOString(),
       clock_in_note: clockInNote?.trim() || null,
       planned_duration_minutes: plannedDurationMinutes || null,
@@ -153,6 +179,19 @@ export async function clockIn(
   if (error) {
     console.error('[clockIn] Error:', error);
     return { success: false, error: error.message };
+  }
+
+  // Insert one row per chosen project. If this fails the session is left
+  // partially wired — undo by deleting the parent row so the user can retry.
+  const links = cleanedProjectIds.map((projectId) => ({
+    session_id: data.id,
+    project_id: projectId,
+  }));
+  const { error: linkError } = await supabase.from('work_session_projects').insert(links);
+  if (linkError) {
+    console.error('[clockIn] Link insert error:', linkError);
+    await supabase.from('work_sessions').delete().eq('id', data.id);
+    return { success: false, error: linkError.message };
   }
 
   revalidatePath('/');
@@ -203,23 +242,28 @@ export async function clockOut(
     return { success: false, error: 'No active session found.' };
   }
 
-  // Block clock-out for project sessions until a session report is attached.
+  // Block clock-out until EVERY chosen project has a session report attached.
   // Either an uploaded file (work_sessions.report_url) OR a structured row in
-  // session_reports (matched by project name + time window) counts. "Other"
-  // sessions (no project_id) remain optional.
-  if (session.project_id) {
-    const effectiveReportUrl = reportUrl ?? session.report_url ?? null;
-    let hasReport = !!effectiveReportUrl;
-    if (!hasReport) {
-      const structured = await hasStructuredReportForSession(sessionId);
-      hasReport = structured.attached;
-    }
-    if (!hasReport) {
-      return {
-        success: false,
-        error: 'You can’t clock out yet — run /qualia-report to submit your session report first.',
-      };
-    }
+  // session_reports counts as the attached report — the structured per-project
+  // check below loops over every project linked to this session and lets
+  // through only if all of them have one.
+  const status = await getSessionProjectsStatus(sessionId);
+  if (status.projects.length === 0) {
+    return {
+      success: false,
+      error: 'No projects on this session — contact an admin.',
+    };
+  }
+  const missing = status.projects.filter((p) => !p.hasReport);
+  if (missing.length > 0) {
+    const names = missing.map((p) => p.name).join(', ');
+    return {
+      success: false,
+      error:
+        missing.length === 1
+          ? `Run /qualia-report in the ${names} repo before clocking out.`
+          : `Run /qualia-report in each repo before clocking out — still missing: ${names}.`,
+    };
   }
 
   const updatePayload: Record<string, unknown> = {
@@ -936,6 +980,124 @@ export async function hasStructuredReportForSession(
     report_id: report.id,
     submitted_at: report.submitted_at ?? undefined,
   };
+}
+
+export interface SessionProjectStatus {
+  projectId: string;
+  name: string;
+  hasReport: boolean;
+  reportId?: string;
+  reportSubmittedAt?: string;
+}
+
+/**
+ * Per-project report status for a multi-project work session.
+ *
+ * For each project linked to the session via work_session_projects, returns
+ * whether a /qualia-report has landed (either a canonical session_reports row
+ * keyed by erp_project_id, or an ilike match on project_name within the
+ * session's active window). The clock-out modal renders this as a checklist
+ * and the clockOut action gates submit on every entry being green.
+ *
+ * The legacy work_sessions.report_url file-upload path counts ONLY when the
+ * session has exactly one project — there's a single URL field, so it can't
+ * unambiguously satisfy multi-project sessions.
+ */
+export async function getSessionProjectsStatus(
+  sessionId: string,
+  options?: { includeDryRun?: boolean }
+): Promise<{ projects: SessionProjectStatus[] }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { projects: [] };
+
+  const { data: session } = await supabase
+    .from('work_sessions')
+    .select('started_at, ended_at, profile_id, report_url')
+    .eq('id', sessionId)
+    .maybeSingle();
+
+  if (!session || session.profile_id !== user.id) {
+    return { projects: [] };
+  }
+
+  const { data: linkRows } = await supabase
+    .from('work_session_projects')
+    .select('project_id, project:projects!work_session_projects_project_id_fkey(id, name)')
+    .eq('session_id', sessionId);
+
+  const linked = (linkRows ?? [])
+    .map((row) => {
+      const project = Array.isArray(row.project) ? row.project[0] : row.project;
+      return project ? { id: project.id, name: project.name } : null;
+    })
+    .filter((p): p is { id: string; name: string } => !!p);
+
+  if (linked.length === 0) return { projects: [] };
+
+  const windowEnd = session.ended_at ?? new Date().toISOString();
+  const admin = createAdminClient();
+  const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
+
+  const statuses = await Promise.all(
+    linked.map(async (project): Promise<SessionProjectStatus> => {
+      let canonicalQuery = admin
+        .from('session_reports')
+        .select('id, submitted_at')
+        .eq('erp_project_id', project.id)
+        .gte('submitted_at', session.started_at)
+        .lte('submitted_at', windowEnd)
+        .order('submitted_at', { ascending: false })
+        .limit(1);
+      if (!options?.includeDryRun) {
+        canonicalQuery = canonicalQuery.neq('dry_run', true);
+      }
+      const { data: canonical } = await canonicalQuery.maybeSingle();
+      if (canonical) {
+        return {
+          projectId: project.id,
+          name: project.name,
+          hasReport: true,
+          reportId: canonical.id,
+          reportSubmittedAt: canonical.submitted_at ?? undefined,
+        };
+      }
+
+      let nameQuery = admin
+        .from('session_reports')
+        .select('id, submitted_at')
+        .ilike('project_name', `%${escapeLike(project.name)}%`)
+        .gte('submitted_at', session.started_at)
+        .lte('submitted_at', windowEnd)
+        .order('submitted_at', { ascending: false })
+        .limit(1);
+      if (!options?.includeDryRun) {
+        nameQuery = nameQuery.neq('dry_run', true);
+      }
+      const { data: byName } = await nameQuery.maybeSingle();
+      if (byName) {
+        return {
+          projectId: project.id,
+          name: project.name,
+          hasReport: true,
+          reportId: byName.id,
+          reportSubmittedAt: byName.submitted_at ?? undefined,
+        };
+      }
+
+      // Legacy file-upload path: only valid when there's exactly one project.
+      if (linked.length === 1 && session.report_url) {
+        return { projectId: project.id, name: project.name, hasReport: true };
+      }
+
+      return { projectId: project.id, name: project.name, hasReport: false };
+    })
+  );
+
+  return { projects: statuses };
 }
 
 // ============ SESSION REPORTS (read side) ============

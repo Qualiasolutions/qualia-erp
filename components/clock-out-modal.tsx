@@ -15,9 +15,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { clockOut, hasStructuredReportForSession } from '@/app/actions/work-sessions';
+import {
+  clockOut,
+  getSessionProjectsStatus,
+  type SessionProjectStatus,
+} from '@/app/actions/work-sessions';
 import { invalidateActiveSession, invalidateTodaysSessions } from '@/lib/swr';
-import { createClient as createBrowserClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
 // ============ TYPES ============
@@ -58,27 +61,18 @@ export function ClockOutModal({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [duration, setDuration] = useState(() => formatDuration(session.started_at));
-  const [reportUrl, setReportUrl] = useState<string | null>(null);
-  const [structuredReportAttached, setStructuredReportAttached] = useState(false);
-  const [checkingReport, setCheckingReport] = useState(false);
+  const [projectStatuses, setProjectStatuses] = useState<SessionProjectStatus[]>([]);
+  const [checkingReports, setCheckingReports] = useState(false);
 
-  // /qualia-report posts twice: a file upload (sets work_sessions.report_url)
-  // and a structured JSON payload (inserts into session_reports). Either can
-  // succeed alone, so we check both and treat either as "attached".
-  const checkForReport = useCallback(async () => {
-    setCheckingReport(true);
+  const checkForReports = useCallback(async () => {
+    setCheckingReports(true);
     try {
-      const supabase = createBrowserClient();
-      const [fileCheck, structuredCheck] = await Promise.all([
-        supabase.from('work_sessions').select('report_url').eq('id', session.id).single(),
-        hasStructuredReportForSession(session.id),
-      ]);
-      setReportUrl(fileCheck.data?.report_url || null);
-      setStructuredReportAttached(structuredCheck.attached);
+      const { projects } = await getSessionProjectsStatus(session.id);
+      setProjectStatuses(projects);
     } catch {
-      // Ignore errors
+      // Ignore — surfaced by the modal-level error if clock-out is attempted.
     } finally {
-      setCheckingReport(false);
+      setCheckingReports(false);
     }
   }, [session.id]);
 
@@ -91,32 +85,36 @@ export function ClockOutModal({
     return () => clearInterval(interval);
   }, [session.started_at]);
 
-  // Check for report when modal opens. Poll every 10s only until one is
-  // detected — once attached, stop polling (previous behaviour kept hammering
-  // every 10s for as long as the modal stayed open).
-  const reportAttached = !!reportUrl || structuredReportAttached;
+  // Poll for per-project reports while any are still missing. Stops as soon
+  // as every project on this session has its /qualia-report attached.
+  const allAttached = projectStatuses.length > 0 && projectStatuses.every((p) => p.hasReport);
   useEffect(() => {
     if (!open) return;
     setSummary('');
     setError(null);
-    if (reportAttached) {
+    if (allAttached) {
       return;
     }
-    checkForReport();
-    const interval = setInterval(checkForReport, 10_000);
+    checkForReports();
+    const interval = setInterval(checkForReports, 10_000);
     return () => clearInterval(interval);
-  }, [open, reportAttached, checkForReport]);
+  }, [open, allAttached, checkForReports]);
 
   const handleSubmit = () => {
     if (!summary.trim()) {
       setError('Please describe what you worked on.');
       return;
     }
+    if (!allAttached) {
+      const missing = projectStatuses.filter((p) => !p.hasReport).map((p) => p.name);
+      setError(`Run /qualia-report in each repo first — still missing: ${missing.join(', ')}.`);
+      return;
+    }
 
     setError(null);
 
     startTransition(async () => {
-      const result = await clockOut(workspaceId, session.id, summary, reportUrl ?? undefined);
+      const result = await clockOut(workspaceId, session.id, summary);
 
       if (!result.success) {
         setError(result.error ?? 'Failed to clock out. Please try again.');
@@ -133,14 +131,9 @@ export function ClockOutModal({
   };
 
   const startedAtFormatted = format(parseISO(session.started_at), 'h:mm a');
-  // Report is required for project sessions — clock-out is blocked at the
-  // server until either work_sessions.report_url or a structured row in
-  // session_reports exists for this session. "Other" sessions (no project)
-  // remain optional. The UI mirrors that contract so the user can't even
-  // press Clock Out before /qualia-report has run.
-  const isOtherSession = !session.project;
-  const reportMissing = !isOtherSession && !reportAttached;
-  const canSubmit = !!summary.trim() && !isPending && !reportMissing;
+  const missingCount = projectStatuses.filter((p) => !p.hasReport).length;
+  const totalCount = projectStatuses.length;
+  const canSubmit = !!summary.trim() && !isPending && allAttached;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,7 +149,9 @@ export function ClockOutModal({
         {/* Session info row */}
         <div className="rounded-lg border border-primary/15 bg-primary/[0.04] px-3 py-2.5">
           <div className="mb-1 text-xs font-semibold text-qualia-700 dark:text-qualia-300">
-            {session.project?.name ?? 'No project'}
+            {totalCount > 0
+              ? `${totalCount} project${totalCount === 1 ? '' : 's'} this session`
+              : (session.project?.name ?? 'No project')}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-primary/80">
             <Clock className="size-3 shrink-0" />
@@ -168,93 +163,77 @@ export function ClockOutModal({
           </div>
         </div>
 
-        {/* Report status — auto-detected, not manually uploaded */}
+        {/* Per-project report status */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium">
-            Session Report{' '}
-            <span className="text-xs font-normal text-muted-foreground">
-              {isOtherSession ? (
-                '(optional)'
-              ) : (
-                <>
-                  (required for project sessions) — run{' '}
-                  <code className="font-mono">/qualia-report</code>, then click Refresh
-                </>
-              )}
-            </span>
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">
+              Session Reports{' '}
+              <span className="text-xs font-normal text-muted-foreground">
+                {totalCount > 0 ? (
+                  <>
+                    ({totalCount - missingCount} of {totalCount} attached)
+                  </>
+                ) : (
+                  'loading…'
+                )}
+              </span>
+            </Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 cursor-pointer px-2 text-xs text-muted-foreground"
+              onClick={checkForReports}
+              disabled={checkingReports}
+            >
+              {checkingReports ? <Loader2 className="size-3.5 animate-spin" /> : 'Refresh'}
+            </Button>
+          </div>
 
-          {checkingReport ? (
+          {projectStatuses.length === 0 && checkingReports && (
             <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
               <Loader2 className="size-4 animate-spin text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Checking for report…</span>
-            </div>
-          ) : reportAttached ? (
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5">
-              <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
-              <div className="min-w-0 flex-1">
-                <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                  Report{' '}
-                  {reportUrl && structuredReportAttached
-                    ? 'uploaded + recorded'
-                    : reportUrl
-                      ? 'uploaded'
-                      : 'recorded'}
-                </span>
-                <p className="text-[10px] text-emerald-600/60 dark:text-emerald-500/60">
-                  Auto-submitted via /qualia-report
-                </p>
-              </div>
-              {reportUrl && (
-                <a
-                  href={reportUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 cursor-pointer text-xs font-medium text-emerald-600 underline-offset-2 hover:underline"
-                >
-                  View
-                </a>
-              )}
-            </div>
-          ) : (
-            <div
-              className={cn(
-                'flex items-center gap-2 rounded-lg border px-3 py-2.5',
-                reportMissing
-                  ? 'border-destructive/30 bg-destructive/[0.06]'
-                  : 'border-border bg-muted/30'
-              )}
-            >
-              <XCircle
-                className={cn(
-                  'size-4 shrink-0',
-                  reportMissing ? 'text-destructive' : 'text-muted-foreground'
-                )}
-              />
-              <div className="min-w-0 flex-1">
-                <span
-                  className={cn(
-                    'text-xs font-medium',
-                    reportMissing ? 'text-destructive' : 'text-muted-foreground'
-                  )}
-                >
-                  {reportMissing ? 'Report required to clock out' : 'No report attached'}
-                </span>
-                <p className="text-[10px] text-muted-foreground/60">
-                  Run <code className="font-mono">/qualia-report</code> to attach one
-                  {isOtherSession && ' (optional)'}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 shrink-0 cursor-pointer px-2 text-xs text-muted-foreground"
-                onClick={checkForReport}
-              >
-                Refresh
-              </Button>
+              <span className="text-xs text-muted-foreground">Checking for reports…</span>
             </div>
           )}
+
+          <ul className="space-y-1.5">
+            {projectStatuses.map((p) => (
+              <li
+                key={p.projectId}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg border px-3 py-2',
+                  p.hasReport
+                    ? 'border-emerald-500/20 bg-emerald-500/[0.06]'
+                    : 'border-destructive/30 bg-destructive/[0.06]'
+                )}
+              >
+                {p.hasReport ? (
+                  <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                ) : (
+                  <XCircle className="size-4 shrink-0 text-destructive" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <span
+                    className={cn(
+                      'block truncate text-xs font-medium',
+                      p.hasReport ? 'text-emerald-700 dark:text-emerald-400' : 'text-destructive'
+                    )}
+                  >
+                    {p.name}
+                  </span>
+                  <span className="block text-[10px] text-muted-foreground/70">
+                    {p.hasReport ? (
+                      'Report attached'
+                    ) : (
+                      <>
+                        Run <code className="font-mono">/qualia-report</code> in this repo
+                      </>
+                    )}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Summary field */}

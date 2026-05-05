@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useTransition } from 'react';
-import { LogIn, Clock, AlertCircle, Loader2, FolderOpen, FileText, ArrowLeft } from 'lucide-react';
+import { LogIn, Clock, AlertCircle, Loader2, FolderOpen, FileText, Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ import {
   isWorkPresetId,
   type WorkPreset,
 } from '@/lib/work-presets';
+import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 interface ClockInModalProps {
@@ -41,15 +42,7 @@ const DURATION_PRESETS: Array<{ minutes: number; label: string }> = [
   { minutes: 480, label: 'Full day' },
 ];
 
-interface SelectedTarget {
-  type: 'project' | 'preset';
-  /** Stable id used by the UI list (project.id OR preset.id). */
-  id: string;
-  /** Resolved project UUID — for presets this comes from the bound project. */
-  projectId: string;
-  /** Display name for the plan-step header. */
-  label: string;
-}
+type Step = 'pick' | 'plan';
 
 export function ClockInModal({
   open,
@@ -62,7 +55,8 @@ export function ClockInModal({
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [target, setTarget] = useState<SelectedTarget | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [step, setStep] = useState<Step>('pick');
   const [plannedOutcome, setPlannedOutcome] = useState('');
   const [plannedMinutes, setPlannedMinutes] = useState<number>(60);
   const [isPending, startTransition] = useTransition();
@@ -74,7 +68,8 @@ export function ClockInModal({
 
     setLoadingProjects(true);
     setError(null);
-    setTarget(null);
+    setSelectedIds(new Set());
+    setStep('pick');
     setPlannedOutcome('');
     setPlannedMinutes(60);
 
@@ -96,33 +91,45 @@ export function ClockInModal({
       .finally(() => setLoadingProjects(false));
   }, [open, currentUserId, isAdmin]);
 
-  function handlePickProject(p: { id: string; name: string }) {
+  function toggleProject(projectId: string) {
     setError(null);
-    setTarget({ type: 'project', id: p.id, projectId: p.id, label: p.name });
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(projectId)) {
+        next.delete(projectId);
+      } else {
+        next.add(projectId);
+      }
+      return next;
+    });
   }
 
-  function handlePickPreset(preset: WorkPreset) {
+  function togglePreset(preset: WorkPreset) {
     setError(null);
     const resolvedProjectId = resolveWorkPresetProjectId(preset, projects);
     if (!resolvedProjectId) {
       setError(`${preset.label} is not bound to an assigned project yet. Contact your admin.`);
       return;
     }
-    setTarget({
-      type: 'preset',
-      id: preset.id,
-      projectId: resolvedProjectId,
-      label: preset.label,
-    });
+    toggleProject(resolvedProjectId);
+  }
+
+  function handleContinue() {
+    if (selectedIds.size === 0) {
+      setError('Pick at least one project.');
+      return;
+    }
+    setError(null);
+    setStep('plan');
   }
 
   function handleBack() {
-    setTarget(null);
+    setStep('pick');
     setError(null);
   }
 
   function handleClockIn() {
-    if (!target) return;
+    if (selectedIds.size === 0) return;
     if (!plannedOutcome.trim()) {
       setError('Tell the team in one sentence what you plan to ship this session.');
       return;
@@ -134,15 +141,15 @@ export function ClockInModal({
 
     setError(null);
 
+    const projectIds = Array.from(selectedIds);
+
     startTransition(async () => {
       try {
-        const reasonForLog = target.type === 'preset' ? `[preset] ${target.label}` : target.label;
         const result = await clockIn(
           workspaceId,
-          target.projectId,
+          projectIds,
           plannedOutcome.trim(),
-          plannedMinutes,
-          reasonForLog
+          plannedMinutes
         );
 
         if (!result.success) {
@@ -158,7 +165,9 @@ export function ClockInModal({
     });
   }
 
-  const showPickStep = target === null;
+  const selectedNames = Array.from(selectedIds)
+    .map((id) => projects.find((p) => p.id === id)?.name)
+    .filter(Boolean) as string[];
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && isAdmin && onDismiss?.()} modal>
@@ -174,8 +183,8 @@ export function ClockInModal({
             <DialogTitle>Clock In</DialogTitle>
           </div>
           <DialogDescription>
-            {showPickStep
-              ? "Pick the project you're working on, then commit to a plan."
+            {step === 'pick'
+              ? 'Tick every project you plan to work on this session — you’ll need a /qualia-report from each one to clock out.'
               : 'One sentence on what you plan to ship — and how long you expect it to take.'}
           </DialogDescription>
         </DialogHeader>
@@ -192,7 +201,7 @@ export function ClockInModal({
             </span>
           </div>
 
-          {showPickStep && (
+          {step === 'pick' && (
             <div className="space-y-2">
               {loadingProjects && (
                 <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
@@ -210,55 +219,108 @@ export function ClockInModal({
                 </div>
               )}
 
-              {/* Configurable presets — pinned above project list. Source: lib/work-presets.ts. */}
+              {/* Configurable presets — pinned above project list. */}
               {!loadingProjects &&
-                presets.map((preset) => (
-                  <Button
-                    key={preset.id}
-                    variant="outline"
-                    className="h-auto w-full cursor-pointer justify-start border-primary/30 bg-primary/[0.04] px-4 py-3 text-left text-sm font-medium hover:border-primary/50 hover:bg-primary/[0.08]"
-                    disabled={isPending}
-                    onClick={() => handlePickPreset(preset)}
-                  >
-                    <FileText className="mr-2 size-4 text-primary" />
-                    {preset.label}
-                  </Button>
-                ))}
+                presets.map((preset) => {
+                  const presetProjectId = resolveWorkPresetProjectId(preset, projects);
+                  const checked = !!presetProjectId && selectedIds.has(presetProjectId);
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      role="checkbox"
+                      aria-checked={checked}
+                      disabled={isPending}
+                      onClick={() => togglePreset(preset)}
+                      className={cn(
+                        'flex h-auto w-full cursor-pointer items-center gap-2 rounded-md border px-3 py-2.5 text-left text-sm font-medium transition-colors',
+                        checked
+                          ? 'border-primary bg-primary/[0.10] text-foreground'
+                          : 'border-primary/30 bg-primary/[0.04] hover:border-primary/50 hover:bg-primary/[0.08]'
+                      )}
+                    >
+                      <Checkbox checked={checked} />
+                      <FileText className="size-4 text-primary" />
+                      <span className="flex-1 truncate">{preset.label}</span>
+                    </button>
+                  );
+                })}
 
               {!loadingProjects &&
-                projects.map((p) => (
-                  <Button
-                    key={p.id}
-                    variant="outline"
-                    className="h-auto w-full cursor-pointer justify-start px-4 py-3 text-left text-sm font-medium hover:border-primary/40 hover:bg-primary/5"
-                    disabled={isPending}
-                    onClick={() => handlePickProject(p)}
-                  >
-                    <FolderOpen className="mr-2 size-4 text-muted-foreground" />
-                    {p.name}
-                  </Button>
-                ))}
+                projects.map((p) => {
+                  const checked = selectedIds.has(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      role="checkbox"
+                      aria-checked={checked}
+                      disabled={isPending}
+                      onClick={() => toggleProject(p.id)}
+                      className={cn(
+                        'flex h-auto w-full cursor-pointer items-center gap-2 rounded-md border px-3 py-2.5 text-left text-sm font-medium transition-colors',
+                        checked
+                          ? 'border-primary bg-primary/[0.10] text-foreground'
+                          : 'border-border hover:border-primary/40 hover:bg-primary/5'
+                      )}
+                    >
+                      <Checkbox checked={checked} />
+                      <FolderOpen
+                        className={cn('size-4', checked ? 'text-primary' : 'text-muted-foreground')}
+                      />
+                      <span className="flex-1 truncate">{p.name}</span>
+                    </button>
+                  );
+                })}
+
+              {!loadingProjects && (projects.length > 0 || presets.length > 0) && (
+                <Button
+                  type="button"
+                  className="mt-2 h-10 w-full cursor-pointer text-sm font-semibold"
+                  disabled={isPending || selectedIds.size === 0}
+                  onClick={handleContinue}
+                >
+                  Continue
+                  {selectedIds.size > 0 && (
+                    <span className="ml-1.5 rounded-full bg-primary-foreground/15 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums">
+                      {selectedIds.size}
+                    </span>
+                  )}
+                </Button>
+              )}
             </div>
           )}
 
-          {!showPickStep && target && (
+          {step === 'plan' && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 cursor-pointer gap-1 px-2 text-xs"
-                  onClick={handleBack}
-                  disabled={isPending}
-                  aria-label="Back to project picker"
-                >
-                  <ArrowLeft className="size-3.5" />
-                  Back
-                </Button>
-                <span className="text-xs text-muted-foreground">Working on</span>
-                <span className="ml-auto truncate text-sm font-semibold text-foreground">
-                  {target.label}
-                </span>
+              <div className="rounded-lg border border-border bg-card px-3 py-2">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    Working on{' '}
+                    <span className="tabular-nums">
+                      {selectedIds.size} project{selectedIds.size === 1 ? '' : 's'}
+                    </span>
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 cursor-pointer px-2 text-[11px] text-muted-foreground"
+                    onClick={handleBack}
+                    disabled={isPending}
+                  >
+                    Edit
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {selectedNames.map((name) => (
+                    <span
+                      key={name}
+                      className="rounded-md bg-primary/[0.08] px-1.5 py-0.5 text-[11px] font-medium text-foreground"
+                    >
+                      {name}
+                    </span>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -332,6 +394,20 @@ export function ClockInModal({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function Checkbox({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'flex size-4 shrink-0 items-center justify-center rounded-[4px] border transition-colors',
+        checked ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/40'
+      )}
+    >
+      {checked && <Check className="size-3" strokeWidth={3} />}
+    </span>
   );
 }
 

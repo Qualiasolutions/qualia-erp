@@ -4551,6 +4551,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      work_session_projects: {
+        Row: {
+          created_at: string;
+          project_id: string;
+          session_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          project_id: string;
+          session_id: string;
+        };
+        Update: {
+          created_at?: string;
+          project_id?: string;
+          session_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'work_session_projects_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'work_session_projects_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'work_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       work_sessions: {
         Row: {
           clock_in_activities: string[] | null;
