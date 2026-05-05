@@ -161,15 +161,6 @@ const PAGES: PageDef[] = [
     appKey: 'control',
     section: 'admin',
   },
-  {
-    id: 'live',
-    label: 'Live',
-    icon: 'activity',
-    href: '/admin/live',
-    roles: ['admin'],
-    appKey: 'control',
-    section: 'admin',
-  },
   // Account
   {
     id: 'chat',
