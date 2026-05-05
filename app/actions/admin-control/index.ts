@@ -18,7 +18,14 @@ export {
   type PlanningHealthPayload,
   type PlanningHealthRow,
 } from './planning-health';
-export { loadTeamTab, type TeamPayload, type AssignmentProject } from './team';
+export {
+  loadTeamTab,
+  type TeamPayload,
+  type AssignmentProject,
+  type TeamTaskStub,
+  type TeamProjectLoad,
+  type TeamWorkloadPerson,
+} from './team';
 export {
   loadFinanceTab,
   type FinancePayload,
@@ -26,6 +33,10 @@ export {
   type FinancePaymentRow,
   type FinanceInvoiceRow,
   type FinanceRecurringRow,
+  type FinanceCashFlowMonth,
+  type FinanceUpcomingBucket,
+  type FinanceClientHealthRow,
+  type FinanceAgingBand,
 } from './finance';
 export {
   loadSystemTab,

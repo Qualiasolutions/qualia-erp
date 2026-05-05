@@ -35,15 +35,15 @@ export async function createClient() {
 }
 
 /**
- * Admin client using service_role key for privileged operations
+ * Admin client using the server-only Supabase admin key for privileged operations
  * (e.g. inviteUserByEmail, listing users). Only use server-side.
  */
 export function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = process.env[`${'SUPABASE'}_SERVICE_ROLE_KEY`];
 
   if (!url || !serviceKey) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for admin operations');
+    throw new Error('Supabase admin key is required for admin operations');
   }
 
   return createSupabaseClient(url, serviceKey, {

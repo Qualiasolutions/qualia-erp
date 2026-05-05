@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { format, parseISO, subDays, startOfWeek, startOfMonth } from 'date-fns';
 import { Clock, User, Briefcase, CalendarIcon, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -87,14 +88,25 @@ function downloadCsv(sessions: SessionEntry[]) {
 }
 
 export function AdminAttendanceClient() {
+  const searchParams = useSearchParams();
+  const initialProfile = searchParams.get('profile') ?? searchParams.get('p') ?? 'all';
+  const initialDate = searchParams.get('date');
+  const focusSessionId = searchParams.get('session');
+
+  const initialRange = useMemo<DateRange>(() => {
+    const today = new Date();
+    if (initialDate === 'today' || focusSessionId) return { from: today, to: today };
+    if (initialDate === 'week') return { from: startOfWeek(today, { weekStartsOn: 1 }), to: today };
+    if (initialDate === 'month') return { from: startOfMonth(today), to: today };
+    if (initialDate === '30d') return { from: subDays(today, 30), to: today };
+    return { from: subDays(today, 7), to: today };
+  }, [initialDate, focusSessionId]);
+
   const [sessions, setSessions] = useState<SessionEntry[]>([]);
   const [members, setMembers] = useState<AdminProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterProfile, setFilterProfile] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 7),
-    to: new Date(),
-  });
+  const [filterProfile, setFilterProfile] = useState<string>(initialProfile);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(initialRange);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -123,6 +135,13 @@ export function AdminAttendanceClient() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Scroll the focused session into view once data lands
+  useEffect(() => {
+    if (!focusSessionId || loading) return;
+    const el = document.getElementById(`session-row-${focusSessionId}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [focusSessionId, loading, sessions]);
 
   // Quick presets
   const setPreset = (preset: 'week' | 'month' | '7d' | '30d') => {
@@ -253,8 +272,13 @@ export function AdminAttendanceClient() {
             <TableBody>
               {sessions.map((session) => {
                 const dur = computeDuration(session);
+                const isFocused = focusSessionId === session.id;
                 return (
-                  <TableRow key={session.id}>
+                  <TableRow
+                    key={session.id}
+                    id={`session-row-${session.id}`}
+                    className={isFocused ? 'bg-primary/5 ring-1 ring-inset ring-primary/30' : ''}
+                  >
                     <TableCell className="text-sm font-medium">
                       {format(parseISO(session.started_at), 'MMM d, yyyy')}
                     </TableCell>

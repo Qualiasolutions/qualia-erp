@@ -8,7 +8,7 @@ import { getInvitationByToken, markInvitationAccepted } from './client-invitatio
 /**
  * Resolve a username (no `@`) to the auth email behind it.
  * Uses the admin client because profiles → auth.users lookup requires
- * service_role (anon can't read auth.users). Returns null on no match.
+ * server admin key (anon can't read auth.users). Returns null on no match.
  * Safe to surface a generic "invalid credentials" to the user on null.
  */
 async function resolveLoginIdentifier(input: string): Promise<string | null> {

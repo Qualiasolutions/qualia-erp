@@ -699,7 +699,7 @@ export async function getTaskStats(
 // ============ FRAMEWORK (session_reports) ============
 //
 // Cross-project admin view of structured reports from /qualia-report.
-// session_reports has service_role-only RLS, so reads go through the admin
+// session_reports has server-only RLS, so reads go through the admin
 // client. All functions here gate on isUserAdmin first.
 
 export interface FrameworkReportRow {

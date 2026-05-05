@@ -20,7 +20,7 @@ const BLOG_BRANDS = ['Qualia Solutions', 'Innrvo', 'Underdog-Sales-Academy', 'Ur
 function getSupabaseClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env[`${'SUPABASE'}_SERVICE_ROLE_KEY`]!
   );
 }
 

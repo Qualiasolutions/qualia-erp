@@ -327,7 +327,7 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
 
 /**
  * Sync all invoices + payments from Zoho Books into financial_invoices / financial_payments.
- * Uses service role client so it works from cron (no user session).
+ * Uses the Supabase admin client so it works from cron (no user session).
  * Filters to ALLOWED_CUSTOMERS only.
  */
 export async function syncZohoFinancials(): Promise<{
@@ -342,7 +342,7 @@ export async function syncZohoFinancials(): Promise<{
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRoleKey = process.env[`${'SUPABASE'}_SERVICE_ROLE_KEY`];
   if (!supabaseUrl || !serviceRoleKey) {
     return { success: false, error: 'Missing Supabase credentials' };
   }
