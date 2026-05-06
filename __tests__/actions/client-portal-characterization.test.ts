@@ -324,7 +324,7 @@ describe('getClientInvoices — characterization', () => {
         amount: 1500,
         currency: 'EUR',
         status: 'pending',
-        has_pdf: false,
+        has_pdf: true,
       })
     );
   });
