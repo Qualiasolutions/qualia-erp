@@ -37,6 +37,28 @@ export async function getProjectPhases(projectId: string) {
     console.error('[getProjectPhases] Error:', error);
     return [];
   }
+
+  // Strip internal-only fields when the caller is a client. Phase descriptions
+  // come from PLAN.md via the GitHub sync and may contain internal notes.
+  // Clients see milestone descriptions (high-level user-facing markers) and
+  // phase metadata, but not the synced phase descriptions or framework
+  // internals like plan counts and last-sync timestamps.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role === 'client') {
+    return (data || []).map((phase) => ({
+      ...phase,
+      description: phase.phase_type === 'milestone' ? phase.description : null,
+      plan_count: null,
+      plans_completed: null,
+      github_synced_at: null,
+    }));
+  }
+
   return data;
 }
 
@@ -87,6 +109,24 @@ export async function getPhaseItems(phaseId: string): Promise<FrameworkPhaseItem
     console.error('[getPhaseItems] Error:', error);
     return [];
   }
+
+  // Strip framework-sync internals from phase items for clients. Descriptions
+  // on framework-sourced items (template_key set, is_custom = false) come from
+  // PLAN.md and may contain internal notes — clients see the title only.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role === 'client') {
+    return (data ?? []).map((item) => ({
+      ...item,
+      description: item.is_custom ? item.description : null,
+      template_key: null,
+    })) as FrameworkPhaseItem[];
+  }
+
   return (data ?? []) as FrameworkPhaseItem[];
 }
 

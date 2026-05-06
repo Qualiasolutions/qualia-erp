@@ -1,13 +1,13 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 
 /**
- * Get assigned employees for a project
- * Uses project_assignments table from Phase 12
+ * Get assigned employees for a project. Uses the admin client so callers
+ * with restricted RLS contexts (clients) can resolve assignments reliably.
  */
 export async function getProjectAssignedEmployees(projectId: string): Promise<string[]> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data: assignments } = await supabase
     .from('project_assignments')
     .select('employee_id')
@@ -17,14 +17,16 @@ export async function getProjectAssignedEmployees(projectId: string): Promise<st
 }
 
 /**
- * Create notification for assigned employees when client takes action
+ * Create notifications for assigned employees when a client takes action.
+ * Uses the admin client because the caller is typically a client whose RLS
+ * context cannot INSERT into other users' notifications rows.
  */
 export async function notifyAssignedEmployees(
   projectId: string,
   action: string,
   details: Record<string, unknown>
 ): Promise<void> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const employeeIds = await getProjectAssignedEmployees(projectId);
 
   if (employeeIds.length === 0) return;
