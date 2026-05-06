@@ -18,7 +18,7 @@ const ACTIVE_STATUSES: TaskStatus[] = ['Todo', 'In Progress'];
 
 export type Period = 'this_week' | 'last_7d' | 'this_month' | 'last_30d';
 
-export function periodBounds(period: Period, now = new Date()): { start: Date; end: Date } {
+function periodBounds(period: Period, now = new Date()): { start: Date; end: Date } {
   const end = new Date(now);
   const start = new Date(now);
   start.setHours(0, 0, 0, 0);

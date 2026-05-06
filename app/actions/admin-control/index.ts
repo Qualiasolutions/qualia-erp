@@ -50,7 +50,6 @@ export {
   getEmployeeProfile,
   getEmployeeTrends,
   getEmployeeHistory,
-  periodBounds,
   type Period,
   type EmployeeProfilePayload,
   type EmployeeTrendsPayload,
