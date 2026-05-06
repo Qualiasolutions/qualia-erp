@@ -429,6 +429,47 @@ export async function getZohoInvoices(
   return { success: true, data: result.data?.invoices || [] };
 }
 
+/**
+ * Download the generated invoice PDF from Zoho Books.
+ * Zoho supports PDF output from the Get Invoice endpoint via `accept=pdf`.
+ */
+export async function getZohoInvoicePdf(
+  workspaceId: string,
+  invoiceId: string
+): Promise<{ success: boolean; data?: Buffer; contentType?: string; error?: string }> {
+  const token = await getAccessToken(workspaceId);
+  if (!token) {
+    return { success: false, error: 'Zoho not connected. Please authenticate first.' };
+  }
+
+  const orgId = await getZohoOrganizationId(workspaceId);
+  if (!orgId) {
+    return { success: false, error: 'Zoho organization_id not configured for this workspace' };
+  }
+
+  try {
+    const params = new URLSearchParams({ organization_id: orgId, accept: 'pdf' });
+    const response = await fetch(`${ZOHO_API_BASE}/books/v3/invoices/${invoiceId}?${params}`, {
+      headers: {
+        Authorization: `Zoho-oauthtoken ${token}`,
+        Accept: 'application/pdf',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('[Zoho] Invoice PDF error:', await response.text());
+      return { success: false, error: `Zoho API error: ${response.status}` };
+    }
+
+    const contentType = response.headers.get('content-type') || 'application/pdf';
+    const data = Buffer.from(await response.arrayBuffer());
+    return { success: true, data, contentType };
+  } catch (error) {
+    console.error('[Zoho] Invoice PDF request failed:', error);
+    return { success: false, error: 'Failed to download invoice PDF from Zoho' };
+  }
+}
+
 // ============ MAIL ============
 
 /**

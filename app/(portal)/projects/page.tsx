@@ -208,6 +208,124 @@ async function ProjectListLoader({ missing }: { missing?: MissingProjectFilter }
   );
 }
 
+async function ClientProjectListLoader({ clientId }: { clientId: string }) {
+  await connection();
+  const supabase = await createClient();
+
+  const { data: rawRows, error } = await supabase
+    .from('client_projects')
+    .select(
+      `
+      project:projects!inner(
+        id,
+        name,
+        status,
+        start_date,
+        target_date,
+        project_type,
+        client_id,
+        logo_url,
+        is_pre_production,
+        sort_order,
+        phases:project_phases(id, status, phase_type)
+      )
+    `
+    )
+    .eq('client_id', clientId);
+
+  if (error) {
+    console.error('Error fetching client projects:', error);
+    return (
+      <ProjectsClient
+        demos={[]}
+        building={[]}
+        preProduction={[]}
+        live={[]}
+        done={[]}
+        archived={[]}
+      />
+    );
+  }
+
+  type PhaseRow = { id: string; status: string | null; phase_type: string | null };
+  type ClientProjectRow = {
+    id: string;
+    name: string;
+    status: string | null;
+    start_date: string | null;
+    target_date: string | null;
+    project_type: ProjectType | null;
+    client_id: string | null;
+    logo_url: string | null;
+    is_pre_production: boolean | null;
+    sort_order: number | null;
+    phases: PhaseRow[] | null;
+  };
+  type LinkRow = { project: ClientProjectRow | ClientProjectRow[] | null };
+
+  const byId = new Map<string, ClientProjectRow>();
+  for (const row of (rawRows || []) as unknown as LinkRow[]) {
+    const project = Array.isArray(row.project) ? row.project[0] : row.project;
+    if (!project || byId.has(project.id)) continue;
+    byId.set(project.id, project);
+  }
+
+  const allProjects: ProjectData[] = [...byId.values()].map((project) => {
+    const phases = (project.phases || []).filter((phase) => phase.phase_type !== 'milestone');
+    const completed = phases.filter((phase) =>
+      ['completed', 'done'].includes(phase.status || '')
+    ).length;
+    const roadmapProgress = phases.length > 0 ? completed / phases.length : 0;
+
+    return {
+      id: project.id,
+      name: project.name,
+      status: project.status || 'Active',
+      start_date: project.start_date,
+      target_date: project.target_date,
+      project_group: null,
+      project_type: project.project_type,
+      deployment_platform: null,
+      client_id: project.client_id,
+      client_name: null,
+      logo_url: project.logo_url,
+      lead: null,
+      issue_stats: { total: phases.length, done: completed },
+      roadmap_progress: roadmapProgress,
+      is_pre_production: Boolean(project.is_pre_production),
+      metadata: null,
+      sort_order: project.sort_order || 0,
+      team: [],
+      has_github: false,
+      is_assigned: true,
+    };
+  });
+
+  const sortByOrder = (a: ProjectData, b: ProjectData) => a.sort_order - b.sort_order;
+  const demos = allProjects.filter((p) => p.status === 'Demos').sort(sortByOrder);
+  const activeDelayed = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  const building = activeDelayed.filter((p) => !p.is_pre_production).sort(sortByOrder);
+  const preProduction = activeDelayed.filter((p) => p.is_pre_production).sort(sortByOrder);
+  const live = allProjects.filter((p) => p.status === 'Launched').sort(sortByOrder);
+  const done = allProjects.filter((p) => p.status === 'Done').sort(sortByOrder);
+  const archived = allProjects
+    .filter((p) => ['Archived', 'Canceled'].includes(p.status))
+    .sort(sortByOrder);
+
+  return (
+    <ProjectsClient
+      demos={demos}
+      building={building}
+      preProduction={preProduction}
+      live={live}
+      done={done}
+      archived={archived}
+      isAdmin={false}
+      expandTerminalGroups
+    />
+  );
+}
+
 function ProjectsSkeleton() {
   return (
     <div className="flex h-full w-full flex-col gap-6 overflow-hidden p-6">
@@ -270,11 +388,11 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
   const profile = await getPortalProfile(user.id);
-  if (profile?.role === 'client') redirect('/');
   const params = await searchParams;
   const missing = resolveMissingProjectFilter(params.missing);
 
   const canCreate = profile?.role === 'admin';
+  const isClient = profile?.role === 'client';
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -289,7 +407,11 @@ export default async function ProjectsPage({ searchParams }: PageProps) {
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         <Suspense fallback={<ProjectsSkeleton />}>
-          <ProjectListLoader missing={missing} />
+          {isClient ? (
+            <ClientProjectListLoader clientId={user.id} />
+          ) : (
+            <ProjectListLoader missing={missing} />
+          )}
         </Suspense>
       </div>
     </div>

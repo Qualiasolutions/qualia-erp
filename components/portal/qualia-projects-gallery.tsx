@@ -147,6 +147,7 @@ function isArchived(project: GalleryProject): boolean {
 interface QualiaProjectsGalleryProps {
   projects: GalleryProject[];
   isAdmin?: boolean;
+  expandTerminalGroups?: boolean;
 }
 
 /* ======================================================================
@@ -613,7 +614,11 @@ const ProjectListRow = memo(function ProjectListRow({ project }: { project: Gall
    Main Gallery Export
    ====================================================================== */
 
-export function QualiaProjectsGallery({ projects, isAdmin }: QualiaProjectsGalleryProps) {
+export function QualiaProjectsGallery({
+  projects,
+  isAdmin,
+  expandTerminalGroups,
+}: QualiaProjectsGalleryProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('columns');
   const [filter, setFilter] = useState<FilterMode>('all');
 
@@ -742,10 +747,18 @@ export function QualiaProjectsGallery({ projects, isAdmin }: QualiaProjectsGalle
           <div className="flex min-h-0 flex-1 flex-col gap-3">
             <StageColumns stages={stages} isAdmin={isAdmin} />
             {finishedProjects.length > 0 && (
-              <FinishedRow projects={finishedProjects} isAdmin={isAdmin} />
+              <FinishedRow
+                projects={finishedProjects}
+                isAdmin={isAdmin}
+                defaultOpen={expandTerminalGroups}
+              />
             )}
             {archivedProjects.length > 0 && (
-              <ArchivedRow projects={archivedProjects} isAdmin={isAdmin} />
+              <ArchivedRow
+                projects={archivedProjects}
+                isAdmin={isAdmin}
+                defaultOpen={expandTerminalGroups}
+              />
             )}
           </div>
         ) : viewMode === 'gallery' ? (
@@ -863,8 +876,16 @@ function StageColumn({
    Both share the same compact item layout.
    ====================================================================== */
 
-function FinishedRow({ projects, isAdmin }: { projects: GalleryProject[]; isAdmin?: boolean }) {
-  const [open, setOpen] = useState(false);
+function FinishedRow({
+  projects,
+  isAdmin,
+  defaultOpen = false,
+}: {
+  projects: GalleryProject[];
+  isAdmin?: boolean;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card ring-1 ring-inset ring-primary/20">
       <button
@@ -993,8 +1014,16 @@ function FinishedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
   );
 }
 
-function ArchivedRow({ projects, isAdmin }: { projects: GalleryProject[]; isAdmin?: boolean }) {
-  const [open, setOpen] = useState(false);
+function ArchivedRow({
+  projects,
+  isAdmin,
+  defaultOpen = false,
+}: {
+  projects: GalleryProject[];
+  isAdmin?: boolean;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <section className="shrink-0 overflow-hidden rounded-xl border border-border bg-card">
       <button

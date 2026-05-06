@@ -750,10 +750,10 @@ export async function getInvoicePdfSignedUrl(
 
   const { data: invoice } = await supabase
     .from('financial_invoices')
-    .select('pdf_url, client_id')
+    .select('pdf_url, client_id, source')
     .eq('zoho_id', zohoId)
     .maybeSingle();
-  if (!invoice?.pdf_url) return { success: false, error: 'No PDF on file' };
+  if (!invoice) return { success: false, error: 'Invoice not found' };
 
   const isAdmin = await isUserManagerOrAbove(user.id);
   if (!isAdmin) {
@@ -776,6 +776,12 @@ export async function getInvoicePdfSignedUrl(
       return { success: false, error: 'Forbidden' };
     }
   }
+
+  if (!invoice.pdf_url && invoice.source === 'zoho') {
+    return { success: true, url: `/api/invoices/${encodeURIComponent(zohoId)}/pdf` };
+  }
+
+  if (!invoice.pdf_url) return { success: false, error: 'No PDF on file' };
 
   const adminClient = createAdminClient();
   const { data: signed, error } = await adminClient.storage

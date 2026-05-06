@@ -71,7 +71,7 @@ export async function getClientInvoices(): Promise<ActionResult> {
       file_url: null,
       project: null,
       source: (inv as { source?: string }).source ?? 'zoho',
-      has_pdf: Boolean((inv as { pdf_url?: string | null }).pdf_url),
+      has_pdf: Boolean((inv as { pdf_url?: string | null }).pdf_url) || inv.source === 'zoho',
     }));
 
     return { success: true, data: mapped };

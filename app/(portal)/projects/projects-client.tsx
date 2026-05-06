@@ -18,6 +18,7 @@ interface ProjectsClientProps {
   done: ProjectData[];
   archived: ProjectData[];
   isAdmin?: boolean;
+  expandTerminalGroups?: boolean;
   missingFilter?: MissingProjectFilter;
 }
 
@@ -47,6 +48,7 @@ export function ProjectsClient({
   done,
   archived,
   isAdmin,
+  expandTerminalGroups,
   missingFilter,
 }: ProjectsClientProps) {
   const all: GalleryProject[] = [
@@ -89,7 +91,11 @@ export function ProjectsClient({
           </Link>
         </div>
       ) : null}
-      <QualiaProjectsGallery projects={all} isAdmin={isAdmin} />
+      <QualiaProjectsGallery
+        projects={all}
+        isAdmin={isAdmin}
+        expandTerminalGroups={expandTerminalGroups}
+      />
     </div>
   );
 }
