@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react';
+import { StatCard } from '@/components/ui/stat-card';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -96,17 +97,14 @@ export function ControlFinance({ data }: { data: FinancePayload | undefined }) {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {data.kpis.map((k) => (
-          <div key={k.label} className="rounded-xl border border-border bg-card p-5">
-            <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-              {k.label}
-            </div>
-            <div className="mt-2 text-[22px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
-              {k.value}
-            </div>
-            {k.sub ? (
-              <div className="mt-1.5 font-mono text-[11px] text-muted-foreground">{k.sub}</div>
-            ) : null}
-          </div>
+          <StatCard
+            key={k.label}
+            label={k.label}
+            value={k.value}
+            helperText={k.sub ?? undefined}
+            deltaPct={k.deltaPct ?? null}
+            deltaLabel={k.deltaPct != null ? 'vs last month' : undefined}
+          />
         ))}
       </div>
 

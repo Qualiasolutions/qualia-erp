@@ -4,7 +4,13 @@ import { getFinancialSummary } from '@/app/actions/financials';
 import { getMrrSnapshot, type RecurringPaymentRow } from '@/app/actions/recurring-payments';
 import { getBillableClients, type BillableClient } from '@/app/actions/invoice-generation';
 
-export type FinanceKpi = { label: string; value: string; sub: string | null };
+export type FinanceKpi = {
+  label: string;
+  value: string;
+  sub: string | null;
+  /** Signed percentage delta vs prior period (e.g. -8.3 = -8.3%). Null = no comparison available. */
+  deltaPct?: number | null;
+};
 
 export type FinancePaymentRow = {
   id: string;
@@ -167,6 +173,8 @@ export async function loadFinanceTab(): Promise<FinancePayload> {
     mrr.expectedThisMonth > 0 ? Math.round((mrr.mrrCurrent / mrr.expectedThisMonth) * 100) : null;
 
   // KPI A — MRR + Expected this month always render, even when Zoho summary is empty.
+  const mrrDeltaPct =
+    mrr.mrrCurrent > 0 ? ((mrr.mrrNextMonth - mrr.mrrCurrent) / mrr.mrrCurrent) * 100 : null;
   const kpis: FinanceKpi[] = [
     {
       label: 'MRR',
@@ -175,28 +183,34 @@ export async function loadFinanceTab(): Promise<FinancePayload> {
         mrrDelta === 0
           ? 'no change vs next month'
           : `${mrrDeltaSign}${fmt2.format(mrrDelta)} next month`,
+      deltaPct: mrrDeltaPct,
     },
     {
       label: 'Expected this month',
       value: fmt2.format(mrr.expectedThisMonth),
       sub:
         oneOffsThisMonth > 0 ? `incl. ${fmt2.format(oneOffsThisMonth)} one-off` : 'recurring only',
+      deltaPct: null,
     },
   ];
 
   if (summary) {
     const deltaThisMonth = summary.thisMonthCollected - summary.lastMonthCollected;
     const deltaSign = deltaThisMonth >= 0 ? '+' : '';
+    const collectedDeltaPct =
+      summary.lastMonthCollected > 0 ? (deltaThisMonth / summary.lastMonthCollected) * 100 : null;
     kpis.push(
       {
         label: 'Collected this month',
         value: fmt.format(summary.thisMonthCollected),
         sub: `${deltaSign}${fmt.format(Math.round(deltaThisMonth))} vs last`,
+        deltaPct: collectedDeltaPct,
       },
       {
         label: 'Outstanding',
         value: fmt.format(summary.totalOutstanding),
         sub: `${summary.overdueInvoices.length} overdue`,
+        deltaPct: null,
       }
     );
   }

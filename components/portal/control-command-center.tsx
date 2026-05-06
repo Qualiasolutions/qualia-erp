@@ -202,7 +202,11 @@ function TodayColumn({ data }: { data: CommandCenterPayload['today'] }) {
           return (
             <Row
               key={row.id}
-              href={`/admin/attendance?profile=${row.profileId}&session=${row.id}&date=today`}
+              href={
+                row.profileId
+                  ? `/admin/employee/${row.profileId}`
+                  : `/admin/attendance?session=${row.id}&date=today`
+              }
               severity={overrun ? 'amber' : 'neutral'}
             >
               <span
@@ -245,11 +249,7 @@ function TodayColumn({ data }: { data: CommandCenterPayload['today'] }) {
         emptyText="No one has clocked out yet today."
       >
         {data.doneToday.map((row) => (
-          <Row
-            key={row.id}
-            href={`/admin/attendance?profile=${row.id}&date=today`}
-            severity="neutral"
-          >
+          <Row key={row.id} href={`/admin/employee/${row.id}`} severity="neutral">
             <span
               className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground"
               aria-hidden

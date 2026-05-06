@@ -394,10 +394,10 @@ function WorkloadPersonDetails({ person }: { person: TeamWorkloadPerson }) {
         <DetailPanel title="Drilldowns" icon={BarChart3}>
           <div className="flex flex-col gap-2">
             <Link
-              className="inline-flex items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
-              href={`/audit/${person.profileId}`}
+              className="inline-flex items-center justify-between gap-2 rounded-md bg-primary/10 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
+              href={`/admin/employee/${person.profileId}`}
             >
-              Employee audit and full history
+              Open full profile
               <ArrowRight className="size-3" />
             </Link>
             <Link

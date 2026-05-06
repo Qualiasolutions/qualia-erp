@@ -46,11 +46,36 @@ export {
   type FrameworkReportCompleteness,
   type TokenAssignableProfile,
 } from './system';
+export {
+  getEmployeeProfile,
+  getEmployeeTrends,
+  getEmployeeHistory,
+  periodBounds,
+  type Period,
+  type EmployeeProfilePayload,
+  type EmployeeTrendsPayload,
+  type EmployeeHistoryPayload,
+  type EmployeeTaskStub,
+  type EmployeeSummary,
+  type EmployeeProjectSplit,
+  type HoursHeatmapWeek,
+  type LatestCheckin,
+  type WeeklyPoint,
+  type SessionFeedRow,
+} from './employee';
 
-export type ControlTab = 'overview' | 'team' | 'finance' | 'system';
+export {
+  getReportsPerformance,
+  type ReportsPerfPayload,
+  type EmployeePerfRow,
+  type ProjectPerfRow,
+  type ReportFlag,
+} from './reports-perf';
+
+export type ControlTab = 'overview' | 'team' | 'finance' | 'reports' | 'system';
 
 export function resolveControlTab(value: string | undefined): ControlTab {
-  if (value === 'team' || value === 'finance' || value === 'system') {
+  if (value === 'team' || value === 'finance' || value === 'reports' || value === 'system') {
     return value;
   }
   return 'overview';
