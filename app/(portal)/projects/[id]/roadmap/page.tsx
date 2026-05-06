@@ -48,6 +48,16 @@ async function RoadmapLoader({ id }: { id: string }) {
       .eq('project_id', id)
       .maybeSingle();
     if (!link) notFound();
+  } else if (role !== 'admin') {
+    const supabase = await createClient();
+    const { data: assignment } = await supabase
+      .from('project_assignments')
+      .select('id')
+      .eq('project_id', id)
+      .eq('employee_id', user.id)
+      .is('removed_at', null)
+      .maybeSingle();
+    if (!assignment) notFound();
   }
 
   return (

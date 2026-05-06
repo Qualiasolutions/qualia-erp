@@ -31,7 +31,19 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
   // Supabase client for page-specific queries (assignments, project details, phases)
   const supabase = await createClient();
 
-  // Employees can access files for all workspace projects
+  // Employees can only access files for projects they're assigned to
+  if (profile.role !== 'admin') {
+    const { data: assignment } = await supabase
+      .from('project_assignments')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('employee_id', user.id)
+      .is('removed_at', null)
+      .single();
+    if (!assignment) {
+      redirect('/projects');
+    }
+  }
 
   // All three queries depend only on projectId — fan out in parallel.
   const [{ data: project }, { data: phases }, files] = await Promise.all([
