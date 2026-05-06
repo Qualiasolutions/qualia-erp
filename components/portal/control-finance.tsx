@@ -3,10 +3,22 @@
 import { memo, useState, useTransition, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { toast } from 'sonner';
 
-import { Receipt, Plus, Pencil, Trash2, Repeat, Calendar as CalendarIcon } from 'lucide-react';
+import {
+  AlertTriangle,
+  Calendar as CalendarIcon,
+  CircleDollarSign,
+  Pencil,
+  Plus,
+  Receipt,
+  Repeat,
+  Trash2,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
+import { StatCard } from '@/components/ui/stat-card';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,6 +52,10 @@ import type {
   FinancePaymentRow,
   FinanceInvoiceRow,
   FinanceRecurringRow,
+  FinanceCashFlowMonth,
+  FinanceUpcomingBucket,
+  FinanceClientHealthRow,
+  FinanceAgingBand,
 } from '@/app/actions/admin-control';
 import { FinanceTemplateInvoiceDialog } from './finance-template-invoice-dialog';
 
@@ -79,27 +95,43 @@ export function ControlFinance({ data }: { data: FinancePayload | undefined }) {
         </div>
       </div>
 
-      {/* KPI row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {data.kpis.map((k) => (
-          <div key={k.label} className="rounded-xl border border-border bg-card p-5">
-            <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-              {k.label}
-            </div>
-            <div className="mt-2 text-[22px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
-              {k.value}
-            </div>
-            {k.sub ? (
-              <div className="mt-1.5 font-mono text-[11px] text-muted-foreground">{k.sub}</div>
-            ) : null}
-          </div>
+          <StatCard
+            key={k.label}
+            label={k.label}
+            value={k.value}
+            helperText={k.sub ?? undefined}
+            deltaPct={k.deltaPct ?? null}
+            deltaLabel={k.deltaPct != null ? 'vs last month' : undefined}
+          />
         ))}
       </div>
 
-      {/* Recurring revenue */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.7fr)]">
+        <CashFlowChart rows={data.cashFlow} />
+        <RecurringSplit
+          recurringSharePct={data.recurringSharePct}
+          mrr={data.mrrCurrent}
+          oneOff={data.oneOffThisMonth}
+          expected={data.expectedThisMonth}
+          lastSyncedAt={data.lastSyncedAt}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.75fr)]">
+        <UpcomingInvoicesSection buckets={data.upcomingBuckets} />
+        <OverdueAgingSection
+          rows={data.openInvoices}
+          aging={data.agingBands}
+          total={data.totalOverdue}
+        />
+      </div>
+
+      <ClientHealthSection rows={data.clientHealth} />
+
       <RecurringRevenueSection rows={data.recurring} />
 
-      {/* Two tables */}
       {(data.recentPayments.length > 0 || data.openInvoices.length > 0) && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <RecentPaymentsTable rows={data.recentPayments} />
@@ -107,6 +139,293 @@ export function ControlFinance({ data }: { data: FinancePayload | undefined }) {
         </div>
       )}
     </div>
+  );
+}
+
+function CashFlowChart({ rows }: { rows: FinanceCashFlowMonth[] }) {
+  const max = Math.max(1, ...rows.map((r) => Math.max(r.revenue, r.expenses)));
+  return (
+    <section className="rounded-xl border border-border bg-card p-5">
+      <header className="mb-5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="size-4 text-primary" aria-hidden />
+          <h3 className="text-sm font-semibold tracking-tight">Cash rhythm</h3>
+        </div>
+        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          Last 6 months
+        </span>
+      </header>
+      {rows.length === 0 ? (
+        <p className="py-8 text-center text-xs italic text-muted-foreground">
+          Cash-flow history will appear after Zoho sync.
+        </p>
+      ) : (
+        <div className="grid h-56 grid-cols-6 items-end gap-3">
+          {rows.map((row) => {
+            const revenueHeight = Math.max(6, (row.revenue / max) * 100);
+            const expenseHeight = Math.max(3, (row.expenses / max) * 100);
+            return (
+              <div key={row.month} className="flex h-full min-w-0 flex-col justify-end gap-2">
+                <div className="flex flex-1 items-end gap-1.5">
+                  <div
+                    className="w-full rounded-t-md bg-primary/80"
+                    style={{ height: `${revenueHeight}%` }}
+                    title={`Revenue ${formatEUR(row.revenue)}`}
+                  />
+                  <div
+                    className="w-full rounded-t-md bg-red-500/35"
+                    style={{ height: `${expenseHeight}%` }}
+                    title={`Expenses ${formatEUR(row.expenses)}`}
+                  />
+                </div>
+                <div className="min-w-0 text-center">
+                  <div
+                    className={cn(
+                      'font-mono text-[10px] font-semibold tabular-nums',
+                      row.net >= 0
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
+                    )}
+                  >
+                    {formatEUR(row.net)}
+                  </div>
+                  <div className="mt-0.5 truncate font-mono text-[10px] uppercase text-muted-foreground">
+                    {format(new Date(`${row.month}-01T00:00:00`), 'MMM')}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function RecurringSplit({
+  recurringSharePct,
+  mrr,
+  oneOff,
+  expected,
+  lastSyncedAt,
+}: {
+  recurringSharePct: number | null;
+  mrr: number;
+  oneOff: number;
+  expected: number;
+  lastSyncedAt: string | null;
+}) {
+  const pct = Math.min(100, Math.max(0, recurringSharePct ?? 0));
+  return (
+    <section className="rounded-xl border border-border bg-card p-5">
+      <header className="mb-4 flex items-center gap-2">
+        <Wallet className="size-4 text-primary" aria-hidden />
+        <h3 className="text-sm font-semibold tracking-tight">Revenue floor</h3>
+      </header>
+      <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        Recurring share
+      </div>
+      <div className="mt-2 flex items-end gap-2">
+        <span className="font-mono text-4xl font-semibold tabular-nums tracking-tight">
+          {recurringSharePct ?? 0}%
+        </span>
+        <span className="pb-1 text-xs text-muted-foreground">of expected month</span>
+      </div>
+      <div className="mt-4 h-3 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full bg-primary transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
+        <div className="rounded-lg bg-muted/40 p-3">
+          <dt className="text-muted-foreground">MRR base</dt>
+          <dd className="mt-1 font-mono font-semibold tabular-nums">{formatEUR(mrr)}</dd>
+        </div>
+        <div className="rounded-lg bg-muted/40 p-3">
+          <dt className="text-muted-foreground">Variable</dt>
+          <dd className="mt-1 font-mono font-semibold tabular-nums">{formatEUR(oneOff)}</dd>
+        </div>
+      </dl>
+      <p className="mt-3 text-[11px] text-muted-foreground">
+        Expected month: {formatEUR(expected)}
+        {lastSyncedAt
+          ? ` · synced ${formatDistanceToNowStrict(new Date(lastSyncedAt), { addSuffix: true })}`
+          : ''}
+      </p>
+    </section>
+  );
+}
+
+function UpcomingInvoicesSection({ buckets }: { buckets: FinanceUpcomingBucket[] }) {
+  return (
+    <section className="overflow-hidden rounded-xl border border-border bg-card">
+      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="flex items-center gap-2">
+          <CalendarIcon className="size-4 text-primary" aria-hidden />
+          <h3 className="text-sm font-semibold tracking-tight">Upcoming invoices</h3>
+        </div>
+        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          60-day view
+        </span>
+      </header>
+      <div className="divide-y divide-border">
+        {buckets.map((bucket) => (
+          <div key={bucket.label} className="px-4 py-3">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold text-foreground">{bucket.label}</span>
+              <span className="font-mono text-[11px] font-semibold tabular-nums text-muted-foreground">
+                {bucket.count} · {formatEUR(bucket.total)}
+              </span>
+            </div>
+            {bucket.invoices.length === 0 ? (
+              <p className="text-xs italic text-muted-foreground">No invoices in this window.</p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {bucket.invoices.map((invoice) => (
+                  <InvoiceRhythmRow key={invoice.id} invoice={invoice} />
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function InvoiceRhythmRow({ invoice }: { invoice: FinanceInvoiceRow }) {
+  const days = invoice.due_date
+    ? Math.round(
+        (new Date(`${invoice.due_date}T00:00:00`).getTime() -
+          new Date(new Date().toDateString()).getTime()) /
+          86_400_000
+      )
+    : null;
+  return (
+    <li className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg bg-muted/35 px-3 py-2">
+      <div className="min-w-0">
+        <div className="truncate text-xs font-medium text-foreground">{invoice.customer_name}</div>
+        <div className="truncate font-mono text-[10px] text-muted-foreground">
+          {invoice.invoice_number}
+          {days !== null ? ` · ${days === 0 ? 'due today' : `in ${days}d`}` : ''}
+        </div>
+      </div>
+      <span className="font-mono text-xs font-semibold tabular-nums">
+        {formatEUR(invoice.balance)}
+      </span>
+    </li>
+  );
+}
+
+function OverdueAgingSection({
+  rows,
+  aging,
+  total,
+}: {
+  rows: FinanceInvoiceRow[];
+  aging: FinanceAgingBand[];
+  total: number;
+}) {
+  return (
+    <section className="rounded-xl border border-border bg-card p-5">
+      <header className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" aria-hidden />
+          <h3 className="text-sm font-semibold tracking-tight">Overdue</h3>
+        </div>
+        <span className="font-mono text-sm font-semibold tabular-nums">{formatEUR(total)}</span>
+      </header>
+      <div className="grid grid-cols-2 gap-2">
+        {aging.map((band) => (
+          <div key={band.label} className="rounded-lg bg-muted/40 p-3">
+            <div className="font-mono text-[10px] uppercase text-muted-foreground">
+              {band.label}
+            </div>
+            <div className="mt-1 font-mono text-sm font-semibold tabular-nums">
+              {formatEUR(band.total)}
+            </div>
+            <div className="mt-0.5 text-[10px] text-muted-foreground">
+              {band.count} invoice{band.count === 1 ? '' : 's'}
+            </div>
+          </div>
+        ))}
+      </div>
+      {rows.length > 0 ? (
+        <ul className="mt-4 flex flex-col gap-1.5">
+          {rows.slice(0, 4).map((invoice) => (
+            <InvoiceRhythmRow key={invoice.id} invoice={invoice} />
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-4 text-xs italic text-muted-foreground">Nothing overdue.</p>
+      )}
+    </section>
+  );
+}
+
+function ClientHealthSection({ rows }: { rows: FinanceClientHealthRow[] }) {
+  if (rows.length === 0) return null;
+  return (
+    <section className="overflow-hidden rounded-xl border border-border bg-card">
+      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="flex items-center gap-2">
+          <CircleDollarSign className="size-4 text-primary" aria-hidden />
+          <h3 className="text-sm font-semibold tracking-tight">Client payment health</h3>
+        </div>
+        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          MRR · outstanding · reliability
+        </span>
+      </header>
+      <ul className="divide-y divide-border">
+        {rows.map((row) => (
+          <li
+            key={row.customerName}
+            className="grid grid-cols-1 items-center gap-2 px-4 py-3 text-xs md:grid-cols-[1fr_110px_120px_120px_120px]"
+          >
+            <span className="truncate font-medium text-foreground">{row.customerName}</span>
+            <span className="font-mono tabular-nums text-muted-foreground">
+              {formatEUR(row.mrr)}
+            </span>
+            <span className="font-mono tabular-nums text-foreground">
+              {formatEUR(row.outstanding)}
+            </span>
+            <ReliabilityBadge value={row.reliabilityPct} />
+            <span className="font-mono text-[10px] text-muted-foreground">
+              {row.lastPaidAt
+                ? formatDistanceToNowStrict(new Date(row.lastPaidAt), { addSuffix: true })
+                : 'no payment'}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function ReliabilityBadge({ value }: { value: number | null }) {
+  if (value === null) {
+    return (
+      <span className="w-fit rounded-md bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+        n/a
+      </span>
+    );
+  }
+  const tone =
+    value >= 90
+      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+      : value >= 70
+        ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+        : 'bg-red-500/10 text-red-700 dark:text-red-400';
+  return (
+    <span
+      className={cn(
+        'w-fit rounded-md px-2 py-0.5 font-mono text-[10px] font-semibold tabular-nums',
+        tone
+      )}
+    >
+      {value}%
+    </span>
   );
 }
 

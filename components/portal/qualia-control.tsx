@@ -17,6 +17,7 @@ import type {
 
 import { ControlTeam } from './control-team';
 import { ControlFinance } from './control-finance';
+import { ControlReports } from './control-reports';
 import { ControlSystem } from './control-system';
 import { CommandCenter } from './control-command-center';
 
@@ -42,6 +43,7 @@ const ALL_TABS: Array<{ id: ControlTab; label: string; desc: string }> = [
   { id: 'overview', label: 'Overview', desc: 'Pulse · health · this week' },
   { id: 'team', label: 'Team', desc: 'People, capacity, roles' },
   { id: 'finance', label: 'Finance', desc: 'Invoices, MRR, expenses' },
+  { id: 'reports', label: 'Reports', desc: 'Team performance · weekly lens' },
   { id: 'system', label: 'System', desc: 'Integrations, audit, workspace' },
 ];
 
@@ -364,6 +366,7 @@ export function QualiaControl({ initialTab, data, canViewFinance = false }: Qual
         {tab === 'overview' && <ControlOverview data={data.overview} />}
         {tab === 'team' && <ControlTeam data={data.team} />}
         {tab === 'finance' && canViewFinance && <ControlFinance data={data.finance} />}
+        {tab === 'reports' && <ControlReports />}
         {tab === 'system' && (
           <ControlSystem
             data={data.system}

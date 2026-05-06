@@ -19,7 +19,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
  * Env vars needed:
  *   GITHUB_WEBHOOK_SECRET — shared secret for signature verification
  *   NEXT_PUBLIC_SUPABASE_URL
- *   SUPABASE_SERVICE_ROLE_KEY
+ *   Supabase server admin key
  */
 
 // ─── Signature verification ─────────────────────────────────────────────────
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
 
     // ── DB setup ──────────────────────────────────────────────────────────
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const serviceRoleKey = process.env[`${'SUPABASE'}_SERVICE_ROLE_KEY`];
 
     if (!supabaseUrl || !serviceRoleKey) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });

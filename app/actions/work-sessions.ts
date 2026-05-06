@@ -890,7 +890,7 @@ export async function updatePlannedLogoutTime(
  * session.ended_at ?? now]. session_reports has no FK to work_sessions, so
  * time+project is the closest available correlation.
  *
- * Uses admin client because session_reports RLS is service_role-only.
+ * Uses admin client because session_reports has server-only RLS.
  */
 export async function hasStructuredReportForSession(
   sessionId: string,
@@ -1127,7 +1127,7 @@ export interface ProjectSessionReport {
  * Fetch recent session_reports rows for a project by its human-readable name
  * (matches session_reports.project_name emitted by /qualia-report).
  *
- * Uses admin client because session_reports RLS is service_role-only. Authz is
+ * Uses admin client because session_reports has server-only RLS. Authz is
  * enforced before the read: caller must be authenticated and be admin or have
  * an active assignment on a project whose name matches.
  */

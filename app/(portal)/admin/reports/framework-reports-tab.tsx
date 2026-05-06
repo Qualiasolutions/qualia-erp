@@ -68,7 +68,7 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
   );
 }
 
-export function FrameworkReportsTab() {
+export function FrameworkReportsTab({ focusId }: { focusId?: string | null }) {
   const [rows, setRows] = useState<FrameworkReportRow[]>([]);
   const [stats, setStats] = useState<FrameworkReportsStats | null>(null);
   const [projects, setProjects] = useState<string[]>([]);
@@ -105,6 +105,12 @@ export function FrameworkReportsTab() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!focusId || rows.length === 0) return;
+    const el = document.getElementById(`framework-report-${focusId}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [focusId, rows]);
 
   const statusOptions = useMemo(() => {
     const s = new Set<string>(rows.map((r) => r.status).filter(Boolean) as string[]);
@@ -271,7 +277,13 @@ export function FrameworkReportsTab() {
                     : null;
 
                 return (
-                  <TableRow key={r.id}>
+                  <TableRow
+                    key={r.id}
+                    id={`framework-report-${r.id}`}
+                    className={
+                      focusId === r.id ? 'bg-primary/[0.06] ring-1 ring-inset ring-primary/25' : ''
+                    }
+                  >
                     <TableCell>
                       <StatusIcon status={r.status} />
                     </TableCell>

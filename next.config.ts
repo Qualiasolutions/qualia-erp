@@ -26,11 +26,6 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
-        source: '/admin/attendance',
-        destination: '/admin?tab=team',
-        permanent: false,
-      },
-      {
         source: '/admin/audit/:id',
         destination: '/audit/:id',
         permanent: false,

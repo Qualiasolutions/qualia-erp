@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { format, subDays, startOfWeek, startOfMonth, subMonths } from 'date-fns';
 import {
   CalendarIcon,
@@ -109,6 +110,9 @@ function downloadBlob(csv: string, prefix: string) {
 }
 
 export function AdminReportsClient() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') as ReportTab | null;
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<ReportSummary | null>(null);
@@ -119,7 +123,9 @@ export function AdminReportsClient() {
     from: startOfMonth(new Date()),
     to: new Date(),
   });
-  const [tab, setTab] = useState<ReportTab>('employees');
+  const [tab, setTab] = useState<ReportTab>(
+    initialTab && TABS.some((t) => t.id === initialTab) ? initialTab : 'framework'
+  );
 
   useEffect(() => {
     getCurrentWorkspaceId().then(setWorkspaceId);
@@ -173,9 +179,15 @@ export function AdminReportsClient() {
     }
   };
 
-  const changeTab = useCallback((next: ReportTab) => {
-    setTab(next);
-  }, []);
+  const changeTab = useCallback(
+    (next: ReportTab) => {
+      setTab(next);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('tab', next);
+      router.replace(`/admin/reports?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
 
   const activeTabMeta = TABS.find((t) => t.id === tab) ?? TABS[0];
 
@@ -855,7 +867,7 @@ export function AdminReportsClient() {
               </div>
             )}
 
-            {tab === 'framework' && <FrameworkReportsTab />}
+            {tab === 'framework' && <FrameworkReportsTab focusId={searchParams.get('id')} />}
           </>
         )}
       </div>

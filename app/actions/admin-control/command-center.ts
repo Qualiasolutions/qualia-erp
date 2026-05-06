@@ -17,6 +17,7 @@ import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 
 export type ClockedInRow = {
   id: string;
+  profileId: string | null;
   name: string | null;
   avatarUrl: string | null;
   projectName: string | null;
@@ -369,6 +370,7 @@ async function loadCommandCenterInternal(
       const startedMs = new Date(row.started_at).getTime();
       return {
         id: row.id,
+        profileId: profile?.id ?? null,
         name: profile?.full_name ?? null,
         avatarUrl: profile?.avatar_url ?? null,
         projectName: project?.name ?? null,

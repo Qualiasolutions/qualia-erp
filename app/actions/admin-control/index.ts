@@ -18,7 +18,14 @@ export {
   type PlanningHealthPayload,
   type PlanningHealthRow,
 } from './planning-health';
-export { loadTeamTab, type TeamPayload, type AssignmentProject } from './team';
+export {
+  loadTeamTab,
+  type TeamPayload,
+  type AssignmentProject,
+  type TeamTaskStub,
+  type TeamProjectLoad,
+  type TeamWorkloadPerson,
+} from './team';
 export {
   loadFinanceTab,
   type FinancePayload,
@@ -26,6 +33,10 @@ export {
   type FinancePaymentRow,
   type FinanceInvoiceRow,
   type FinanceRecurringRow,
+  type FinanceCashFlowMonth,
+  type FinanceUpcomingBucket,
+  type FinanceClientHealthRow,
+  type FinanceAgingBand,
 } from './finance';
 export {
   loadSystemTab,
@@ -35,11 +46,36 @@ export {
   type FrameworkReportCompleteness,
   type TokenAssignableProfile,
 } from './system';
+export {
+  getEmployeeProfile,
+  getEmployeeTrends,
+  getEmployeeHistory,
+  periodBounds,
+  type Period,
+  type EmployeeProfilePayload,
+  type EmployeeTrendsPayload,
+  type EmployeeHistoryPayload,
+  type EmployeeTaskStub,
+  type EmployeeSummary,
+  type EmployeeProjectSplit,
+  type HoursHeatmapWeek,
+  type LatestCheckin,
+  type WeeklyPoint,
+  type SessionFeedRow,
+} from './employee';
 
-export type ControlTab = 'overview' | 'team' | 'finance' | 'system';
+export {
+  getReportsPerformance,
+  type ReportsPerfPayload,
+  type EmployeePerfRow,
+  type ProjectPerfRow,
+  type ReportFlag,
+} from './reports-perf';
+
+export type ControlTab = 'overview' | 'team' | 'finance' | 'reports' | 'system';
 
 export function resolveControlTab(value: string | undefined): ControlTab {
-  if (value === 'team' || value === 'finance' || value === 'system') {
+  if (value === 'team' || value === 'finance' || value === 'reports' || value === 'system') {
     return value;
   }
   return 'overview';
