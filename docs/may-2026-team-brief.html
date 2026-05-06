@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qualia Solutions · May 2026 Team Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --hue: 192;
+    --bg:          oklch(0.13 0.010 var(--hue));
+    --surface:     oklch(0.17 0.012 var(--hue));
+    --elevated:    oklch(0.21 0.014 var(--hue));
+    --line:        oklch(0.26 0.012 var(--hue));
+    --line-strong: oklch(0.34 0.016 var(--hue));
+    --text:        oklch(0.96 0.006 var(--hue));
+    --muted:       oklch(0.64 0.012 var(--hue));
+    --dim:         oklch(0.46 0.010 var(--hue));
+    --accent:      oklch(0.76 0.15 var(--hue));
+    --accent-dim:  oklch(0.36 0.08 var(--hue));
+    --accent-bg:   oklch(0.20 0.04 var(--hue));
+    --warm:        oklch(0.80 0.13 55);
+    --warm-dim:    oklch(0.36 0.07 55);
+    --green:       oklch(0.78 0.14 150);
+    --green-dim:   oklch(0.30 0.08 150);
+    --red:         oklch(0.70 0.18 24);
+    --red-dim:     oklch(0.28 0.08 24);
+    --purple:      oklch(0.74 0.12 300);
+    --purple-dim:  oklch(0.28 0.07 300);
+    --shadow-sm:   0 1px 0 oklch(0.07 0.010 var(--hue) / 0.5);
+    --shadow-md:   0 8px 32px -8px oklch(0.06 0.010 var(--hue) / 0.7),
+                   0 2px 8px -2px oklch(0.06 0.010 var(--hue) / 0.5);
+    --shadow-lg:   0 24px 64px -16px oklch(0.04 0.010 var(--hue) / 0.8),
+                   0 4px 12px -4px oklch(0.04 0.010 var(--hue) / 0.5);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Geist', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  /* GRAIN OVERLAY */
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 200;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px;
+  }
+
+  /* LAYOUT */
+  .wrap {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(1.25rem, 5vw, 4rem);
+  }
+
+  /* TOP NAV BAR */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: oklch(0.13 0.010 var(--hue) / 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+    padding-block: 0.85rem;
+  }
+  .topbar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .topbar__brand {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .topbar__date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--dim);
+    letter-spacing: 0.06em;
+  }
+
+  /* HERO */
+  .hero {
+    padding-block: clamp(4rem, 10vw, 8rem) clamp(3rem, 6vw, 5rem);
+    border-bottom: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -10%;
+    width: 60vw;
+    height: 60vw;
+    max-width: 800px;
+    max-height: 800px;
+    background: radial-gradient(ellipse, oklch(0.36 0.10 var(--hue) / 0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero__layout {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 3rem;
+    align-items: end;
+  }
+  .hero__eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .hero__eyebrow::before {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .hero__title {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: clamp(3rem, 7vw, 6.5rem);
+    line-height: 1.0;
+    letter-spacing: -0.04em;
+    margin-bottom: 1.5rem;
+    font-variation-settings: "opsz" 144;
+  }
+  .hero__title strong {
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .hero__title em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--muted);
+  }
+  .hero__sub {
+    font-size: clamp(1.05rem, 1.5vw, 1.2rem);
+    color: var(--muted);
+    max-width: 58ch;
+    line-height: 1.65;
+  }
+  .hero__meta {
+    display: grid;
+    grid-template-rows: repeat(3, auto);
+    gap: 1.25rem;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .hero__meta-item {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+  }
+  .hero__meta-label {
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.3rem;
+  }
+  .hero__meta-value {
+    color: var(--text);
+    font-weight: 500;
+    font-size: 0.85rem;
+  }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: var(--line);
+    margin-block: clamp(3rem, 6vw, 5rem);
+  }
+
+  /* SECTION HEADER */
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    margin-bottom: clamp(1.75rem, 3vw, 2.5rem);
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    font-variation-settings: "opsz" 72;
+  }
+  .section-sub {
+    margin-left: auto;
+    font-size: 0.82rem;
+    color: var(--dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* PART: TEAM ASSIGNMENTS */
+  .team-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+  }
+  .team-member {
+    background: var(--surface);
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+  }
+  .team-member--hasan { border-right: none; }
+  .member-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .member-identity {}
+  .member-name {
+    font-family: 'Fraunces', serif;
+    font-size: 1.9rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    font-variation-settings: "opsz" 48;
+  }
+  .member-role {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+    letter-spacing: 0.04em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .member-email {
+    font-size: 0.72rem;
+    color: var(--dim);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 0.2rem;
+  }
+  .member-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.7rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .badge--accent { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-dim); }
+  .badge--warm   { background: var(--warm-dim);   color: var(--warm);   border: 1px solid oklch(0.46 0.09 55); }
+  .badge--green  { background: var(--green-dim);  color: var(--green);  border: 1px solid oklch(0.40 0.10 150); }
+  .badge--purple { background: var(--purple-dim); color: var(--purple); border: 1px solid oklch(0.38 0.09 300); }
+  .badge--red    { background: var(--red-dim);    color: var(--red);    border: 1px solid oklch(0.40 0.10 24); }
+  .badge--dim    { background: var(--elevated);   color: var(--muted);  border: 1px solid var(--line-strong); }
+
+  .project-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .project-item {
+    background: var(--elevated);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 1.1rem 1.25rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.75rem 1rem;
+    align-items: start;
+    transition: border-color 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .project-item:hover { border-color: var(--line-strong); }
+  .project-item--primary {
+    background: oklch(0.18 0.018 var(--hue));
+    border-color: var(--accent-dim);
+  }
+  .project-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+  .project-info {}
+  .project-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    margin-bottom: 0.2rem;
+    line-height: 1.3;
+  }
+  .project-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .project-status-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+  .project-phase {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .member-note {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: oklch(0.14 0.010 var(--hue));
+    border-left: 3px solid var(--accent-dim);
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .member-note strong { color: var(--text); }
+
+  /* DEMOS SECTION */
+  .demos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .demo-card {
+    background: var(--surface);
+    padding: 1.5rem 1.75rem;
+    position: relative;
+    transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .demo-card:hover { background: var(--elevated); }
+  .demo-card__cat {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 0.85rem;
+  }
+  .demo-card__name {
+    font-family: 'Fraunces', serif;
+    font-size: 1.35rem;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+    font-variation-settings: "opsz" 36;
+  }
+  .demo-card__desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.55;
+    margin-bottom: 1rem;
+  }
+  .demo-card__url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .demo-card__live {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+  .demo-card__live::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* BUILDING SECTION */
+  .building-list {
+    display: grid;
+    gap: 1.5px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .building-row {
+    background: var(--surface);
+    display: grid;
+    grid-template-columns: 2fr 3fr 2fr 2fr 1.5fr;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.1rem 1.75rem;
+    transition: background 150ms ease-out;
+  }
+  .building-row:hover { background: var(--elevated); }
+  .building-row--head {
+    background: var(--elevated);
+    border-bottom: 2px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .building-row--head:hover { background: var(--elevated); }
+  .brow-project { font-weight: 600; font-size: 0.88rem; }
+  .brow-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.45; }
+  .brow-owner { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+  .brow-phase { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+  .brow-priority { display: flex; justify-content: flex-end; }
+
+  /* RULES SECTION */
+  .rules-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+  .rules-col {}
+  .rules-col-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.25rem;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--line);
+    font-variation-settings: "opsz" 36;
+  }
+  .rule-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--line);
+    align-items: start;
+  }
+  .rule-item:last-child { border-bottom: none; }
+  .rule-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+    padding-top: 0.15rem;
+    width: 1.5rem;
+    flex-shrink: 0;
+  }
+  .rule-body {}
+  .rule-title {
+    font-weight: 600;
+    font-size: 0.88rem;
+    margin-bottom: 0.3rem;
+    line-height: 1.35;
+  }
+  .rule-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .rule-desc code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75em;
+    background: var(--elevated);
+    border: 1px solid var(--line);
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  /* FRAMEWORK STUDY */
+  .study-path {
+    counter-reset: study;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .study-step {
+    counter-increment: study;
+    background: var(--surface);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem 1.5rem;
+    padding: 1.25rem 1.75rem;
+    align-items: center;
+    transition: background 150ms ease-out;
+  }
+  .study-step:hover { background: var(--elevated); }
+  .study-step::before {
+    content: counter(study, decimal-leading-zero);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent);
+    width: 2.5rem;
+    flex-shrink: 0;
+  }
+  .study-body {}
+  .study-title {
+    font-weight: 600;
+    font-size: 0.88rem;
+    margin-bottom: 0.25rem;
+  }
+  .study-path-txt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+  }
+  .study-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: 0.25rem;
+  }
+  .study-when {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* REPORT SECTION */
+  .report-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  .report-block {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .report-block__head {
+    padding: 1rem 1.5rem;
+    background: var(--elevated);
+    border-bottom: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .report-block__body {
+    padding: 1.5rem;
+  }
+  .report-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .report-code .cmd { color: var(--accent); }
+  .report-code .comment { color: var(--dim); }
+  .report-check {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .report-check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .report-check-item::before {
+    content: '→';
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  /* FOOTER */
+  .footer {
+    margin-top: clamp(4rem, 8vw, 6rem);
+    padding-block: 2.5rem;
+    border-top: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .footer__brand {
+    font-family: 'Fraunces', serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--muted);
+    font-variation-settings: "opsz" 32;
+  }
+  .footer__brand em { color: var(--accent); font-style: italic; }
+  .footer__meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--dim);
+    text-align: right;
+  }
+
+  /* UTILS */
+  section { margin-bottom: clamp(4rem, 8vw, 6rem); }
+
+  @media (max-width: 900px) {
+    .team-grid { grid-template-columns: 1fr; }
+    .demos-grid { grid-template-columns: 1fr 1fr; }
+    .rules-layout { grid-template-columns: 1fr; }
+    .report-layout { grid-template-columns: 1fr; }
+    .hero__layout { grid-template-columns: 1fr; }
+    .hero__meta { text-align: left; flex-direction: row; flex-wrap: wrap; }
+    .building-row { grid-template-columns: 1fr 1fr; }
+    .building-row--head { display: none; }
+  }
+  @media (max-width: 600px) {
+    .demos-grid { grid-template-columns: 1fr; }
+    .building-row { grid-template-columns: 1fr; }
+    .study-step { grid-template-columns: auto 1fr; }
+    .study-when { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<!-- TOP BAR -->
+<nav class="topbar" aria-label="Document navigation">
+  <div class="wrap topbar__inner">
+    <span class="topbar__brand">Qualia Solutions</span>
+    <span class="topbar__date">May 2026 · Internal Team Brief</span>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+
+    <!-- HERO -->
+    <header class="hero" id="top">
+      <div class="hero__layout">
+        <div>
+          <p class="hero__eyebrow">Team Brief · May 2026</p>
+          <h1 class="hero__title">
+            May is<br>
+            <strong>execution</strong><br>
+            <em>month.</em>
+          </h1>
+          <p class="hero__sub">
+            Projects are real, clients are waiting, and the team is small — which means every hour needs a clear owner. This document lays out who owns what in May, what's live to demo, what's being built, and how we expect things to run going forward.
+          </p>
+        </div>
+        <div class="hero__meta" role="complementary" aria-label="Document metadata">
+          <div class="hero__meta-item">
+            <div class="hero__meta-label">Period</div>
+            <div class="hero__meta-value">May 2026</div>
+          </div>
+          <div class="hero__meta-item">
+            <div class="hero__meta-label">Team Size</div>
+            <div class="hero__meta-value">3 active</div>
+          </div>
+          <div class="hero__meta-item">
+            <div class="hero__meta-label">Live Projects</div>
+            <div class="hero__meta-value">8 deployed</div>
+          </div>
+          <div class="hero__meta-item">
+            <div class="hero__meta-label">In-Building</div>
+            <div class="hero__meta-value">4 active</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- SECTION 01 — TEAM ASSIGNMENTS -->
+    <section aria-labelledby="team-heading">
+      <div class="section-head">
+        <span class="section-num">01</span>
+        <h2 class="section-title" id="team-heading">Who owns what</h2>
+        <span class="section-sub">May 2026 assignments</span>
+      </div>
+
+      <div class="team-grid" role="region" aria-label="Team assignments">
+
+        <!-- HASAN -->
+        <div class="team-member team-member--hasan">
+          <div class="member-header">
+            <div class="member-identity">
+              <h3 class="member-name">Hasan</h3>
+              <p class="member-role">Platform Lead · Mobile &amp; Backend</p>
+              <p class="member-email">hasan@qualiasolutions.net</p>
+            </div>
+            <span class="member-badge badge--accent">Primary Dev</span>
+          </div>
+
+          <div class="project-list">
+            <div class="project-item project-item--primary">
+              <div class="project-icon" style="background: var(--accent-bg);" aria-hidden="true">🏢</div>
+              <div class="project-info">
+                <p class="project-name">Sakani</p>
+                <p class="project-desc">Jordan-first Residential Building Management. Monorepo: Admin (Next.js), Mobile (Expo SDK 53), NestJS API. Client: Smart IT Buildings L.L.C, Amman.</p>
+              </div>
+              <div class="project-status-wrap">
+                <span class="member-badge badge--green">Primary</span>
+                <span class="project-phase">Phase 2 / 5</span>
+              </div>
+            </div>
+
+            <div class="project-item">
+              <div class="project-icon" style="background: var(--elevated);" aria-hidden="true">🐟</div>
+              <div class="project-info">
+                <p class="project-name">Aquador</p>
+                <p class="project-desc">Full-stack platform, shipped v3.9. Monitor for regressions after the optimization pass. Maintenance and minor fixes only.</p>
+              </div>
+              <div class="project-status-wrap">
+                <span class="member-badge badge--dim">Maintenance</span>
+                <span class="project-phase">Live · aquadorcy.com</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="member-note">
+            <strong>Sakani is 100% of your focus.</strong> Phase 2 is App Store submission — Apple Developer, TestFlight, App Store Connect, Play Console. After that, three more phases of SRS mediums (Finance, Identity, Analytics, L10n). Aquador is maintenance-only: you respond to issues but do not build new features unless Fawzi approves.
+          </div>
+        </div>
+
+        <!-- MOAYAD -->
+        <div class="team-member">
+          <div class="member-header">
+            <div class="member-identity">
+              <h3 class="member-name">Moayad</h3>
+              <p class="member-role">Developer · Web, AI &amp; E-commerce</p>
+              <p class="member-email">moayad@qualiasolutions.net</p>
+            </div>
+            <span class="member-badge badge--warm">Full Stack</span>
+          </div>
+
+          <div class="project-list">
+            <div class="project-item project-item--primary">
+              <div class="project-icon" style="background: var(--accent-bg);" aria-hidden="true">🤖</div>
+              <div class="project-info">
+                <p class="project-name">GlluzTech AI Platform</p>
+                <p class="project-desc">Conversational AI discovery platform with consultant personas (Alex Rivera, Riley Thompson). Next.js 15, Vercel AI SDK. Partnership — 15% margin, GT brand.</p>
+              </div>
+              <div class="project-status-wrap">
+                <span class="member-badge badge--green">Primary</span>
+                <span class="project-phase">Active dev</span>
+              </div>
+            </div>
+
+            <div class="project-item">
+              <div class="project-icon" style="background: var(--elevated);" aria-hidden="true">👜</div>
+              <div class="project-info">
+                <p class="project-name">Maud</p>
+                <p class="project-desc">Maison Maud luxury e-commerce (maisonmaud.ae). Fix: checkout sending wrong product to Stripe. Phase 1 of 3, straightforward bug fix.</p>
+              </div>
+              <div class="project-status-wrap">
+                <span class="member-badge badge--red">Urgent Fix</span>
+                <span class="project-phase">Phase 1 / 3</span>
+              </div>
+            </div>
+
+            <div class="project-item">
+              <div class="project-icon" style="background: var(--elevated);" aria-hidden="true">🇮🇹</div>
+              <div class="project-info">
+                <p class="project-name">Giannino Mayfair</p>
+                <p class="project-desc">Luxury Italian restaurant website (Mayfair, London). Verified phase 5/5. Client may request changes — handle as quick tasks.</p>
+              </div>
+              <div class="project-status-wrap">
+                <span class="member-badge badge--dim">Maintenance</span>
+                <span class="project-phase">Shipped · verified</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="member-note">
+            <strong>Primary project this month: GlluzTech.</strong> Maud checkout is a same-week fix — identify the bug, patch, test, ship. Giannino and Armenius are stable — only touch if a client request comes in. Do not add features you weren't asked to add.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 02 — LIVE DEMOS -->
+    <section aria-labelledby="demos-heading">
+      <div class="section-head">
+        <span class="section-num">02</span>
+        <h2 class="section-title" id="demos-heading">Live — what we can demo right now</h2>
+        <span class="section-sub">8 deployed · all verified</span>
+      </div>
+
+      <div class="demos-grid" role="list">
+
+        <div class="demo-card" role="listitem">
+          <div class="demo-card__live" aria-label="Live">Live</div>
+          <p class="demo-card__cat">Voice AI</p>
+          <h3 class="demo-card__name">Armenius</h3>
+          <p class="demo-card__desc">Multilingual voice agent for armenius.cy e-commerce. Greek, English, Russian. ElevenLabs + Cloudflare Worker + PrestaShop API. The cleanest voice agent demo we have.</p>
+          <p class="demo-card__url">armenius.cy · widget: qualia-widgets.vercel.app</p>
+        </div>
+
+        <div class="demo-card" role="listitem">
+          <div class="demo-card__live" aria-label="Live">Live</div>
+          <p class="demo-card__cat">Wellness AI App</p>
+          <h3 class="demo-card__name">Innrvo</h3>
+          <p class="demo-card__desc">Personalized guided meditation generator. Users describe mood, AI generates a meditation script with TTS voice synthesis. 22 phases shipped, v5.0 complete.</p>
+          <p class="demo-card__url">innrvo.com</p>
+        </div>
+
+        <div class="demo-card" role="listitem">
+          <div class="demo-card__live" aria-label="Live">Live</div>
+          <p class="demo-card__cat">AI Chat Platform</p>
+          <h3 class="demo-card__name">AIBoss Brainz</h3>
+          <p class="demo-card__desc">Executive AI consultancy personas — Alexandria, Kim, Collaborative. Powered by Vercel Chat SDK. Business consulting with distinct personalities.</p>
+          <p class="demo-card__url">Alecci Media · 32 phases</p>
+        </div>
+
+        <div class="demo-card" role="listitem">
+          <div class="demo-card__live" aria-label="Live">Live</div>
+          <p class="demo-card__cat">Full Platform</p>
+          <h3 class="demo-card__name">Aquador</h3>
+          <p class="demo-card__desc">Feature-complete web platform — 32 phases, v3.9 deployed. Shows our ability to deliver a sustained, evolving product over many milestones.</p>
+          <p class="demo-card__url">aquadorcy.com</p>
+        </div>
+
+        <div class="demo-card" role="listitem">
+          <div class="demo-card__live" aria-label="Live">Live</div>
+          <p class="demo-card__cat">Luxury Restaurant</p>
+          <h3 class="demo-card__name">Giannino Mayfair</h3>
+          <p class="demo-card__desc">Dark editorial site for 1899 Milan restaurant, Mayfair London. OpenTable integration, AI concierge, Supabase CMS. Best showcase for high-end brand work.</p>
+          <p class="demo-card__url">giannino-mayfair.com</p>
+        </div>
+
+        <div class="demo-card" role="listitem">
+          <div class="demo-card__live" aria-label="Live">Live</div>
+          <p class="demo-card__cat">E-Commerce</p>
+          <h3 class="demo-card__name">Maud</h3>
+          <p class="demo-card__desc">Luxury leather handbag store for Abu Dhabi brand. Next.js, Stripe, Supabase, Halan courier integration. AED checkout, admin panel, waitlist. Fix in progress.</p>
+          <p class="demo-card__url">maisonmaud.ae</p>
+        </div>
+
+        <div class="demo-card" role="listitem">
+          <div class="demo-card__live" aria-label="Live">Live</div>
+          <p class="demo-card__cat">AI Discovery</p>
+          <h3 class="demo-card__name">GlluzTech Platform</h3>
+          <p class="demo-card__desc">AI consultant personas assess client businesses and recommend AI solutions. Next.js 15, Vercel AI SDK. Partnership project (GT brand, built by Qualia).</p>
+          <p class="demo-card__url">GlluzTech · in development</p>
+        </div>
+
+        <div class="demo-card" role="listitem">
+          <div class="demo-card__live" aria-label="Live">Live</div>
+          <p class="demo-card__cat">Building Management</p>
+          <h3 class="demo-card__name">Sakani</h3>
+          <p class="demo-card__desc">Jordan-first residential building management. Bilingual Arabic/English, full RTL. Admin console + Expo mobile app. Central Bank demo PWA available. Store submission in progress.</p>
+          <p class="demo-card__url">sakani-gamma.vercel.app · Amman, Jordan</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 03 — IN-BUILDING -->
+    <section aria-labelledby="building-heading">
+      <div class="section-head">
+        <span class="section-num">03</span>
+        <h2 class="section-title" id="building-heading">In-building this month</h2>
+        <span class="section-sub">Active development · May 2026</span>
+      </div>
+
+      <div class="building-list" role="table" aria-label="In-building projects">
+        <div class="building-row building-row--head" role="row">
+          <div role="columnheader">Project</div>
+          <div role="columnheader">Current Focus</div>
+          <div role="columnheader">Owner</div>
+          <div role="columnheader">Phase</div>
+          <div role="columnheader">Priority</div>
+        </div>
+
+        <div class="building-row" role="row">
+          <div class="brow-project" role="cell">Sakani</div>
+          <div class="brow-desc" role="cell">App Store submission — Apple Developer onboarding, TestFlight, App Store Connect metadata, Play Console. Then SRS Finance &amp; Identity mediums.</div>
+          <div class="brow-owner" role="cell"><span class="member-badge badge--accent">Hasan</span></div>
+          <div class="brow-phase" role="cell">Phase 2 / 5</div>
+          <div class="brow-priority" role="cell"><span class="member-badge badge--green">P0</span></div>
+        </div>
+
+        <div class="building-row" role="row">
+          <div class="brow-project" role="cell">GlluzTech AI</div>
+          <div class="brow-desc" role="cell">Consultant persona platform — conversation flows, recommendation engine, lead capture. Partnership delivery: under GlluzTech brand, co-credited.</div>
+          <div class="brow-owner" role="cell"><span class="member-badge badge--warm">Moayad</span></div>
+          <div class="brow-phase" role="cell">Active</div>
+          <div class="brow-priority" role="cell"><span class="member-badge badge--accent">P1</span></div>
+        </div>
+
+        <div class="building-row" role="row">
+          <div class="brow-project" role="cell">Maud</div>
+          <div class="brow-desc" role="cell">Checkout sends wrong product ID to Stripe. Debug the product selection flow, fix the payload, test against Stripe test mode, deploy and verify.</div>
+          <div class="brow-owner" role="cell"><span class="member-badge badge--warm">Moayad</span></div>
+          <div class="brow-phase" role="cell">Phase 1 / 3</div>
+          <div class="brow-priority" role="cell"><span class="member-badge badge--red">Urgent</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 04 — OPERATING RULES -->
+    <section aria-labelledby="rules-heading">
+      <div class="section-head">
+        <span class="section-num">04</span>
+        <h2 class="section-title" id="rules-heading">How we work — tighter in May</h2>
+      </div>
+
+      <div class="rules-layout">
+        <!-- Non-negotiable -->
+        <div class="rules-col">
+          <h3 class="rules-col-title">Non-negotiable rules</h3>
+
+          <div class="rule-item">
+            <span class="rule-num">01</span>
+            <div class="rule-body">
+              <p class="rule-title">Run <code>/qualia-report</code> before every clock-out</p>
+              <p class="rule-desc">This is not optional. The ERP only knows you worked if you report. No report = no session credit. It takes 30 seconds. There is no exception.</p>
+            </div>
+          </div>
+
+          <div class="rule-item">
+            <span class="rule-num">02</span>
+            <div class="rule-body">
+              <p class="rule-title">Feature branches only — never push to main</p>
+              <p class="rule-desc">Branch name: <code>feat/description</code>, <code>fix/description</code>. Create a PR. If you push directly to main, you explain it. The second time is a serious conversation.</p>
+            </div>
+          </div>
+
+          <div class="rule-item">
+            <span class="rule-num">03</span>
+            <div class="rule-body">
+              <p class="rule-title">Four-check verification after every deploy</p>
+              <p class="rule-desc">HTTP 200, auth flow, no console errors, API latency under 500ms. Run <code>/qualia-verify</code>. Do not tell Fawzi something is deployed until all four pass.</p>
+            </div>
+          </div>
+
+          <div class="rule-item">
+            <span class="rule-num">04</span>
+            <div class="rule-body">
+              <p class="rule-title">RLS on every database table you create</p>
+              <p class="rule-desc">No exceptions. If you add a table without Row Level Security policies, the PR does not merge. Check: <code>ALTER TABLE x ENABLE ROW LEVEL SECURITY</code>.</p>
+            </div>
+          </div>
+
+          <div class="rule-item">
+            <span class="rule-num">05</span>
+            <div class="rule-body">
+              <p class="rule-title">Zod validation on every server action</p>
+              <p class="rule-desc">No raw FormData or <code>JSON.parse</code> reaching the database. Every input goes through a Zod schema. Use <code>parseFormData()</code> from <code>lib/validation.ts</code>.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- How things should go -->
+        <div class="rules-col">
+          <h3 class="rules-col-title">How things should go</h3>
+
+          <div class="rule-item">
+            <span class="rule-num">06</span>
+            <div class="rule-body">
+              <p class="rule-title">Read before you write — always</p>
+              <p class="rule-desc">Open the project's <code>CLAUDE.md</code> and <code>.planning/STATE.md</code> before touching a single file. If the project has a <code>DESIGN.md</code>, read it before any frontend change.</p>
+            </div>
+          </div>
+
+          <div class="rule-item">
+            <span class="rule-num">07</span>
+            <div class="rule-body">
+              <p class="rule-title">30-minute stuck rule</p>
+              <p class="rule-desc">Try <code>/qualia-idk</code> first — it often unblocks you. If you're still stuck 30 minutes later, message Fawzi. Do not spin for 2 hours in silence. That's wasted time for everyone.</p>
+            </div>
+          </div>
+
+          <div class="rule-item">
+            <span class="rule-num">08</span>
+            <div class="rule-body">
+              <p class="rule-title">MVP first, no gold-plating</p>
+              <p class="rule-desc">Build only what was asked. Don't add features, refactor nearby code, or "while I'm at it" anything. A bug fix is a bug fix. A feature is exactly the feature specified.</p>
+            </div>
+          </div>
+
+          <div class="rule-item">
+            <span class="rule-num">09</span>
+            <div class="rule-body">
+              <p class="rule-title">Update PROGRESS.md at start of day, not end</p>
+              <p class="rule-desc">What you plan to do today goes in at 9am. What you actually did gets checked off as you go. If Fawzi checks your PROGRESS.md at noon, it should reflect your morning.</p>
+            </div>
+          </div>
+
+          <div class="rule-item">
+            <span class="rule-num">10</span>
+            <div class="rule-body">
+              <p class="rule-title">Qualia is a company — never a "studio"</p>
+              <p class="rule-desc">External copy, proposals, expo materials, any client-facing text: say "Qualia Solutions" or "company." Never studio, never agency, never shop. This matters for positioning.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 05 — FRAMEWORK STUDY -->
+    <section aria-labelledby="study-heading">
+      <div class="section-head">
+        <span class="section-num">05</span>
+        <h2 class="section-title" id="study-heading">How to study the framework</h2>
+        <span class="section-sub">Ordered reading path</span>
+      </div>
+
+      <div class="study-path" role="list" aria-label="Framework study path">
+
+        <div class="study-step" role="listitem">
+          <div class="study-body">
+            <p class="study-title">Employee Lifecycle Guide</p>
+            <p class="study-path-txt">docs/employee-lifecycle.md</p>
+            <p class="study-desc">How projects flow from discovery to client handoff. The mental model for the entire workflow. Read this first — everything else references it.</p>
+          </div>
+          <span class="study-when">Day 1, morning</span>
+        </div>
+
+        <div class="study-step" role="listitem">
+          <div class="study-body">
+            <p class="study-title">Trainee Onboarding Guide</p>
+            <p class="study-path-txt">docs/trainee-onboarding.md</p>
+            <p class="study-desc">Phase-by-phase technical steps — Supabase setup, server actions pattern, Zod schemas, SWR hooks, testing, deployment. The technical playbook.</p>
+          </div>
+          <span class="study-when">Day 1, afternoon</span>
+        </div>
+
+        <div class="study-step" role="listitem">
+          <div class="study-body">
+            <p class="study-title">Git Workflow</p>
+            <p class="study-path-txt">docs/guides/git-workflow.md</p>
+            <p class="study-desc">Branches, commit conventions (<code>feat:</code>, <code>fix:</code>, <code>refactor:</code>), PR process the Qualia way. Understand this before your first commit.</p>
+          </div>
+          <span class="study-when">Day 1, afternoon</span>
+        </div>
+
+        <div class="study-step" role="listitem">
+          <div class="study-body">
+            <p class="study-title">Qualia Commands Reference</p>
+            <p class="study-path-txt">docs/guides/qualia-commands.md</p>
+            <p class="study-desc">Every <code>/qualia-*</code> command with when to use it. The smart router <code>/qualia</code> tells you the next step. Run it any time you're unsure.</p>
+          </div>
+          <span class="study-when">Day 2, morning</span>
+        </div>
+
+        <div class="study-step" role="listitem">
+          <div class="study-body">
+            <p class="study-title">Security Rules</p>
+            <p class="study-path-txt">~/.claude/rules/security.md</p>
+            <p class="study-desc">RLS on every table, server-side auth, Zod validation, no service_role in client code. Memorize the six rules — you'll apply them on every project, every day.</p>
+          </div>
+          <span class="study-when">Day 2</span>
+        </div>
+
+        <div class="study-step" role="listitem">
+          <div class="study-body">
+            <p class="study-title">Frontend Standards</p>
+            <p class="study-path-txt">~/.claude/rules/frontend.md + design-laws.md</p>
+            <p class="study-desc">Typography rules (no Inter), OKLCH colors, layout, motion, accessibility. Before any UI work: check if a <code>DESIGN.md</code> exists in the project — it overrides defaults.</p>
+          </div>
+          <span class="study-when">Before first UI task</span>
+        </div>
+
+        <div class="study-step" role="listitem">
+          <div class="study-body">
+            <p class="study-title">CLAUDE.md in every project you touch</p>
+            <p class="study-path-txt">[project-root]/CLAUDE.md</p>
+            <p class="study-desc">Every project has one. It has the architecture, routes, tech stack, patterns, and deployment process specific to that project. Read it the first time you open the repo — not halfway through.</p>
+          </div>
+          <span class="study-when">Before any project work</span>
+        </div>
+
+        <div class="study-step" role="listitem">
+          <div class="study-body">
+            <p class="study-title">Walkthroughs and Completion Checklists</p>
+            <p class="study-path-txt">docs/walkthroughs.md · docs/completion-checklists.md</p>
+            <p class="study-desc">Real project examples and what "done" looks like for each project type. Read when you're starting a new project type you haven't done before.</p>
+          </div>
+          <span class="study-when">As needed</span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 06 — REPORT PROTOCOL -->
+    <section aria-labelledby="report-heading">
+      <div class="section-head">
+        <span class="section-num">06</span>
+        <h2 class="section-title" id="report-heading">How to report</h2>
+        <span class="section-sub">Clock-out protocol</span>
+      </div>
+
+      <div class="report-layout">
+
+        <div class="report-block">
+          <div class="report-block__head">The command</div>
+          <div class="report-block__body">
+            <pre class="report-code"><span class="comment"># Navigate to the project you worked on</span>
+<span class="cmd">cd ~/Projects/sakani</span>     <span class="comment"># or maud, GlluzTech, etc.</span>
+
+<span class="comment"># Run the report — this is mandatory at clock-out</span>
+<span class="cmd">/qualia-report</span>
+
+<span class="comment"># The framework POSTs a structured session report
+# to portal.qualiasolutions.net/api/v1/reports
+# Fawzi sees it in the ERP under "Framework Reports"</span></pre>
+
+            <div class="report-check">
+              <p class="report-check-item">Run in the project directory — not from ~/Projects</p>
+              <p class="report-check-item">API key is read automatically from <code>~/.claude/.erp-api-key</code></p>
+              <p class="report-check-item">Each session gets a <code>QS-REPORT-NN</code> ID for tracking</p>
+              <p class="report-check-item">Retries are safe — idempotency key prevents duplicates</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-block">
+          <div class="report-block__head">What the report captures</div>
+          <div class="report-block__body">
+            <div class="report-check" style="margin-bottom: 1.25rem;">
+              <p class="report-check-item">Project name and framework project ID</p>
+              <p class="report-check-item">Git commits made during the session</p>
+              <p class="report-check-item">Phase status changes (planned → executed → verified)</p>
+              <p class="report-check-item">Milestones opened or closed</p>
+              <p class="report-check-item">Blockers and gap cycles</p>
+              <p class="report-check-item">Session duration and activity summary</p>
+            </div>
+
+            <pre class="report-code"><span class="comment"># Check your framework setup is configured:</span>
+<span class="cmd">cat ~/.claude/.qualia-config.json</span>
+
+<span class="comment"># Update framework if needed:</span>
+<span class="cmd">npx qualia-framework-v2 update</span>
+<span class="cmd">npx qualia-framework-v2 version</span></pre>
+          </div>
+        </div>
+
+        <div class="report-block">
+          <div class="report-block__head">What Fawzi sees</div>
+          <div class="report-block__body">
+            <div class="report-check">
+              <p class="report-check-item">Every report appears in the ERP under Admin → Framework Reports</p>
+              <p class="report-check-item">Each row shows: project, report ID, phase, milestone, session summary</p>
+              <p class="report-check-item">Missing reports are visible — if you clocked in but no report arrived, it shows as a gap</p>
+              <p class="report-check-item">Dry-run reports (for testing) are filtered from production view automatically</p>
+              <p class="report-check-item">Reports feed into client billing and project status tracking</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-block">
+          <div class="report-block__head">During the day — quick commands</div>
+          <div class="report-block__body">
+            <pre class="report-code"><span class="comment"># When you start work on a project:</span>
+<span class="cmd">/qualia</span>        <span class="comment"># tells you exactly what's next</span>
+
+<span class="comment"># For a task you can do in one session:</span>
+<span class="cmd">/qualia-quick</span>  <span class="comment"># fast all-purpose workflow</span>
+
+<span class="comment"># If you don't know what to do:</span>
+<span class="cmd">/qualia-idk</span>    <span class="comment"># framework diagnoses your situation</span>
+
+<span class="comment"># If something is broken:</span>
+<span class="cmd">/qualia-debug</span>  <span class="comment"># structured diagnosis</span>
+
+<span class="comment"># End of session — non-negotiable:</span>
+<span class="cmd">/qualia-report</span></pre>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div><!-- /wrap -->
+</main>
+
+<!-- FOOTER -->
+<footer class="footer" role="contentinfo">
+  <div class="wrap" style="width: 100%; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <p class="footer__brand">Qualia Solutions · <em>May 2026</em></p>
+    <div class="footer__meta">
+      <p>Internal use only · Nicosia, Cyprus</p>
+      <p style="margin-top: 0.2rem;">Fawzi Goussous · info@qualiasolutions.net</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
