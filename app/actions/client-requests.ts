@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import { type ActionResult, isUserManagerOrAbove } from './shared';
 import { notifyAssignedEmployees } from '@/lib/notifications';
@@ -234,6 +234,125 @@ export async function updateFeatureRequest(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update request',
+    };
+  }
+}
+
+/**
+ * Cancel a feature request owned by the current client.
+ * Uses the existing terminal `declined` status to avoid a live DB constraint
+ * change; the portal renders this as "Cancelled" when the response marker is set.
+ */
+export async function cancelFeatureRequest(requestId: string): Promise<ActionResult> {
+  try {
+    const imp = await assertNotImpersonating();
+    if (!imp.ok) return { success: false, error: imp.error };
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const isAdmin = await isUserManagerOrAbove(user.id);
+    const adminClient = createAdminClient();
+
+    const { data: request, error: readError } = await adminClient
+      .from('client_feature_requests')
+      .select('id, client_id, status')
+      .eq('id', requestId)
+      .maybeSingle();
+
+    if (readError) throw readError;
+    if (!request) return { success: false, error: 'Request not found' };
+    if (!isAdmin && request.client_id !== user.id) {
+      return { success: false, error: 'Access denied' };
+    }
+    if (['completed', 'declined'].includes(request.status || '')) {
+      return { success: false, error: 'Request is already closed' };
+    }
+
+    const { data, error } = await adminClient
+      .from('client_feature_requests')
+      .update({
+        status: 'declined',
+        admin_response: 'Cancelled by client',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', requestId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('[cancelFeatureRequest] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to cancel request',
+    };
+  }
+}
+
+/**
+ * Delete a feature request owned by the current client.
+ * Clients can delete pending/in-review requests; admins can delete any request.
+ */
+export async function deleteFeatureRequest(requestId: string): Promise<ActionResult> {
+  try {
+    const imp = await assertNotImpersonating();
+    if (!imp.ok) return { success: false, error: imp.error };
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const isAdmin = await isUserManagerOrAbove(user.id);
+    const adminClient = createAdminClient();
+
+    const { data: request, error: readError } = await adminClient
+      .from('client_feature_requests')
+      .select('id, client_id, status, attachments')
+      .eq('id', requestId)
+      .maybeSingle();
+
+    if (readError) throw readError;
+    if (!request) return { success: false, error: 'Request not found' };
+    if (!isAdmin && request.client_id !== user.id) {
+      return { success: false, error: 'Access denied' };
+    }
+    if (!isAdmin && !['pending', 'in_review'].includes(request.status || '')) {
+      return { success: false, error: 'Only pending or in-review requests can be deleted' };
+    }
+
+    const attachments = Array.isArray(request.attachments)
+      ? (request.attachments as RequestAttachment[])
+      : [];
+    const storagePaths = attachments.map((a) => a.path).filter(Boolean);
+    if (storagePaths.length > 0) {
+      await adminClient.storage.from('project-files').remove(storagePaths);
+    }
+
+    const { error: commentsError } = await adminClient
+      .from('request_comments')
+      .delete()
+      .eq('request_id', requestId);
+    if (commentsError) throw commentsError;
+
+    const { error } = await adminClient
+      .from('client_feature_requests')
+      .delete()
+      .eq('id', requestId);
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error) {
+    console.error('[deleteFeatureRequest] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete request',
     };
   }
 }

@@ -15,13 +15,19 @@ import {
   FileText,
   Image as ImageIcon,
   Trash2,
+  XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useRouter } from 'next/navigation';
 import { RequestCommentThread } from './request-comment-thread';
 import { getRequestCommentCounts } from '@/app/actions/request-comments';
-import { getRequestAttachmentUrl, deleteRequestAttachment } from '@/app/actions/client-requests';
+import {
+  getRequestAttachmentUrl,
+  deleteRequestAttachment,
+  cancelFeatureRequest,
+  deleteFeatureRequest,
+} from '@/app/actions/client-requests';
 import { toast } from 'sonner';
 
 interface RequestAttachmentMeta {
@@ -199,6 +205,13 @@ function getStatusColor(status: string) {
   }
 }
 
+function getRequestStatusLabel(request: FeatureRequest) {
+  if (request.status === 'declined' && request.admin_response === 'Cancelled by client') {
+    return 'Cancelled';
+  }
+  return request.status.replace(/_/g, ' ');
+}
+
 function getPriorityColor(priority: string) {
   switch (priority) {
     case 'urgent':
@@ -233,102 +246,199 @@ const RequestRow = memo(function RequestRow({
   userRole,
   onToggle,
 }: RequestRowProps) {
+  const router = useRouter();
+  const [action, setAction] = useState<'cancel' | 'delete' | null>(null);
+  const [busy, setBusy] = useState<'cancel' | 'delete' | null>(null);
+  const [removed, setRemoved] = useState(false);
+  const [localStatus, setLocalStatus] = useState(request.status);
+  const [localAdminResponse, setLocalAdminResponse] = useState(request.admin_response);
+
+  const effectiveRequest = {
+    ...request,
+    status: localStatus,
+    admin_response: localAdminResponse,
+  };
+  const isClosed = ['completed', 'declined'].includes(localStatus);
+  const canDelete =
+    (userRole === 'admin' || userRole === 'client') &&
+    ['pending', 'in_review'].includes(localStatus);
+  const canCancel = (userRole === 'admin' || userRole === 'client') && !isClosed;
+
+  const handleCancelRequest = async () => {
+    setBusy('cancel');
+    const res = await cancelFeatureRequest(request.id);
+    setBusy(null);
+    if (!res.success) {
+      toast.error(res.error || 'Failed to cancel request');
+      return;
+    }
+    setLocalStatus('declined');
+    setLocalAdminResponse('Cancelled by client');
+    toast.success('Request cancelled');
+    router.refresh();
+  };
+
+  const handleDeleteRequest = async () => {
+    setBusy('delete');
+    const res = await deleteFeatureRequest(request.id);
+    setBusy(null);
+    if (!res.success) {
+      toast.error(res.error || 'Failed to delete request');
+      return;
+    }
+    setRemoved(true);
+    toast.success('Request deleted');
+    router.refresh();
+  };
+
+  if (removed) return null;
+
   return (
-    <div
-      className={cn(
-        'rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/20',
-        'animate-fade-in fill-mode-both'
-      )}
-      style={index < 10 ? { animationDelay: `${index * 30}ms` } : undefined}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-base font-medium text-foreground">{request.title}</h3>
-          {request.description && (
-            <RichText compact className="mt-1 line-clamp-2">
-              {request.description}
-            </RichText>
-          )}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Badge className={cn('text-[10px] capitalize', getStatusColor(request.status))}>
-              {request.status.replace(/_/g, ' ')}
-            </Badge>
-            <Badge
-              variant="outline"
-              className={cn('text-[10px] capitalize', getPriorityColor(request.priority))}
-            >
-              {request.priority}
-            </Badge>
-            {request.project && (
-              <span className="text-xs text-muted-foreground">{request.project.name}</span>
+    <>
+      <div
+        className={cn(
+          'rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/20',
+          'animate-fade-in fill-mode-both'
+        )}
+        style={index < 10 ? { animationDelay: `${index * 30}ms` } : undefined}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-medium text-foreground">{request.title}</h3>
+            {request.description && (
+              <RichText compact className="mt-1 line-clamp-2">
+                {request.description}
+              </RichText>
             )}
-            <span className="text-xs text-muted-foreground">
-              {new Date(request.created_at).toLocaleDateString()}
-            </span>
-            {request.attachments && request.attachments.length > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <Paperclip className="h-3 w-3" />
-                {request.attachments.length}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Badge className={cn('text-[10px] capitalize', getStatusColor(localStatus))}>
+                {getRequestStatusLabel(effectiveRequest)}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={cn('text-[10px] capitalize', getPriorityColor(request.priority))}
+              >
+                {request.priority}
+              </Badge>
+              {request.project && (
+                <span className="text-xs text-muted-foreground">{request.project.name}</span>
+              )}
+              <span className="text-xs text-muted-foreground">
+                {new Date(request.created_at).toLocaleDateString()}
               </span>
+              {request.attachments && request.attachments.length > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Paperclip className="h-3 w-3" />
+                  {request.attachments.length}
+                </span>
+              )}
+            </div>
+            {request.attachments && request.attachments.length > 0 && (
+              <ul className="mt-3 space-y-1.5">
+                {request.attachments.map((att) => (
+                  <AttachmentRow
+                    key={att.path}
+                    requestId={request.id}
+                    attachment={att}
+                    userRole={userRole}
+                  />
+                ))}
+              </ul>
+            )}
+            {(canCancel || canDelete) && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                {canCancel && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 cursor-pointer gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    disabled={busy !== null}
+                    onClick={() => setAction('cancel')}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    Cancel
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 cursor-pointer gap-1.5 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    disabled={busy !== null}
+                    onClick={() => setAction('delete')}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </Button>
+                )}
+              </div>
             )}
           </div>
-          {request.attachments && request.attachments.length > 0 && (
-            <ul className="mt-3 space-y-1.5">
-              {request.attachments.map((att) => (
-                <AttachmentRow
-                  key={att.path}
-                  requestId={request.id}
-                  attachment={att}
-                  userRole={userRole}
-                />
-              ))}
-            </ul>
-          )}
+
+          {/* Expand/collapse for comment thread */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 shrink-0 cursor-pointer p-0"
+            onClick={() => onToggle(request.id)}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Collapse comments' : 'Expand comments'}
+          >
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
         </div>
 
-        {/* Expand/collapse for comment thread */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 shrink-0 cursor-pointer p-0"
-          onClick={() => onToggle(request.id)}
-          aria-expanded={expanded}
-          aria-label={expanded ? 'Collapse comments' : 'Expand comments'}
-        >
-          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
+        {/* Comment count + legacy response indicator */}
+        {!expanded && (
+          <button
+            onClick={() => onToggle(request.id)}
+            className="mt-2 flex cursor-pointer items-center gap-1.5 text-xs text-primary transition-colors duration-150 hover:text-primary/80"
+          >
+            <MessageSquare className="h-3 w-3" />
+            {commentCount > 0 ? (
+              <span>
+                {commentCount} comment
+                {commentCount !== 1 ? 's' : ''}
+              </span>
+            ) : localAdminResponse ? (
+              <span>Has response</span>
+            ) : (
+              <span>Add comment</span>
+            )}
+          </button>
+        )}
+
+        {/* Comment thread (expanded) */}
+        {expanded && (
+          <RequestCommentThread
+            requestId={request.id}
+            currentUserId={currentUserId}
+            userRole={userRole}
+            legacyAdminResponse={localAdminResponse}
+          />
+        )}
       </div>
-
-      {/* Comment count + legacy response indicator */}
-      {!expanded && (
-        <button
-          onClick={() => onToggle(request.id)}
-          className="mt-2 flex cursor-pointer items-center gap-1.5 text-xs text-primary transition-colors duration-150 hover:text-primary/80"
-        >
-          <MessageSquare className="h-3 w-3" />
-          {commentCount > 0 ? (
-            <span>
-              {commentCount} comment
-              {commentCount !== 1 ? 's' : ''}
-            </span>
-          ) : request.admin_response ? (
-            <span>Has response</span>
-          ) : (
-            <span>Add comment</span>
-          )}
-        </button>
-      )}
-
-      {/* Comment thread (expanded) */}
-      {expanded && (
-        <RequestCommentThread
-          requestId={request.id}
-          currentUserId={currentUserId}
-          userRole={userRole}
-          legacyAdminResponse={request.admin_response}
-        />
-      )}
-    </div>
+      <ConfirmDialog
+        open={action === 'cancel'}
+        onOpenChange={(open) => !open && setAction(null)}
+        title="Cancel request?"
+        description="This will close the request and mark it as cancelled for the team."
+        confirmLabel="Cancel request"
+        variant="destructive"
+        onConfirm={handleCancelRequest}
+      />
+      <ConfirmDialog
+        open={action === 'delete'}
+        onOpenChange={(open) => !open && setAction(null)}
+        title="Delete request?"
+        description="This permanently deletes the request, its comments, and its attachments."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDeleteRequest}
+      />
+    </>
   );
 });
 
