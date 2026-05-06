@@ -53,19 +53,7 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
     if (!link) notFound();
   }
 
-  // Employees can only view projects they're assigned to
-  if (userProfile && userProfile.role !== 'admin' && userProfile.role !== 'client') {
-    const { data: assignment } = await supabase
-      .from('project_assignments')
-      .select('id')
-      .eq('project_id', id)
-      .eq('employee_id', userProfile.id)
-      .is('removed_at', null)
-      .single();
-    if (!assignment) {
-      notFound();
-    }
-  }
+  // Employees can view all workspace projects (no assignment gate)
 
   const [project, profiles, integrationStatus, clientsRaw] = await Promise.all([
     getCachedProjectById(id),
