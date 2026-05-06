@@ -1403,6 +1403,157 @@ export async function notifyEmployeesOfClientActivity(
 }
 
 // ============================================================================
+// Unified Client Activity Notification — Admin (Fawzi) + Assigned Employees
+// ============================================================================
+
+const QUALIA_ADMIN_EMAIL = 'info@qualiasolutions.net';
+
+function buildClientActivityEmail(params: {
+  recipientName: string;
+  clientName: string;
+  activityType: string;
+  activityDetails: string;
+  projectName: string;
+  viewUrl: string;
+  isAdminCopy: boolean;
+}): { html: string; text: string } {
+  const {
+    recipientName,
+    clientName,
+    activityType,
+    activityDetails,
+    projectName,
+    viewUrl,
+    isAdminCopy,
+  } = params;
+  const footer = isAdminCopy
+    ? "You're receiving this as the workspace owner."
+    : "You're receiving this because you're assigned to this project. Manage notification preferences in Settings.";
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #00A4AC 0%, #008085 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Client Activity</h1>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
+    <p style="margin: 0 0 24px; font-size: 16px;">
+      <strong>${clientName}</strong> ${activityType} on <strong>${projectName}</strong>:
+    </p>
+    <div style="background: #f9fafb; border-left: 4px solid #00A4AC; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0; white-space: pre-wrap;">${activityDetails}</p>
+    </div>
+    <a href="${viewUrl}" style="display: inline-block; background: #00A4AC; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      Open in portal
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">${footer}</p>
+  </div>
+</body>
+</html>`.trim();
+  const text = `Hi ${recipientName},\n\n${clientName} ${activityType} on ${projectName}:\n\n${activityDetails}\n\nOpen: ${viewUrl}\n\n---\n${footer}`;
+  return { html, text };
+}
+
+/**
+ * Send a client-activity email to the workspace admin (Fawzi) and/or
+ * all assigned employees on a project. Used for write events on the
+ * client portal: feature requests, comments, file uploads, portal messages,
+ * cancellations, deletions.
+ *
+ * Admin always receives the email (no preferences check). Employees honor
+ * their `client_activity` notification preference.
+ */
+export async function notifyAdminAndAssignedOfClientActivity(params: {
+  projectId: string;
+  clientName: string;
+  activityType: string;
+  activityDetails: string;
+  includeAdmin?: boolean;
+  includeAssigned?: boolean;
+}): Promise<{ success: boolean; error?: string }> {
+  const { projectId, clientName, activityType, activityDetails } = params;
+  const includeAdmin = params.includeAdmin !== false;
+  const includeAssigned = params.includeAssigned !== false;
+
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyAdminAndAssignedOfClientActivity] Resend not configured');
+      return { success: true };
+    }
+
+    const supabase = await createClient();
+    const { data: project } = await supabase
+      .from('projects')
+      .select('name, workspace_id')
+      .eq('id', projectId)
+      .single();
+    if (!project) return { success: false, error: 'Project not found' };
+
+    const viewUrl = `${APP_URL}/projects/${projectId}`;
+    const subject = `${clientName} ${activityType} on ${project.name}`;
+
+    const sends: Promise<unknown>[] = [];
+
+    if (includeAdmin) {
+      const { html, text } = buildClientActivityEmail({
+        recipientName: 'Fawzi',
+        clientName,
+        activityType,
+        activityDetails,
+        projectName: project.name,
+        viewUrl,
+        isAdminCopy: true,
+      });
+      sends.push(
+        resendClient.emails
+          .send({ from: FROM_EMAIL, to: QUALIA_ADMIN_EMAIL, subject, html, text })
+          .catch((err) => console.error('[notifyAdminAndAssigned admin send]', err))
+      );
+    }
+
+    if (includeAssigned) {
+      const employeeIds = await getProjectAssignedEmployees(projectId);
+      if (employeeIds.length > 0) {
+        const { data: employees } = await supabase
+          .from('profiles')
+          .select('id, email, full_name')
+          .in('id', employeeIds);
+
+        for (const emp of employees || []) {
+          if (!emp.email) continue;
+          const ok = await shouldSendEmail(emp.id, project.workspace_id, 'client_activity');
+          if (!ok) continue;
+          const { html, text } = buildClientActivityEmail({
+            recipientName: emp.full_name || 'there',
+            clientName,
+            activityType,
+            activityDetails,
+            projectName: project.name,
+            viewUrl,
+            isAdminCopy: false,
+          });
+          sends.push(
+            resendClient.emails
+              .send({ from: FROM_EMAIL, to: emp.email, subject, html, text })
+              .catch((err) => console.error('[notifyAdminAndAssigned employee send]', err))
+          );
+        }
+      }
+    }
+
+    await Promise.all(sends);
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyAdminAndAssignedOfClientActivity] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+// ============================================================================
 // Client Notification Functions (Phase 14-03)
 // ============================================================================
 

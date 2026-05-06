@@ -3,10 +3,14 @@
 import { createClient } from '@/lib/supabase/server';
 
 import type { ActionResult } from './shared';
-import { isUserManagerOrAbove } from './shared';
+import { isUserAdmin } from './shared';
+import { isStaffOnProject } from '@/lib/auth/is-staff-on-project';
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { uuidParam, requestCommentSchema } from '@/lib/validation';
-import { notifyEmployeesOfClientComment } from '@/lib/email';
+import {
+  notifyEmployeesOfClientComment,
+  notifyAdminAndAssignedOfClientActivity,
+} from '@/lib/email';
 
 /**
  * Get all comments for a feature request
@@ -25,17 +29,30 @@ export async function getRequestComments(requestId: string): Promise<ActionResul
     return { success: false, error: 'Invalid request ID' };
   }
 
-  // Verify user can access this request:
-  // Staff can see any, clients can only see their own requests
-  const isStaff = await isUserManagerOrAbove(user.id);
-  if (!isStaff) {
-    const { data: request } = await supabase
-      .from('client_feature_requests')
-      .select('client_id')
-      .eq('id', requestId)
+  // Authorize: admin → any; employee → only requests on assigned projects;
+  // client → only their own requests.
+  const { data: request } = await supabase
+    .from('client_feature_requests')
+    .select('client_id, project_id')
+    .eq('id', requestId)
+    .single();
+
+  if (!request) return { success: false, error: 'Request not found or access denied' };
+
+  const isAdmin = await isUserAdmin(user.id);
+  if (!isAdmin) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
       .single();
 
-    if (!request || request.client_id !== user.id) {
+    if (profile?.role === 'employee') {
+      const allowed = request.project_id
+        ? await isStaffOnProject(user.id, request.project_id)
+        : false;
+      if (!allowed) return { success: false, error: 'Request not found or access denied' };
+    } else if (request.client_id !== user.id) {
       return { success: false, error: 'Request not found or access denied' };
     }
   }
@@ -89,27 +106,32 @@ export async function createRequestComment(
     return { success: false, error: parsed.error.issues[0]?.message || 'Invalid input' };
   }
 
-  // Check user role
+  // Resolve role + request once (used for both auth + post-insert notification)
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
-  const isStaff = profile?.role === 'admin' || profile?.role === 'employee';
+  const { data: request } = await supabase
+    .from('client_feature_requests')
+    .select('client_id, project_id, title')
+    .eq('id', requestId)
+    .single();
 
-  // Verify user can access this request
-  if (!isStaff) {
-    // Client: check that the request belongs to them
-    const { data: request } = await supabase
-      .from('client_feature_requests')
-      .select('client_id')
-      .eq('id', requestId)
-      .single();
+  if (!request) return { success: false, error: 'Request not found or access denied' };
 
-    if (!request || request.client_id !== user.id) {
-      return { success: false, error: 'Request not found or access denied' };
-    }
+  // Authorize: admin → any; employee → only requests on assigned projects;
+  // client → only their own requests.
+  if (profile?.role === 'admin') {
+    // ok
+  } else if (profile?.role === 'employee') {
+    const allowed = request.project_id
+      ? await isStaffOnProject(user.id, request.project_id)
+      : false;
+    if (!allowed) return { success: false, error: 'Request not found or access denied' };
+  } else if (request.client_id !== user.id) {
+    return { success: false, error: 'Request not found or access denied' };
   }
 
   // Insert comment
@@ -143,20 +165,20 @@ export async function createRequestComment(
     author: normalizeFKResponse(comment.author),
   };
 
-  // Notify assigned employees when a client posts a comment
-  if (profile?.role === 'client') {
-    const { data: request } = await supabase
-      .from('client_feature_requests')
-      .select('project_id, title')
-      .eq('id', requestId)
-      .single();
-
-    if (request?.project_id) {
-      const authorName = normalized.author?.full_name || 'A client';
-      notifyEmployeesOfClientComment(request.project_id, authorName, content.trim()).catch((err) =>
-        console.error('[request-comment notify]', err)
-      );
-    }
+  // Notify admin + assigned employees when a client posts a comment
+  if (profile?.role === 'client' && request.project_id) {
+    const authorName = normalized.author?.full_name || 'A client';
+    notifyEmployeesOfClientComment(request.project_id, authorName, content.trim()).catch((err) =>
+      console.error('[request-comment notify employees]', err)
+    );
+    notifyAdminAndAssignedOfClientActivity({
+      projectId: request.project_id,
+      clientName: authorName,
+      activityType: 'commented on request',
+      activityDetails: `"${request.title}" — ${content.trim()}`,
+      includeAdmin: true,
+      includeAssigned: false, // employees already notified above by notifyEmployeesOfClientComment
+    }).catch((err) => console.error('[request-comment notify admin]', err));
   }
 
   return { success: true, data: normalized };
@@ -191,11 +213,11 @@ export async function deleteRequestComment(commentId: string): Promise<ActionRes
     return { success: false, error: 'Comment not found' };
   }
 
-  // Check permission: admin/manager can delete any; others only their own
-  const isStaff = await isUserManagerOrAbove(user.id);
+  // Check permission: admin can delete any; others only their own
+  const isAdmin = await isUserAdmin(user.id);
   const isAuthor = comment.author_id === user.id;
 
-  if (!isStaff && !isAuthor) {
+  if (!isAdmin && !isAuthor) {
     return { success: false, error: 'Not authorized to delete this comment' };
   }
 

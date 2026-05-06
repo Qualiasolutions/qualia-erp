@@ -6,7 +6,10 @@ import type { ActionResult } from './shared';
 import { isUserAdmin } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { createActivityLogEntry } from './activity-feed';
-import { notifyEmployeesOfClientComment } from '@/lib/email';
+import {
+  notifyEmployeesOfClientComment,
+  notifyAdminAndAssignedOfClientActivity,
+} from '@/lib/email';
 import { canAccessProject } from '@/lib/portal-utils';
 
 interface CreatePhaseCommentInput {
@@ -86,7 +89,7 @@ export async function createPhaseComment(data: CreatePhaseCommentInput): Promise
     isClientVisible: !finalIsInternal,
   });
 
-  // Notify assigned employees if comment is from a client
+  // Notify assigned employees + admin if comment is from a client
   if (isClient) {
     const { data: author } = await supabase
       .from('profiles')
@@ -94,11 +97,15 @@ export async function createPhaseComment(data: CreatePhaseCommentInput): Promise
       .eq('id', user.id)
       .single();
 
-    await notifyEmployeesOfClientComment(
+    const authorName = author?.full_name || 'A client';
+    await notifyEmployeesOfClientComment(projectId, authorName, commentText.trim());
+    notifyAdminAndAssignedOfClientActivity({
       projectId,
-      author?.full_name || 'A client',
-      commentText.trim()
-    );
+      clientName: authorName,
+      activityType: `commented on phase "${phaseName}"`,
+      activityDetails: commentText.trim(),
+      includeAssigned: false,
+    }).catch((err) => console.error('[phase-comment email]', err));
   }
 
   return { success: true, data: comment };

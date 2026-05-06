@@ -32,7 +32,10 @@ export type ProjectFileWithUploader = ProjectFile & {
 import { canAccessProject, canDeleteProjectFile, type ActionResult } from './shared';
 import { canAccessProject as canClientAccessProject } from '@/lib/portal-utils';
 import { createActivityLogEntry } from './activity-feed';
-import { notifyEmployeesOfClientFileUpload } from '@/lib/email';
+import {
+  notifyEmployeesOfClientFileUpload,
+  notifyAdminAndAssignedOfClientActivity,
+} from '@/lib/email';
 
 // Max file size: 50MB
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -305,12 +308,20 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
 
     // Only notify if uploader is a client (not admin/employee)
     if (uploader && uploader.role !== 'admin' && uploader.role !== 'employee') {
+      const clientName = uploader.full_name || 'A client';
       await notifyEmployeesOfClientFileUpload(
         projectId,
-        uploader.full_name || 'A client',
+        clientName,
         file.name,
         description || undefined
       );
+      notifyAdminAndAssignedOfClientActivity({
+        projectId,
+        clientName,
+        activityType: 'uploaded a file',
+        activityDetails: `${file.name}${description ? `\n\n${description}` : ''}`,
+        includeAssigned: false,
+      }).catch((err) => console.error('[uploadProjectFile email]', err));
     }
   }
 
@@ -445,13 +456,20 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
     isClientVisible: true,
   });
 
-  // Notify team members of the client upload
+  // Notify team members + admin of the client upload
   await notifyEmployeesOfClientFileUpload(
     projectId,
     uploaderName,
     file.name,
     description || undefined
   );
+  notifyAdminAndAssignedOfClientActivity({
+    projectId,
+    clientName: uploaderName,
+    activityType: 'uploaded a file',
+    activityDetails: `${file.name}${description ? `\n\n${description}` : ''}`,
+    includeAssigned: false,
+  }).catch((err) => console.error('[uploadPortalFile email]', err));
 
   revalidatePath('/projects/[id]/files', 'page');
   revalidatePath('/portal/[id]/files', 'page');

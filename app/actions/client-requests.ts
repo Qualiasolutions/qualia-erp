@@ -2,8 +2,10 @@
 
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
-import { type ActionResult, isUserManagerOrAbove } from './shared';
+import { type ActionResult, isUserAdmin, isUserManagerOrAbove } from './shared';
 import { notifyAssignedEmployees } from '@/lib/notifications';
+import { notifyAdminAndAssignedOfClientActivity } from '@/lib/email';
+import { getEmployeeProjectIds } from '@/lib/auth/is-staff-on-project';
 import { FeatureRequestCreateSchema, UpdateFeatureRequestSchema } from '@/lib/validation';
 import { assertNotImpersonating } from '@/lib/portal-utils';
 
@@ -93,6 +95,19 @@ export async function createFeatureRequest(input: {
             action_type: 'feature_request',
           }
         );
+
+        const { data: clientProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+
+        notifyAdminAndAssignedOfClientActivity({
+          projectId: resolvedProjectId,
+          clientName: clientProfile?.full_name || 'A client',
+          activityType: 'submitted a feature request',
+          activityDetails: `${safeInput.title}${safeInput.description ? `\n\n${safeInput.description}` : ''}`,
+        }).catch((err) => console.error('[createFeatureRequest email]', err));
       }
     } catch (err) {
       console.error('[createFeatureRequest] Activity/notification error:', err);
@@ -119,7 +134,14 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    const isAdmin = await isUserManagerOrAbove(user.id);
+    const isAdmin = await isUserAdmin(user.id);
+
+    // Resolve role to scope the query
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
 
     let query = supabase
       .from('client_feature_requests')
@@ -141,9 +163,15 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
       )
       .order('created_at', { ascending: false });
 
-    // Clients only see their own (RLS enforces this too)
     if (!isAdmin) {
-      query = query.eq('client_id', user.id);
+      if (profile?.role === 'employee') {
+        const projectIds = await getEmployeeProjectIds(user.id);
+        if (projectIds.length === 0) return { success: true, data: [] };
+        query = query.in('project_id', projectIds);
+      } else {
+        // Clients only see their own (RLS enforces this too)
+        query = query.eq('client_id', user.id);
+      }
     }
 
     const { data, error } = await query;
@@ -280,10 +308,28 @@ export async function cancelFeatureRequest(requestId: string): Promise<ActionRes
         updated_at: new Date().toISOString(),
       })
       .eq('id', requestId)
-      .select()
+      .select('id, title, project_id')
       .single();
 
     if (error) throw error;
+
+    // Notify admin + assigned employees only when the cancel was initiated
+    // by the client themselves (not an admin canceling on their behalf).
+    if (!isAdmin && data.project_id) {
+      const { data: clientProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      notifyAdminAndAssignedOfClientActivity({
+        projectId: data.project_id,
+        clientName: clientProfile?.full_name || 'A client',
+        activityType: 'cancelled a request',
+        activityDetails: data.title,
+      }).catch((err) => console.error('[cancelFeatureRequest email]', err));
+    }
+
     return { success: true, data };
   } catch (error) {
     console.error('[cancelFeatureRequest] Error:', error);
@@ -314,7 +360,7 @@ export async function deleteFeatureRequest(requestId: string): Promise<ActionRes
 
     const { data: request, error: readError } = await adminClient
       .from('client_feature_requests')
-      .select('id, client_id, status, attachments')
+      .select('id, client_id, status, attachments, title, project_id')
       .eq('id', requestId)
       .maybeSingle();
 
@@ -346,6 +392,21 @@ export async function deleteFeatureRequest(requestId: string): Promise<ActionRes
       .delete()
       .eq('id', requestId);
     if (error) throw error;
+
+    if (!isAdmin && request.project_id) {
+      const { data: clientProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      notifyAdminAndAssignedOfClientActivity({
+        projectId: request.project_id,
+        clientName: clientProfile?.full_name || 'A client',
+        activityType: 'deleted a request',
+        activityDetails: request.title,
+      }).catch((err) => console.error('[deleteFeatureRequest email]', err));
+    }
 
     return { success: true };
   } catch (error) {

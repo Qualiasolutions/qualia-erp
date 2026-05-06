@@ -6,6 +6,7 @@ import type { ActionResult } from '@/app/actions/shared';
 import { getUserRole } from '@/app/actions/shared';
 import { getClientProjectIds } from '@/lib/portal-utils';
 import { notifyAssignedEmployees } from '@/lib/notifications';
+import { notifyAdminAndAssignedOfClientActivity } from '@/lib/email';
 
 // ============ RESULT TYPES ============
 // More specific return types so SWR hooks can access nested data properties
@@ -503,7 +504,7 @@ export async function sendMessage(input: {
       console.error('[sendMessage] Channel update error:', updateError);
     }
 
-    // Notify assigned employees when a client sends a message
+    // Notify assigned employees + admin when a client sends a message
     if (role === 'client') {
       const { data: senderProfile } = await supabase
         .from('profiles')
@@ -511,11 +512,19 @@ export async function sendMessage(input: {
         .eq('id', user.id)
         .single();
 
-      notifyAssignedEmployees(
+      const senderName = senderProfile?.full_name || 'a client';
+      notifyAssignedEmployees(projectId, 'New message from ' + senderName, {
+        type: 'portal_message',
         projectId,
-        'New message from ' + (senderProfile?.full_name || 'a client'),
-        { type: 'portal_message', projectId, messagePreview: content.substring(0, 100) }
-      ).catch((err) => console.error('[sendMessage notify]', err));
+        messagePreview: content.substring(0, 100),
+      }).catch((err) => console.error('[sendMessage notify]', err));
+
+      notifyAdminAndAssignedOfClientActivity({
+        projectId,
+        clientName: senderName,
+        activityType: 'sent a message',
+        activityDetails: content,
+      }).catch((err) => console.error('[sendMessage email]', err));
     }
 
     // Normalize the sender FK

@@ -17,12 +17,7 @@ export default async function PortalRequestsPage() {
     redirect('/auth/login');
   }
 
-  // Employees don't submit/view feature requests — redirect
   const profile = await getPortalProfile(user.id);
-
-  if (profile?.role === 'employee') {
-    redirect('/');
-  }
 
   // App Library guard: block clients if the "requests" app is disabled
   if (profile?.role === 'client') {
@@ -36,7 +31,10 @@ export default async function PortalRequestsPage() {
     getClientFeatureRequests(),
   ]);
 
-  // Get project dropdown: admins see all active projects, clients see their linked projects
+  const isEmployee = profile?.role === 'employee';
+
+  // Get project dropdown: admins see all active projects; clients see their linked projects;
+  // employees see assigned projects (read-only on requests).
   const supabase = await createClient();
   let projectsData: { id: string; name: string }[] = [];
   if (isAdmin) {
@@ -46,6 +44,18 @@ export default async function PortalRequestsPage() {
       .not('status', 'eq', 'Canceled')
       .order('name');
     projectsData = (data || []).map((p) => ({ id: p.id, name: p.name }));
+  } else if (isEmployee) {
+    const { data } = await supabase
+      .from('project_assignments')
+      .select('project:projects!project_assignments_project_id_fkey(id, name)')
+      .eq('employee_id', user.id)
+      .is('removed_at', null);
+    projectsData = (data ?? [])
+      .map((row) => {
+        const p = Array.isArray(row.project) ? row.project[0] : row.project;
+        return p ? { id: p.id, name: p.name } : null;
+      })
+      .filter((p): p is { id: string; name: string } => p !== null);
   } else {
     const { data } = await supabase
       .from('client_projects')
@@ -85,10 +95,12 @@ export default async function PortalRequestsPage() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Requests</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Track your feature requests and changes
+            {isEmployee
+              ? 'Client requests on your assigned projects'
+              : 'Track your feature requests and changes'}
           </p>
         </div>
-        <PortalRequestDialog projects={projects} />
+        {!isEmployee && <PortalRequestDialog projects={projects} />}
       </div>
 
       <PortalRequestList
