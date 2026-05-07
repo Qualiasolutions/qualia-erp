@@ -318,14 +318,14 @@ export function QualiaControl({ initialTab, data, canViewFinance = false }: Qual
           <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight">
-                Control
+                Dashboard
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">{activeTab.desc}</p>
             </div>
           </div>
           <nav
             role="tablist"
-            aria-label="Control tabs"
+            aria-label="Dashboard tabs"
             className="mt-6 flex items-center gap-6 overflow-x-auto"
           >
             {TABS.map((t) => {
