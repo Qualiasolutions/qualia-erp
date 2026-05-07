@@ -57,15 +57,16 @@ export async function getDailyBrief(forDate?: string): Promise<DailyBriefRespons
       .eq('owner_id', userId)
       .eq('for_date', date);
     if ((count ?? 0) === 0) {
-      const { data: profile } = await supabase
-        .from('profiles')
+      const { data: membership } = await supabase
+        .from('workspace_members')
         .select('workspace_id')
-        .eq('id', userId)
-        .single();
-      if (profile?.workspace_id) {
+        .eq('profile_id', userId)
+        .eq('is_default', true)
+        .maybeSingle();
+      if (membership?.workspace_id) {
         try {
           const admin = createAdminClient();
-          await generateDailyBrief(admin, userId, profile.workspace_id, date);
+          await generateDailyBrief(admin, userId, membership.workspace_id, date);
         } catch (err) {
           console.error('[getDailyBrief] auto-generate failed:', err);
         }
@@ -195,16 +196,17 @@ export async function createManualBriefItem(input: {
   if (!trimmedBody) return { success: false, error: 'Body is required.' };
 
   const { supabase, userId } = await requireSession();
-  const { data: profile } = await supabase
-    .from('profiles')
+  const { data: membership } = await supabase
+    .from('workspace_members')
     .select('workspace_id')
-    .eq('id', userId)
-    .single();
+    .eq('profile_id', userId)
+    .eq('is_default', true)
+    .maybeSingle();
 
   const date = input.forDate ?? cyprusToday();
   const { error } = await supabase.from('daily_brief_items').insert({
     owner_id: userId,
-    workspace_id: profile?.workspace_id ?? null,
+    workspace_id: membership?.workspace_id ?? null,
     for_date: date,
     source_type: 'manual',
     source_id: null,
@@ -221,19 +223,20 @@ export async function createManualBriefItem(input: {
 
 export async function regenerateMyDailyBrief(): Promise<ActionResult> {
   const { supabase: userClient, userId } = await requireSession();
-  const { data: profile, error: profileErr } = await userClient
-    .from('profiles')
-    .select('workspace_id, role')
-    .eq('id', userId)
-    .single();
+  const { data: membership, error: membershipErr } = await userClient
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('profile_id', userId)
+    .eq('is_default', true)
+    .maybeSingle();
 
-  if (profileErr || !profile?.workspace_id) {
+  if (membershipErr || !membership?.workspace_id) {
     return { success: false, error: 'No workspace for current user.' };
   }
 
   try {
     const admin = createAdminClient();
-    const result = await generateDailyBrief(admin, userId, profile.workspace_id);
+    const result = await generateDailyBrief(admin, userId, membership.workspace_id);
     revalidatePath('/');
     return { success: true, data: result };
   } catch (err) {
