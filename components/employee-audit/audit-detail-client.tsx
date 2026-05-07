@@ -518,72 +518,35 @@ export function AuditExamView({
         : `Q${currentSlide} / ${TOTAL_QUESTIONS}`;
 
   const slideContent = useMemo(() => {
-    // Slide 0 — intro (full-bleed two-column hero)
+    // Slide 0 — intro (centered hero, minimal)
     if (currentSlide === 0) {
       return (
-        <div className="grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16">
-          {/* Left column — copy + start */}
-          <div className="flex flex-col gap-6">
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-              Self-evaluation · Qualia framework
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-8 text-center">
+          <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.22em] text-primary">
+            Self-evaluation · Qualia framework
+          </span>
+          <h1 className="text-[clamp(2.75rem,2rem+3.5vw,5rem)] font-semibold leading-[0.98] tracking-tight">
+            Where are you,
+            <br />
+            <span className="text-primary">really?</span>
+          </h1>
+          <p className="max-w-2xl text-[clamp(1rem,0.85rem+0.6vw,1.25rem)] leading-relaxed text-muted-foreground">
+            For <span className="font-medium text-foreground">{fullName}</span>. 25 questions — your
+            honest read of how comfortable you are with the framework, the project types, and the
+            real situations a client throws at you. No wrong answers. No time limit. Partial saves
+            welcome.
+          </p>
+          <p className="max-w-xl text-[clamp(0.95rem,0.85rem+0.4vw,1.125rem)] leading-relaxed text-muted-foreground/80">
+            First instinct beats polished prose. Don&apos;t research, don&apos;t ask Claude — we
+            want what comes out of your head right now.
+          </p>
+          <div className="mt-4 flex flex-col items-center gap-3">
+            <Button type="button" size="lg" className="h-14 gap-2 px-10 text-base" onClick={goNext}>
+              Start <ArrowRight className="size-5" />
+            </Button>
+            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+              ← → keys to navigate · auto-saves as you go
             </span>
-            <h1 className="text-[clamp(2rem,1.4rem+2.4vw,3.25rem)] font-semibold leading-[1.02] tracking-tight">
-              Where are you,
-              <br />
-              <span className="text-primary">really?</span>
-            </h1>
-            <p className="max-w-prose text-[15px] leading-relaxed text-muted-foreground">
-              For <span className="font-medium text-foreground">{fullName}</span>. 25 questions —
-              your honest read of how comfortable you are with the framework, the project types, and
-              the real situations a client throws at you. No wrong answers. No time limit. Partial
-              saves welcome.
-            </p>
-            <p className="max-w-prose text-[14px] leading-relaxed text-muted-foreground/80">
-              First instinct beats polished prose. Don&apos;t research, don&apos;t ask Claude — we
-              want what comes out of your head right now.
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <Button type="button" size="lg" className="gap-2" onClick={goNext}>
-                Start <ArrowRight className="size-4" />
-              </Button>
-              <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
-                ← → keys to navigate · auto-saves as you go
-              </span>
-            </div>
-          </div>
-
-          {/* Right column — visual breakdown of what's coming */}
-          <div className="relative">
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { count: '11', label: 'Skill ratings', help: 'Self-rate where you are' },
-                { count: '4', label: 'Quick selects', help: 'Tick what applies' },
-                { count: '10', label: 'Real scenarios', help: 'Walk us through your move' },
-                { count: '~12 min', label: 'Total time', help: 'No rush' },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="flex flex-col gap-1 rounded-xl border border-border bg-card/40 p-4"
-                >
-                  <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                    {item.label}
-                  </span>
-                  <span className="font-mono text-[clamp(1.5rem,1rem+1.2vw,2rem)] font-semibold tracking-tight text-foreground">
-                    {item.count}
-                  </span>
-                  <span className="text-[12px] text-muted-foreground">{item.help}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-4">
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
-                Why we&apos;re asking
-              </p>
-              <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-                This shapes what we route to you solo, what we pair on, and where the framework is
-                failing you. Useful only if you&apos;re honest.
-              </p>
-            </div>
           </div>
         </div>
       );
