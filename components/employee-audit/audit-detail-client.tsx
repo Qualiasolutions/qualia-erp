@@ -556,6 +556,12 @@ export function AuditExamView({
   const [isPending, start] = useTransition();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(1);
+  // Lock submit after first success — the slide flips to a thank-you screen and
+  // submit cannot fire a second time.
+  const [submitted, setSubmitted] = useState(false);
+  const [submittedAt, setSubmittedAt] = useState<string | null>(
+    audit.latestAssessment?.submittedAt ?? null
+  );
 
   // Slide-position 1..25 → underlying question case ID 1..25
   // Stable per profile: same person sees the same order across reloads,
@@ -610,6 +616,7 @@ export function AuditExamView({
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitted || isPending) return; // hard guard against double-clicks
     start(async () => {
       const result = await submitSelfAssessment(
         audit.profileId,
@@ -617,6 +624,8 @@ export function AuditExamView({
         notes.trim() || null
       );
       if (result.success) {
+        setSubmitted(true);
+        setSubmittedAt(new Date().toISOString());
         toast.success('Submitted. Thanks for the honesty.');
       } else {
         toast.error(result.error ?? 'Failed to save.');
@@ -672,8 +681,42 @@ export function AuditExamView({
       );
     }
 
-    // Slide 16 — submit
+    // Slide 16 — submit (or thank-you, post-success)
     if (currentSlide === TOTAL_SLIDES - 1) {
+      // Post-success thank-you screen
+      if (submitted) {
+        return (
+          <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center">
+            <div className="flex size-20 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/30">
+              <CheckCircle2 className="size-10 text-primary" />
+            </div>
+            <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.22em] text-primary">
+              Submitted
+            </span>
+            <h2 className="text-[clamp(2rem,1.5rem+2vw,3.25rem)] font-semibold leading-[1.05] tracking-tight">
+              Thanks, {fullName.split(' ')[0]}.
+            </h2>
+            <p className="max-w-2xl text-[clamp(1rem,0.85rem+0.5vw,1.15rem)] leading-relaxed text-muted-foreground">
+              Your answers are in. Fawzi will review them and get back to you to talk through some
+              of them in person — usually within a few days.
+            </p>
+            <p className="max-w-xl text-[13px] leading-relaxed text-muted-foreground/80">
+              Nothing else to do here. You can close this tab.
+            </p>
+            {submittedAt ? (
+              <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+                Recorded at{' '}
+                {new Date(submittedAt).toLocaleString('en-IE', {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })}
+              </p>
+            ) : null}
+          </div>
+        );
+      }
+
+      // Pre-submit: review screen
       return (
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-3">
@@ -720,10 +763,10 @@ export function AuditExamView({
             {isPending ? 'Submitting…' : 'Submit assessment'}
           </Button>
 
-          {audit.latestAssessment ? (
+          {submittedAt ? (
             <p className="text-[11px] text-muted-foreground">
               Last submission:{' '}
-              {new Date(audit.latestAssessment.submittedAt).toLocaleString('en-IE', {
+              {new Date(submittedAt).toLocaleString('en-IE', {
                 dateStyle: 'medium',
                 timeStyle: 'short',
               })}
@@ -1134,9 +1177,10 @@ export function AuditExamView({
     fullName,
     answered,
     isPending,
+    submitted,
+    submittedAt,
     canWritePrivateNotes,
     notes,
-    audit.latestAssessment,
     toggleInList,
     update,
     goNext,
@@ -1237,7 +1281,9 @@ export function AuditExamView({
             })}
           </div>
 
-          {currentSlide < TOTAL_SLIDES - 1 ? (
+          {submitted ? (
+            <div className="w-[5rem]" aria-hidden />
+          ) : currentSlide < TOTAL_SLIDES - 1 ? (
             <Button
               type="button"
               size="sm"
@@ -1252,7 +1298,7 @@ export function AuditExamView({
               type="submit"
               form="audit-form"
               size="sm"
-              disabled={isPending}
+              disabled={isPending || submitted}
               className="gap-1.5 font-mono text-[12px]"
             >
               {isPending ? (
