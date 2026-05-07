@@ -137,6 +137,126 @@ const DEBUG_COMFORT_CHOICES: RadioChoice<Frequency4>[] = [
   { value: 'no', label: 'I escalate before debugging' },
 ];
 
+// Q13–Q25: choice-driven options (replaces previous free-text fields, but the
+// underlying form keys stay the same so historic responses still hydrate.)
+const WISHED_COMMAND_CHOICES: RadioChoice<string>[] = [
+  { value: 'translate', label: '/qualia-translate — swap project to a new language' },
+  { value: 'demo', label: '/qualia-demo — auto-prep a stakeholder demo' },
+  { value: 'docs', label: '/qualia-docs — auto-generate client-facing docs' },
+  { value: 'schema-diff', label: '/qualia-schema-diff — diff DB schema vs migrations' },
+  { value: 'brief', label: '/qualia-brief — turn a vague request into a planning input' },
+  { value: 'none', label: 'Nothing — what we have covers it' },
+];
+
+const UNCLEAR_OR_BROKEN_CHOICES: RadioChoice<string>[] = [
+  { value: 'verify-gap', label: '/qualia-verify gap-cycle limit triggers too early' },
+  { value: 'plan-verbose', label: '/qualia-plan output is too verbose' },
+  { value: 'build-context', label: '/qualia-build subagents lose context mid-wave' },
+  { value: 'polish-loop', label: '/qualia-polish-loop iterates too long before stopping' },
+  { value: 'discuss-long', label: '/qualia-discuss interview is too long for small phases' },
+  { value: 'nothing', label: 'Nothing major — it works for me' },
+];
+
+const YES_GIVE_ME_SOLO_CHOICES: RadioChoice<string>[] = [
+  { value: 'one-pager', label: 'Single-page marketing site' },
+  { value: 'multi-page', label: 'Multi-page marketing site (5–10 pages)' },
+  { value: 'dashboard', label: 'Web app with Supabase auth + dashboard' },
+  { value: 'ai-chat', label: 'AI chatbot integration' },
+  { value: 'voice', label: 'Voice agent (Retell + ElevenLabs)' },
+  { value: 'integration', label: 'Custom integration (Zoho / Stripe / Calendar)' },
+  { value: 'mobile', label: 'React Native / Expo mobile app' },
+  { value: 'not-yet', label: 'Not ready for solo yet' },
+];
+
+const SCENARIO_INHERIT_CHOICES: RadioChoice<string>[] = [
+  { value: 'map-state-resume', label: '/qualia-map → /qualia → /qualia-resume' },
+  { value: 'state-resume-plan', label: '/qualia → /qualia-resume → /qualia-plan' },
+  { value: 'plan-build-verify', label: '/qualia-plan → /qualia-build → /qualia-verify' },
+  { value: 'review-map-state', label: '/qualia-review → /qualia-map → /qualia' },
+  { value: 'just-read', label: 'No commands — I just read the code first' },
+];
+
+const SCENARIO_WHITE_PAGE_CHOICES: RadioChoice<string>[] = [
+  { value: 'devtools-mobile', label: 'Open mobile DevTools and check the console for errors' },
+  {
+    value: 'hydration',
+    label: 'Suspect SSR/CSR hydration mismatch — check server vs client output',
+  },
+  { value: 'bisect', label: 'Bisect commits to find when the page started breaking' },
+  { value: 'cache', label: 'Tell the client to clear cache / hard refresh' },
+  { value: 'guess', label: 'Start guessing and re-deploying until it works' },
+];
+
+const SCENARIO_CODE_PROUD_CHOICES: RadioChoice<string>[] = [
+  { value: 'separation', label: 'Clean separation of concerns — adapters at seams' },
+  { value: 'types', label: 'Strict types — no any, all paths typed' },
+  { value: 'testable', label: 'Testable — dependencies injectable, easy to mock' },
+  { value: 'reads', label: 'Reads like prose — names tell the story' },
+  { value: 'idiomatic', label: 'Uses framework idioms correctly' },
+  { value: 'perf', label: 'Performance-oriented — measured, not assumed' },
+];
+
+const SCENARIO_CLIENT_AI_CHOICES: RadioChoice<string>[] = [
+  { value: 'jtbd', label: "What's the user's job to be done?" },
+  { value: 'success', label: 'What does success look like in 30 days?' },
+  { value: 'data', label: 'What data does the agent need access to?' },
+  { value: 'fallback', label: "What happens when the agent can't answer?" },
+  { value: 'budget', label: "What's the budget for compute / tokens?" },
+];
+
+const SCENARIO_STUCK_CHOICES: RadioChoice<string>[] = [
+  { value: 'break', label: 'Take a 15–30 min break and re-read with fresh eyes' },
+  { value: 'rubberduck', label: 'Write the bug out in plain English to a teammate' },
+  { value: 'paired-claude', label: 'Open a paired Claude session with full context' },
+  { value: 'bisect', label: 'Bisect to find when it last worked' },
+  { value: 'slack', label: 'Ask the team Slack with reproducible steps' },
+  { value: 'push', label: 'Push through — I always get there eventually' },
+];
+
+const SCENARIO_SLOW_PAGE_CHOICES: RadioChoice<string>[] = [
+  { value: 'network', label: 'Network tab — biggest payload / slowest request first' },
+  { value: 'lighthouse', label: 'Lighthouse audit — biggest opportunity reported' },
+  { value: 'server-logs', label: 'Server logs — DB query times and N+1 patterns' },
+  { value: 'profiler', label: 'React DevTools profiler — wasted renders' },
+  { value: 'guess', label: 'Start optimizing what I think is slow' },
+];
+
+const SCENARIO_PR_REVIEW_CHOICES: RadioChoice<string>[] = [
+  { value: 'tests', label: 'Tests pass and cover the change' },
+  { value: 'security', label: 'Security implications — auth, RLS, secrets' },
+  { value: 'types', label: 'Type safety preserved — no any leaks' },
+  { value: 'edge', label: 'Edge cases handled — null, empty, errors' },
+  { value: 'cleanup', label: 'No console.log, commented code, or TODOs' },
+  { value: 'lgtm', label: 'Looks fine, hit approve' },
+];
+
+const SCENARIO_VAGUE_CHOICES: RadioChoice<string>[] = [
+  { value: 'show-me', label: '"Show me 3 sites you think really pop"' },
+  { value: 'color-motion', label: '"Is it a color thing, a motion thing, or a typography thing?"' },
+  { value: 'where', label: '"Which page or section in particular?"' },
+  { value: 'feeling', label: '"What feeling should it evoke when you land on it?"' },
+  { value: 'compare', label: '"Compared to what previous version that *didn\'t* pop?"' },
+];
+
+const SCENARIO_RISKY_MIGRATION_CHOICES: RadioChoice<string>[] = [
+  { value: 'nullable-backfill', label: 'Add nullable column → backfill in batches → SET NOT NULL' },
+  {
+    value: 'default-then-alter',
+    label: 'Add column WITH DEFAULT → update default → ALTER NOT NULL',
+  },
+  { value: 'lock-and-go', label: 'Briefly lock the table and ALTER TABLE in one shot' },
+  { value: 'maintenance-window', label: 'Schedule a maintenance window and do it offline' },
+  { value: 'tool', label: 'Use a zero-downtime migration tool (pg-migrate / similar)' },
+];
+
+const SCENARIO_FIRST_COMMIT_CHOICES: RadioChoice<string>[] = [
+  { value: 'qualia-new', label: '/qualia-new output: PROJECT.md + RESEARCH + ROADMAP + STATE' },
+  { value: 'scaffold', label: 'Empty Next.js scaffold + README + .env.example' },
+  { value: 'schema', label: 'Database schema + auth scaffolding first' },
+  { value: 'readme', label: 'Just the README with project goals and stack' },
+  { value: 'design', label: 'Design system primitives (DESIGN.md, globals.css)' },
+];
+
 const TOTAL_QUESTIONS = 25;
 const TOTAL_SLIDES = 27; // 0=intro, 1-25=questions, 26=submit
 
@@ -798,14 +918,12 @@ export function AuditExamView({
             <SlideHeader
               number={slideNum}
               prompt="One framework command you wish existed"
-              hint="Something you keep needing that no /qualia-* command does today."
+              hint="Pick the one you'd reach for most often if it existed."
             />
-            <Textarea
-              rows={4}
+            <RadioGroup
+              choices={WISHED_COMMAND_CHOICES}
               value={form.wishedCommand}
-              onChange={(e) => update('wishedCommand', e.target.value)}
-              placeholder="e.g. /qualia-translate to swap the project to a new language"
-              autoFocus
+              onChange={(v) => update('wishedCommand', v)}
             />
           </>
         );
@@ -815,14 +933,12 @@ export function AuditExamView({
             <SlideHeader
               number={slideNum}
               prompt="What in the framework feels broken, unclear, or slows you down?"
-              hint="Be specific. This is how we improve V6."
+              hint="Pick the biggest pain. This is how we improve V6."
             />
-            <Textarea
-              rows={4}
+            <RadioGroup
+              choices={UNCLEAR_OR_BROKEN_CHOICES}
               value={form.unclearOrBroken}
-              onChange={(e) => update('unclearOrBroken', e.target.value)}
-              placeholder="e.g. /qualia-verify gap-cycle limit triggers too early on design phases"
-              autoFocus
+              onChange={(v) => update('unclearOrBroken', v)}
             />
           </>
         );
@@ -832,14 +948,12 @@ export function AuditExamView({
             <SlideHeader
               number={slideNum}
               prompt="If I gave you a brand-new client tomorrow, what kind of project would you say 'yes, give me solo'?"
-              hint="One concrete example. This is the kind of work we'll route to you first."
+              hint="Pick the closest match. This is the kind of work we'll route to you first."
             />
-            <Textarea
-              rows={4}
+            <RadioGroup
+              choices={YES_GIVE_ME_SOLO_CHOICES}
               value={form.yesGiveMeSolo}
-              onChange={(e) => update('yesGiveMeSolo', e.target.value)}
-              placeholder="e.g. A multi-page marketing site with a contact form and Calendly booking, EN-only, deploy to Vercel"
-              autoFocus
+              onChange={(v) => update('yesGiveMeSolo', v)}
             />
           </>
         );
@@ -853,15 +967,13 @@ export function AuditExamView({
           <>
             <SlideHeader
               number={slideNum}
-              prompt="You inherit a Qualia project mid-build. Previous engineer is gone. You've never seen the codebase. What are the first 3 commands you run, in order, and why?"
-              hint="First instinct. Sequence matters more than the exact answer."
+              prompt="You inherit a Qualia project mid-build. Previous engineer is gone. You've never seen the codebase. First three commands?"
+              hint="Pick the closest match to what you'd actually run."
             />
-            <Textarea
-              rows={6}
+            <RadioGroup
+              choices={SCENARIO_INHERIT_CHOICES}
               value={form.scenarioInheritProject}
-              onChange={(e) => update('scenarioInheritProject', e.target.value)}
-              placeholder="1. /qualia-...&#10;2. /qualia-...&#10;3. /qualia-...&#10;&#10;Why this order:"
-              autoFocus
+              onChange={(v) => update('scenarioInheritProject', v)}
             />
           </>
         );
@@ -871,15 +983,13 @@ export function AuditExamView({
           <>
             <SlideHeader
               number={slideNum}
-              prompt='A client says: "the site deploys fine, but on my phone the whole page is blank." Walk me through what you do, step by step, until you have it fixed.'
-              hint="Process > answer. We want to see how you actually debug."
+              prompt='A client says: "the site deploys fine, but on my phone the whole page is blank." Your first move?'
+              hint="First instinct only — pick the one closest to your real reflex."
             />
-            <Textarea
-              rows={6}
+            <RadioGroup
+              choices={SCENARIO_WHITE_PAGE_CHOICES}
               value={form.scenarioWhitePageMobile}
-              onChange={(e) => update('scenarioWhitePageMobile', e.target.value)}
-              placeholder="Step 1: …&#10;Step 2: …&#10;Step 3: …"
-              autoFocus
+              onChange={(v) => update('scenarioWhitePageMobile', v)}
             />
           </>
         );
@@ -889,15 +999,13 @@ export function AuditExamView({
           <>
             <SlideHeader
               number={slideNum}
-              prompt="Paste one piece of code, query, or component you wrote in the last 30 days that you're proud of. In 2-3 sentences, explain why it's good."
-              hint="The reason matters more than the code. What makes it good in your eyes?"
+              prompt="What makes code 'good' in your eyes?"
+              hint="Pick the property you optimize for first."
             />
-            <Textarea
-              rows={10}
+            <RadioGroup
+              choices={SCENARIO_CODE_PROUD_CHOICES}
               value={form.scenarioCodeYouProud}
-              onChange={(e) => update('scenarioCodeYouProud', e.target.value)}
-              placeholder="```ts&#10;// paste your code here&#10;```&#10;&#10;Why it's good:"
-              autoFocus
+              onChange={(v) => update('scenarioCodeYouProud', v)}
             />
           </>
         );
@@ -907,15 +1015,15 @@ export function AuditExamView({
           <>
             <SlideHeader
               number={slideNum}
-              prompt='A new client tells you: "I want an AI agent for [their use case]." What are the first 3 questions you ask BEFORE writing any code?'
-              hint="Before tools, before architecture, before models — what do you need to know?"
+              prompt={
+                'A client says: "I want an AI agent for [their use case]." First question you ask BEFORE writing any code?'
+              }
+              hint="One question. The single most important thing you need to know first."
             />
-            <Textarea
-              rows={6}
+            <RadioGroup
+              choices={SCENARIO_CLIENT_AI_CHOICES}
               value={form.scenarioClientAIBrief}
-              onChange={(e) => update('scenarioClientAIBrief', e.target.value)}
-              placeholder="1. …&#10;2. …&#10;3. …"
-              autoFocus
+              onChange={(v) => update('scenarioClientAIBrief', v)}
             />
           </>
         );
@@ -925,15 +1033,13 @@ export function AuditExamView({
           <>
             <SlideHeader
               number={slideNum}
-              prompt="You've been on a single bug for 2 hours and made zero progress. What's your next move and why?"
-              hint="Specific. Not 'I'd ask for help' — what kind of help, from whom, with what context?"
+              prompt="You've been stuck on a single bug for 2 hours. Zero progress. Next move?"
+              hint="Pick the one closest to your actual reflex."
             />
-            <Textarea
-              rows={5}
+            <RadioGroup
+              choices={SCENARIO_STUCK_CHOICES}
               value={form.scenarioStuckTwoHours}
-              onChange={(e) => update('scenarioStuckTwoHours', e.target.value)}
-              placeholder="My next move:&#10;&#10;Why:"
-              autoFocus
+              onChange={(v) => update('scenarioStuckTwoHours', v)}
             />
           </>
         );
@@ -943,15 +1049,13 @@ export function AuditExamView({
           <>
             <SlideHeader
               number={slideNum}
-              prompt="A page takes 8 seconds to load. The client wants it under 2. Where do you start looking, in order?"
-              hint="No need to fix it. Just tell us how you'd diagnose where the time is going."
+              prompt="A page takes 8 seconds to load. Client wants it under 2. Where do you look first?"
+              hint="One first place. Where you actually start, not where it's polite to start."
             />
-            <Textarea
-              rows={6}
+            <RadioGroup
+              choices={SCENARIO_SLOW_PAGE_CHOICES}
               value={form.scenarioSlowPage}
-              onChange={(e) => update('scenarioSlowPage', e.target.value)}
-              placeholder="First place I check:&#10;Then:&#10;Then:"
-              autoFocus
+              onChange={(v) => update('scenarioSlowPage', v)}
             />
           </>
         );
@@ -961,15 +1065,13 @@ export function AuditExamView({
           <>
             <SlideHeader
               number={slideNum}
-              prompt="A teammate sends you a PR. What are the first 3 things you check before approving?"
-              hint="Pretend you have 5 minutes — what's worth your attention first?"
+              prompt="Teammate sends you a PR. Five minutes to review. What do you check first?"
+              hint="Pick the single most-load-bearing check."
             />
-            <Textarea
-              rows={5}
+            <RadioGroup
+              choices={SCENARIO_PR_REVIEW_CHOICES}
               value={form.scenarioPRReview}
-              onChange={(e) => update('scenarioPRReview', e.target.value)}
-              placeholder="1. …&#10;2. …&#10;3. …"
-              autoFocus
+              onChange={(v) => update('scenarioPRReview', v)}
             />
           </>
         );
@@ -979,15 +1081,13 @@ export function AuditExamView({
           <>
             <SlideHeader
               number={slideNum}
-              prompt='A client says "I want it to pop more." What do you ask?'
-              hint="They will not give you a useful answer to 'what do you mean by pop?'. What questions actually unblock the work?"
+              prompt={'Client says "I want it to pop more." First question you ask?'}
+              hint={'Not "what do you mean by pop?" — something that actually unblocks the work.'}
             />
-            <Textarea
-              rows={5}
+            <RadioGroup
+              choices={SCENARIO_VAGUE_CHOICES}
               value={form.scenarioVagueRequest}
-              onChange={(e) => update('scenarioVagueRequest', e.target.value)}
-              placeholder="My questions:"
-              autoFocus
+              onChange={(v) => update('scenarioVagueRequest', v)}
             />
           </>
         );
@@ -997,15 +1097,13 @@ export function AuditExamView({
           <>
             <SlideHeader
               number={slideNum}
-              prompt="You need to add a NOT NULL column to a 10-million-row production table that's actively being written to. What's your plan?"
-              hint="Walk through the migration order. What could go wrong?"
+              prompt="You need to add a NOT NULL column to a 10M-row production table that's actively being written to. Best plan?"
+              hint="Pick the safest realistic approach."
             />
-            <Textarea
-              rows={6}
+            <RadioGroup
+              choices={SCENARIO_RISKY_MIGRATION_CHOICES}
               value={form.scenarioRiskyMigration}
-              onChange={(e) => update('scenarioRiskyMigration', e.target.value)}
-              placeholder="My migration plan:&#10;&#10;Risks I'd watch:"
-              autoFocus
+              onChange={(v) => update('scenarioRiskyMigration', v)}
             />
           </>
         );
@@ -1015,15 +1113,13 @@ export function AuditExamView({
           <>
             <SlideHeader
               number={slideNum}
-              prompt="Day 1 of a brand-new client project. Empty repo. What does your first commit look like?"
-              hint="Be specific about what's IN that commit. We're testing your starting discipline."
+              prompt="Day 1 of a brand-new client project. Empty repo. What's IN your first commit?"
+              hint="Pick the closest match to where you'd actually start."
             />
-            <Textarea
-              rows={6}
+            <RadioGroup
+              choices={SCENARIO_FIRST_COMMIT_CHOICES}
               value={form.scenarioFirstCommit}
-              onChange={(e) => update('scenarioFirstCommit', e.target.value)}
-              placeholder="What's in my first commit:&#10;&#10;Why I start there:"
-              autoFocus
+              onChange={(v) => update('scenarioFirstCommit', v)}
             />
           </>
         );

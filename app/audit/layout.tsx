@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function AuditLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-dvh bg-background text-foreground">
+    <div className="relative min-h-dvh w-full flex-1 overflow-y-auto bg-background text-foreground">
       <Toaster richColors position="top-center" />
       {children}
     </div>
