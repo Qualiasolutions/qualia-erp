@@ -1,13 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, CheckCircle2, Menu, X } from 'lucide-react';
+import {
+  ArrowRight,
+  BarChart3,
+  Calendar,
+  CheckCircle2,
+  CheckSquare,
+  FolderKanban,
+  Home,
+  Inbox,
+  Menu,
+  Settings,
+  Sparkles,
+  Users,
+  Wallet,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { AnimatedGroup } from '@/components/ui/animated-group';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 
 const transitionVariants = {
   item: {
@@ -107,28 +124,14 @@ export function LandingHero() {
             </AnimatedGroup>
           </div>
 
-          <AnimatedGroup
-            variants={{
-              container: {
-                hidden: { opacity: 0 },
-                visible: { opacity: 1, transition: { staggerChildren: 0.12, delayChildren: 0.5 } },
-              },
-              item: {
-                hidden: { opacity: 0, y: 32, filter: 'blur(8px)' },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  filter: 'blur(0px)',
-                  transition: { duration: 1.0, ease: [0.16, 1, 0.3, 1] as const },
-                },
-              },
-            }}
-            className="mt-6 grid w-full grid-cols-1 gap-4 sm:mt-8 md:grid-cols-3 md:gap-3 lg:gap-4"
+          <m.div
+            initial={{ opacity: 0, y: 32, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{ duration: 1.0, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-7 w-full sm:mt-9"
           >
-            <RoleCard role="admin" />
-            <RoleCard role="employee" />
-            <RoleCard role="client" />
-          </AnimatedGroup>
+            <DashboardPreview />
+          </m.div>
         </div>
       </section>
 
@@ -274,209 +277,360 @@ function LandingNav() {
 }
 
 /* ----------------------------------------------------------------------- */
-/* Role cards — three views: admin, employee, client                         */
+/* Dashboard preview — single large frame with role toggle                   */
 /* ----------------------------------------------------------------------- */
 
 type Role = 'admin' | 'employee' | 'client';
 
-const ROLE_CONFIG: Record<
-  Role,
-  {
-    label: string;
-    blurb: string;
-    nav: { label: string; icon: string; active?: boolean; count?: number }[];
-    main: React.ReactNode;
-  }
-> = {
-  admin: {
-    label: 'Admin',
-    blurb: 'Run the studio',
-    nav: [
-      { label: 'Home', icon: '◈', active: true },
-      { label: 'Workspace', icon: '◍' },
-      { label: 'Clients', icon: '◉' },
-      { label: 'Payments', icon: '€' },
-      { label: 'Reports', icon: '◐' },
-    ],
-    main: <AdminMain />,
-  },
-  employee: {
-    label: 'Employee',
-    blurb: 'Ship the work',
-    nav: [
-      { label: 'Home', icon: '◈', active: true },
-      { label: 'Tasks', icon: '◆', count: 8 },
-      { label: 'Schedule', icon: '◇' },
-      { label: 'Knowledge', icon: '▤' },
-      { label: 'Settings', icon: '⚙' },
-    ],
-    main: <EmployeeMain />,
-  },
-  client: {
-    label: 'Client',
-    blurb: 'See what you need',
-    nav: [
-      { label: 'Workspace', icon: '◈', active: true },
-      { label: 'Requests', icon: '◆', count: 2 },
-      { label: 'Files', icon: '▤' },
-      { label: 'Billing', icon: '€' },
-      { label: 'Settings', icon: '⚙' },
-    ],
-    main: <ClientMain />,
-  },
-};
+const ROLES: { id: Role; label: string; blurb: string }[] = [
+  { id: 'admin', label: 'Admin', blurb: 'Run the studio' },
+  { id: 'employee', label: 'Employee', blurb: 'Ship the work' },
+  { id: 'client', label: 'Client', blurb: 'See what you need' },
+];
 
-function RoleCard({ role }: { role: Role }) {
-  const cfg = ROLE_CONFIG[role];
+function DashboardPreview() {
+  const [role, setRole] = useState<Role>('admin');
+  const [interacted, setInteracted] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-cycle until the user clicks the toggle
+  useEffect(() => {
+    if (interacted) return;
+    intervalRef.current = setInterval(() => {
+      setRole((r) => {
+        const i = ROLES.findIndex((x) => x.id === r);
+        return ROLES[(i + 1) % ROLES.length].id;
+      });
+    }, 4500);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [interacted]);
+
+  const onSelect = (id: Role) => {
+    setInteracted(true);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setRole(id);
+  };
+
+  const cfg = ROLES.find((r) => r.id === role)!;
+
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-1 shadow-[0_18px_40px_-22px_hsl(var(--primary)/0.22),var(--elevation-raised)] ring-1 ring-primary/5 backdrop-blur">
-      <div className="flex h-full min-h-[clamp(320px,40vh,440px)] flex-col overflow-hidden rounded-xl bg-background">
-        {/* Role pill header */}
-        <div className="flex items-center justify-between border-b border-border/40 px-4 py-2.5">
-          <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary ring-1 ring-primary/20">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            {cfg.label}
-          </span>
-          <span className="text-[10px] text-muted-foreground/70">{cfg.blurb}</span>
+    <div className="relative mx-auto w-full max-w-6xl">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -bottom-px z-10 h-24 bg-gradient-to-b from-transparent to-background"
+      />
+      <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/80 p-1 shadow-[0_30px_80px_-22px_hsl(var(--primary)/0.28),var(--elevation-floating)] ring-1 ring-primary/10 backdrop-blur">
+        {/* Top bar with workspace label + role toggle */}
+        <div className="flex items-center justify-between gap-3 border-b border-border/40 px-3 py-2 sm:px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/20">
+              <Image src="/logo.webp" alt="" width={14} height={14} className="rounded" />
+            </span>
+            <span className="truncate text-[11px] font-semibold text-foreground">Qualia Suite</span>
+            <span className="hidden text-[10px] text-muted-foreground/70 sm:inline">
+              · {cfg.blurb}
+            </span>
+          </div>
+          <RoleToggle role={role} onSelect={onSelect} />
         </div>
 
-        {/* Sidebar + main */}
-        <div className="grid flex-1 grid-cols-[110px_1fr] overflow-hidden">
-          <RoleSidebar items={cfg.nav} />
-          <div className="flex min-w-0 flex-col">{cfg.main}</div>
+        {/* Big preview frame */}
+        <div className="relative h-[clamp(360px,52vh,580px)] overflow-hidden rounded-xl bg-background">
+          <AnimatePresence mode="wait">
+            <m.div
+              key={role}
+              initial={{ opacity: 0, y: 8, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -6, filter: 'blur(6px)' }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0 grid grid-cols-[160px_1fr] md:grid-cols-[180px_1fr_240px]"
+            >
+              <RoleSidebar role={role} />
+              <RoleMain role={role} />
+              <RoleRightRail role={role} />
+            </m.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>
   );
 }
 
-function RoleSidebar({
-  items,
-}: {
-  items: { label: string; icon: string; active?: boolean; count?: number }[];
-}) {
+function RoleToggle({ role, onSelect }: { role: Role; onSelect: (r: Role) => void }) {
   return (
-    <aside className="flex flex-col gap-2 border-r border-border/40 bg-card/30 p-2.5">
-      <div className="flex items-center gap-1.5 px-2 pb-1.5 pt-1">
-        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/20">
-          <Image src="/logo.webp" alt="" width={12} height={12} className="rounded" />
-        </span>
-        <span className="truncate text-[10px] font-semibold text-foreground">Qualia</span>
-      </div>
+    <div
+      className="relative inline-flex items-center gap-0.5 rounded-full border border-border/50 bg-card/60 p-0.5 shadow-[var(--elevation-resting)] backdrop-blur"
+      role="tablist"
+      aria-label="Role view"
+    >
+      {ROLES.map((r) => {
+        const active = r.id === role;
+        return (
+          <button
+            key={r.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onSelect(r.id)}
+            className="relative z-10 rounded-full px-2.5 py-1 text-[10.5px] font-medium transition-colors duration-200 sm:px-3"
+          >
+            {active && (
+              <m.span
+                layoutId="role-toggle-pill"
+                className="absolute inset-0 -z-10 rounded-full bg-primary shadow-[var(--glow-teal-sm)]"
+                transition={{
+                  duration: 0.32,
+                  ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
+                }}
+              />
+            )}
+            <span className={active ? 'text-primary-foreground' : 'text-muted-foreground'}>
+              {r.label}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* --- Sidebar (per-role nav) -------------------------------------------- */
+
+const NAV_BY_ROLE: Record<
+  Role,
+  { label: string; Icon: LucideIcon; active?: boolean; count?: number }[]
+> = {
+  admin: [
+    { label: 'Home', Icon: Home, active: true },
+    { label: 'Workspace', Icon: FolderKanban },
+    { label: 'Clients', Icon: Users, count: 13 },
+    { label: 'Projects', Icon: CheckSquare },
+    { label: 'Payments', Icon: Wallet },
+    { label: 'Reports', Icon: BarChart3 },
+    { label: 'Settings', Icon: Settings },
+  ],
+  employee: [
+    { label: 'Home', Icon: Home, active: true },
+    { label: 'Tasks', Icon: CheckSquare, count: 8 },
+    { label: 'Projects', Icon: FolderKanban },
+    { label: 'Schedule', Icon: Calendar },
+    { label: 'Knowledge', Icon: Sparkles },
+    { label: 'Settings', Icon: Settings },
+  ],
+  client: [
+    { label: 'Workspace', Icon: Home, active: true },
+    { label: 'Updates', Icon: Inbox },
+    { label: 'Files', Icon: FolderKanban },
+    { label: 'Requests', Icon: CheckSquare, count: 2 },
+    { label: 'Billing', Icon: Wallet },
+    { label: 'Settings', Icon: Settings },
+  ],
+};
+
+function RoleSidebar({ role }: { role: Role }) {
+  const items = NAV_BY_ROLE[role];
+  return (
+    <aside className="flex flex-col gap-2 border-r border-border/40 bg-card/30 p-3">
+      <p className="px-2 pb-1 pt-1 text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+        {role === 'admin' ? 'Admin · Workspace' : role === 'employee' ? 'Studio' : 'Your portal'}
+      </p>
       <div className="h-px bg-border/40" />
-      <div className="flex flex-col gap-1.5 pt-1">
+      <m.ul
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: { opacity: 1, transition: { staggerChildren: 0.04, delayChildren: 0.1 } },
+        }}
+        className="flex flex-col gap-2 pt-1"
+      >
         {items.map((it) => (
-          <div
+          <m.li
             key={it.label}
+            variants={{
+              hidden: { opacity: 0, x: -6 },
+              visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
+            }}
             className={cn(
-              'flex items-center gap-2 rounded-lg px-2 py-2 text-[10.5px] transition-colors',
+              'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[11px] transition-colors',
               it.active
                 ? 'bg-primary text-primary-foreground shadow-[var(--glow-teal-sm)]'
                 : 'text-muted-foreground'
             )}
           >
-            <span className="text-[10px] opacity-75">{it.icon}</span>
+            <it.Icon className="h-3.5 w-3.5 shrink-0 opacity-90" strokeWidth={1.75} />
             <span className="flex-1 truncate font-medium">{it.label}</span>
             {it.count ? (
               <span
                 className={cn(
-                  'inline-flex h-[14px] min-w-[14px] items-center justify-center rounded-full px-1 text-[8.5px] font-semibold',
+                  'inline-flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-1 text-[9px] font-semibold',
                   it.active ? 'bg-primary-foreground/20' : 'bg-primary text-primary-foreground'
                 )}
               >
                 {it.count}
               </span>
             ) : null}
-          </div>
+          </m.li>
         ))}
-      </div>
+      </m.ul>
     </aside>
   );
 }
 
-/* --- Per-role main content --------------------------------------------- */
+/* --- Main pane (per-role content) -------------------------------------- */
+
+function RoleMain({ role }: { role: Role }) {
+  if (role === 'admin') return <AdminMain />;
+  if (role === 'employee') return <EmployeeMain />;
+  return <ClientMain />;
+}
+
+const stagger = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.15 } },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 8 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+  },
+};
 
 function AdminMain() {
+  const team = [
+    { who: 'Hasan', load: 92, role: 'eng' },
+    { who: 'Rama', load: 74, role: 'design' },
+    { who: 'Moayad', load: 58, role: 'eng' },
+    { who: 'Sally', load: 41, role: 'ops' },
+  ];
   return (
-    <>
-      <div className="px-4 pb-2 pt-3">
-        <p className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
-          Workspace
-        </p>
-        <h3 className="mt-0.5 text-[12px] font-semibold text-foreground">Studio overview</h3>
-      </div>
-      <div className="grid grid-cols-2 gap-2 px-4">
+    <m.section
+      initial="hidden"
+      animate="visible"
+      variants={stagger}
+      className="flex min-w-0 flex-col"
+    >
+      <m.div
+        variants={fadeUp}
+        className="flex items-center justify-between border-b border-border/40 px-5 py-3"
+      >
+        <div className="min-w-0">
+          <p className="text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Studio overview
+          </p>
+          <h3 className="mt-0.5 truncate text-[13px] font-semibold text-foreground">
+            Good afternoon, Fawzi
+          </h3>
+        </div>
+        <span className="rounded-md border border-border/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+          ⌘K
+        </span>
+      </m.div>
+      <m.div variants={fadeUp} className="grid grid-cols-3 gap-2 px-5 py-3">
         <Stat label="Receivables" value="€42k" trend="+8%" />
         <Stat label="Active proj." value="7" trend="+1" />
-      </div>
-      <div className="mt-3 px-4 pb-3">
-        <p className="pb-1.5 text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-          Team capacity
-        </p>
-        <ul className="space-y-2">
-          {[
-            { who: 'Hasan', load: 92, role: 'eng' },
-            { who: 'Rama', load: 74, role: 'design' },
-            { who: 'Moayad', load: 58, role: 'eng' },
-            { who: 'Sally', load: 41, role: 'ops' },
-          ].map((m) => (
-            <li key={m.who} className="flex items-center gap-2">
-              <span className="h-4 w-4 shrink-0 rounded-full bg-gradient-to-br from-qualia-300 to-qualia-600 ring-1 ring-border/40" />
-              <span className="w-14 truncate text-[10.5px] font-medium text-foreground">
-                {m.who}
+        <Stat label="MRR" value="€18k" trend="+4%" />
+      </m.div>
+      <div className="px-5 pb-3">
+        <m.p
+          variants={fadeUp}
+          className="pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+        >
+          Team capacity · this week
+        </m.p>
+        <ul className="space-y-2.5">
+          {team.map((m_) => (
+            <m.li key={m_.who} variants={fadeUp} className="flex items-center gap-2.5">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-qualia-300 to-qualia-600 text-[9px] font-semibold text-white ring-1 ring-border/40">
+                {m_.who[0]}
+              </span>
+              <span className="w-16 truncate text-[11px] font-medium text-foreground">
+                {m_.who}
+              </span>
+              <span className="hidden w-10 text-[9.5px] uppercase tracking-wide text-muted-foreground/70 sm:inline">
+                {m_.role}
               </span>
               <span className="flex-1">
                 <span className="block h-1.5 overflow-hidden rounded-full bg-muted">
-                  <span
+                  <m.span
+                    initial={{ width: 0 }}
+                    animate={{ width: `${m_.load}%` }}
+                    transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
                     className={cn(
                       'block h-full rounded-full',
-                      m.load > 80 ? 'bg-amber-500/80' : 'bg-primary shadow-[var(--glow-teal-sm)]'
+                      m_.load > 80 ? 'bg-amber-500/80' : 'bg-primary shadow-[var(--glow-teal-sm)]'
                     )}
-                    style={{ width: `${m.load}%` }}
                   />
                 </span>
               </span>
-              <span className="w-7 text-right font-mono text-[9px] text-muted-foreground">
-                {m.load}%
+              <span className="w-8 text-right font-mono text-[10px] text-muted-foreground">
+                {m_.load}%
               </span>
-            </li>
+            </m.li>
           ))}
         </ul>
       </div>
-    </>
+    </m.section>
   );
 }
 
 function EmployeeMain() {
+  const tasks = [
+    { title: 'Review Q3 brand refresh proposal', meta: 'Alkemy · today', priority: 'high' },
+    { title: 'Approve invoice draft INV-2086', meta: 'Armenius · today', priority: 'med' },
+    { title: 'Ship landing page polish', meta: 'Qualia · in progress', priority: 'high' },
+    { title: 'Sync milestone phase-3 to GitHub', meta: 'Sakani · 14:30', priority: 'med' },
+    { title: 'Send weekly digest to clients', meta: 'workflow · 17:00', priority: 'low' },
+  ] as const;
   return (
-    <>
-      <div className="flex items-center justify-between border-b border-border/30 px-4 py-2.5">
+    <m.section
+      initial="hidden"
+      animate="visible"
+      variants={stagger}
+      className="flex min-w-0 flex-col"
+    >
+      <m.div
+        variants={fadeUp}
+        className="flex items-center justify-between border-b border-border/40 px-5 py-3"
+      >
         <div className="min-w-0">
-          <p className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
+          <p className="text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground/70">
             Today
           </p>
-          <h3 className="mt-0.5 truncate text-[12px] font-semibold text-foreground">
-            Hi, Hasan · <span className="font-mono text-primary">04:32</span>
+          <h3 className="mt-0.5 truncate text-[13px] font-semibold text-foreground">
+            Hi, Hasan · <span className="font-mono text-primary">04:32</span> on shift
           </h3>
         </div>
-        <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary ring-1 ring-primary/20">
-          on shift
+        <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider text-primary ring-1 ring-primary/20">
+          clocked in
         </span>
-      </div>
-      <div className="px-4 pb-2 pt-3">
-        <p className="pb-1.5 text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-          Inbox
-        </p>
-        <ul className="space-y-1.5">
-          {[
-            { title: 'Review Q3 brand proposal', meta: 'Alkemy', priority: 'high' },
-            { title: 'Approve INV-2086', meta: 'Armenius', priority: 'med' },
-            { title: 'Sync milestone phase-3', meta: 'Sakani', priority: 'high' },
-            { title: 'Weekly digest draft', meta: 'workflow', priority: 'low' },
-          ].map((t) => (
-            <li
+      </m.div>
+      <m.div variants={fadeUp} className="grid grid-cols-3 gap-2 px-5 py-3">
+        <Stat label="My tasks" value="8" trend="+2" />
+        <Stat label="Done today" value="3" trend="+3" />
+        <Stat label="Hours" value="4.5h" trend="+4.5" />
+      </m.div>
+      <div className="px-5 pb-3">
+        <m.div variants={fadeUp} className="flex items-baseline justify-between pb-1.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Inbox
+          </p>
+          <span className="text-[10px] text-muted-foreground/70">5 of 8</span>
+        </m.div>
+        <ul className="overflow-hidden rounded-lg border border-border/40 bg-card/30">
+          {tasks.map((t, i) => (
+            <m.li
               key={t.title}
-              className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-muted/30"
+              variants={fadeUp}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2',
+                i !== tasks.length - 1 && 'border-b border-border/30'
+              )}
             >
               <span
                 className={cn(
@@ -487,62 +641,278 @@ function EmployeeMain() {
                 )}
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[10.5px] font-medium text-foreground">{t.title}</p>
-                <p className="truncate text-[9px] text-muted-foreground">{t.meta}</p>
+                <p className="truncate text-[11.5px] font-medium text-foreground">{t.title}</p>
+                <p className="truncate text-[10px] text-muted-foreground">{t.meta}</p>
               </div>
-            </li>
+              <span className="text-[10px] text-muted-foreground/70">↗</span>
+            </m.li>
           ))}
         </ul>
       </div>
-    </>
+    </m.section>
   );
 }
 
 function ClientMain() {
   return (
-    <>
-      <div className="px-4 pb-2 pt-3">
-        <p className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
-          Your project
-        </p>
-        <h3 className="mt-0.5 text-[12px] font-semibold text-foreground">Brand refresh — Q3</h3>
-      </div>
-      <div className="mx-4 rounded-lg border border-border/40 bg-card/40 p-2.5">
-        <div className="flex items-center justify-between text-[10px]">
-          <span className="text-muted-foreground">Phase 2 of 4</span>
-          <span className="font-mono text-foreground">68%</span>
+    <m.section
+      initial="hidden"
+      animate="visible"
+      variants={stagger}
+      className="flex min-w-0 flex-col"
+    >
+      <m.div
+        variants={fadeUp}
+        className="flex items-center justify-between border-b border-border/40 px-5 py-3"
+      >
+        <div className="min-w-0">
+          <p className="text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Your project
+          </p>
+          <h3 className="mt-0.5 truncate text-[13px] font-semibold text-foreground">
+            Brand refresh — Q3
+          </h3>
         </div>
-        <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-muted">
-          <span className="block h-full w-[68%] rounded-full bg-primary shadow-[var(--glow-teal-sm)]" />
+        <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider text-primary ring-1 ring-primary/20">
+          on track
         </span>
-        <p className="mt-2 text-[9.5px] text-muted-foreground">
-          Next milestone <span className="text-foreground">Visual system review</span> · 12 May
-        </p>
-      </div>
-      <div className="mt-3 px-4 pb-3">
-        <p className="pb-1.5 text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+      </m.div>
+      <m.div variants={fadeUp} className="px-5 py-3">
+        <div className="rounded-lg border border-border/40 bg-card/40 p-3">
+          <div className="flex items-center justify-between text-[10.5px]">
+            <span className="text-muted-foreground">Phase 2 of 4 · Visual system</span>
+            <span className="font-mono text-foreground">68%</span>
+          </div>
+          <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-muted">
+            <m.span
+              initial={{ width: 0 }}
+              animate={{ width: '68%' }}
+              transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="block h-full rounded-full bg-primary shadow-[var(--glow-teal-sm)]"
+            />
+          </span>
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            Next milestone <span className="text-foreground">System review</span> · 12 May
+          </p>
+        </div>
+      </m.div>
+      <div className="px-5 pb-3">
+        <m.p
+          variants={fadeUp}
+          className="pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+        >
           Recent activity
-        </p>
-        <ul className="space-y-1.5">
+        </m.p>
+        <ul className="space-y-2">
           {[
-            { label: 'Logo concepts shared', when: '2h' },
-            { label: 'Invoice INV-2086 issued', when: '1d' },
-            { label: 'Discovery call notes', when: '3d' },
+            { label: 'Logo concepts shared', meta: 'Files · 2h ago', dot: 'bg-primary' },
+            { label: 'Invoice INV-2086 issued', meta: 'Billing · 1d ago', dot: 'bg-amber-500/80' },
+            { label: 'Discovery call notes added', meta: 'Updates · 3d ago', dot: 'bg-primary/60' },
+            {
+              label: 'Welcome to Qualia Suite',
+              meta: 'Updates · 6d ago',
+              dot: 'bg-muted-foreground/40',
+            },
           ].map((a) => (
-            <li
+            <m.li
               key={a.label}
-              className="flex items-center justify-between gap-2 rounded-md px-1.5 py-1"
+              variants={fadeUp}
+              className="flex items-center gap-2.5 rounded-md px-1 py-1"
             >
-              <span className="flex min-w-0 items-center gap-2">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
-                <span className="truncate text-[10.5px] text-foreground">{a.label}</span>
-              </span>
-              <span className="text-[9px] text-muted-foreground">{a.when}</span>
-            </li>
+              <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', a.dot)} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[11.5px] font-medium text-foreground">{a.label}</p>
+                <p className="truncate text-[10px] text-muted-foreground">{a.meta}</p>
+              </div>
+            </m.li>
           ))}
         </ul>
       </div>
-    </>
+    </m.section>
+  );
+}
+
+/* --- Right rail (per-role widgets) ------------------------------------- */
+
+function RoleRightRail({ role }: { role: Role }) {
+  if (role === 'admin') return <AdminRail />;
+  if (role === 'employee') return <EmployeeRail />;
+  return <ClientRail />;
+}
+
+function AdminRail() {
+  const projects = [
+    { name: 'Sakani · Phase 3', pct: 68, due: '3w' },
+    { name: 'Armenius · CMS', pct: 42, due: '6w' },
+    { name: 'Underdog · v2', pct: 91, due: '5d' },
+  ];
+  return (
+    <m.aside
+      initial="hidden"
+      animate="visible"
+      variants={stagger}
+      className="hidden border-l border-border/40 bg-card/30 p-4 md:block"
+    >
+      <m.p
+        variants={fadeUp}
+        className="text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground"
+      >
+        Active projects
+      </m.p>
+      <ul className="mt-2 space-y-2">
+        {projects.map((p) => (
+          <m.li
+            key={p.name}
+            variants={fadeUp}
+            className="rounded-lg border border-border/40 bg-card/60 p-2.5"
+          >
+            <div className="flex items-center justify-between">
+              <span className="truncate text-[11.5px] font-semibold text-foreground">{p.name}</span>
+              <span className="text-[10px] text-muted-foreground">{p.due}</span>
+            </div>
+            <div className="mt-1.5 flex items-center gap-2">
+              <span className="block h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                <m.span
+                  initial={{ width: 0 }}
+                  animate={{ width: `${p.pct}%` }}
+                  transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="block h-full rounded-full bg-primary"
+                />
+              </span>
+              <span className="font-mono text-[10px] text-muted-foreground">{p.pct}%</span>
+            </div>
+          </m.li>
+        ))}
+      </ul>
+      <m.p
+        variants={fadeUp}
+        className="mt-4 text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground"
+      >
+        AI assistant
+      </m.p>
+      <m.div
+        variants={fadeUp}
+        className="mt-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-[11px] text-muted-foreground"
+      >
+        <span className="text-foreground">Want me to draft</span> the Q3 retainer email for
+        Armenius?
+      </m.div>
+    </m.aside>
+  );
+}
+
+function EmployeeRail() {
+  return (
+    <m.aside
+      initial="hidden"
+      animate="visible"
+      variants={stagger}
+      className="hidden border-l border-border/40 bg-card/30 p-4 md:block"
+    >
+      <m.p
+        variants={fadeUp}
+        className="text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground"
+      >
+        Today&rsquo;s schedule
+      </m.p>
+      <ul className="mt-2 space-y-2">
+        {[
+          { time: '10:00', label: 'Standup', tag: 'Studio' },
+          { time: '13:00', label: 'Sakani sprint review', tag: 'Sakani' },
+          { time: '15:30', label: 'Design crit · brand', tag: 'Alkemy' },
+        ].map((s) => (
+          <m.li
+            key={s.label}
+            variants={fadeUp}
+            className="flex items-center gap-3 rounded-lg border border-border/40 bg-card/60 p-2"
+          >
+            <span className="font-mono text-[10px] text-muted-foreground">{s.time}</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[11px] font-semibold text-foreground">{s.label}</p>
+              <p className="truncate text-[9.5px] text-muted-foreground">{s.tag}</p>
+            </div>
+          </m.li>
+        ))}
+      </ul>
+      <m.p
+        variants={fadeUp}
+        className="mt-4 text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground"
+      >
+        Activity
+      </m.p>
+      <ul className="mt-2 space-y-2">
+        {[
+          { who: 'Rama', what: 'pushed phase-2', when: '12m' },
+          { who: 'Moayad', what: 'commented on T-204', when: '38m' },
+          { who: 'Sally', what: 'logged 1.5h', when: '1h' },
+        ].map((a) => (
+          <m.li
+            key={a.who + a.when}
+            variants={fadeUp}
+            className="flex items-center gap-2 text-[11px]"
+          >
+            <span className="h-5 w-5 rounded-full bg-gradient-to-br from-qualia-300 to-qualia-600 ring-1 ring-border/40" />
+            <span className="min-w-0 flex-1 truncate text-foreground">
+              <span className="font-medium">{a.who}</span>{' '}
+              <span className="text-muted-foreground">{a.what}</span>
+            </span>
+            <span className="text-[10px] text-muted-foreground/70">{a.when}</span>
+          </m.li>
+        ))}
+      </ul>
+    </m.aside>
+  );
+}
+
+function ClientRail() {
+  return (
+    <m.aside
+      initial="hidden"
+      animate="visible"
+      variants={stagger}
+      className="hidden border-l border-border/40 bg-card/30 p-4 md:block"
+    >
+      <m.p
+        variants={fadeUp}
+        className="text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground"
+      >
+        Your team
+      </m.p>
+      <m.ul variants={stagger} className="mt-2 space-y-2">
+        {[
+          { who: 'Fawzi', role: 'Lead' },
+          { who: 'Rama', role: 'Design' },
+          { who: 'Hasan', role: 'Engineering' },
+        ].map((m_) => (
+          <m.li
+            key={m_.who}
+            variants={fadeUp}
+            className="flex items-center gap-2.5 rounded-lg border border-border/40 bg-card/60 p-2"
+          >
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-qualia-300 to-qualia-600 text-[10px] font-semibold text-white ring-1 ring-border/40">
+              {m_.who[0]}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-[11px] font-semibold text-foreground">{m_.who}</p>
+              <p className="truncate text-[9.5px] text-muted-foreground">{m_.role}</p>
+            </div>
+          </m.li>
+        ))}
+      </m.ul>
+      <m.p
+        variants={fadeUp}
+        className="mt-4 text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground"
+      >
+        Open requests
+      </m.p>
+      <m.div
+        variants={fadeUp}
+        className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5"
+      >
+        <p className="text-[11px] font-semibold text-foreground">Add Spanish landing page</p>
+        <p className="mt-0.5 text-[9.5px] text-muted-foreground">Awaiting estimate · 1 of 2</p>
+      </m.div>
+    </m.aside>
   );
 }
 
@@ -550,14 +920,14 @@ function Stat({ label, value, trend }: { label: string; value: string; trend: st
   const positive = trend.startsWith('+');
   return (
     <div className="rounded-lg border border-border/40 bg-card/30 px-2.5 py-1.5">
-      <p className="text-[8.5px] font-medium uppercase tracking-[0.1em] text-muted-foreground/70">
+      <p className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/70">
         {label}
       </p>
       <div className="mt-0.5 flex items-baseline gap-1.5">
         <span className="text-[15px] font-semibold tracking-tight text-foreground">{value}</span>
         <span
           className={cn(
-            'text-[9px] font-medium',
+            'text-[9.5px] font-medium',
             positive ? 'text-primary' : 'text-muted-foreground/70'
           )}
         >
