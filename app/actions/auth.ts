@@ -119,42 +119,6 @@ export async function persistInternalOnboardingState(
 }
 
 /**
- * Get current user's admin status
- */
-export async function getAdminStatus(): Promise<{
-  isAdmin: boolean;
-  isSuperAdmin: boolean;
-  userId: string | null;
-  email: string | null;
-}> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { isAdmin: false, isSuperAdmin: false, userId: null, email: null };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, email')
-    .eq('id', user.id)
-    .single();
-
-  const SUPER_ADMIN_EMAIL = 'info@qualiasolutions.net';
-  const superAdmin = profile?.email === SUPER_ADMIN_EMAIL;
-  const admin = profile?.role === 'admin' || superAdmin;
-
-  return {
-    isAdmin: admin,
-    isSuperAdmin: superAdmin,
-    userId: user.id,
-    email: profile?.email || null,
-  };
-}
-
-/**
  * Get profiles for a workspace or all profiles
  */
 export async function getProfiles(workspaceId?: string) {

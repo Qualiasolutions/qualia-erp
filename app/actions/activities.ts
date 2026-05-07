@@ -84,39 +84,3 @@ export async function getRecentActivities(
     meeting: Array.isArray(a.meeting) ? a.meeting[0] || null : a.meeting,
   })) as Activity[];
 }
-
-/**
- * Delete an activity (admin only).
- * Item 23: Added UUID validation.
- */
-export async function deleteActivity(activityId: string): Promise<ActionResult> {
-  // Item 23: UUID validation
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!uuidRegex.test(activityId)) {
-    return { success: false, error: 'Invalid activity ID' };
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
-  // Check if user is admin
-  const adminCheck = await isUserAdmin(user.id);
-  if (!adminCheck) {
-    return { success: false, error: 'Only admins can delete activities' };
-  }
-
-  const { error } = await supabase.from('activities').delete().eq('id', activityId);
-
-  if (error) {
-    console.error('Error deleting activity:', error);
-    return { success: false, error: error.message };
-  }
-
-  return { success: true };
-}

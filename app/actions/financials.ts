@@ -451,52 +451,6 @@ export async function syncZohoFinancials(): Promise<{
   };
 }
 
-// ─── Hide / Unhide / Delete invoices ──────────────────────
-
-export async function hideInvoice(zohoId: string): Promise<{ success: boolean; error?: string }> {
-  if (!(await checkAdmin())) return { success: false, error: 'Unauthorized' };
-
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from('financial_invoices')
-    .update({ is_hidden: true })
-    .eq('zoho_id', zohoId);
-
-  if (error) return { success: false, error: error.message };
-
-  return { success: true };
-}
-
-export async function unhideInvoice(zohoId: string): Promise<{ success: boolean; error?: string }> {
-  if (!(await checkAdmin())) return { success: false, error: 'Unauthorized' };
-
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from('financial_invoices')
-    .update({ is_hidden: false })
-    .eq('zoho_id', zohoId);
-
-  if (error) return { success: false, error: error.message };
-
-  return { success: true };
-}
-
-export async function deleteInvoice(zohoId: string): Promise<{ success: boolean; error?: string }> {
-  // Item 14: Validate zohoId format
-  const { z } = await import('zod');
-  const idResult = z.string().min(1).max(128).safeParse(zohoId);
-  if (!idResult.success) return { success: false, error: 'Invalid invoice ID' };
-
-  if (!(await checkAdmin())) return { success: false, error: 'Unauthorized' };
-
-  const supabase = await createClient();
-  const { error } = await supabase.from('financial_invoices').delete().eq('zoho_id', zohoId);
-
-  if (error) return { success: false, error: error.message };
-
-  return { success: true };
-}
-
 // ─── Expenses CRUD ────────────────────────────────────────
 
 export type Expense = {

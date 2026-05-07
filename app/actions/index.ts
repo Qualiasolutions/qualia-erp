@@ -35,7 +35,6 @@ export {
   canDeleteMeeting,
   canDeleteClient,
   canDeletePhase,
-  canDeletePhaseItem,
   canModifyTask,
   canAccessProject,
   canDeleteProjectFile,
@@ -64,7 +63,7 @@ export { createTeam, getTeams, getTeamById, updateTeam, deleteTeam } from './tea
 
 // ============ ACTIVITIES ============
 export type { Activity } from './activities';
-export { getRecentActivities, deleteActivity } from './activities';
+export { getRecentActivities } from './activities';
 
 // ============ NOTIFICATIONS ============
 export type { NotificationType } from './notifications';
@@ -136,7 +135,7 @@ export {
 } from './projects';
 
 // ============ AUTH ============
-export { loginAction, getAdminStatus, getProfiles } from './auth';
+export { loginAction, getProfiles } from './auth';
 
 // ============ HEALTH MONITORING ============
 export {
@@ -196,7 +195,7 @@ export { getDailyFlowData } from './daily-flow';
 
 // ============ FINANCIALS ============
 export type { FinancialSummary, FinancialInvoice, FinancialPayment } from './financials';
-export { getFinancialSummary, hideInvoice, unhideInvoice, deleteInvoice } from './financials';
+export { getFinancialSummary } from './financials';
 
 // Learning system removed in v2.0 — see .planning/phases/26-team-sync-daily-structure/26-01-PLAN.md
 

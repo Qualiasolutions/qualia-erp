@@ -133,25 +133,6 @@ export async function canDeletePhase(userId: string, phaseId: string): Promise<b
   return projectData?.lead_id === userId;
 }
 
-// Check if user can delete a phase item (project lead or admin)
-export async function canDeletePhaseItem(userId: string, itemId: string): Promise<boolean> {
-  if (await isUserAdmin(userId)) return true;
-
-  const supabase = await createClient();
-  const { data: item } = await supabase
-    .from('phase_items')
-    .select('phase:project_phases(project:projects(lead_id))')
-    .eq('id', itemId)
-    .single();
-
-  // Handle nested FK array normalization - Supabase returns ambiguous types for nested relations
-  const phaseData = normalizeFKResponse(
-    item?.phase as FKResponse<{ project: FKResponse<{ lead_id: string }> }>
-  );
-  const projectData = normalizeFKResponse(phaseData?.project as FKResponse<{ lead_id: string }>);
-  return projectData?.lead_id === userId;
-}
-
 // ============ TASK AUTHORIZATION HELPERS ============
 
 // Check if user can modify a task — tightened to least-privilege.
