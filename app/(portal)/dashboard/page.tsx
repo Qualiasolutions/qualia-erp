@@ -96,7 +96,7 @@ export default async function PortalDashboard({
         .eq('id', workspaceId)
         .maybeSingle();
       if (!rawClient) {
-        redirect('/');
+        redirect('/dashboard');
       }
       const logoUrl = await getWorkspaceClientLogo(workspaceId);
       return (
