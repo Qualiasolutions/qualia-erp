@@ -92,31 +92,35 @@ export function LandingHero() {
                 },
                 item: transitionVariants.item,
               }}
-              className="mt-6 flex flex-col items-center justify-center gap-3 sm:mt-7 sm:flex-row"
+              className="mt-6 flex flex-col items-center justify-center gap-2 sm:mt-7"
             >
               <Button
                 asChild
                 size="lg"
-                className="h-11 w-full rounded-xl px-6 text-sm font-semibold sm:h-12 sm:w-auto"
+                className="h-12 w-full rounded-xl px-7 text-sm font-semibold shadow-[var(--glow-teal-sm)] sm:w-auto"
               >
-                <Link href="/auth/login">
-                  Sign in
+                <a href="mailto:info@qualiasolutions.net?subject=Qualia%20Suite%20walkthrough&body=Hi%20Qualia%20team%2C%20I%27d%20like%20to%20see%20a%20walkthrough.%0A%0AAbout%20us%3A%20%0ATeam%20size%3A%20%0AWhat%20we%20use%20today%3A%20">
+                  Book a walkthrough
                   <ArrowRight className="h-4 w-4" />
+                </a>
+              </Button>
+              <p className="text-[11px] text-muted-foreground/80">
+                20-min live demo · no deck, no slides · with a real human
+              </p>
+              <p className="mt-3 text-[12px] text-muted-foreground">
+                Already have an account?{' '}
+                <Link
+                  href="/auth/login"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Sign in
                 </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="h-11 w-full rounded-xl px-6 text-sm font-semibold sm:h-12 sm:w-auto"
-              >
-                <Link href="/auth/signup">Create account</Link>
-              </Button>
+              </p>
             </AnimatedGroup>
 
             <AnimatedGroup
               variants={transitionVariants}
-              className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground/80 sm:mt-5"
+              className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground/80 sm:mt-6"
             >
               <Chip>Built on Supabase</Chip>
               <Chip>Real-time collaboration</Chip>
@@ -229,7 +233,9 @@ function LandingNav() {
             <Link href="/auth/login">Sign in</Link>
           </Button>
           <Button asChild size="sm" className="h-9 rounded-lg px-4">
-            <Link href="/auth/signup">Get started</Link>
+            <a href="mailto:info@qualiasolutions.net?subject=Qualia%20Suite%20walkthrough">
+              Book a walkthrough
+            </a>
           </Button>
         </div>
 
@@ -258,14 +264,17 @@ function LandingNav() {
               ))}
             </ul>
             <div className="flex flex-col gap-2 border-t border-border/40 pt-3">
-              <Button asChild variant="outline" size="sm" className="h-10 w-full rounded-lg">
+              <Button asChild size="sm" className="h-10 w-full rounded-lg">
+                <a
+                  href="mailto:info@qualiasolutions.net?subject=Qualia%20Suite%20walkthrough"
+                  onClick={() => setOpen(false)}
+                >
+                  Book a walkthrough
+                </a>
+              </Button>
+              <Button asChild variant="ghost" size="sm" className="h-10 w-full rounded-lg">
                 <Link href="/auth/login" onClick={() => setOpen(false)}>
                   Sign in
-                </Link>
-              </Button>
-              <Button asChild size="sm" className="h-10 w-full rounded-lg">
-                <Link href="/auth/signup" onClick={() => setOpen(false)}>
-                  Get started
                 </Link>
               </Button>
             </div>
