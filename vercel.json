@@ -6,14 +6,6 @@
       "schedule": "0 6 * * 1-5"
     },
     {
-      "path": "/api/cron/research-tasks",
-      "schedule": "0 5 * * 1-5"
-    },
-    {
-      "path": "/api/cron/blog-tasks",
-      "schedule": "5 5 * * 1-5"
-    },
-    {
       "path": "/api/cron/weekly-digest",
       "schedule": "0 9 * * 5"
     },
