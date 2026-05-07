@@ -99,7 +99,7 @@ export function LandingHero() {
                 size="lg"
                 className="h-12 w-full rounded-xl px-7 text-sm font-semibold shadow-[var(--glow-teal-sm)] sm:w-auto"
               >
-                <a href="mailto:info@qualiasolutions.net?subject=Qualia%20Suite%20walkthrough&body=Hi%20Qualia%20team%2C%20I%27d%20like%20to%20see%20a%20walkthrough.%0A%0AAbout%20us%3A%20%0ATeam%20size%3A%20%0AWhat%20we%20use%20today%3A%20">
+                <a href="https://qualiasolutions.net/contact" target="_blank" rel="noreferrer">
                   Book a walkthrough
                   <ArrowRight className="h-4 w-4" />
                 </a>
@@ -233,7 +233,7 @@ function LandingNav() {
             <Link href="/auth/login">Sign in</Link>
           </Button>
           <Button asChild size="sm" className="h-9 rounded-lg px-4">
-            <a href="mailto:info@qualiasolutions.net?subject=Qualia%20Suite%20walkthrough">
+            <a href="https://qualiasolutions.net/contact" target="_blank" rel="noreferrer">
               Book a walkthrough
             </a>
           </Button>
@@ -266,7 +266,9 @@ function LandingNav() {
             <div className="flex flex-col gap-2 border-t border-border/40 pt-3">
               <Button asChild size="sm" className="h-10 w-full rounded-lg">
                 <a
-                  href="mailto:info@qualiasolutions.net?subject=Qualia%20Suite%20walkthrough"
+                  href="https://qualiasolutions.net/contact"
+                  target="_blank"
+                  rel="noreferrer"
                   onClick={() => setOpen(false)}
                 >
                   Book a walkthrough
