@@ -1,9 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { generateObject } from 'ai';
+import { z } from 'zod';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { isUserAdmin } from '@/app/actions/shared';
 import { sendInternalEmail } from '@/lib/email';
+import { knowledgeAssistantModel } from '@/lib/ai/gemini-client';
 
 /**
  * Employee performance audit — pulls every measurable signal we have
@@ -952,4 +955,210 @@ export async function submitSelfAssessment(
   revalidatePath(`/admin/audit/${profileId}`);
   revalidatePath('/admin/audit');
   return { success: true };
+}
+
+// ============================================================================
+// Drift analysis — compare self-assessment vs actual data using OpenRouter
+// ============================================================================
+
+export type AuditDriftFinding = {
+  severity: 'high' | 'medium' | 'low' | 'aligned';
+  dimension: string;
+  claim: string;
+  actual: string;
+  explanation: string;
+};
+
+export type AuditDriftReport = {
+  summary: string;
+  honestyScore: number;
+  findings: AuditDriftFinding[];
+  generatedAt: string;
+};
+
+const DriftSchema = z.object({
+  summary: z
+    .string()
+    .describe('Two to three sentences summarising overall calibration between claims and data.'),
+  honesty_score: z
+    .number()
+    .min(1)
+    .max(10)
+    .describe(
+      '1 = wildly miscalibrated (claims wildly diverge from reality). 10 = perfectly self-aware.'
+    ),
+  findings: z
+    .array(
+      z.object({
+        severity: z
+          .enum(['high', 'medium', 'low', 'aligned'])
+          .describe(
+            'high = significant overclaim/underclaim, low = minor noise, aligned = claim matches data and is worth highlighting.'
+          ),
+        dimension: z
+          .string()
+          .describe(
+            'Short label: framework_fluency, debugging, client_comms, ship_solo, project_count, attendance, code_quality, scenarios, internal_contradiction, etc.'
+          ),
+        claim: z.string().describe('Quote what they said in the self-assessment, briefly.'),
+        actual: z.string().describe('Cite the metric or contradicting answer.'),
+        explanation: z.string().describe('One or two sentences. Be direct. No hedging.'),
+      })
+    )
+    .min(3)
+    .max(8),
+});
+
+function buildDriftPrompt(audit: EmployeeAuditPayload, responses: Record<string, unknown>): string {
+  const lines: string[] = [];
+  lines.push(
+    `Employee: ${audit.overview.fullName ?? audit.overview.email ?? 'Unknown'} (${audit.overview.email ?? ''})`
+  );
+  lines.push(
+    `Role: ${audit.overview.role ?? 'employee'} · ${audit.overview.daysInCompany} days in company`
+  );
+  lines.push('');
+  lines.push('=== ACTUAL METRICS (last 90 days unless stated) ===');
+  lines.push(
+    `Attendance: ${audit.attendance.attendancePct}% (${audit.attendance.attendedWeekdays}/${audit.attendance.expectedWeekdays} expected workdays · ${audit.attendance.expectedDaysPerWeek}d/week schedule)`
+  );
+  lines.push(
+    `Late after 10am: ${audit.attendance.lateAfter10} · very late (after noon): ${audit.attendance.veryLateAfterNoon}`
+  );
+  lines.push(
+    `Sessions: ${audit.sessions.totalSessions} sessions · ${audit.sessions.totalHours.toFixed(1)} hours total · ${audit.sessions.distinctWorkdays} distinct workdays`
+  );
+  lines.push(
+    `Avg session: ${audit.sessions.avgSessionMin ?? 'n/a'} min · unended: ${audit.sessions.unended} · no-project: ${audit.sessions.noProject} · no-clockout-summary: ${audit.sessions.noClockOutSummary}`
+  );
+  const reportRate =
+    audit.sessions.totalSessions > 0
+      ? Math.round((audit.reports.total / audit.sessions.totalSessions) * 100)
+      : 0;
+  lines.push(
+    `Framework reports filed: ${audit.reports.total} (${reportRate}% of sessions) · verif passed: ${audit.reports.verifPassed}, failed: ${audit.reports.verifFailed} · gap cycles total: ${audit.reports.totalGapCycles}`
+  );
+  lines.push(
+    `Projects worked: ${audit.projects.length} · top by hours: ${
+      audit.projects
+        .slice(0, 5)
+        .map((p) => `${p.projectName} (${p.hoursLogged.toFixed(1)}h)`)
+        .join(', ') || 'none'
+    }`
+  );
+  lines.push(
+    `Tasks: ${audit.tasks.completed}/${audit.tasks.totalAssigned} completed · on-time: ${audit.tasks.onTimePct}% · avg days to done: ${audit.tasks.avgDaysToDone ?? 'n/a'}`
+  );
+  lines.push(
+    `Project assignments: ${audit.assignments.totalAssignments} · completed: ${audit.assignments.completedAssignments} · removed without complete: ${audit.assignments.removedWithoutComplete}`
+  );
+  lines.push('');
+  lines.push('=== SELF-ASSESSMENT ANSWERS ===');
+  const fmt = (k: string, v: unknown) => {
+    if (v == null || v === '') return '';
+    if (Array.isArray(v)) return v.length === 0 ? '' : `${k}: ${v.join(', ')}`;
+    return `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`;
+  };
+  const knownKeys = [
+    'overallMastery',
+    'frameworkAddonScore',
+    'clientHandoffConfidence',
+    'frameworkCommandsMastered',
+    'soloCapableProjectTypes',
+    'weakSpots',
+    'tenMilestoneTime',
+    'clientCommsAlone',
+    'gapClosureAlone',
+    'shippedSoloCount',
+    'debugComfort',
+    'lastSoloProject',
+    'wishedCommand',
+    'unclearOrBroken',
+    'yesGiveMeSolo',
+    'scenarioInheritProject',
+    'scenarioWhitePageMobile',
+    'scenarioCodeYouProud',
+    'scenarioClientAIBrief',
+    'scenarioStuckTwoHours',
+    'scenarioSlowPage',
+    'scenarioPRReview',
+    'scenarioVagueRequest',
+    'scenarioRiskyMigration',
+    'scenarioFirstCommit',
+  ];
+  for (const k of knownKeys) {
+    const line = fmt(k, responses[k]);
+    if (line) lines.push(line);
+  }
+  return lines.join('\n');
+}
+
+/**
+ * Run a drift analysis: compare the employee's self-assessment to their actual
+ * metrics via Claude Sonnet (over OpenRouter) and return a structured report.
+ *
+ * Admin-only. Costs ~$0.02 per run, latency ~3-5s. Not cached — admin can rerun
+ * if they want a fresh take.
+ */
+export async function analyzeAuditDrift(
+  profileId: string
+): Promise<{ success: true; report: AuditDriftReport } | { success: false; error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+  if (!(await isUserAdmin(user.id))) return { success: false, error: 'Admin only' };
+
+  if (!process.env.OPENROUTER_API_KEY) {
+    return { success: false, error: 'OPENROUTER_API_KEY not configured' };
+  }
+
+  const audit = await getEmployeeAudit(profileId);
+  if (!audit) return { success: false, error: 'Audit data not found' };
+  if (!audit.latestAssessment) {
+    return { success: false, error: 'Employee has not submitted the self-assessment yet' };
+  }
+
+  const facts = buildDriftPrompt(audit, audit.latestAssessment.responses);
+
+  try {
+    const result = await generateObject({
+      model: knowledgeAssistantModel,
+      schema: DriftSchema,
+      schemaName: 'AuditDrift',
+      maxOutputTokens: 1500,
+      prompt: `You are auditing the gap between an employee's self-rating and their actual work data over the last 90 days. Be direct. No hedging. Cite specific evidence in every finding.
+
+The goal is to surface drift that helps the boss decide what to route to this employee solo, what to pair on, and where they need coaching.
+
+A drift can go in either direction:
+- Overclaim: rated themselves high but data shows otherwise
+- Underclaim: data shows they're stronger than they admit
+- Internal contradiction: two of their answers don't match each other
+- Aligned (still worth a finding when calibration is impressive on a high-stakes dimension)
+
+Surface 3-7 findings. Be specific about commands, project types, scenarios — quote the relevant claim and cite the relevant metric.
+
+EMPLOYEE DATA:
+
+${facts}`,
+    });
+
+    return {
+      success: true,
+      report: {
+        summary: result.object.summary,
+        honestyScore: result.object.honesty_score,
+        findings: result.object.findings,
+        generatedAt: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error('[analyzeAuditDrift] error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Drift analysis failed',
+    };
+  }
 }
