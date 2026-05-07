@@ -50,7 +50,7 @@ export function LandingHero() {
 
       <section
         id="product"
-        className="relative flex flex-1 flex-col justify-start pt-[clamp(5rem,11vh,7rem)] sm:justify-center sm:pt-0"
+        className="relative flex flex-1 flex-col justify-start pb-8 pt-[clamp(5.5rem,10vh,7rem)]"
       >
         <div
           aria-hidden
@@ -67,7 +67,7 @@ export function LandingHero() {
         <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-5 sm:px-6">
           <div className="mx-auto w-full max-w-3xl text-center">
             <AnimatedGroup variants={transitionVariants}>
-              <h1 className="text-balance text-[clamp(2rem,5vw,4rem)] font-semibold leading-[1.04] tracking-[-0.02em] text-foreground">
+              <h1 className="text-balance text-[clamp(1.875rem,4.4vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.02em] text-foreground">
                 The operating system for your{' '}
                 <span className="bg-gradient-to-br from-qualia-400 via-qualia-500 to-qualia-700 bg-clip-text text-transparent dark:from-qualia-200 dark:via-qualia-300 dark:to-qualia-500">
                   client work
@@ -346,7 +346,7 @@ function DashboardPreview() {
         </div>
 
         {/* Big preview frame */}
-        <div className="relative h-[clamp(360px,52vh,580px)] overflow-hidden rounded-xl bg-background">
+        <div className="relative h-[clamp(300px,42vh,440px)] overflow-hidden rounded-xl bg-background">
           <AnimatePresence mode="wait">
             <m.div
               key={role}
@@ -456,12 +456,8 @@ function RoleSidebar({ role }: { role: Role }) {
         className="flex flex-col gap-2 pt-1"
       >
         {items.map((it) => (
-          <m.li
+          <li
             key={it.label}
-            variants={{
-              hidden: { opacity: 0, x: -6 },
-              visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
-            }}
             className={cn(
               'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[11px] transition-colors',
               it.active
@@ -481,7 +477,7 @@ function RoleSidebar({ role }: { role: Role }) {
                 {it.count}
               </span>
             ) : null}
-          </m.li>
+          </li>
         ))}
       </m.ul>
     </aside>
@@ -554,7 +550,7 @@ function AdminMain() {
         </m.p>
         <ul className="space-y-2.5">
           {team.map((m_) => (
-            <m.li key={m_.who} variants={fadeUp} className="flex items-center gap-2.5">
+            <li key={m_.who} className="flex items-center gap-2.5">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-qualia-300 to-qualia-600 text-[9px] font-semibold text-white ring-1 ring-border/40">
                 {m_.who[0]}
               </span>
@@ -580,7 +576,7 @@ function AdminMain() {
               <span className="w-8 text-right font-mono text-[10px] text-muted-foreground">
                 {m_.load}%
               </span>
-            </m.li>
+            </li>
           ))}
         </ul>
       </div>
@@ -633,9 +629,8 @@ function EmployeeMain() {
         </m.div>
         <ul className="overflow-hidden rounded-lg border border-border/40 bg-card/30">
           {tasks.map((t, i) => (
-            <m.li
+            <li
               key={t.title}
-              variants={fadeUp}
               className={cn(
                 'flex items-center gap-3 px-3 py-2',
                 i !== tasks.length - 1 && 'border-b border-border/30'
@@ -654,7 +649,7 @@ function EmployeeMain() {
                 <p className="truncate text-[10px] text-muted-foreground">{t.meta}</p>
               </div>
               <span className="text-[10px] text-muted-foreground/70">↗</span>
-            </m.li>
+            </li>
           ))}
         </ul>
       </div>
@@ -723,17 +718,13 @@ function ClientMain() {
               dot: 'bg-muted-foreground/40',
             },
           ].map((a) => (
-            <m.li
-              key={a.label}
-              variants={fadeUp}
-              className="flex items-center gap-2.5 rounded-md px-1 py-1"
-            >
+            <li key={a.label} className="flex items-center gap-2.5 rounded-md px-1 py-1">
               <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', a.dot)} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[11.5px] font-medium text-foreground">{a.label}</p>
                 <p className="truncate text-[10px] text-muted-foreground">{a.meta}</p>
               </div>
-            </m.li>
+            </li>
           ))}
         </ul>
       </div>
@@ -770,11 +761,7 @@ function AdminRail() {
       </m.p>
       <ul className="mt-2 space-y-2">
         {projects.map((p) => (
-          <m.li
-            key={p.name}
-            variants={fadeUp}
-            className="rounded-lg border border-border/40 bg-card/60 p-2.5"
-          >
+          <li key={p.name} className="rounded-lg border border-border/40 bg-card/60 p-2.5">
             <div className="flex items-center justify-between">
               <span className="truncate text-[11.5px] font-semibold text-foreground">{p.name}</span>
               <span className="text-[10px] text-muted-foreground">{p.due}</span>
@@ -790,7 +777,7 @@ function AdminRail() {
               </span>
               <span className="font-mono text-[10px] text-muted-foreground">{p.pct}%</span>
             </div>
-          </m.li>
+          </li>
         ))}
       </ul>
       <m.p
@@ -830,9 +817,8 @@ function EmployeeRail() {
           { time: '13:00', label: 'Sakani sprint review', tag: 'Sakani' },
           { time: '15:30', label: 'Design crit · brand', tag: 'Alkemy' },
         ].map((s) => (
-          <m.li
+          <li
             key={s.label}
-            variants={fadeUp}
             className="flex items-center gap-3 rounded-lg border border-border/40 bg-card/60 p-2"
           >
             <span className="font-mono text-[10px] text-muted-foreground">{s.time}</span>
@@ -840,7 +826,7 @@ function EmployeeRail() {
               <p className="truncate text-[11px] font-semibold text-foreground">{s.label}</p>
               <p className="truncate text-[9.5px] text-muted-foreground">{s.tag}</p>
             </div>
-          </m.li>
+          </li>
         ))}
       </ul>
       <m.p
@@ -855,18 +841,14 @@ function EmployeeRail() {
           { who: 'Moayad', what: 'commented on T-204', when: '38m' },
           { who: 'Sally', what: 'logged 1.5h', when: '1h' },
         ].map((a) => (
-          <m.li
-            key={a.who + a.when}
-            variants={fadeUp}
-            className="flex items-center gap-2 text-[11px]"
-          >
+          <li key={a.who + a.when} className="flex items-center gap-2 text-[11px]">
             <span className="h-5 w-5 rounded-full bg-gradient-to-br from-qualia-300 to-qualia-600 ring-1 ring-border/40" />
             <span className="min-w-0 flex-1 truncate text-foreground">
               <span className="font-medium">{a.who}</span>{' '}
               <span className="text-muted-foreground">{a.what}</span>
             </span>
             <span className="text-[10px] text-muted-foreground/70">{a.when}</span>
-          </m.li>
+          </li>
         ))}
       </ul>
     </m.aside>
@@ -893,9 +875,8 @@ function ClientRail() {
           { who: 'Rama', role: 'Design' },
           { who: 'Hasan', role: 'Engineering' },
         ].map((m_) => (
-          <m.li
+          <li
             key={m_.who}
-            variants={fadeUp}
             className="flex items-center gap-2.5 rounded-lg border border-border/40 bg-card/60 p-2"
           >
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-qualia-300 to-qualia-600 text-[10px] font-semibold text-white ring-1 ring-border/40">
@@ -905,7 +886,7 @@ function ClientRail() {
               <p className="truncate text-[11px] font-semibold text-foreground">{m_.who}</p>
               <p className="truncate text-[9.5px] text-muted-foreground">{m_.role}</p>
             </div>
-          </m.li>
+          </li>
         ))}
       </m.ul>
       <m.p
