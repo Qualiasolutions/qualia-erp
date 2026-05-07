@@ -19,7 +19,7 @@ export default async function PortalActivityPage() {
   // App Library guard: block clients if the "activity" app is disabled
   if (role === 'client') {
     const allowed = await assertAppEnabledForClient(user.id, 'activity', role);
-    if (!allowed) redirect('/');
+    if (!allowed) redirect('/dashboard');
   }
 
   // Get all project IDs the user has access to

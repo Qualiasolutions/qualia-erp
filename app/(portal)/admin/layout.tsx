@@ -8,7 +8,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const profile = await getPortalProfile(user.id);
 
-  if (profile?.role !== 'admin') redirect('/');
+  if (profile?.role !== 'admin') redirect('/dashboard');
 
   return <>{children}</>;
 }

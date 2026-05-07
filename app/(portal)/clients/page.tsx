@@ -78,7 +78,7 @@ export default async function PortalClientsPage() {
   if (!user) redirect('/auth/login');
 
   const role = await getCachedUserRole(user.id);
-  if (role !== 'admin') redirect('/');
+  if (role !== 'admin') redirect('/dashboard');
 
   return (
     <div className="flex h-full flex-col">

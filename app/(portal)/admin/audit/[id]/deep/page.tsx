@@ -19,7 +19,7 @@ export default async function AuditDeepPage({ params }: { params: Promise<{ id: 
 
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
-  if (!(await isUserAdmin(user.id))) redirect('/');
+  if (!(await isUserAdmin(user.id))) redirect('/dashboard');
 
   const { id } = await params;
   const audit = await getEmployeeAudit(id);

@@ -84,7 +84,7 @@ export default async function PortalStatusPage() {
 
   const role = await getCachedUserRole(user.id);
   // Only admin, manager, employee can access status
-  if (role === 'client') redirect('/');
+  if (role === 'client') redirect('/dashboard');
 
   let monitors: Monitor[] = [];
   let error: string | null = null;

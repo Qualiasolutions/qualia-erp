@@ -15,7 +15,7 @@ export default async function AdminAttendancePage() {
   await connection();
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
-  if (!(await isUserAdmin(user.id))) redirect('/');
+  if (!(await isUserAdmin(user.id))) redirect('/dashboard');
 
   return <AdminAttendanceClient />;
 }

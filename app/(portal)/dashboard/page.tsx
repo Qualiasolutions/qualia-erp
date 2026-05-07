@@ -8,11 +8,11 @@ import {
   getClientPrimaryLogo,
   getWorkspaceClientLogo,
 } from '@/lib/portal-cache';
-import { PortalDashboardContent } from './portal-dashboard-content';
+import { PortalDashboardContent } from '../portal-dashboard-content';
 import { getClientWorkspaces } from '@/app/actions/portal-workspaces';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
-import { EmployeeDashboardContent } from './employee-dashboard-content';
-import { AdminDashboardContent } from './admin-dashboard-content';
+import { EmployeeDashboardContent } from '../employee-dashboard-content';
+import { AdminDashboardContent } from '../admin-dashboard-content';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 
 export default async function PortalDashboard({

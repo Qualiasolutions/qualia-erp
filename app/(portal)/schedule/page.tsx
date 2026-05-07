@@ -92,7 +92,7 @@ export default async function PortalSchedulePage({
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
   const profile = await getPortalProfile(user.id);
-  if (profile?.role === 'client') redirect('/');
+  if (profile?.role === 'client') redirect('/dashboard');
 
   const params = await searchParams;
   const weekStart = resolveWeekStart(params.week);

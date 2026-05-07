@@ -8,7 +8,7 @@ import { type NextRequest } from 'next/server';
  * Only allows internal paths (starting with /) and blocks protocol-relative URLs.
  */
 function getSafeRedirectPath(next: string | null): string {
-  if (!next) return '/';
+  if (!next) return '/dashboard';
   // Must start with / but not // (protocol-relative URL) or /\ (path traversal)
   if (next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\')) {
     // Additional check: ensure no protocol in the path
@@ -16,7 +16,7 @@ function getSafeRedirectPath(next: string | null): string {
       return next;
     }
   }
-  return '/';
+  return '/dashboard';
 }
 
 export async function GET(request: NextRequest) {

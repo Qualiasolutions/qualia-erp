@@ -7,7 +7,7 @@ export default async function AdminReportsPage() {
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
   const profile = await getPortalProfile(user.id);
-  if (!isPortalAdminRole(profile?.role ?? null)) redirect('/');
+  if (!isPortalAdminRole(profile?.role ?? null)) redirect('/dashboard');
 
   return <AdminReportsClient />;
 }

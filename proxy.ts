@@ -44,12 +44,11 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect all routes except /auth/* and /api/*
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/auth') &&
-    !request.nextUrl.pathname.startsWith('/api')
-  ) {
+  // Protect all routes except /auth/*, /api/*, and the public landing at /
+  const pathname = request.nextUrl.pathname;
+  const isPublicRoute =
+    pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/api');
+  if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
     return NextResponse.redirect(url);
@@ -58,6 +57,7 @@ export async function proxy(request: NextRequest) {
   // Role-based routing: read role from JWT claims (injected by custom_access_token_hook).
   // Three-tier resolution: app_metadata (instant) → getClaims() (local JWT) → DB (final fallback).
   if (user) {
+    // pathname captured above
     // Primary: app_metadata set by custom_access_token_hook (no parsing, no roundtrip)
     let userRole: string | undefined = (user.app_metadata as Record<string, unknown> | null)
       ?.user_role as string | undefined;
@@ -80,14 +80,12 @@ export async function proxy(request: NextRequest) {
       userRole = profile?.role ?? undefined;
     }
 
-    const pathname = request.nextUrl.pathname;
-
     // Backward-compat: redirect legacy /portal/* URLs to the new unprefixed routes.
     // Historical links, bookmarks and emails still point at /portal/*.
     if (pathname === '/portal' || pathname.startsWith('/portal/')) {
       const url = request.nextUrl.clone();
       if (pathname === '/portal') {
-        url.pathname = '/';
+        url.pathname = '/dashboard';
       } else if (pathname === '/portal/admin') {
         url.pathname = '/workspace';
       } else {
@@ -105,7 +103,7 @@ export async function proxy(request: NextRequest) {
     const internalOnlyRoutes = ['/schedule'];
     if (userRole === 'client' && internalOnlyRoutes.some((route) => pathname.startsWith(route))) {
       const url = request.nextUrl.clone();
-      url.pathname = '/';
+      url.pathname = '/dashboard';
       return NextResponse.redirect(url);
     }
 
@@ -113,14 +111,14 @@ export async function proxy(request: NextRequest) {
     const adminOnlyRoutes = ['/admin', '/clients', '/workspace'];
     if (userRole !== 'admin' && adminOnlyRoutes.some((route) => pathname.startsWith(route))) {
       const url = request.nextUrl.clone();
-      url.pathname = '/';
+      url.pathname = '/dashboard';
       return NextResponse.redirect(url);
     }
 
-    // Authenticated users hitting /auth/login or /auth/signup → home
-    if (pathname === '/auth/login' || pathname === '/auth/signup') {
+    // Authenticated users hitting auth pages or the public landing → dashboard
+    if (pathname === '/' || pathname === '/auth/login' || pathname === '/auth/signup') {
       const url = request.nextUrl.clone();
-      url.pathname = '/';
+      url.pathname = '/dashboard';
       return NextResponse.redirect(url);
     }
   }

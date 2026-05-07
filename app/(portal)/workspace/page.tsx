@@ -20,7 +20,7 @@ export default async function PortalAdminPage() {
   const userRole = await getCachedUserRole(user.id);
 
   if (!isPortalAdminRole(userRole)) {
-    redirect('/');
+    redirect('/dashboard');
   }
 
   // Get workspace ID for this user

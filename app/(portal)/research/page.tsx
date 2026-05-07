@@ -15,7 +15,7 @@ export default async function PortalResearchPage() {
   if (!user) redirect('/auth/login');
 
   const role = await getCachedUserRole(user.id);
-  if (role === 'client') redirect('/');
+  if (role === 'client') redirect('/dashboard');
 
   const isAdmin = role === 'admin';
   const result = await getResearchEntries({ limit: 50 });

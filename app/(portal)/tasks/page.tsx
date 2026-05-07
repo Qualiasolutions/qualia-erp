@@ -39,7 +39,7 @@ export default async function PortalTasksPage({ searchParams }: PageProps) {
 
   if (role === 'client') {
     const allowed = await assertAppEnabledForClient(user.id, 'tasks', role);
-    if (!allowed) redirect('/');
+    if (!allowed) redirect('/dashboard');
   }
 
   // Resolve admin check + workspace in parallel — both depend only on user.id,

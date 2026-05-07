@@ -21,7 +21,7 @@ export default async function PortalBillingPage() {
   const profile = await getPortalProfile(user.id);
 
   if (profile?.role === 'employee') {
-    redirect('/');
+    redirect('/dashboard');
   }
 
   const isAdmin = profile?.role === 'admin';
@@ -29,7 +29,7 @@ export default async function PortalBillingPage() {
   // App Library guard: block clients if the "billing" app is disabled
   if (profile?.role === 'client') {
     const allowed = await assertAppEnabledForClient(user.id, 'billing', profile.role);
-    if (!allowed) redirect('/');
+    if (!allowed) redirect('/dashboard');
   }
 
   const supabase = await createClient();
