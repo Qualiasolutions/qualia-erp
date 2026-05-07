@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { format, subDays, startOfWeek, startOfMonth, subMonths } from 'date-fns';
+import { format, startOfMonth, subMonths } from 'date-fns';
 import {
   CalendarIcon,
   Clock,
@@ -10,12 +10,8 @@ import {
   Briefcase,
   TrendingUp,
   Download,
-  AlertTriangle,
-  Zap,
-  Heart,
-  CheckCircle2,
-  AlertCircle,
-  ListTodo,
+  Loader2,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -29,31 +25,27 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import {
   getReportData,
-  getAssignedVsDone,
-  getCheckinAnalytics,
-  getTaskStats,
+  getEmployeeSessionDetail,
   type ReportSummary,
-  type AssignedVsDone,
-  type CheckinAnalytics,
-  type TaskStats,
+  type EmployeeSessionDetail,
 } from '@/app/actions/reports';
 import type { DateRange } from 'react-day-picker';
 import { FrameworkReportsTab } from './framework-reports-tab';
 
-type ReportTab = 'employees' | 'projects' | 'assigned' | 'checkins' | 'tasks' | 'framework';
+type ReportTab = 'employees' | 'framework';
 
 const TABS: Array<{ id: ReportTab; label: string; desc: string }> = [
   { id: 'employees', label: 'Hours', desc: 'Team hours logged per employee' },
-  { id: 'projects', label: 'Projects', desc: 'Hours and sessions by project' },
-  { id: 'assigned', label: 'Assignments', desc: 'Assigned projects vs actual work logged' },
-  { id: 'checkins', label: 'Wellness', desc: 'Daily check-in energy and mood trends' },
-  { id: 'tasks', label: 'Tasks', desc: 'Task creation, completion, and overdue rates' },
   { id: 'framework', label: 'Framework Reports', desc: 'Qualia framework session reports' },
 ];
+
+// Tracking starts from May 2026 — anything earlier is excluded from totals.
+const TRACKING_START = new Date(2026, 4, 1); // May 1, 2026
 
 function formatHours(minutes: number): string {
   const h = Math.floor(minutes / 60);
@@ -81,19 +73,6 @@ function downloadEmployeeCsv(data: ReportSummary) {
   downloadBlob([header, ...rows].join('\n'), 'report-employees');
 }
 
-function downloadProjectCsv(data: ReportSummary) {
-  const header = 'Project,Hours,Sessions,Contributors';
-  const rows = data.byProject.map((p) =>
-    [
-      `"${p.projectName}"`,
-      (p.totalMinutes / 60).toFixed(1),
-      p.sessionCount,
-      `"${p.contributors.join(', ')}"`,
-    ].join(',')
-  );
-  downloadBlob([header, ...rows].join('\n'), 'report-projects');
-}
-
 const tabBase =
   'relative whitespace-nowrap border-b-2 pb-3 pt-1 text-sm font-medium transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2';
 const tabActive = 'border-primary text-primary';
@@ -116,16 +95,19 @@ export function AdminReportsClient() {
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<ReportSummary | null>(null);
-  const [avd, setAvd] = useState<AssignedVsDone[]>([]);
-  const [checkinData, setCheckinData] = useState<CheckinAnalytics | null>(null);
-  const [taskData, setTaskData] = useState<TaskStats | null>(null);
+  // Default: from May 1 2026 (tracking start) → today.
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: startOfMonth(new Date()),
+    from: TRACKING_START,
     to: new Date(),
   });
   const [tab, setTab] = useState<ReportTab>(
-    initialTab && TABS.some((t) => t.id === initialTab) ? initialTab : 'framework'
+    initialTab && TABS.some((t) => t.id === initialTab) ? initialTab : 'employees'
   );
+
+  // Drill-down state
+  const [drillProfileId, setDrillProfileId] = useState<string | null>(null);
+  const [drillDetail, setDrillDetail] = useState<EmployeeSessionDetail | null>(null);
+  const [drillLoading, setDrillLoading] = useState(false);
 
   useEffect(() => {
     getCurrentWorkspaceId().then(setWorkspaceId);
@@ -134,18 +116,12 @@ export function AdminReportsClient() {
   const fetchData = useCallback(async () => {
     if (!workspaceId || !dateRange?.from || !dateRange?.to) return;
     setLoading(true);
-    const start = format(dateRange.from, 'yyyy-MM-dd');
+    // Clamp the start to TRACKING_START — never aggregate older data.
+    const effectiveFrom = dateRange.from < TRACKING_START ? TRACKING_START : dateRange.from;
+    const start = format(effectiveFrom, 'yyyy-MM-dd');
     const end = format(dateRange.to, 'yyyy-MM-dd');
-    const [reportData, avdData, checkinRes, taskRes] = await Promise.all([
-      getReportData(workspaceId, start, end),
-      getAssignedVsDone(workspaceId, start, end),
-      getCheckinAnalytics(workspaceId, start, end),
-      getTaskStats(workspaceId, start, end),
-    ]);
+    const reportData = await getReportData(workspaceId, start, end);
     setReport(reportData);
-    setAvd(avdData);
-    setCheckinData(checkinRes);
-    setTaskData(taskRes);
     setLoading(false);
   }, [workspaceId, dateRange]);
 
@@ -153,26 +129,28 @@ export function AdminReportsClient() {
     fetchData();
   }, [fetchData]);
 
-  const setPreset = (preset: 'week' | 'month' | '7d' | '30d' | 'last-month') => {
+  const setPreset = (preset: 'since-may' | 'this-month' | 'last-month') => {
     const today = new Date();
     switch (preset) {
-      case 'week':
-        setDateRange({ from: startOfWeek(today, { weekStartsOn: 1 }), to: today });
+      case 'since-may':
+        setDateRange({ from: TRACKING_START, to: today });
         break;
-      case 'month':
-        setDateRange({ from: startOfMonth(today), to: today });
+      case 'this-month': {
+        const from = startOfMonth(today);
+        setDateRange({ from: from < TRACKING_START ? TRACKING_START : from, to: today });
         break;
-      case '7d':
-        setDateRange({ from: subDays(today, 7), to: today });
-        break;
-      case '30d':
-        setDateRange({ from: subDays(today, 30), to: today });
-        break;
+      }
       case 'last-month': {
         const prev = subMonths(today, 1);
+        const from = startOfMonth(prev);
+        const to = new Date(prev.getFullYear(), prev.getMonth() + 1, 0);
+        if (to < TRACKING_START) {
+          setDateRange({ from: TRACKING_START, to: today });
+          break;
+        }
         setDateRange({
-          from: startOfMonth(prev),
-          to: new Date(prev.getFullYear(), prev.getMonth() + 1, 0),
+          from: from < TRACKING_START ? TRACKING_START : from,
+          to,
         });
         break;
       }
@@ -216,6 +194,22 @@ export function AdminReportsClient() {
     [tab, changeTab]
   );
 
+  const openDrillDown = useCallback(
+    async (profileId: string) => {
+      if (!workspaceId || !dateRange?.from || !dateRange?.to) return;
+      setDrillProfileId(profileId);
+      setDrillDetail(null);
+      setDrillLoading(true);
+      const effectiveFrom = dateRange.from < TRACKING_START ? TRACKING_START : dateRange.from;
+      const start = format(effectiveFrom, 'yyyy-MM-dd');
+      const end = format(dateRange.to, 'yyyy-MM-dd');
+      const detail = await getEmployeeSessionDetail(workspaceId, profileId, start, end);
+      setDrillDetail(detail);
+      setDrillLoading(false);
+    },
+    [workspaceId, dateRange]
+  );
+
   return (
     <div className="flex flex-col">
       <header className="border-b border-border bg-muted/30 px-6 pt-8 lg:px-8">
@@ -239,32 +233,37 @@ export function AdminReportsClient() {
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
                 <div className="flex flex-wrap gap-1 border-b border-border px-3 py-2">
-                  {(['7d', 'week', 'month', '30d', 'last-month'] as const).map((p) => (
-                    <Button
-                      key={p}
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs"
-                      onClick={() => setPreset(p)}
-                    >
-                      {p === '7d'
-                        ? 'Last 7d'
-                        : p === 'week'
-                          ? 'This week'
-                          : p === 'month'
-                            ? 'This month'
-                            : p === '30d'
-                              ? 'Last 30d'
-                              : 'Last month'}
-                    </Button>
-                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setPreset('since-may')}
+                  >
+                    Since May 2026
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setPreset('this-month')}
+                  >
+                    This month
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setPreset('last-month')}
+                  >
+                    Last month
+                  </Button>
                 </div>
                 <Calendar
                   mode="range"
                   selected={dateRange}
                   onSelect={setDateRange}
                   numberOfMonths={2}
-                  disabled={{ after: new Date() }}
+                  disabled={{ before: TRACKING_START, after: new Date() }}
                 />
               </PopoverContent>
             </Popover>
@@ -274,84 +273,22 @@ export function AdminReportsClient() {
             aria-label="Reports tabs"
             className="mt-6 flex items-center gap-6 overflow-x-auto"
           >
-            <button
-              type="button"
-              role="tab"
-              id="report-tab-employees"
-              aria-selected={tab === 'employees'}
-              aria-controls="report-panel-employees"
-              tabIndex={tab === 'employees' ? 0 : -1}
-              onClick={() => changeTab('employees')}
-              onKeyDown={handleTabKeyDown}
-              className={cn(tabBase, tab === 'employees' ? tabActive : tabInactive)}
-            >
-              Hours
-            </button>
-            <button
-              type="button"
-              role="tab"
-              id="report-tab-projects"
-              aria-selected={tab === 'projects'}
-              aria-controls="report-panel-projects"
-              tabIndex={tab === 'projects' ? 0 : -1}
-              onClick={() => changeTab('projects')}
-              onKeyDown={handleTabKeyDown}
-              className={cn(tabBase, tab === 'projects' ? tabActive : tabInactive)}
-            >
-              Projects
-            </button>
-            <button
-              type="button"
-              role="tab"
-              id="report-tab-assigned"
-              aria-selected={tab === 'assigned'}
-              aria-controls="report-panel-assigned"
-              tabIndex={tab === 'assigned' ? 0 : -1}
-              onClick={() => changeTab('assigned')}
-              onKeyDown={handleTabKeyDown}
-              className={cn(tabBase, tab === 'assigned' ? tabActive : tabInactive)}
-            >
-              Assignments
-            </button>
-            <button
-              type="button"
-              role="tab"
-              id="report-tab-checkins"
-              aria-selected={tab === 'checkins'}
-              aria-controls="report-panel-checkins"
-              tabIndex={tab === 'checkins' ? 0 : -1}
-              onClick={() => changeTab('checkins')}
-              onKeyDown={handleTabKeyDown}
-              className={cn(tabBase, tab === 'checkins' ? tabActive : tabInactive)}
-            >
-              Wellness
-            </button>
-            <button
-              type="button"
-              role="tab"
-              id="report-tab-tasks"
-              aria-selected={tab === 'tasks'}
-              aria-controls="report-panel-tasks"
-              tabIndex={tab === 'tasks' ? 0 : -1}
-              onClick={() => changeTab('tasks')}
-              onKeyDown={handleTabKeyDown}
-              className={cn(tabBase, tab === 'tasks' ? tabActive : tabInactive)}
-            >
-              Tasks
-            </button>
-            <button
-              type="button"
-              role="tab"
-              id="report-tab-framework"
-              aria-selected={tab === 'framework'}
-              aria-controls="report-panel-framework"
-              tabIndex={tab === 'framework' ? 0 : -1}
-              onClick={() => changeTab('framework')}
-              onKeyDown={handleTabKeyDown}
-              className={cn(tabBase, tab === 'framework' ? tabActive : tabInactive)}
-            >
-              Framework Reports
-            </button>
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                id={`report-tab-${t.id}`}
+                aria-selected={tab === t.id}
+                aria-controls={`report-panel-${t.id}`}
+                tabIndex={tab === t.id ? 0 : -1}
+                onClick={() => changeTab(t.id)}
+                onKeyDown={handleTabKeyDown}
+                className={cn(tabBase, tab === t.id ? tabActive : tabInactive)}
+              >
+                {t.label}
+              </button>
+            ))}
           </nav>
         </div>
       </header>
@@ -362,516 +299,194 @@ export function AdminReportsClient() {
         aria-labelledby={`report-tab-${tab}`}
         className="w-full p-6 lg:p-8"
       >
-        {loading ? (
+        {tab === 'framework' ? (
+          <FrameworkReportsTab focusId={searchParams.get('id')} />
+        ) : loading ? (
           <div className="flex h-[50vh] items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
         ) : !report ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
-            <Clock className="mb-3 size-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No data available.</p>
-          </div>
+          <EmptyState message="No data available." />
         ) : (
-          <>
-            {tab === 'employees' && (
-              <div>
-                <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-                  <StatCard
-                    label="Total Hours"
-                    value={`${report.totalHours}h`}
-                    icon={<Clock className="size-4 text-muted-foreground" />}
-                  />
-                  <StatCard
-                    label="Sessions"
-                    value={report.totalSessions}
-                    icon={<Briefcase className="size-4 text-muted-foreground" />}
-                  />
-                  <StatCard
-                    label="Team Members"
-                    value={report.activeMembers}
-                    icon={<Users className="size-4 text-muted-foreground" />}
-                  />
-                  <StatCard
-                    label="Avg/Day"
-                    value={`${report.avgHoursPerDay}h`}
-                    icon={<TrendingUp className="size-4 text-muted-foreground" />}
-                  />
-                </div>
+          <div>
+            <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <StatCard
+                label="Total Hours"
+                value={`${report.totalHours}h`}
+                icon={<Clock className="size-4 text-muted-foreground" />}
+              />
+              <StatCard
+                label="Sessions"
+                value={report.totalSessions}
+                icon={<Briefcase className="size-4 text-muted-foreground" />}
+              />
+              <StatCard
+                label="Team Members"
+                value={report.activeMembers}
+                icon={<Users className="size-4 text-muted-foreground" />}
+              />
+              <StatCard
+                label="Avg/Day"
+                value={`${report.avgHoursPerDay}h`}
+                icon={<TrendingUp className="size-4 text-muted-foreground" />}
+              />
+            </div>
 
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    {report.byEmployee.length} employees
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => downloadEmployeeCsv(report)}
-                    disabled={report.byEmployee.length === 0}
-                  >
-                    <Download className="mr-1.5 size-3.5" />
-                    CSV
-                  </Button>
-                </div>
-                {report.byEmployee.length === 0 ? (
-                  <EmptyState message="No employee data for this period." />
-                ) : (
-                  <div className="rounded-xl border border-border bg-card">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="w-[200px]">Employee</TableHead>
-                          <TableHead className="w-[100px]">Hours</TableHead>
-                          <TableHead className="w-[90px]">Sessions</TableHead>
-                          <TableHead>Projects</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {report.byEmployee.map((emp) => (
-                          <TableRow key={emp.profileId}>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
-                                  <span className="text-[10px] font-semibold text-primary">
-                                    {emp.fullName[0]?.toUpperCase() ?? '?'}
-                                  </span>
-                                </div>
-                                <span className="text-sm font-medium">{emp.fullName}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-sm font-medium tabular-nums">
-                              {formatHours(emp.totalMinutes)}
-                            </TableCell>
-                            <TableCell className="text-sm tabular-nums text-muted-foreground">
-                              {emp.sessionCount}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                {emp.projects.map((p) => (
-                                  <Badge key={p} variant="secondary" className="text-[10px]">
-                                    {p}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {tab === 'projects' && (
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    {report.byProject.length} projects
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => downloadProjectCsv(report)}
-                    disabled={report.byProject.length === 0}
-                  >
-                    <Download className="mr-1.5 size-3.5" />
-                    CSV
-                  </Button>
-                </div>
-                {report.byProject.length === 0 ? (
-                  <EmptyState message="No project data for this period." />
-                ) : (
-                  <div className="rounded-xl border border-border bg-card">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="w-[240px]">Project</TableHead>
-                          <TableHead className="w-[100px]">Hours</TableHead>
-                          <TableHead className="w-[90px]">Sessions</TableHead>
-                          <TableHead>Contributors</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {report.byProject.map((proj) => (
-                          <TableRow key={proj.projectId ?? proj.projectName}>
-                            <TableCell>
-                              <div className="flex items-center gap-1.5 text-sm font-medium">
-                                <Briefcase className="size-3.5 shrink-0 text-muted-foreground" />
-                                {proj.projectName}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-sm font-medium tabular-nums">
-                              {formatHours(proj.totalMinutes)}
-                            </TableCell>
-                            <TableCell className="text-sm tabular-nums text-muted-foreground">
-                              {proj.sessionCount}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                {proj.contributors.map((c) => (
-                                  <Badge key={c} variant="secondary" className="text-[10px]">
-                                    {c}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {tab === 'assigned' && (
-              <div>
-                <p className="mb-3 text-sm text-muted-foreground">
-                  Comparing active project assignments to actual work logged
-                </p>
-                {avd.length === 0 ? (
-                  <EmptyState message="No assignment or session data for this period." />
-                ) : (
-                  <div className="space-y-4">
-                    {avd.map((entry) => (
-                      <div
-                        key={entry.profileId}
-                        className="rounded-xl border border-border bg-card p-6"
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">{report.byEmployee.length} employees</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => downloadEmployeeCsv(report)}
+                disabled={report.byEmployee.length === 0}
+              >
+                <Download className="mr-1.5 size-3.5" />
+                CSV
+              </Button>
+            </div>
+            {report.byEmployee.length === 0 ? (
+              <EmptyState message="No employee data for this period." />
+            ) : (
+              <div className="rounded-xl border border-border bg-card">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[200px]">Employee</TableHead>
+                      <TableHead className="w-[100px]">Hours</TableHead>
+                      <TableHead className="w-[90px]">Sessions</TableHead>
+                      <TableHead>Projects</TableHead>
+                      <TableHead className="w-[40px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {report.byEmployee.map((emp) => (
+                      <TableRow
+                        key={emp.profileId}
+                        className="cursor-pointer"
+                        onClick={() => openDrillDown(emp.profileId)}
                       >
-                        <div className="mb-3 flex items-center gap-2">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                            <span className="text-xs font-semibold text-primary">
-                              {entry.fullName[0]?.toUpperCase() ?? '?'}
-                            </span>
-                          </div>
-                          <span className="text-sm font-semibold">{entry.fullName}</span>
-                        </div>
-
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div>
-                            <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                              Assigned To
-                            </p>
-                            {entry.assignedProjects.length === 0 ? (
-                              <p className="text-xs text-muted-foreground/60">No assignments</p>
-                            ) : (
-                              <div className="flex flex-wrap gap-1.5">
-                                {entry.assignedProjects.map((p) => {
-                                  const worked = entry.workedProjects.find((w) => w.id === p.id);
-                                  return (
-                                    <Badge
-                                      key={p.id}
-                                      variant={worked ? 'default' : 'outline'}
-                                      className={
-                                        worked
-                                          ? 'gap-1 text-[10px]'
-                                          : 'gap-1 border-amber-500/30 text-[10px] text-amber-600'
-                                      }
-                                    >
-                                      {p.name}
-                                      {worked ? (
-                                        <span className="opacity-70">
-                                          {formatHours(worked.minutes)}
-                                        </span>
-                                      ) : (
-                                        <AlertTriangle className="size-2.5" />
-                                      )}
-                                    </Badge>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                              Actually Worked On
-                            </p>
-                            {entry.workedProjects.length === 0 &&
-                            entry.unassignedWork.length === 0 ? (
-                              <p className="text-xs text-muted-foreground/60">No sessions logged</p>
-                            ) : (
-                              <div className="flex flex-wrap gap-1.5">
-                                {entry.workedProjects.map((w) => (
-                                  <Badge
-                                    key={w.id}
-                                    variant="secondary"
-                                    className="gap-1 text-[10px]"
-                                  >
-                                    {w.name}
-                                    <span className="opacity-70">{formatHours(w.minutes)}</span>
-                                  </Badge>
-                                ))}
-                                {entry.unassignedWork.map((u) => (
-                                  <Badge
-                                    key={u.name}
-                                    variant="outline"
-                                    className="gap-1 border-blue-500/30 text-[10px] text-blue-600"
-                                  >
-                                    {u.name}
-                                    <span className="opacity-70">{formatHours(u.minutes)}</span>
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {tab === 'checkins' && (
-              <div>
-                {!checkinData || checkinData.totalCheckins === 0 ? (
-                  <EmptyState message="No check-in data for this period." />
-                ) : (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-                      <StatCard
-                        label="Total Check-ins"
-                        value={checkinData.totalCheckins}
-                        icon={<CheckCircle2 className="size-4 text-muted-foreground" />}
-                      />
-                      <StatCard
-                        label="Avg Energy"
-                        value={
-                          checkinData.avgEnergyOverall != null
-                            ? `${checkinData.avgEnergyOverall}/5`
-                            : '—'
-                        }
-                        icon={<Zap className="size-4 text-amber-500" />}
-                      />
-                      <StatCard
-                        label="Avg Mood"
-                        value={
-                          checkinData.avgMoodOverall != null
-                            ? `${checkinData.avgMoodOverall}/5`
-                            : '—'
-                        }
-                        icon={<Heart className="size-4 text-rose-500" />}
-                      />
-                    </div>
-
-                    <div className="rounded-xl border border-border bg-card">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="hover:bg-transparent">
-                            <TableHead className="w-[200px]">Employee</TableHead>
-                            <TableHead className="w-[90px]">Days</TableHead>
-                            <TableHead className="w-[100px]">Avg Energy</TableHead>
-                            <TableHead className="w-[100px]">Avg Mood</TableHead>
-                            <TableHead className="w-[90px]">Blockers</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {checkinData.byEmployee.map((emp) => (
-                            <TableRow key={emp.profileId}>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
-                                    <span className="text-[10px] font-semibold text-primary">
-                                      {emp.fullName[0]?.toUpperCase() ?? '?'}
-                                    </span>
-                                  </div>
-                                  <span className="text-sm font-medium">{emp.fullName}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-sm tabular-nums">
-                                {emp.checkinDays}
-                              </TableCell>
-                              <TableCell>
-                                {emp.avgEnergy != null ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <div
-                                      className="h-1.5 rounded-full bg-amber-500"
-                                      style={{ width: `${(emp.avgEnergy / 5) * 60}px` }}
-                                    />
-                                    <span className="text-sm tabular-nums">{emp.avgEnergy}</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground/50">&mdash;</span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {emp.avgMood != null ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <div
-                                      className="h-1.5 rounded-full bg-rose-500"
-                                      style={{ width: `${(emp.avgMood / 5) * 60}px` }}
-                                    />
-                                    <span className="text-sm tabular-nums">{emp.avgMood}</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground/50">&mdash;</span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {emp.blockerCount > 0 ? (
-                                  <Badge
-                                    variant="outline"
-                                    className="border-amber-500/30 text-[10px] text-amber-600"
-                                  >
-                                    {emp.blockerCount}
-                                  </Badge>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground/50">0</span>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-
-                    {checkinData.topBlockers.length > 0 && (
-                      <div>
-                        <h3 className="mb-3 text-sm font-semibold text-foreground">
-                          Most Reported Blockers
-                        </h3>
-                        <div className="space-y-2">
-                          {checkinData.topBlockers.map((blocker, i) => (
-                            <div
-                              key={i}
-                              className="flex items-start gap-2 rounded-lg border border-border bg-card px-4 py-3"
-                            >
-                              <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
-                              <span className="text-sm text-foreground">{blocker}</span>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                              <span className="text-[10px] font-semibold text-primary">
+                                {emp.fullName[0]?.toUpperCase() ?? '?'}
+                              </span>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                            <span className="text-sm font-medium">{emp.fullName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm font-medium tabular-nums">
+                          {formatHours(emp.totalMinutes)}
+                        </TableCell>
+                        <TableCell className="text-sm tabular-nums text-muted-foreground">
+                          {emp.sessionCount}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {emp.projects.map((p) => (
+                              <Badge key={p} variant="secondary" className="text-[10px]">
+                                {p}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <ChevronRight className="size-4 text-muted-foreground/60" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
-
-            {tab === 'tasks' && (
-              <div>
-                {!taskData ? (
-                  <EmptyState message="No task data for this period." />
-                ) : (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                      <StatCard
-                        label="Created"
-                        value={taskData.created}
-                        icon={<ListTodo className="size-4 text-muted-foreground" />}
-                      />
-                      <StatCard
-                        label="Completed"
-                        value={taskData.completed}
-                        icon={<CheckCircle2 className="size-4 text-green-600" />}
-                      />
-                      <StatCard
-                        label="Overdue"
-                        value={taskData.overdue}
-                        icon={<AlertTriangle className="size-4 text-destructive" />}
-                        valueClassName={taskData.overdue > 0 ? 'text-destructive' : undefined}
-                      />
-                      <StatCard
-                        label="Avg Completion"
-                        value={
-                          taskData.avgCompletionDays != null
-                            ? `${taskData.avgCompletionDays}d`
-                            : '—'
-                        }
-                        icon={<TrendingUp className="size-4 text-muted-foreground" />}
-                      />
-                    </div>
-
-                    {taskData.byEmployee.length === 0 ? (
-                      <EmptyState message="No assigned tasks for this period." />
-                    ) : (
-                      <div className="rounded-xl border border-border bg-card">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="hover:bg-transparent">
-                              <TableHead className="w-[200px]">Employee</TableHead>
-                              <TableHead className="w-[100px]">Created</TableHead>
-                              <TableHead className="w-[100px]">Completed</TableHead>
-                              <TableHead className="w-[100px]">Overdue</TableHead>
-                              <TableHead className="w-[120px]">Completion %</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {taskData.byEmployee.map((emp) => {
-                              const rate =
-                                emp.created > 0
-                                  ? Math.round((emp.completed / emp.created) * 100)
-                                  : null;
-                              return (
-                                <TableRow key={emp.profileId}>
-                                  <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
-                                        <span className="text-[10px] font-semibold text-primary">
-                                          {emp.fullName[0]?.toUpperCase() ?? '?'}
-                                        </span>
-                                      </div>
-                                      <span className="text-sm font-medium">{emp.fullName}</span>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="text-sm tabular-nums">
-                                    {emp.created}
-                                  </TableCell>
-                                  <TableCell className="text-sm tabular-nums text-green-600">
-                                    {emp.completed}
-                                  </TableCell>
-                                  <TableCell>
-                                    {emp.overdue > 0 ? (
-                                      <span className="text-sm font-medium tabular-nums text-destructive">
-                                        {emp.overdue}
-                                      </span>
-                                    ) : (
-                                      <span className="text-sm tabular-nums text-muted-foreground/50">
-                                        0
-                                      </span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    {rate != null ? (
-                                      <div className="flex items-center gap-2">
-                                        <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
-                                          <div
-                                            className={`h-full rounded-full transition-all ${
-                                              rate >= 80
-                                                ? 'bg-green-500'
-                                                : rate >= 50
-                                                  ? 'bg-amber-500'
-                                                  : 'bg-destructive'
-                                            }`}
-                                            style={{ width: `${Math.min(rate, 100)}%` }}
-                                          />
-                                        </div>
-                                        <span className="text-sm tabular-nums">{rate}%</span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground/50">
-                                        &mdash;
-                                      </span>
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {tab === 'framework' && <FrameworkReportsTab focusId={searchParams.get('id')} />}
-          </>
+          </div>
         )}
       </div>
+
+      <Sheet
+        open={drillProfileId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDrillProfileId(null);
+            setDrillDetail(null);
+          }
+        }}
+      >
+        <SheetContent side="right" className="flex w-full flex-col gap-0 sm:max-w-xl">
+          <SheetHeader className="border-b border-border px-6 py-5">
+            <SheetTitle className="text-base font-semibold">
+              {drillDetail?.fullName ?? 'Sessions'}
+            </SheetTitle>
+            {drillDetail && (
+              <p className="text-xs text-muted-foreground">
+                {drillDetail.sessions.length} sessions · {formatHours(drillDetail.totalMinutes)} ·{' '}
+                {dateRange?.from
+                  ? format(
+                      dateRange.from < TRACKING_START ? TRACKING_START : dateRange.from,
+                      'MMM d'
+                    )
+                  : ''}{' '}
+                – {dateRange?.to ? format(dateRange.to, 'MMM d, yyyy') : ''}
+              </p>
+            )}
+          </SheetHeader>
+          <div className="flex-1 overflow-auto">
+            {drillLoading ? (
+              <div className="flex h-40 items-center justify-center">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : !drillDetail || drillDetail.sessions.length === 0 ? (
+              <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+                No sessions in this range.
+              </div>
+            ) : (
+              <ul className="divide-y divide-border">
+                {drillDetail.sessions.map((s) => (
+                  <SessionRow key={s.id} session={s} />
+                ))}
+              </ul>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
+  );
+}
+
+function SessionRow({
+  session,
+}: {
+  session: {
+    id: string;
+    startedAt: string;
+    endedAt: string | null;
+    durationMinutes: number;
+    projectName: string;
+    summary: string | null;
+  };
+}) {
+  const start = new Date(session.startedAt);
+  const end = session.endedAt ? new Date(session.endedAt) : null;
+  return (
+    <li className="px-6 py-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{session.projectName}</span>
+          </div>
+          <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+            {format(start, 'EEE MMM d, yyyy')} · {format(start, 'HH:mm')}
+            {end ? ` – ${format(end, 'HH:mm')}` : ''}
+          </div>
+          {session.summary && (
+            <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{session.summary}</p>
+          )}
+        </div>
+        <div className="shrink-0 text-sm font-medium tabular-nums">
+          {formatHours(session.durationMinutes)}
+        </div>
+      </div>
+    </li>
   );
 }
 
