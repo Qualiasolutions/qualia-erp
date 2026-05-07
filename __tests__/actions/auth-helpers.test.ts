@@ -2,7 +2,7 @@ export {};
 
 /**
  * Tests for auth/permission helpers from app/actions/shared.ts
- * Covers: isUserAdmin, isUserManagerOrAbove, canDeleteProject, canDeleteIssue,
+ * Covers: isUserAdmin, isUserAdmin, canDeleteProject, canDeleteIssue,
  *         canDeleteClient, canDeleteMeeting
  */
 
@@ -35,7 +35,6 @@ import {
   canDeleteClient,
   canDeleteMeeting,
   isUserAdmin,
-  isUserManagerOrAbove,
 } from '@/app/actions/shared';
 
 // ---- Helpers ----
@@ -85,23 +84,6 @@ describe('isUserAdmin', () => {
   it('returns false when data is null', async () => {
     supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
     expect(await isUserAdmin('user-1')).toBe(false);
-  });
-});
-
-describe('isUserManagerOrAbove (aliased to isUserAdmin after manager role removal)', () => {
-  it('returns true for admin', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: { role: 'admin' }, error: null }));
-    expect(await isUserManagerOrAbove('user-1')).toBe(true);
-  });
-
-  it('returns false for employee', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: { role: 'employee' }, error: null }));
-    expect(await isUserManagerOrAbove('user-1')).toBe(false);
-  });
-
-  it('returns false for client', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: { role: 'client' }, error: null }));
-    expect(await isUserManagerOrAbove('user-1')).toBe(false);
   });
 });
 

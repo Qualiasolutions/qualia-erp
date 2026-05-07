@@ -30,7 +30,7 @@ jest.mock('@/app/actions/workspace', () => ({
 }));
 
 jest.mock('@/app/actions/shared', () => ({
-  isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
+  isUserAdmin: jest.fn().mockResolvedValue(true),
   getCachedUserRole: jest.fn().mockResolvedValue('admin'),
 }));
 
@@ -73,7 +73,7 @@ import {
   setupPortalForClient,
   createClientActionItem,
 } from '@/app/actions/client-portal';
-import { isUserManagerOrAbove } from '@/app/actions/shared';
+import { isUserAdmin } from '@/app/actions/shared';
 
 // --- Constants ---
 
@@ -123,7 +123,7 @@ beforeEach(() => {
   // Use mockReset before setting resolved value to clear any leftover
   // `mockResolvedValueOnce` entries from prior tests (clearAllMocks does not
   // reliably clear the "once" queue in all Jest versions).
-  const { isUserManagerOrAbove: mockIsManager } = jest.requireMock('@/app/actions/shared');
+  const { isUserAdmin: mockIsManager } = jest.requireMock('@/app/actions/shared');
   (mockIsManager as jest.Mock).mockReset();
   (mockIsManager as jest.Mock).mockResolvedValue(true);
   const { getCurrentWorkspaceId: mockGetWs } = jest.requireMock('@/app/actions/workspace');
@@ -143,7 +143,7 @@ describe('getPortalClientManagement — characterization', () => {
   });
 
   it('rejects non-admin users', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     const result = await getPortalClientManagement();
     expect(result).toEqual({ success: false, error: 'Admin access required' });
   });
@@ -176,7 +176,7 @@ describe('getClientDashboardData — characterization', () => {
   });
 
   it('rejects unauthorized users (not self and not admin)', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     // USER_ID !== CLIENT_ID
     const result = await getClientDashboardData(CLIENT_ID);
     expect(result).toEqual({ success: false, error: 'Not authorized' });
@@ -184,7 +184,7 @@ describe('getClientDashboardData — characterization', () => {
 
   it('returns dashboard shape for self-access', async () => {
     mockAuth({ id: CLIENT_ID, email: 'client@test.com' });
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
 
     // First call: client_projects JOIN. Rest: Promise.all queries.
     supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
@@ -223,14 +223,14 @@ describe('getClientDashboardProjects — characterization', () => {
   });
 
   it('rejects unauthorized users (not self and not admin)', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     const result = await getClientDashboardProjects(CLIENT_ID);
     expect(result).toEqual({ success: false, error: 'Not authorized' });
   });
 
   it('returns empty array when no projects', async () => {
     mockAuth({ id: CLIENT_ID, email: 'client@test.com' });
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
 
     const result = await getClientDashboardProjects(CLIENT_ID);
@@ -330,7 +330,7 @@ describe('getClientInvoices — characterization', () => {
   });
 
   it('returns empty array when non-admin has no linked projects', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     // First call: client_projects — empty
     supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
 
@@ -352,7 +352,7 @@ describe('getClientActionItems — characterization', () => {
   });
 
   it('rejects unauthorized users (not self and not admin)', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     const result = await getClientActionItems(CLIENT_ID);
     expect(result).toEqual({ success: false, error: 'Unauthorized' });
   });
@@ -408,7 +408,7 @@ describe('setupPortalForClient — characterization', () => {
   });
 
   it('rejects non-admin users', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     const result = await setupPortalForClient(CLIENT_ID, [PROJECT_ID]);
     expect(result).toEqual({ success: false, error: 'Admin access required' });
   });
@@ -454,7 +454,7 @@ describe('createClientActionItem — characterization', () => {
   });
 
   it('rejects non-admin users', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     const result = await createClientActionItem({
       projectId: PROJECT_ID,
       clientId: CLIENT_ID,

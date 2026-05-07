@@ -21,7 +21,7 @@ jest.mock('@/app/actions/workspace', () => ({
 }));
 
 jest.mock('@/app/actions/shared', () => ({
-  isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
+  isUserAdmin: jest.fn().mockResolvedValue(true),
   getCachedUserRole: jest.fn().mockResolvedValue('admin'),
 }));
 
@@ -55,7 +55,7 @@ import {
   updateNotificationPreferences,
   setupPortalForClient,
 } from '@/app/actions/client-portal';
-import { isUserManagerOrAbove } from '@/app/actions/shared';
+import { isUserAdmin } from '@/app/actions/shared';
 
 // ---- Helpers ----
 
@@ -98,7 +98,7 @@ function mockAuth(user: typeof AUTH_USER | null = AUTH_USER) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockAuth();
-  const { isUserManagerOrAbove: mockIsManager } = jest.requireMock('@/app/actions/shared');
+  const { isUserAdmin: mockIsManager } = jest.requireMock('@/app/actions/shared');
   (mockIsManager as jest.Mock).mockResolvedValue(true);
   const { getCurrentWorkspaceId: mockGetWs } = jest.requireMock('@/app/actions/workspace');
   (mockGetWs as jest.Mock).mockResolvedValue(WS_ID);
@@ -116,7 +116,7 @@ describe('inviteClientByEmail', () => {
   });
 
   it('returns error when user is not admin/manager', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     const result = await inviteClientByEmail(PROJECT_ID, 'client@test.com');
     expect(result.success).toBe(false);
     expect(result.error).toContain('admin');
@@ -163,7 +163,7 @@ describe('inviteClientToProject', () => {
   });
 
   it('returns error when user is not admin/manager', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     const result = await inviteClientToProject(PROJECT_ID, CLIENT_ID);
     expect(result.success).toBe(false);
     expect(result.error).toContain('admin');
@@ -219,7 +219,7 @@ describe('removeClientFromProject', () => {
   });
 
   it('returns error when user is not admin/manager', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     const result = await removeClientFromProject(PROJECT_ID, CLIENT_ID);
     expect(result.success).toBe(false);
     expect(result.error).toContain('admin');
@@ -247,7 +247,7 @@ describe('revokePortalAccess', () => {
   });
 
   it('returns error when user is not admin/manager', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     const result = await revokePortalAccess(CLIENT_ID);
     expect(result.success).toBe(false);
     expect(result.error).toContain('Admin');
@@ -311,7 +311,7 @@ describe('getClientInvoices', () => {
   });
 
   it('returns client-specific invoices when user is not admin', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
 
     const result = await getClientInvoices();
@@ -328,7 +328,7 @@ describe('getClientDashboardData', () => {
   });
 
   it('returns error when not authorized', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     // USER_ID !== CLIENT_ID
     const result = await getClientDashboardData(CLIENT_ID);
     expect(result.success).toBe(false);
@@ -337,7 +337,7 @@ describe('getClientDashboardData', () => {
 
   it('returns dashboard data when user is same as client', async () => {
     mockAuth({ id: CLIENT_ID, email: 'client@test.com' });
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
 
     // Mock client project links query
     supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
@@ -360,7 +360,7 @@ describe('getClientDashboardProjects', () => {
 
   it('returns empty data when client has no projects', async () => {
     mockAuth({ id: CLIENT_ID, email: 'client@test.com' });
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
 
     supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
 
@@ -547,7 +547,7 @@ describe('setupPortalForClient', () => {
   });
 
   it('returns error when user is not admin/manager', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     const result = await setupPortalForClient(CLIENT_ID, [PROJECT_ID]);
     expect(result.success).toBe(false);
     expect(result.error).toContain('Admin');
@@ -555,7 +555,7 @@ describe('setupPortalForClient', () => {
 
   it('returns error when CRM client not found (DB error)', async () => {
     // Set admin explicitly for this test
-    const { isUserManagerOrAbove: mockIsManager } = jest.requireMock('@/app/actions/shared');
+    const { isUserAdmin: mockIsManager } = jest.requireMock('@/app/actions/shared');
     (mockIsManager as jest.Mock).mockResolvedValue(true);
     supabase.from.mockReturnValue(
       buildChain({ data: null, error: { message: 'Not found', code: '404' } })

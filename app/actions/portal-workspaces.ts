@@ -2,7 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import type { ActionResult } from './shared';
-import { isUserManagerOrAbove } from './shared';
+import { isUserAdmin } from './shared';
 
 export interface ClientWorkspace {
   id: string;
@@ -35,7 +35,7 @@ export async function getClientWorkspaces(): Promise<ActionResult> {
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Admin access required' };
     }
 

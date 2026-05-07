@@ -2,7 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 
-import { type ActionResult, isUserManagerOrAbove, getUserRole } from './shared';
+import { type ActionResult, isUserAdmin, getCachedUserRole } from './shared';
 import {
   PortalAppConfigSchema,
   PortalBrandingSchema,
@@ -127,7 +127,7 @@ export async function updatePortalAppConfig(
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Only admins and managers can update app config' };
     }
 
@@ -274,7 +274,7 @@ export async function updatePortalBranding(
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Only admins and managers can update branding' };
     }
 
@@ -340,7 +340,7 @@ export async function uploadPortalLogo(formData: FormData): Promise<ActionResult
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Only admins and managers can upload portal logos' };
     }
 
@@ -441,9 +441,9 @@ export async function getEnabledAppsForClient(
 
     // Auth check: must be the client themselves or admin/manager
     if (user.id !== clientId) {
-      if (!(await isUserManagerOrAbove(user.id))) {
+      if (!(await isUserAdmin(user.id))) {
         // Also allow if user has 'client' role and is the same user
-        const role = await getUserRole(user.id);
+        const role = await getCachedUserRole(user.id);
         if (role !== 'client' || user.id !== clientId) {
           return { success: false, error: 'Not authorized to view this client config' };
         }
@@ -558,7 +558,7 @@ export async function updatePortalSettings(
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Only admins and managers can update portal settings' };
     }
 

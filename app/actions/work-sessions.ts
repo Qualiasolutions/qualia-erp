@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
-import { isUserAdmin, isUserManagerOrAbove } from './shared';
+import { isUserAdmin } from './shared';
 import type { ActionResult } from './shared';
 
 // ============ TYPES ============
@@ -654,7 +654,7 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
 
   if (!user) return [];
 
-  const allowed = await isUserManagerOrAbove(user.id);
+  const allowed = await isUserAdmin(user.id);
   if (!allowed) {
     return [];
   }

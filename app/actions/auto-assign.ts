@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { isUserManagerOrAbove } from './shared';
+import { isUserAdmin } from './shared';
 
 // ============ AUTO-ASSIGNMENT ENGINE ============
 // Creates milestone-level inbox tasks when employees are assigned to projects.
@@ -29,7 +29,7 @@ async function requireAuthIfServerAction(externalClient?: AnySupabaseClient): Pr
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return false;
-  return isUserManagerOrAbove(user.id);
+  return isUserAdmin(user.id);
 }
 
 /**
@@ -193,17 +193,10 @@ export async function createTasksFromMilestones(
   return { created: inserted?.length ?? 0, skipped, total };
 }
 
-/**
- * Backwards-compatible alias. Old call sites still use this name; it now
- * delegates to the milestone-based engine.
- */
-export const createTasksFromPhases = createTasksFromMilestones;
-
 // ============ LEGACY FUNCTIONS (used by webhook cascade) ============
 
 /**
  * Get the current active milestone for a project.
- * @deprecated Use createTasksFromPhases instead for new assignment flows.
  */
 export async function getActiveMilestone(projectId: string, supabaseClient?: AnySupabaseClient) {
   if (!(await requireAuthIfServerAction(supabaseClient))) return null;

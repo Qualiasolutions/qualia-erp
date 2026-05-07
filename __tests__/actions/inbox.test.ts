@@ -37,7 +37,7 @@ jest.mock('@/app/actions', () => ({
 jest.mock('@/app/actions/shared', () => ({
   canModifyTask: jest.fn(),
   isUserAdmin: jest.fn(),
-  isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
+  isUserAdmin: jest.fn().mockResolvedValue(true),
   getCachedUserRole: jest.fn().mockResolvedValue('admin'),
 }));
 

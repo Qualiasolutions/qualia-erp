@@ -8,7 +8,7 @@ import { parseFormData, createTaskSchema, updateTaskSchema } from '@/lib/validat
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { notifyTaskCreated } from '@/lib/email';
 import { cookies } from 'next/headers';
-import { canModifyTask, isUserAdmin, isUserManagerOrAbove, type ActionResult } from './shared';
+import { canModifyTask, isUserAdmin, type ActionResult } from './shared';
 import { canAccessProject } from '@/lib/portal-utils';
 
 /**
@@ -26,12 +26,12 @@ async function getEffectiveUser(
 
   if (!viewAsUserId || viewAsUserId === realUserId) {
     // No impersonation — use real role check
-    const elevated = await isUserManagerOrAbove(realUserId);
+    const elevated = await isUserAdmin(realUserId);
     return { effectiveUserId: realUserId, shouldScope: !elevated };
   }
 
   // Admin is impersonating — check the TARGET user's role
-  const targetElevated = await isUserManagerOrAbove(viewAsUserId);
+  const targetElevated = await isUserAdmin(viewAsUserId);
   return { effectiveUserId: viewAsUserId, shouldScope: !targetElevated };
 }
 

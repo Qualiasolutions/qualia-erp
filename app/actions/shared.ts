@@ -52,15 +52,6 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
   return role === 'admin';
 }
 
-// Backwards-compatible alias for call sites that used the old 2-role helper.
-// Kept so we don't churn 40+ imports; behavior is identical to isUserAdmin.
-export const isUserManagerOrAbove = isUserAdmin;
-
-// Get user's role
-export async function getUserRole(userId: string): Promise<string | null> {
-  return getCachedUserRole(userId);
-}
-
 // Check if user can delete an issue (creator or admin)
 export async function canDeleteIssue(userId: string, issueId: string): Promise<boolean> {
   if (await isUserAdmin(userId)) return true;
@@ -130,25 +121,6 @@ export async function canDeletePhase(userId: string, phaseId: string): Promise<b
     .single();
 
   const projectData = normalizeFKResponse(phase?.project as FKResponse<{ lead_id: string }>);
-  return projectData?.lead_id === userId;
-}
-
-// Check if user can delete a phase item (project lead or admin)
-export async function canDeletePhaseItem(userId: string, itemId: string): Promise<boolean> {
-  if (await isUserAdmin(userId)) return true;
-
-  const supabase = await createClient();
-  const { data: item } = await supabase
-    .from('phase_items')
-    .select('phase:project_phases(project:projects(lead_id))')
-    .eq('id', itemId)
-    .single();
-
-  // Handle nested FK array normalization - Supabase returns ambiguous types for nested relations
-  const phaseData = normalizeFKResponse(
-    item?.phase as FKResponse<{ project: FKResponse<{ lead_id: string }> }>
-  );
-  const projectData = normalizeFKResponse(phaseData?.project as FKResponse<{ lead_id: string }>);
   return projectData?.lead_id === userId;
 }
 

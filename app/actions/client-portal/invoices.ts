@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { type ActionResult, isUserManagerOrAbove } from '../shared';
+import { type ActionResult, isUserAdmin } from '../shared';
 
 /**
  * Get invoices for the current client user.
@@ -15,7 +15,7 @@ export async function getClientInvoices(): Promise<ActionResult> {
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    const isAdmin = await isUserManagerOrAbove(user.id);
+    const isAdmin = await isUserAdmin(user.id);
 
     let query = supabase
       .from('financial_invoices')

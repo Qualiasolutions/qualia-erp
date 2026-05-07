@@ -2,7 +2,7 @@
 
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
-import { type ActionResult, isUserAdmin, isUserManagerOrAbove } from './shared';
+import { type ActionResult, isUserAdmin } from './shared';
 import { notifyAssignedEmployees } from '@/lib/notifications';
 import { notifyAdminAndAssignedOfClientActivity } from '@/lib/email';
 import { getEmployeeProjectIds } from '@/lib/auth/is-staff-on-project';
@@ -222,7 +222,7 @@ export async function updateFeatureRequest(
     }
     const safeUpdates = parsed.data;
 
-    const isAdmin = await isUserManagerOrAbove(user.id);
+    const isAdmin = await isUserAdmin(user.id);
 
     const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
@@ -282,7 +282,7 @@ export async function cancelFeatureRequest(requestId: string): Promise<ActionRes
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    const isAdmin = await isUserManagerOrAbove(user.id);
+    const isAdmin = await isUserAdmin(user.id);
     const adminClient = createAdminClient();
 
     const { data: request, error: readError } = await adminClient
@@ -355,7 +355,7 @@ export async function deleteFeatureRequest(requestId: string): Promise<ActionRes
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    const isAdmin = await isUserManagerOrAbove(user.id);
+    const isAdmin = await isUserAdmin(user.id);
     const adminClient = createAdminClient();
 
     const { data: request, error: readError } = await adminClient
@@ -458,7 +458,7 @@ async function assertRequestOwnership(
   | { ok: false; error: string }
 > {
   const supabase = await createClient();
-  const isAdmin = await isUserManagerOrAbove(userId);
+  const isAdmin = await isUserAdmin(userId);
   const { data, error } = await supabase
     .from('client_feature_requests')
     .select('id, client_id, attachments')

@@ -28,7 +28,7 @@ jest.mock('@/lib/supabase/server', () => ({
 }));
 
 jest.mock('@/app/actions/shared', () => ({
-  isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
+  isUserAdmin: jest.fn().mockResolvedValue(true),
 }));
 
 // ---- Mock setup ----

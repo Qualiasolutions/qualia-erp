@@ -7,7 +7,7 @@ import {
   getTemplateForType,
   type QualiaFrameworkPhaseTemplate,
 } from '@/lib/qualia-framework-templates';
-import { type ActionResult, canAccessProject, isUserManagerOrAbove } from './shared';
+import { type ActionResult, canAccessProject, isUserAdmin } from './shared';
 import { assertNotImpersonating } from '@/lib/portal-utils';
 import type { Database } from '@/types/database';
 
@@ -144,7 +144,7 @@ export async function createProjectPhase(projectId: string, name: string) {
   if (!user) return { success: false, error: 'Not authenticated' };
 
   // Role guard: only managers and admins can create phases
-  const isPriv = await isUserManagerOrAbove(user.id);
+  const isPriv = await isUserAdmin(user.id);
   if (!isPriv) return { success: false, error: 'Not authorized' };
 
   // Look up the project's workspace_id so the insert satisfies the
@@ -212,7 +212,7 @@ export async function deleteProjectPhase(phaseId: string, projectId: string) {
   if (!user) return { success: false, error: 'Not authenticated' };
 
   // Role guard: only managers and admins can delete phases
-  const isPriv = await isUserManagerOrAbove(user.id);
+  const isPriv = await isUserAdmin(user.id);
   if (!isPriv) return { success: false, error: 'Not authorized' };
 
   // Use .select() so we can detect when RLS silently filtered out the row
@@ -251,7 +251,7 @@ export async function updateProjectPhase(phaseId: string, name: string, projectI
   if (!user) return { success: false, error: 'Not authenticated' };
 
   // Role guard: only managers and admins can update phases
-  const isPriv = await isUserManagerOrAbove(user.id);
+  const isPriv = await isUserAdmin(user.id);
   if (!isPriv) return { success: false, error: 'Not authorized' };
 
   const { error } = await supabase.from('project_phases').update({ name }).eq('id', phaseId);

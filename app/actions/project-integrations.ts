@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { decryptToken } from '@/lib/token-encryption';
 
-import { type ActionResult, isUserManagerOrAbove } from './shared';
+import { type ActionResult, isUserAdmin } from './shared';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net';
 const WEBHOOK_PATH = '/api/github/webhook';
@@ -181,7 +181,7 @@ export async function upsertIntegration(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  const isPriv = await isUserManagerOrAbove(user.id);
+  const isPriv = await isUserAdmin(user.id);
   if (!isPriv) return { success: false, error: 'Not authorized' };
 
   // Check if integration already exists for this project + service type
@@ -252,7 +252,7 @@ export async function deleteIntegration(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  const isPriv = await isUserManagerOrAbove(user.id);
+  const isPriv = await isUserAdmin(user.id);
   if (!isPriv) return { success: false, error: 'Not authorized' };
 
   const { error } = await supabase.from('project_integrations').delete().eq('id', integrationId);

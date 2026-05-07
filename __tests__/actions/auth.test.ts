@@ -37,12 +37,7 @@ jest.mock('@/app/actions/workspace', () => ({
 }));
 
 // ---- Imports ----
-import {
-  loginAction,
-  signupWithInvitationAction,
-  getAdminStatus,
-  getProfiles,
-} from '@/app/actions/auth';
+import { loginAction, signupWithInvitationAction, getProfiles } from '@/app/actions/auth';
 import { getInvitationByToken, markInvitationAccepted } from '@/app/actions/client-invitations';
 
 // ---- Helpers ----
@@ -130,43 +125,7 @@ describe('loginAction', () => {
   });
 });
 
-describe('getAdminStatus', () => {
-  it('returns admin status for admin user', async () => {
-    supabase.from.mockReturnValue(
-      buildChain({ data: { role: 'admin', email: 'admin@test.com' }, error: null })
-    );
-    const result = await getAdminStatus();
-    expect(result.isAdmin).toBe(true);
-    expect(result.userId).toBe(USER_ID);
-  });
-
-  it('returns super admin for info@qualiasolutions.net', async () => {
-    supabase.from.mockReturnValue(
-      buildChain({ data: { role: 'admin', email: 'info@qualiasolutions.net' }, error: null })
-    );
-    const result = await getAdminStatus();
-    expect(result.isAdmin).toBe(true);
-    expect(result.isSuperAdmin).toBe(true);
-  });
-
-  it('returns non-admin for employee role', async () => {
-    supabase.from.mockReturnValue(
-      buildChain({ data: { role: 'employee', email: 'emp@test.com' }, error: null })
-    );
-    const result = await getAdminStatus();
-    expect(result.isAdmin).toBe(false);
-    expect(result.isSuperAdmin).toBe(false);
-    expect(result.userId).toBe(USER_ID);
-  });
-
-  it('returns unauthenticated defaults when no user', async () => {
-    mockAuth(null);
-    const result = await getAdminStatus();
-    expect(result.isAdmin).toBe(false);
-    expect(result.userId).toBeNull();
-    expect(result.email).toBeNull();
-  });
-});
+// getAdminStatus removed in 2026-05-07 dead-export pruning — no UI consumer; isUserAdmin covers the use case.
 
 describe('getProfiles', () => {
   it('returns workspace member profiles and filters out clients', async () => {

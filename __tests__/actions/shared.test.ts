@@ -2,7 +2,7 @@ export {};
 
 /**
  * Tests for app/actions/shared.ts
- * Covers: isUserAdmin, isUserManagerOrAbove, getUserRole, canDeleteProject,
+ * Covers: isUserAdmin, isUserAdmin, getCachedUserRole, canDeleteProject,
  *         canDeleteMeeting, canModifyTask, canAccessProject, canDeleteProjectFile
  */
 
@@ -79,8 +79,7 @@ function setupSupabaseMockByTable(tableMap: Record<string, { data: unknown; erro
 describe('shared action helpers', () => {
   let createClient: jest.Mock;
   let isUserAdmin: (userId: string) => Promise<boolean>;
-  let isUserManagerOrAbove: (userId: string) => Promise<boolean>;
-  let getUserRole: (userId: string) => Promise<string | null>;
+  let getCachedUserRole: (userId: string) => Promise<string | null>;
   let canDeleteProject: (userId: string, projectId: string) => Promise<boolean>;
   let canModifyTask: (userId: string, taskId: string) => Promise<boolean>;
   let canAccessProject: (userId: string, projectId: string) => Promise<boolean>;
@@ -100,8 +99,7 @@ describe('shared action helpers', () => {
 
     const shared = jest.requireActual('@/app/actions/shared') as {
       isUserAdmin: typeof isUserAdmin;
-      isUserManagerOrAbove: typeof isUserManagerOrAbove;
-      getUserRole: typeof getUserRole;
+      getCachedUserRole: typeof getCachedUserRole;
       canDeleteProject: typeof canDeleteProject;
       canModifyTask: typeof canModifyTask;
       canAccessProject: typeof canAccessProject;
@@ -109,8 +107,7 @@ describe('shared action helpers', () => {
     };
 
     isUserAdmin = shared.isUserAdmin;
-    isUserManagerOrAbove = shared.isUserManagerOrAbove;
-    getUserRole = shared.getUserRole;
+    getCachedUserRole = shared.getCachedUserRole;
     canDeleteProject = shared.canDeleteProject;
     canModifyTask = shared.canModifyTask;
     canAccessProject = shared.canAccessProject;
@@ -143,36 +140,16 @@ describe('shared action helpers', () => {
     });
   });
 
-  describe('isUserManagerOrAbove (alias for isUserAdmin after manager removal)', () => {
-    it('returns true for admin role', async () => {
-      setupSupabaseMock({ role: 'admin' });
-      const result = await isUserManagerOrAbove('user-1');
-      expect(result).toBe(true);
-    });
-
-    it('returns false for employee role', async () => {
-      setupSupabaseMock({ role: 'employee' });
-      const result = await isUserManagerOrAbove('user-1');
-      expect(result).toBe(false);
-    });
-
-    it('returns false for client role', async () => {
-      setupSupabaseMock({ role: 'client' });
-      const result = await isUserManagerOrAbove('user-1');
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('getUserRole', () => {
+  describe('getCachedUserRole', () => {
     it('returns the role string for a found user', async () => {
       setupSupabaseMock({ role: 'admin' });
-      const result = await getUserRole('user-1');
+      const result = await getCachedUserRole('user-1');
       expect(result).toBe('admin');
     });
 
     it('returns null when user not found', async () => {
       setupSupabaseMock(null);
-      const result = await getUserRole('user-1');
+      const result = await getCachedUserRole('user-1');
       expect(result).toBeNull();
     });
   });

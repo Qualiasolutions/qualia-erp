@@ -27,10 +27,10 @@ export const metadata: Metadata = {
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   // H9 (OPTIMIZE.md): this layout previously fired 5–7 sequential DB queries
-  // before any HTML streamed (auth → getUserRole → profile → viewAs → workspace
+  // before any HTML streamed (auth → getCachedUserRole → profile → viewAs → workspace
   // → apps+branding). Collapsed to 3 sequential waits by:
   //   1) reading `role` from a single profile select (drops the separate
-  //      getUserRole round-trip)
+  //      getCachedUserRole round-trip)
   //   2) batching real profile + viewAs profile in parallel (cookie read is
   //      fast, so we speculatively fire the viewAs query)
   //   3) batching workspace lookup + companyName in parallel

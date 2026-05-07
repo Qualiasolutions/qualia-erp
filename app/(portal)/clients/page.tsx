@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getUserRole } from '@/lib/portal-utils';
+import { getCachedUserRole } from '@/lib/portal-utils';
 import { getClients } from '@/app/actions';
 import { getClientAccessDrift } from '@/app/actions/clients';
 import { QualiaClientsView } from '@/components/portal/qualia-clients-view';
@@ -77,7 +77,7 @@ export default async function PortalClientsPage() {
 
   if (!user) redirect('/auth/login');
 
-  const role = await getUserRole(user.id);
+  const role = await getCachedUserRole(user.id);
   if (role !== 'admin') redirect('/');
 
   return (

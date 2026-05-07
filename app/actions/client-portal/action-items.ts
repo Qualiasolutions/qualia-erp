@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { type ActionResult, isUserManagerOrAbove } from '../shared';
+import { type ActionResult, isUserAdmin } from '../shared';
 
 /**
  * Get pending action items for a client (incomplete only, ordered by due date).
@@ -19,7 +19,7 @@ export async function getClientActionItems(clientId: string): Promise<ActionResu
     }
 
     // Auth check: must be the client or an admin/manager
-    if (user.id !== clientId && !(await isUserManagerOrAbove(user.id))) {
+    if (user.id !== clientId && !(await isUserAdmin(user.id))) {
       return { success: false, error: 'Unauthorized' };
     }
 
@@ -72,7 +72,7 @@ export async function createClientActionItem(data: {
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Only admins and managers can create action items' };
     }
 
@@ -143,7 +143,7 @@ export async function completeClientActionItem(itemId: string): Promise<ActionRe
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Only admins and managers can complete action items' };
     }
 

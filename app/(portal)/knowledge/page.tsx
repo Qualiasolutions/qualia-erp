@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getUserRole } from '@/lib/portal-utils';
+import { getCachedUserRole } from '@/lib/portal-utils';
 import { QualiaKnowledgeView } from '@/components/portal/qualia-knowledge-view';
 import { getKnowledgeGuides } from '@/app/actions/knowledge';
 import { type Guide } from '@/lib/guides-data';
@@ -15,7 +15,7 @@ export default async function PortalKnowledgePage() {
 
   if (!user) redirect('/auth/login');
 
-  const role = await getUserRole(user.id);
+  const role = await getCachedUserRole(user.id);
   if (role === 'client') redirect('/');
 
   // Try DB first, fall back to hardcoded guide bundle

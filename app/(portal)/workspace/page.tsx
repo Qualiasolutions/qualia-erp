@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
+import { getCachedUserRole, isPortalAdminRole } from '@/lib/portal-utils';
 import { AdminContent } from './admin-content';
 
 export const metadata = {
@@ -17,7 +17,7 @@ export default async function PortalAdminPage() {
     redirect('/auth/login');
   }
 
-  const userRole = await getUserRole(user.id);
+  const userRole = await getCachedUserRole(user.id);
 
   if (!isPortalAdminRole(userRole)) {
     redirect('/');

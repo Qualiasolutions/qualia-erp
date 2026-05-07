@@ -36,7 +36,6 @@ jest.mock('@/lib/email', () => ({
 jest.mock('@/app/actions/shared', () => ({
   canAccessProject: jest.fn().mockResolvedValue(true),
   isUserAdmin: jest.fn().mockResolvedValue(true),
-  isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
   getCachedUserRole: jest.fn().mockResolvedValue('admin'),
   createActivity: jest.fn().mockResolvedValue(undefined),
 }));
@@ -120,10 +119,9 @@ describe('phase actions', () => {
     jest.clearAllMocks();
     mockSupabase.from.mockReset();
     mockSupabase.auth.getUser.mockReset();
-    const { canAccessProject, isUserManagerOrAbove, isUserAdmin, getCachedUserRole } =
+    const { canAccessProject, isUserAdmin, getCachedUserRole } =
       jest.requireMock('@/app/actions/shared');
     (canAccessProject as jest.Mock).mockResolvedValue(true);
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValue(true);
     (isUserAdmin as jest.Mock).mockResolvedValue(true);
     (getCachedUserRole as jest.Mock).mockResolvedValue('admin');
   });

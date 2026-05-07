@@ -4,12 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 import { parseFormData, assignEmployeeSchema, reassignEmployeeSchema } from '@/lib/validation';
-import {
-  createActivity,
-  isUserManagerOrAbove,
-  type ActionResult,
-  type ActivityType,
-} from './shared';
+import { createActivity, isUserAdmin, type ActionResult, type ActivityType } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { syncPlanningFromGitHubWithServiceRole } from '@/lib/planning-sync-core';
 import { assertNotImpersonating } from '@/lib/portal-utils';
@@ -101,7 +96,7 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
   }
 
   // Authorization: admin only
-  const isAdmin = await isUserManagerOrAbove(user.id);
+  const isAdmin = await isUserAdmin(user.id);
   if (!isAdmin) {
     return { success: false, error: 'Only admins and managers can assign employees to projects' };
   }
@@ -260,7 +255,7 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
   }
 
   // Authorization: admin only
-  const isAdmin = await isUserManagerOrAbove(user.id);
+  const isAdmin = await isUserAdmin(user.id);
   if (!isAdmin) {
     return { success: false, error: 'Only admins and managers can reassign employees' };
   }
@@ -450,7 +445,7 @@ export async function removeAssignment(assignmentId: string): Promise<ActionResu
   }
 
   // Authorization: admin only
-  const isAdmin = await isUserManagerOrAbove(user.id);
+  const isAdmin = await isUserAdmin(user.id);
   if (!isAdmin) {
     return { success: false, error: 'Only admins and managers can remove assignments' };
   }
@@ -643,7 +638,7 @@ export async function getAssignmentHistory(
   }
 
   // Authorization: admin only for full history
-  const isAdmin = await isUserManagerOrAbove(user.id);
+  const isAdmin = await isUserAdmin(user.id);
   if (!isAdmin) {
     return { success: false, error: 'Only admins and managers can view assignment history' };
   }
@@ -840,7 +835,7 @@ export async function completeProjectAssignment(assignmentId: string): Promise<A
     return { success: false, error: 'Not authenticated' };
   }
 
-  const isAdmin = await isUserManagerOrAbove(user.id);
+  const isAdmin = await isUserAdmin(user.id);
   if (!isAdmin) {
     return { success: false, error: 'Only admins and managers can complete assignments' };
   }

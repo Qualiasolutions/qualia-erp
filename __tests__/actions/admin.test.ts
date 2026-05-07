@@ -11,7 +11,6 @@ jest.mock('next/cache', () => ({
 
 jest.mock('@/app/actions/shared', () => ({
   isUserAdmin: jest.fn().mockResolvedValue(true),
-  isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
 }));
 
 const supabase = {
@@ -31,7 +30,7 @@ jest.mock('@/lib/supabase/server', () => ({
 
 // ---- Imports ----
 import { getTeamMembers, updateUserRole } from '@/app/actions/admin';
-import { isUserAdmin, isUserManagerOrAbove } from '@/app/actions/shared';
+import { isUserAdmin } from '@/app/actions/shared';
 
 // ---- Helpers ----
 
@@ -72,7 +71,7 @@ beforeEach(() => {
   mockAuth();
   const { isUserAdmin: mockIsAdmin } = jest.requireMock('@/app/actions/shared');
   (mockIsAdmin as jest.Mock).mockResolvedValue(true);
-  const { isUserManagerOrAbove: mockIsManager } = jest.requireMock('@/app/actions/shared');
+  const { isUserAdmin: mockIsManager } = jest.requireMock('@/app/actions/shared');
   (mockIsManager as jest.Mock).mockResolvedValue(true);
 });
 
@@ -87,7 +86,7 @@ describe('getTeamMembers', () => {
   });
 
   it('returns error when user lacks permissions', async () => {
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
     const result = await getTeamMembers();
     expect(result.success).toBe(false);
     expect(result.error).toContain('permissions');
