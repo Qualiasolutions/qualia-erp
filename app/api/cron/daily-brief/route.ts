@@ -26,11 +26,11 @@ export async function GET(request: NextRequest) {
     const supabase = createAdminClient();
     const today = cyprusToday();
 
-    const { data: admins, error: adminsErr } = await supabase
-      .from('profiles')
-      .select('id, workspace_id, full_name')
-      .eq('role', 'admin')
-      .not('workspace_id', 'is', null);
+    const { data: adminMemberships, error: adminsErr } = await supabase
+      .from('workspace_members')
+      .select('workspace_id, profile_id, is_default, profiles!inner(id, full_name, role)')
+      .eq('is_default', true)
+      .eq('profiles.role', 'admin');
 
     if (adminsErr) {
       console.error('[cron/daily-brief] Failed to load admins:', adminsErr.message);
@@ -45,20 +45,21 @@ export async function GET(request: NextRequest) {
       error?: string;
     }> = [];
 
-    for (const admin of admins ?? []) {
-      if (!admin.workspace_id) continue;
+    for (const m of adminMemberships ?? []) {
+      const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+      if (!m.workspace_id || !profile?.id) continue;
       try {
-        const result = await generateDailyBrief(supabase, admin.id, admin.workspace_id, today);
+        const result = await generateDailyBrief(supabase, profile.id, m.workspace_id, today);
         results.push({
-          ownerId: admin.id,
-          name: admin.full_name,
+          ownerId: profile.id,
+          name: profile.full_name,
           inserted: result.inserted,
           bySource: result.bySource,
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        console.error(`[cron/daily-brief] Failed for ${admin.id}:`, message);
-        results.push({ ownerId: admin.id, name: admin.full_name, error: message });
+        console.error(`[cron/daily-brief] Failed for ${profile.id}:`, message);
+        results.push({ ownerId: profile.id, name: profile.full_name, error: message });
       }
     }
 
