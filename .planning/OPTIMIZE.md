@@ -8,6 +8,17 @@ low: 5
 status: needs_attention
 prior_date: 2026-04-26
 scope: simplification (dead code, duplicates, premature abstractions) + architecture deepening (Ousterhout) + badly-handled FE/BE patterns
+shipped_in_session_2026_05_07: [L1, L2, L5, M3, M5]
+deferred_with_reason:
+  - L3: 33 import-path changes for moving 14-line file — low ROI churn
+  - L4: per-route audit needed (which reads via SWR vs server component)
+  - M1: substantial — 4 modules + their UI consumers, deserves own PR
+  - M2: only 11 callers, partial overlap, dedup payoff small (~30 LOC)
+  - M4: single-file leak; inline fix is 3-line shuffle, no real benefit
+  - H2: behavior change (silent success → error on missing rows) needs per-call-site audit before applying broadly
+  - H1: 271-fn migration — multi-week, must be incremental per-module
+  - H3: 2337-line lib/swr.ts split — mechanical but high churn, own PR
+  - H4: god-component splits — per-component multi-day refactors
 ---
 
 # Optimization Report — 2026-05-07
