@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { uuidParam, dashboardNoteContentSchema } from '@/lib/validation';
-import { isUserManagerOrAbove, type ActionResult } from './shared';
+import { isUserAdmin, type ActionResult } from './shared';
 
 export type DashboardNote = {
   id: string;
@@ -52,7 +52,7 @@ export async function createDashboardNote(content: string): Promise<ActionResult
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  if (!(await isUserManagerOrAbove(user.id))) {
+  if (!(await isUserAdmin(user.id))) {
     return { success: false, error: 'Only admins and managers can create notes' };
   }
 
@@ -87,7 +87,7 @@ export async function updateDashboardNote(noteId: string, content: string): Prom
 
   if (!note) return { success: false, error: 'Note not found' };
 
-  if (note.author_id !== user.id && !(await isUserManagerOrAbove(user.id))) {
+  if (note.author_id !== user.id && !(await isUserAdmin(user.id))) {
     return { success: false, error: 'You can only edit your own notes' };
   }
 
@@ -120,7 +120,7 @@ export async function deleteDashboardNote(noteId: string): Promise<ActionResult>
 
   if (!note) return { success: false, error: 'Note not found' };
 
-  if (note.author_id !== user.id && !(await isUserManagerOrAbove(user.id))) {
+  if (note.author_id !== user.id && !(await isUserAdmin(user.id))) {
     return { success: false, error: 'You can only delete your own notes' };
   }
 
@@ -141,7 +141,7 @@ export async function togglePinNote(noteId: string, pinned: boolean): Promise<Ac
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  if (!(await isUserManagerOrAbove(user.id))) {
+  if (!(await isUserAdmin(user.id))) {
     return { success: false, error: 'Only admins and managers can pin notes' };
   }
 

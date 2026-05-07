@@ -26,7 +26,7 @@ jest.mock('@/lib/supabase/server', () => ({
 }));
 
 jest.mock('@/app/actions/shared', () => ({
-  isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
+  isUserAdmin: jest.fn().mockResolvedValue(true),
   createActivity: jest.fn().mockResolvedValue(undefined),
   getCachedUserRole: jest.fn().mockResolvedValue('admin'),
 }));
@@ -172,8 +172,8 @@ describe('assignEmployeeToProject', () => {
   });
 
   it('returns error when user is not admin/manager', async () => {
-    const { isUserManagerOrAbove } = jest.requireMock('@/app/actions/shared');
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    const { isUserAdmin } = jest.requireMock('@/app/actions/shared');
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
 
     const fd = makeFormData({ project_id: PROJECT_ID, employee_id: EMPLOYEE_ID });
     const result = await assignEmployeeToProject(fd);
@@ -337,8 +337,8 @@ describe('reassignEmployee', () => {
   });
 
   it('returns error when user is not admin/manager', async () => {
-    const { isUserManagerOrAbove } = jest.requireMock('@/app/actions/shared');
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValueOnce(false);
+    const { isUserAdmin } = jest.requireMock('@/app/actions/shared');
+    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
 
     const fd = makeFormData({ assignment_id: ASSIGNMENT_ID, new_project_id: NEW_PROJECT_ID });
     const result = await reassignEmployee(fd);

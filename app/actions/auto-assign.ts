@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { isUserManagerOrAbove } from './shared';
+import { isUserAdmin } from './shared';
 
 // ============ AUTO-ASSIGNMENT ENGINE ============
 // Creates milestone-level inbox tasks when employees are assigned to projects.
@@ -29,7 +29,7 @@ async function requireAuthIfServerAction(externalClient?: AnySupabaseClient): Pr
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return false;
-  return isUserManagerOrAbove(user.id);
+  return isUserAdmin(user.id);
 }
 
 /**

@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { type ActionResult, isUserManagerOrAbove } from '../shared';
+import { type ActionResult, isUserAdmin } from '../shared';
 
 // ============================================================================
 // SECTION: Client Dashboard Data
@@ -25,7 +25,7 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    if (user.id !== clientId && !(await isUserManagerOrAbove(user.id))) {
+    if (user.id !== clientId && !(await isUserAdmin(user.id))) {
       return { success: false, error: 'Not authorized' };
     }
 
@@ -126,7 +126,7 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    if (user.id !== clientId && !(await isUserManagerOrAbove(user.id))) {
+    if (user.id !== clientId && !(await isUserAdmin(user.id))) {
       return { success: false, error: 'Not authorized' };
     }
 

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getUserRole } from '@/lib/portal-utils';
+import { getCachedUserRole } from '@/lib/portal-utils';
 import { getMonitors, getOverallStatus, type Monitor } from '@/lib/uptime';
 import { StatusDashboard, type ProjectInfo } from '@/components/status/status-dashboard';
 
@@ -82,7 +82,7 @@ export default async function PortalStatusPage() {
 
   if (!user) redirect('/auth/login');
 
-  const role = await getUserRole(user.id);
+  const role = await getCachedUserRole(user.id);
   // Only admin, manager, employee can access status
   if (role === 'client') redirect('/');
 

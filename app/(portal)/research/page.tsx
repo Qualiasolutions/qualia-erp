@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getUserRole } from '@/lib/portal-utils';
+import { getCachedUserRole } from '@/lib/portal-utils';
 import { QualiaResearchView } from '@/components/portal/qualia-research-view';
 import { getResearchEntries } from '@/app/actions/research';
 
@@ -14,7 +14,7 @@ export default async function PortalResearchPage() {
 
   if (!user) redirect('/auth/login');
 
-  const role = await getUserRole(user.id);
+  const role = await getCachedUserRole(user.id);
   if (role === 'client') redirect('/');
 
   const isAdmin = role === 'admin';

@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath, unstable_cache } from 'next/cache';
-import { type ActionResult, isUserManagerOrAbove } from '../shared';
+import { type ActionResult, isUserAdmin } from '../shared';
 import { getCurrentWorkspaceId } from '../workspace';
 import { randomBytes } from 'node:crypto';
 
@@ -72,7 +72,7 @@ export async function inviteClientByEmail(
     }
 
     // Verify user is admin or manager
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Only admins and managers can invite clients' };
     }
 
@@ -206,7 +206,7 @@ export async function inviteClientToProject(
     }
 
     // Verify user is admin
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Only admins can invite clients to projects' };
     }
 
@@ -283,7 +283,7 @@ export async function removeClientFromProject(
     }
 
     // Verify user is admin
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Only admins can remove client access' };
     }
 
@@ -323,7 +323,7 @@ export async function revokePortalAccess(portalUserId: string): Promise<ActionRe
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Admin access required' };
     }
 
@@ -395,7 +395,7 @@ export async function setupPortalForClient(
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Admin access required' };
     }
 
@@ -663,7 +663,7 @@ export async function updateClientPortalProjects(
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Admin access required' };
     }
 
@@ -794,7 +794,7 @@ export async function getPortalClientManagement(): Promise<ActionResult> {
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Admin access required' };
     }
 
@@ -895,7 +895,7 @@ export async function resetClientPassword(email: string): Promise<ActionResult> 
     }
 
     // Admin/manager only
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Only admins and managers can reset client passwords' };
     }
 
@@ -1001,7 +1001,7 @@ export async function createClientWorkspace(
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserManagerOrAbove(user.id))) {
+    if (!(await isUserAdmin(user.id))) {
       return { success: false, error: 'Admin access required' };
     }
 

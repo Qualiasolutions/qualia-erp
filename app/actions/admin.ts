@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { isUserAdmin, isUserManagerOrAbove, type ActionResult } from './shared';
+import { isUserAdmin, type ActionResult } from './shared';
 import type { Database } from '@/types/database';
 
 type UserRole = Database['public']['Enums']['user_role'];
@@ -24,7 +24,7 @@ export async function getTeamMembers(): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  if (!(await isUserManagerOrAbove(user.id))) {
+  if (!(await isUserAdmin(user.id))) {
     return { success: false, error: 'Insufficient permissions' };
   }
 

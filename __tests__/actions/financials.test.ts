@@ -15,8 +15,8 @@ jest.mock('@/lib/integrations/zoho', () => ({
   getZohoPayments: jest.fn(),
 }));
 
-// Mock isUserAdmin from the re-export router
-jest.mock('@/app/actions', () => ({
+// Mock isUserAdmin from the shared module
+jest.mock('@/app/actions/shared', () => ({
   isUserAdmin: jest.fn(),
 }));
 
@@ -37,7 +37,7 @@ import {
   updateExpense,
   deleteExpense,
 } from '@/app/actions/financials';
-import { isUserAdmin } from '@/app/actions';
+import { isUserAdmin } from '@/app/actions/shared';
 
 // ---- Helpers ----
 

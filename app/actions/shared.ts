@@ -52,15 +52,6 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
   return role === 'admin';
 }
 
-// Backwards-compatible alias for call sites that used the old 2-role helper.
-// Kept so we don't churn 40+ imports; behavior is identical to isUserAdmin.
-export const isUserManagerOrAbove = isUserAdmin;
-
-// Get user's role
-export async function getUserRole(userId: string): Promise<string | null> {
-  return getCachedUserRole(userId);
-}
-
 // Check if user can delete an issue (creator or admin)
 export async function canDeleteIssue(userId: string, issueId: string): Promise<boolean> {
   if (await isUserAdmin(userId)) return true;

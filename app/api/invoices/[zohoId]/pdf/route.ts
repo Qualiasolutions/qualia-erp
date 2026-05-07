@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
-import { isUserManagerOrAbove } from '@/app/actions/shared';
+import { isUserAdmin } from '@/app/actions/shared';
 import { getZohoInvoicePdf } from '@/lib/integrations/zoho';
 
 async function getClientWorkspaceAndCrmClientIds(userId: string) {
@@ -75,7 +75,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ zo
     return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
   }
 
-  const isInternal = await isUserManagerOrAbove(user.id);
+  const isInternal = await isUserAdmin(user.id);
   let workspaceId: string | null = null;
 
   if (isInternal) {

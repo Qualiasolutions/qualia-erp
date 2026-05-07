@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { sendMessageSchema, markChannelReadSchema, validateData } from '@/lib/validation';
 import type { ActionResult } from '@/app/actions/shared';
-import { getUserRole } from '@/app/actions/shared';
+import { getCachedUserRole } from '@/app/actions/shared';
 import { getClientProjectIds } from '@/lib/portal-utils';
 import { notifyAssignedEmployees } from '@/lib/notifications';
 import { notifyAdminAndAssignedOfClientActivity } from '@/lib/email';
@@ -189,7 +189,7 @@ export async function getMessageChannels(userId: string): Promise<ActionResult> 
       return { success: false, error: 'Not authenticated' };
     }
 
-    const role = await getUserRole(user.id);
+    const role = await getCachedUserRole(user.id);
     const isClient = role === 'client';
 
     // Get client project IDs if needed
@@ -312,7 +312,7 @@ export async function getChannelMessages(
       return { success: false, error: 'Not authenticated' };
     }
 
-    const role = await getUserRole(user.id);
+    const role = await getCachedUserRole(user.id);
 
     // Verify access
     const hasAccess = await hasMessageAccess(user.id, role, projectId);
@@ -438,7 +438,7 @@ export async function sendMessage(input: {
 
     const { projectId, content, contentHtml, isInternal } = validation.data;
 
-    const role = await getUserRole(user.id);
+    const role = await getCachedUserRole(user.id);
 
     // Verify access
     const hasAccess = await hasMessageAccess(user.id, role, projectId);
@@ -576,7 +576,7 @@ export async function getMessagingProjects(
       return { success: false, error: 'Not authenticated' };
     }
 
-    const role = await getUserRole(user.id);
+    const role = await getCachedUserRole(user.id);
     const isClient = role === 'client';
 
     if (isClient) {
@@ -650,7 +650,7 @@ export async function startConversation(
       return { success: false, error: 'Not authenticated' };
     }
 
-    const role = await getUserRole(user.id);
+    const role = await getCachedUserRole(user.id);
     const hasAccess = await hasMessageAccess(user.id, role, projectId);
     if (!hasAccess) {
       return { success: false, error: 'You do not have access to this project' };
@@ -743,7 +743,7 @@ export async function getUnreadCounts(
       return { success: false, error: 'Not authenticated' };
     }
 
-    const role = await getUserRole(user.id);
+    const role = await getCachedUserRole(user.id);
     const isClient = role === 'client';
 
     // Get accessible channels

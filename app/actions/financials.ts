@@ -10,8 +10,7 @@ import {
   type ManualInvoiceInput,
   type UpdateManualInvoiceInput,
 } from '@/lib/validation';
-import { isUserAdmin } from '@/app/actions';
-import { isUserManagerOrAbove } from './shared';
+import { isUserAdmin } from './shared';
 import { getZohoAllInvoices, getZohoPayments } from '@/lib/integrations/zoho';
 
 const STORAGE_BUCKET = 'project-files';
@@ -542,7 +541,7 @@ export async function createManualInvoice(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  if (!(await isUserManagerOrAbove(user.id))) {
+  if (!(await isUserAdmin(user.id))) {
     return { success: false, error: 'Only admins and managers can create invoices' };
   }
 
@@ -621,7 +620,7 @@ export async function updateManualInvoice(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  if (!(await isUserManagerOrAbove(user.id))) {
+  if (!(await isUserAdmin(user.id))) {
     return { success: false, error: 'Only admins and managers can update invoices' };
   }
 
@@ -709,7 +708,7 @@ export async function getInvoicePdfSignedUrl(
     .maybeSingle();
   if (!invoice) return { success: false, error: 'Invoice not found' };
 
-  const isAdmin = await isUserManagerOrAbove(user.id);
+  const isAdmin = await isUserAdmin(user.id);
   if (!isAdmin) {
     // For clients: check that this invoice belongs to one of their CRM clients
     // by walking client_projects → projects.client_id → financial_invoices.client_id.

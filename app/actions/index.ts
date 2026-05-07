@@ -28,8 +28,7 @@
 export type { ActionResult, ActivityType, ProfileRef } from './shared';
 export {
   isUserAdmin,
-  isUserManagerOrAbove,
-  getUserRole,
+  getCachedUserRole,
   canDeleteIssue,
   canDeleteProject,
   canDeleteMeeting,

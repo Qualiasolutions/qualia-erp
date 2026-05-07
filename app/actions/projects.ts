@@ -18,7 +18,7 @@ import { getCurrentWorkspaceId } from './workspace';
 import {
   createActivity,
   canDeleteProject,
-  isUserManagerOrAbove,
+  isUserAdmin,
   getCachedUserRole,
   type ActionResult,
   type ActivityType,
@@ -434,7 +434,7 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
   }
 
   // Role guard: only managers and admins can update projects
-  const isPriv = await isUserManagerOrAbove(user.id);
+  const isPriv = await isUserAdmin(user.id);
   if (!isPriv) return { success: false, error: 'Not authorized' };
 
   // Validate input

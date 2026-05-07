@@ -41,7 +41,7 @@ export function isPortalAdminRole(role: string | null): boolean {
 /**
  * Get user role from profiles
  */
-export async function getUserRole(userId: string): Promise<string | null> {
+export async function getCachedUserRole(userId: string): Promise<string | null> {
   try {
     const supabase = await createClient();
     const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();

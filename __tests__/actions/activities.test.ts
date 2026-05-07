@@ -27,7 +27,7 @@ jest.mock('@/lib/supabase/server', () => ({
 }));
 
 // ---- Imports ----
-import { getRecentActivities, deleteActivity } from '@/app/actions/activities';
+import { getRecentActivities } from '@/app/actions/activities';
 import { isUserAdmin } from '@/app/actions/shared';
 
 // ---- Helpers ----
@@ -127,31 +127,4 @@ describe('getRecentActivities', () => {
   });
 });
 
-describe('deleteActivity', () => {
-  it('returns error when not authenticated', async () => {
-    mockAuth(null);
-    const result = await deleteActivity(ACTIVITY_ID);
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('authenticated');
-  });
-
-  it('returns error when user is not admin', async () => {
-    (isUserAdmin as jest.Mock).mockResolvedValueOnce(false);
-    const result = await deleteActivity(ACTIVITY_ID);
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('admin');
-  });
-
-  it('deletes activity successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
-    const result = await deleteActivity(ACTIVITY_ID);
-    expect(result.success).toBe(true);
-  });
-
-  it('returns error on DB failure', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: { message: 'Delete failed' } }));
-    const result = await deleteActivity(ACTIVITY_ID);
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('Delete failed');
-  });
-});
+// deleteActivity removed in 2026-05-07 dead-export pruning — no UI consumer.

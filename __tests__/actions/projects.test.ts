@@ -32,8 +32,7 @@ jest.mock('@/app/actions/workspace', () => ({
 jest.mock('@/app/actions/shared', () => ({
   createActivity: jest.fn().mockResolvedValue(undefined),
   canDeleteProject: jest.fn(),
-  isUserAdmin: jest.fn(),
-  isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
+  isUserAdmin: jest.fn().mockResolvedValue(true),
   getCachedUserRole: jest.fn().mockResolvedValue('admin'),
 }));
 
@@ -129,11 +128,10 @@ describe('project actions', () => {
     mockSupabase.from.mockReset();
     mockSupabase.rpc.mockReset();
     mockSupabase.auth.getUser.mockReset();
-    const { canDeleteProject, isUserAdmin, isUserManagerOrAbove, getCachedUserRole } =
+    const { canDeleteProject, isUserAdmin, getCachedUserRole } =
       jest.requireMock('@/app/actions/shared');
     (canDeleteProject as jest.Mock).mockResolvedValue(true);
     (isUserAdmin as jest.Mock).mockResolvedValue(true);
-    (isUserManagerOrAbove as jest.Mock).mockResolvedValue(true);
     (getCachedUserRole as jest.Mock).mockResolvedValue('admin');
     const { createActivity } = jest.requireMock('@/app/actions/shared');
     (createActivity as jest.Mock).mockResolvedValue(undefined);

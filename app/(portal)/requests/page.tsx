@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientFeatureRequests } from '@/app/actions/client-requests';
-import { isUserManagerOrAbove } from '@/app/actions/shared';
+import { isUserAdmin } from '@/app/actions/shared';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { PortalRequestList } from '@/components/portal/portal-request-list';
@@ -27,7 +27,7 @@ export default async function PortalRequestsPage() {
 
   // Parallelize the admin check + feature requests fetch (independent)
   const [isAdmin, requestsResult] = await Promise.all([
-    isUserManagerOrAbove(user.id),
+    isUserAdmin(user.id),
     getClientFeatureRequests(),
   ]);
 
