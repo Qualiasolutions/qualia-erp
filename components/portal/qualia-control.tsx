@@ -40,7 +40,7 @@ interface QualiaControlProps {
 }
 
 const ALL_TABS: Array<{ id: ControlTab; label: string; desc: string }> = [
-  { id: 'overview', label: 'Overview', desc: 'Pulse · health · this week' },
+  { id: 'overview', label: 'Dashboard', desc: 'Today, project risk, and this week' },
   { id: 'team', label: 'Team', desc: 'People, capacity, roles' },
   { id: 'finance', label: 'Finance', desc: 'Invoices, MRR, expenses' },
   { id: 'reports', label: 'Reports', desc: 'Team performance · weekly lens' },
@@ -70,11 +70,11 @@ const ControlOverview = memo(function ControlOverview({
 }: {
   data: OverviewPayload | undefined;
 }) {
-  if (!data) return <ControlTabPlaceholder label="Overview" />;
+  if (!data) return <ControlTabPlaceholder label="Dashboard" />;
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Command center — the operations bridge */}
+      {/* Daily overview for the main admin dashboard. */}
       <CommandCenter data={data.commandCenter} />
 
       {/* Planning health — orphan deadlines / missing dates */}
