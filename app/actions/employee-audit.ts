@@ -776,6 +776,25 @@ function formatResponseBlock(responses: Record<string, unknown>): string {
     ['Wished-for command', asText(responses.wishedCommand)],
     ['What feels broken / unclear', asText(responses.unclearOrBroken)],
     ['"Yes, give me solo" project type', asText(responses.yesGiveMeSolo)],
+    ['Scenario · inherit a Qualia project mid-build', asText(responses.scenarioInheritProject)],
+    [
+      'Scenario · white page on mobile, debug walkthrough',
+      asText(responses.scenarioWhitePageMobile),
+    ],
+    ['Scenario · code they are proud of (last 30 days)', asText(responses.scenarioCodeYouProud)],
+    [
+      'Scenario · client asks for an AI agent — first 3 questions',
+      asText(responses.scenarioClientAIBrief),
+    ],
+    ['Scenario · stuck on a bug 2 hours, next move', asText(responses.scenarioStuckTwoHours)],
+    ['Scenario · 8s page load, where they look first', asText(responses.scenarioSlowPage)],
+    ['Scenario · PR review checks before approving', asText(responses.scenarioPRReview)],
+    ['Scenario · client says "make it pop", what they ask', asText(responses.scenarioVagueRequest)],
+    [
+      'Scenario · NOT NULL on a 10M-row live table — plan',
+      asText(responses.scenarioRiskyMigration),
+    ],
+    ['Scenario · day 1 of new project, first commit', asText(responses.scenarioFirstCommit)],
   ];
 
   return rows.map(([label, value]) => `${label}: ${value}`).join('\n');

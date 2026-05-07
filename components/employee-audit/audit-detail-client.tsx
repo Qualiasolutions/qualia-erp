@@ -38,6 +38,17 @@ type FormState = {
   wishedCommand: string;
   unclearOrBroken: string;
   yesGiveMeSolo: string;
+  // Scenario questions — capability assessment, first-instinct answers
+  scenarioInheritProject: string;
+  scenarioWhitePageMobile: string;
+  scenarioCodeYouProud: string;
+  scenarioClientAIBrief: string;
+  scenarioStuckTwoHours: string;
+  scenarioSlowPage: string;
+  scenarioPRReview: string;
+  scenarioVagueRequest: string;
+  scenarioRiskyMigration: string;
+  scenarioFirstCommit: string;
 };
 
 const FRAMEWORK_COMMANDS: Array<{ key: string; label: string; help: string }> = [
@@ -126,8 +137,38 @@ const DEBUG_COMFORT_CHOICES: RadioChoice<Frequency4>[] = [
   { value: 'no', label: 'I escalate before debugging' },
 ];
 
-const TOTAL_QUESTIONS = 15;
-const TOTAL_SLIDES = 17; // 0=intro, 1-15=questions, 16=submit
+const TOTAL_QUESTIONS = 25;
+const TOTAL_SLIDES = 27; // 0=intro, 1-25=questions, 26=submit
+
+// Deterministic shuffle keyed by profileId so each person sees a stable order
+// (Hasan and Moayad each get a different order — they can't compare "what was Q5?")
+function hashStringToInt(s: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+function mulberry32(seed: number) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = seed;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function seededShuffle<T>(arr: T[], seed: number): T[] {
+  const out = arr.slice();
+  const rand = mulberry32(seed);
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
 
 function defaultForm(initial?: Record<string, unknown>): FormState {
   const get = <T,>(key: string, fallback: T): T => {
@@ -151,6 +192,16 @@ function defaultForm(initial?: Record<string, unknown>): FormState {
     wishedCommand: get('wishedCommand', ''),
     unclearOrBroken: get('unclearOrBroken', ''),
     yesGiveMeSolo: get('yesGiveMeSolo', ''),
+    scenarioInheritProject: get('scenarioInheritProject', ''),
+    scenarioWhitePageMobile: get('scenarioWhitePageMobile', ''),
+    scenarioCodeYouProud: get('scenarioCodeYouProud', ''),
+    scenarioClientAIBrief: get('scenarioClientAIBrief', ''),
+    scenarioStuckTwoHours: get('scenarioStuckTwoHours', ''),
+    scenarioSlowPage: get('scenarioSlowPage', ''),
+    scenarioPRReview: get('scenarioPRReview', ''),
+    scenarioVagueRequest: get('scenarioVagueRequest', ''),
+    scenarioRiskyMigration: get('scenarioRiskyMigration', ''),
+    scenarioFirstCommit: get('scenarioFirstCommit', ''),
   };
 }
 
@@ -171,6 +222,16 @@ function answeredCount(form: FormState): number {
   if (form.wishedCommand.trim()) n++;
   if (form.unclearOrBroken.trim()) n++;
   if (form.yesGiveMeSolo.trim()) n++;
+  if (form.scenarioInheritProject.trim()) n++;
+  if (form.scenarioWhitePageMobile.trim()) n++;
+  if (form.scenarioCodeYouProud.trim()) n++;
+  if (form.scenarioClientAIBrief.trim()) n++;
+  if (form.scenarioStuckTwoHours.trim()) n++;
+  if (form.scenarioSlowPage.trim()) n++;
+  if (form.scenarioPRReview.trim()) n++;
+  if (form.scenarioVagueRequest.trim()) n++;
+  if (form.scenarioRiskyMigration.trim()) n++;
+  if (form.scenarioFirstCommit.trim()) n++;
   return n;
 }
 
@@ -376,6 +437,15 @@ export function AuditExamView({
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(1);
 
+  // Slide-position 1..25 → underlying question case ID 1..25
+  // Stable per profile: same person sees the same order across reloads,
+  // different people see different orders (so they can't compare "what was Q5?")
+  const slideToCaseId = useMemo(() => {
+    const seed = hashStringToInt(audit.profileId);
+    const ids = Array.from({ length: TOTAL_QUESTIONS }, (_, i) => i + 1);
+    return seededShuffle(ids, seed);
+  }, [audit.profileId]);
+
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -448,31 +518,73 @@ export function AuditExamView({
         : `Q${currentSlide} / ${TOTAL_QUESTIONS}`;
 
   const slideContent = useMemo(() => {
-    // Slide 0 — intro
+    // Slide 0 — intro (full-bleed two-column hero)
     if (currentSlide === 0) {
       return (
-        <div className="flex flex-col gap-5">
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-            Self-evaluation
-          </span>
-          <h1 className="text-[clamp(1.75rem,1.3rem+1.8vw,2.75rem)] font-semibold leading-[1.05] tracking-tight">
-            Qualia Framework V5
-            <br />
-            capability audit
-          </h1>
-          <p className="max-w-prose text-[14px] leading-relaxed text-muted-foreground">
-            For <span className="font-medium text-foreground">{fullName}</span>. 15 questions, no
-            time limit, no wrong answers. Your honest read of where you are right now is exactly
-            what we&apos;re looking for — this is how we figure out what to give you solo, what to
-            pair on, and where the framework is failing you.
-          </p>
-          <div className="mt-4 flex flex-col gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3.5 text-[13px] text-muted-foreground">
-            <p>15 questions · no wrong answers · partial saves welcome</p>
-            <p>Use → or click Next to move through. ← to go back.</p>
+        <div className="grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16">
+          {/* Left column — copy + start */}
+          <div className="flex flex-col gap-6">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+              Self-evaluation · Qualia framework
+            </span>
+            <h1 className="text-[clamp(2rem,1.4rem+2.4vw,3.25rem)] font-semibold leading-[1.02] tracking-tight">
+              Where are you,
+              <br />
+              <span className="text-primary">really?</span>
+            </h1>
+            <p className="max-w-prose text-[15px] leading-relaxed text-muted-foreground">
+              For <span className="font-medium text-foreground">{fullName}</span>. 25 questions —
+              your honest read of how comfortable you are with the framework, the project types, and
+              the real situations a client throws at you. No wrong answers. No time limit. Partial
+              saves welcome.
+            </p>
+            <p className="max-w-prose text-[14px] leading-relaxed text-muted-foreground/80">
+              First instinct beats polished prose. Don&apos;t research, don&apos;t ask Claude — we
+              want what comes out of your head right now.
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <Button type="button" size="lg" className="gap-2" onClick={goNext}>
+                Start <ArrowRight className="size-4" />
+              </Button>
+              <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
+                ← → keys to navigate · auto-saves as you go
+              </span>
+            </div>
           </div>
-          <Button type="button" size="lg" className="mt-2 w-fit gap-2" onClick={goNext}>
-            Start <ArrowRight className="size-4" />
-          </Button>
+
+          {/* Right column — visual breakdown of what's coming */}
+          <div className="relative">
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { count: '11', label: 'Skill ratings', help: 'Self-rate where you are' },
+                { count: '4', label: 'Quick selects', help: 'Tick what applies' },
+                { count: '10', label: 'Real scenarios', help: 'Walk us through your move' },
+                { count: '~12 min', label: 'Total time', help: 'No rush' },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="flex flex-col gap-1 rounded-xl border border-border bg-card/40 p-4"
+                >
+                  <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                    {item.label}
+                  </span>
+                  <span className="font-mono text-[clamp(1.5rem,1rem+1.2vw,2rem)] font-semibold tracking-tight text-foreground">
+                    {item.count}
+                  </span>
+                  <span className="text-[12px] text-muted-foreground">{item.help}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-4">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
+                Why we&apos;re asking
+              </p>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+                This shapes what we route to you solo, what we pair on, and where the framework is
+                failing you. Useful only if you&apos;re honest.
+              </p>
+            </div>
+          </div>
         </div>
       );
     }
@@ -538,13 +650,15 @@ export function AuditExamView({
       );
     }
 
-    // Questions 1-15
-    switch (currentSlide) {
+    // Questions 1-25 — slide position maps to a stable shuffled case ID
+    const caseId = slideToCaseId[currentSlide - 1] ?? currentSlide;
+    const slideNum = currentSlide; // displayed as "Q01 / 25" using slide position
+    switch (caseId) {
       case 1:
         return (
           <>
             <SlideHeader
-              number={1}
+              number={slideNum}
               prompt="Which framework commands have you mastered?"
               hint='"Mastered" = you reach for it without checking docs and it works. Tick all that apply.'
             />
@@ -560,7 +674,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={2}
+              number={slideNum}
               prompt="Which project types can you take from 0 → handoff alone?"
               hint="Solo = kickoff, build, deploy, handoff — without me stepping in."
             />
@@ -576,7 +690,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={3}
+              number={slideNum}
               prompt="With Qualia V5, how long would you need to complete a 10-milestone project from scratch?"
               hint="Be realistic. Include planning, building, polish, verify, ship, handoff."
             />
@@ -591,7 +705,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={4}
+              number={slideNum}
               prompt="If you're assigned a project from 0 → handoff, can you handle client communication without backup?"
               hint="Kickoff calls, scope discussions, status updates, handoff."
             />
@@ -606,7 +720,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={5}
+              number={slideNum}
               prompt="When /qualia-verify returns FAIL, can you close the gaps without help?"
             />
             <RadioGroup
@@ -620,7 +734,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={6}
+              number={slideNum}
               prompt="Have you ever shipped a phase to production solo (no review)?"
             />
             <RadioGroup
@@ -634,7 +748,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={7}
+              number={slideNum}
               prompt="When something breaks in production, what's your default move?"
             />
             <RadioGroup
@@ -648,7 +762,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={8}
+              number={slideNum}
               prompt="From 1 to 10, how well can you talk to the framework to extend a project beyond the planned milestones?"
               hint="Add-ons, design polish outside the milestone scope, refactors, bonus features."
             />
@@ -662,7 +776,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={9}
+              number={slideNum}
               prompt="From 1 to 10, your overall mastery of Qualia Framework V5 right now"
               hint="1 = I copy commands without understanding. 10 = I know what each command does, when to skip it, and how to recover when it goes wrong."
             />
@@ -673,7 +787,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={10}
+              number={slideNum}
               prompt="From 1 to 10, your confidence handing a finished project to a real client"
               hint="Walking them through what was built, answering their questions, taking responsibility if something breaks."
             />
@@ -687,7 +801,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={11}
+              number={slideNum}
               prompt="Where do you NOT want to be assigned solo yet?"
               hint="Tick all that apply. Knowing the gaps now means we don't drop you in blind."
             />
@@ -703,7 +817,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={12}
+              number={slideNum}
               prompt="Last project you took 0 → handoff alone (or closest)"
               hint="Project name + a sentence on the result. If none yet, write 'none'."
             />
@@ -719,7 +833,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={13}
+              number={slideNum}
               prompt="One framework command you wish existed"
               hint="Something you keep needing that no /qualia-* command does today."
             />
@@ -736,7 +850,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={14}
+              number={slideNum}
               prompt="What in the framework feels broken, unclear, or slows you down?"
               hint="Be specific. This is how we improve V6."
             />
@@ -753,7 +867,7 @@ export function AuditExamView({
         return (
           <>
             <SlideHeader
-              number={15}
+              number={slideNum}
               prompt="If I gave you a brand-new client tomorrow, what kind of project would you say 'yes, give me solo'?"
               hint="One concrete example. This is the kind of work we'll route to you first."
             />
@@ -766,11 +880,197 @@ export function AuditExamView({
             />
           </>
         );
+
+      // ─────────────────────────────────────────────────────────────────
+      // Scenarios — first instinct only, don't look anything up
+      // ─────────────────────────────────────────────────────────────────
+
+      case 16:
+        return (
+          <>
+            <SlideHeader
+              number={slideNum}
+              prompt="You inherit a Qualia project mid-build. Previous engineer is gone. You've never seen the codebase. What are the first 3 commands you run, in order, and why?"
+              hint="First instinct. Sequence matters more than the exact answer."
+            />
+            <Textarea
+              rows={6}
+              value={form.scenarioInheritProject}
+              onChange={(e) => update('scenarioInheritProject', e.target.value)}
+              placeholder="1. /qualia-...&#10;2. /qualia-...&#10;3. /qualia-...&#10;&#10;Why this order:"
+              autoFocus
+            />
+          </>
+        );
+
+      case 17:
+        return (
+          <>
+            <SlideHeader
+              number={slideNum}
+              prompt='A client says: "the site deploys fine, but on my phone the whole page is blank." Walk me through what you do, step by step, until you have it fixed.'
+              hint="Process > answer. We want to see how you actually debug."
+            />
+            <Textarea
+              rows={6}
+              value={form.scenarioWhitePageMobile}
+              onChange={(e) => update('scenarioWhitePageMobile', e.target.value)}
+              placeholder="Step 1: …&#10;Step 2: …&#10;Step 3: …"
+              autoFocus
+            />
+          </>
+        );
+
+      case 18:
+        return (
+          <>
+            <SlideHeader
+              number={slideNum}
+              prompt="Paste one piece of code, query, or component you wrote in the last 30 days that you're proud of. In 2-3 sentences, explain why it's good."
+              hint="The reason matters more than the code. What makes it good in your eyes?"
+            />
+            <Textarea
+              rows={10}
+              value={form.scenarioCodeYouProud}
+              onChange={(e) => update('scenarioCodeYouProud', e.target.value)}
+              placeholder="```ts&#10;// paste your code here&#10;```&#10;&#10;Why it's good:"
+              autoFocus
+            />
+          </>
+        );
+
+      case 19:
+        return (
+          <>
+            <SlideHeader
+              number={slideNum}
+              prompt='A new client tells you: "I want an AI agent for [their use case]." What are the first 3 questions you ask BEFORE writing any code?'
+              hint="Before tools, before architecture, before models — what do you need to know?"
+            />
+            <Textarea
+              rows={6}
+              value={form.scenarioClientAIBrief}
+              onChange={(e) => update('scenarioClientAIBrief', e.target.value)}
+              placeholder="1. …&#10;2. …&#10;3. …"
+              autoFocus
+            />
+          </>
+        );
+
+      case 20:
+        return (
+          <>
+            <SlideHeader
+              number={slideNum}
+              prompt="You've been on a single bug for 2 hours and made zero progress. What's your next move and why?"
+              hint="Specific. Not 'I'd ask for help' — what kind of help, from whom, with what context?"
+            />
+            <Textarea
+              rows={5}
+              value={form.scenarioStuckTwoHours}
+              onChange={(e) => update('scenarioStuckTwoHours', e.target.value)}
+              placeholder="My next move:&#10;&#10;Why:"
+              autoFocus
+            />
+          </>
+        );
+
+      case 21:
+        return (
+          <>
+            <SlideHeader
+              number={slideNum}
+              prompt="A page takes 8 seconds to load. The client wants it under 2. Where do you start looking, in order?"
+              hint="No need to fix it. Just tell us how you'd diagnose where the time is going."
+            />
+            <Textarea
+              rows={6}
+              value={form.scenarioSlowPage}
+              onChange={(e) => update('scenarioSlowPage', e.target.value)}
+              placeholder="First place I check:&#10;Then:&#10;Then:"
+              autoFocus
+            />
+          </>
+        );
+
+      case 22:
+        return (
+          <>
+            <SlideHeader
+              number={slideNum}
+              prompt="A teammate sends you a PR. What are the first 3 things you check before approving?"
+              hint="Pretend you have 5 minutes — what's worth your attention first?"
+            />
+            <Textarea
+              rows={5}
+              value={form.scenarioPRReview}
+              onChange={(e) => update('scenarioPRReview', e.target.value)}
+              placeholder="1. …&#10;2. …&#10;3. …"
+              autoFocus
+            />
+          </>
+        );
+
+      case 23:
+        return (
+          <>
+            <SlideHeader
+              number={slideNum}
+              prompt='A client says "I want it to pop more." What do you ask?'
+              hint="They will not give you a useful answer to 'what do you mean by pop?'. What questions actually unblock the work?"
+            />
+            <Textarea
+              rows={5}
+              value={form.scenarioVagueRequest}
+              onChange={(e) => update('scenarioVagueRequest', e.target.value)}
+              placeholder="My questions:"
+              autoFocus
+            />
+          </>
+        );
+
+      case 24:
+        return (
+          <>
+            <SlideHeader
+              number={slideNum}
+              prompt="You need to add a NOT NULL column to a 10-million-row production table that's actively being written to. What's your plan?"
+              hint="Walk through the migration order. What could go wrong?"
+            />
+            <Textarea
+              rows={6}
+              value={form.scenarioRiskyMigration}
+              onChange={(e) => update('scenarioRiskyMigration', e.target.value)}
+              placeholder="My migration plan:&#10;&#10;Risks I'd watch:"
+              autoFocus
+            />
+          </>
+        );
+
+      case 25:
+        return (
+          <>
+            <SlideHeader
+              number={slideNum}
+              prompt="Day 1 of a brand-new client project. Empty repo. What does your first commit look like?"
+              hint="Be specific about what's IN that commit. We're testing your starting discipline."
+            />
+            <Textarea
+              rows={6}
+              value={form.scenarioFirstCommit}
+              onChange={(e) => update('scenarioFirstCommit', e.target.value)}
+              placeholder="What's in my first commit:&#10;&#10;Why I start there:"
+              autoFocus
+            />
+          </>
+        );
+
       default:
         return null;
     }
   }, [
     currentSlide,
+    slideToCaseId,
     form,
     fullName,
     answered,
@@ -783,11 +1083,17 @@ export function AuditExamView({
     goNext,
   ]);
 
+  // Narrow column for questions, full-bleed for intro/submit
+  const isWideSlide = currentSlide === 0;
+  const slideContainerClass = isWideSlide
+    ? 'mx-auto w-full max-w-6xl overflow-hidden px-5 pb-32 pt-12 md:px-10 md:pt-16'
+    : 'mx-auto w-full max-w-[720px] overflow-hidden px-5 pb-32 pt-12 md:px-8 md:pt-14';
+
   return (
-    <div className="relative min-h-dvh">
+    <div className="relative min-h-dvh bg-background">
       {/* Sticky progress bar */}
       <div className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="mx-auto flex w-full max-w-[680px] items-center gap-3 px-5 py-3 md:px-8">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-5 py-3 md:px-10">
           <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
             Qualia
           </span>
@@ -801,18 +1107,14 @@ export function AuditExamView({
               role="progressbar"
             />
           </div>
-          <span className="min-w-[4.5rem] text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+          <span className="min-w-[5.5rem] text-right font-mono text-[11px] tabular-nums text-muted-foreground">
             {slideLabel}
           </span>
         </div>
       </div>
 
       {/* Slide area */}
-      <form
-        id="audit-form"
-        onSubmit={onSubmit}
-        className="mx-auto w-full max-w-[680px] overflow-hidden px-5 pb-32 pt-12 md:px-8 md:pt-14"
-      >
+      <form id="audit-form" onSubmit={onSubmit} className={slideContainerClass}>
         <AnimatePresence mode="wait" custom={direction}>
           <m.div
             key={currentSlide}
@@ -832,7 +1134,7 @@ export function AuditExamView({
         className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/80"
         aria-label="Question navigation"
       >
-        <div className="mx-auto flex w-full max-w-[680px] items-center justify-between gap-4 px-5 py-3.5 md:px-8">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-3.5 md:px-10">
           <Button
             type="button"
             variant="ghost"
@@ -845,24 +1147,35 @@ export function AuditExamView({
             Back
           </Button>
 
-          {/* Step dots */}
-          <div className="flex items-center gap-1" role="presentation">
-            {Array.from({ length: TOTAL_SLIDES }).map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => goTo(i)}
-                aria-label={i === 0 ? 'Intro' : i === TOTAL_SLIDES - 1 ? 'Submit' : `Question ${i}`}
-                className={cn(
-                  'rounded-full transition-all duration-200',
-                  i === currentSlide
-                    ? 'h-2 w-5 bg-primary'
-                    : i < currentSlide
-                      ? 'h-1.5 w-1.5 bg-primary/40 hover:bg-primary/60'
-                      : 'h-1.5 w-1.5 bg-border hover:bg-muted-foreground/40'
-                )}
-              />
-            ))}
+          {/* Step dots — windowed for 27 slides so they fit at any width */}
+          <div className="flex flex-1 items-center justify-center gap-1" role="presentation">
+            {Array.from({ length: TOTAL_SLIDES }).map((_, i) => {
+              const isActive = i === currentSlide;
+              const isPast = i < currentSlide;
+              // Show all dots above 720px; on smaller screens only show ±4 around active
+              const distance = Math.abs(i - currentSlide);
+              const isEndpoint = i === 0 || i === TOTAL_SLIDES - 1;
+              const visibleSm = distance <= 3 || isEndpoint;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => goTo(i)}
+                  aria-label={
+                    i === 0 ? 'Intro' : i === TOTAL_SLIDES - 1 ? 'Submit' : `Question ${i}`
+                  }
+                  className={cn(
+                    'rounded-full transition-all duration-200',
+                    isActive
+                      ? 'h-2 w-5 bg-primary'
+                      : isPast
+                        ? 'h-1.5 w-1.5 bg-primary/40 hover:bg-primary/60'
+                        : 'h-1.5 w-1.5 bg-border hover:bg-muted-foreground/40',
+                    !visibleSm && 'hidden sm:inline-block'
+                  )}
+                />
+              );
+            })}
           </div>
 
           {currentSlide < TOTAL_SLIDES - 1 ? (
