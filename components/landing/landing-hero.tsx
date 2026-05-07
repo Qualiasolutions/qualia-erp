@@ -543,7 +543,7 @@ function AdminMain() {
       <m.div variants={fadeUp} className="grid grid-cols-3 gap-2 px-5 py-3">
         <Stat label="Receivables" value="€42k" trend="+8%" />
         <Stat label="Active proj." value="7" trend="+1" />
-        <Stat label="MRR" value="€18k" trend="+4%" />
+        <Stat label="Pipeline" value="€18k" trend="+4%" />
       </m.div>
       <div className="px-5 pb-3">
         <m.p
