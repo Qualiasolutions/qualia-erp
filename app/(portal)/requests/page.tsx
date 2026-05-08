@@ -22,7 +22,7 @@ export default async function PortalRequestsPage() {
   // App Library guard: block clients if the "requests" app is disabled
   if (profile?.role === 'client') {
     const allowed = await assertAppEnabledForClient(user.id, 'requests', profile.role);
-    if (!allowed) redirect('/');
+    if (!allowed) redirect('/dashboard');
   }
 
   // Parallelize the admin check + feature requests fetch (independent)

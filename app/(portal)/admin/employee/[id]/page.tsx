@@ -28,7 +28,7 @@ export default async function EmployeeProfilePage({ params, searchParams }: Page
   await connection();
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
-  if (!(await isUserAdmin(user.id))) redirect('/');
+  if (!(await isUserAdmin(user.id))) redirect('/dashboard');
 
   const { id } = await params;
   const { tab: tabRaw, period: periodRaw } = await searchParams;

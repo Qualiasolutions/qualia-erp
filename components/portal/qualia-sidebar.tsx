@@ -67,7 +67,7 @@ const PAGES: PageDef[] = [
     id: 'employee-dashboard',
     label: 'Dashboard',
     icon: 'home',
-    href: '/',
+    href: '/dashboard',
     exact: true,
     roles: ['employee'],
     appKey: 'home',
@@ -76,7 +76,7 @@ const PAGES: PageDef[] = [
     id: 'client-dashboard',
     label: 'Dashboard',
     icon: 'home',
-    href: '/',
+    href: '/dashboard',
     exact: true,
     roles: ['client'],
     appKey: 'home',
@@ -527,7 +527,7 @@ function BrandRow({
   return (
     <div className="flex items-center gap-3 px-4 py-5">
       <Link
-        href="/"
+        href="/dashboard"
         onClick={onLinkClick}
         className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-primary/10 ring-1 ring-primary/15 transition-shadow duration-150 hover:dark:shadow-[var(--glow-teal-sm)]"
         aria-label="Qualia home"

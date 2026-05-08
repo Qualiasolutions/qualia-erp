@@ -55,7 +55,7 @@ export default async function PortalLayout({ children }: { children: React.React
 
   const actualRole = profile?.role || null;
   if (!actualRole) {
-    redirect('/');
+    redirect('/dashboard');
   }
 
   const isAdminViewing = isPortalAdminRole(actualRole);

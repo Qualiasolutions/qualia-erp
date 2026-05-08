@@ -20,7 +20,7 @@ export default async function PortalMessagesPage() {
   // App Library guard: block clients if the "messages" app is disabled
   if (profile?.role === 'client') {
     const allowed = await assertAppEnabledForClient(user.id, 'messages', profile.role);
-    if (!allowed) redirect('/');
+    if (!allowed) redirect('/dashboard');
   }
 
   const userName = profile?.full_name || user.email?.split('@')[0] || 'User';

@@ -31,7 +31,7 @@ export default async function NotificationSettingsPage() {
   // App Library guard: block clients if the "settings" app is disabled
   if (profile.role === 'client') {
     const allowed = await assertAppEnabledForClient(user.id, 'settings', profile.role);
-    if (!allowed) redirect('/');
+    if (!allowed) redirect('/dashboard');
   }
 
   // Get workspace_id from workspace_members (not on profiles table)

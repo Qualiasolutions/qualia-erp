@@ -14,7 +14,7 @@ export default async function BrainPage() {
   await connection();
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
-  if (!(await isUserAdmin(user.id))) redirect('/');
+  if (!(await isUserAdmin(user.id))) redirect('/dashboard');
 
   return <BrainView />;
 }

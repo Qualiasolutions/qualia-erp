@@ -17,7 +17,7 @@ export default async function AuditIndexPage() {
   await connection();
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
-  if (!(await isUserAdmin(user.id))) redirect('/');
+  if (!(await isUserAdmin(user.id))) redirect('/dashboard');
 
   const rows = await getAuditIndex();
 

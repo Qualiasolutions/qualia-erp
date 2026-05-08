@@ -16,7 +16,7 @@ export default async function PortalKnowledgePage() {
   if (!user) redirect('/auth/login');
 
   const role = await getCachedUserRole(user.id);
-  if (role === 'client') redirect('/');
+  if (role === 'client') redirect('/dashboard');
 
   // Try DB first, fall back to hardcoded guide bundle
   let allGuides: Guide[];

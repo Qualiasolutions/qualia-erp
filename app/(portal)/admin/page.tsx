@@ -54,7 +54,7 @@ async function ControlLoader({ tab }: { tab: ControlTab }) {
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
   const profile = await getPortalProfile(user.id);
-  if (!profile || !(await isUserAdmin(user.id))) redirect('/');
+  if (!profile || !(await isUserAdmin(user.id))) redirect('/dashboard');
 
   // Finance tab is admin-visible (back from owner-only gate).
   const canViewFinance = true;
