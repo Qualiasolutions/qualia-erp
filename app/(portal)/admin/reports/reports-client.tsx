@@ -36,12 +36,14 @@ import {
 } from '@/app/actions/reports';
 import type { DateRange } from 'react-day-picker';
 import { FrameworkReportsTab } from './framework-reports-tab';
+import { AIPromptsTab } from './ai-prompts-tab';
 
-type ReportTab = 'employees' | 'framework';
+type ReportTab = 'employees' | 'framework' | 'ai-prompts';
 
 const TABS: Array<{ id: ReportTab; label: string; desc: string }> = [
   { id: 'employees', label: 'Hours', desc: 'Team hours logged per employee' },
   { id: 'framework', label: 'Framework Reports', desc: 'Qualia framework session reports' },
+  { id: 'ai-prompts', label: 'AI Prompts', desc: 'What employees ask the Qualia AI assistant' },
 ];
 
 // Tracking starts from May 2026 — anything earlier is excluded from totals.
@@ -301,6 +303,8 @@ export function AdminReportsClient() {
       >
         {tab === 'framework' ? (
           <FrameworkReportsTab focusId={searchParams.get('id')} />
+        ) : tab === 'ai-prompts' ? (
+          <AIPromptsTab fromDate={dateRange?.from} toDate={dateRange?.to} />
         ) : loading ? (
           <div className="flex h-[50vh] items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
