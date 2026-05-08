@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import { cn } from '@/lib/utils';
@@ -30,11 +30,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 /* ======================================================================
-   Nav registry — grouped into sections
+   Nav registry — flat list, role-filtered
    ====================================================================== */
 
 type Role = 'admin' | 'employee' | 'client';
-type Section = 'workspace' | 'knowledge' | 'admin' | 'account';
 
 type PageDef = {
   id: string;
@@ -43,40 +42,44 @@ type PageDef = {
   href: string;
   roles: Role[];
   appKey: string;
-  section: Section;
   exact?: boolean;
+  /** When set, active state requires this query param key=value in addition to pathname match. */
+  matchQuery?: { key: string; value: string };
 };
 
+/**
+ * Items are ordered per role so that filtering by role produces the correct
+ * display order. When an item belongs to multiple roles the position is
+ * chosen for the role that lists it earliest; the `roleOrder` map below
+ * re-sorts at runtime so every role gets its intended sequence.
+ */
 const PAGES: PageDef[] = [
-  // Workspace
   {
-    id: 'today',
-    label: 'Home',
+    id: 'admin-dashboard',
+    label: 'Dashboard',
+    icon: 'home',
+    href: '/admin',
+    exact: true,
+    roles: ['admin'],
+    appKey: 'home',
+  },
+  {
+    id: 'employee-dashboard',
+    label: 'Dashboard',
     icon: 'home',
     href: '/dashboard',
     exact: true,
-    roles: ['admin', 'employee'],
+    roles: ['employee'],
     appKey: 'home',
-    section: 'workspace',
   },
   {
-    id: 'portal',
-    label: 'Workspace',
+    id: 'client-dashboard',
+    label: 'Dashboard',
     icon: 'home',
     href: '/dashboard',
     exact: true,
     roles: ['client'],
     appKey: 'home',
-    section: 'workspace',
-  },
-  {
-    id: 'tasks',
-    label: 'Tasks',
-    icon: 'tasks',
-    href: '/tasks',
-    roles: ['admin', 'employee'],
-    appKey: 'tasks',
-    section: 'workspace',
   },
   {
     id: 'projects',
@@ -85,55 +88,7 @@ const PAGES: PageDef[] = [
     href: '/projects',
     roles: ['admin', 'employee', 'client'],
     appKey: 'projects',
-    section: 'workspace',
   },
-  {
-    id: 'schedule',
-    label: 'Schedule',
-    icon: 'calendar',
-    href: '/schedule',
-    roles: ['admin', 'employee'],
-    appKey: 'schedule',
-    section: 'workspace',
-  },
-  {
-    id: 'requests',
-    label: 'Requests',
-    icon: 'tasks',
-    href: '/requests',
-    roles: ['client'],
-    appKey: 'requests',
-    section: 'workspace',
-  },
-  // Knowledge
-  {
-    id: 'knowledge',
-    label: 'Knowledge',
-    icon: 'knowledge',
-    href: '/knowledge',
-    roles: ['admin', 'employee'],
-    appKey: 'knowledge',
-    section: 'knowledge',
-  },
-  {
-    id: 'research',
-    label: 'Research',
-    icon: 'research',
-    href: '/research',
-    roles: ['admin', 'employee'],
-    appKey: 'research',
-    section: 'knowledge',
-  },
-  {
-    id: 'brain',
-    label: 'Brain',
-    icon: 'sparkle',
-    href: '/brain',
-    roles: ['admin'],
-    appKey: 'brain',
-    section: 'knowledge',
-  },
-  // Admin
   {
     id: 'clients',
     label: 'Clients',
@@ -141,25 +96,15 @@ const PAGES: PageDef[] = [
     href: '/clients',
     roles: ['admin'],
     appKey: 'clients',
-    section: 'admin',
   },
   {
-    id: 'server',
-    label: 'Server',
-    icon: 'server',
-    href: '/status',
-    roles: ['admin', 'employee'],
-    appKey: 'status',
-    section: 'admin',
-  },
-  {
-    id: 'control',
-    label: 'Control',
-    icon: 'admin',
-    href: '/admin',
+    id: 'team',
+    label: 'Team',
+    icon: 'team',
+    href: '/admin?tab=team',
     roles: ['admin'],
     appKey: 'control',
-    section: 'admin',
+    matchQuery: { key: 'tab', value: 'team' },
   },
   {
     id: 'reports',
@@ -168,26 +113,47 @@ const PAGES: PageDef[] = [
     href: '/admin/reports',
     roles: ['admin'],
     appKey: 'reports',
-    section: 'admin',
   },
-  // Account
   {
-    id: 'chat',
+    id: 'admin-billing',
+    label: 'Billing',
+    icon: 'payments',
+    href: '/admin?tab=finance',
+    roles: ['admin'],
+    appKey: 'control',
+    matchQuery: { key: 'tab', value: 'finance' },
+  },
+  {
+    id: 'knowledge',
+    label: 'Knowledge',
+    icon: 'knowledge',
+    href: '/knowledge',
+    roles: ['admin', 'employee'],
+    appKey: 'knowledge',
+  },
+  {
+    id: 'requests',
+    label: 'Requests',
+    icon: 'tasks',
+    href: '/requests',
+    roles: ['client'],
+    appKey: 'requests',
+  },
+  {
+    id: 'messages',
     label: 'Messages',
     icon: 'agent',
     href: '/messages',
     roles: ['client'],
     appKey: 'messages',
-    section: 'account',
   },
   {
-    id: 'payments',
-    label: 'Payments',
+    id: 'client-billing',
+    label: 'Billing',
     icon: 'payments',
     href: '/billing',
     roles: ['client'],
     appKey: 'billing',
-    section: 'account',
   },
   {
     id: 'settings',
@@ -196,18 +162,23 @@ const PAGES: PageDef[] = [
     href: '/settings',
     roles: ['admin', 'employee', 'client'],
     appKey: 'settings',
-    section: 'account',
   },
 ];
 
-const SECTION_LABEL: Record<Section, string> = {
-  workspace: 'Workspace',
-  knowledge: 'Knowledge',
-  admin: 'Admin',
-  account: 'Account',
+const ROLE_ORDER: Record<Role, string[]> = {
+  admin: [
+    'admin-dashboard',
+    'projects',
+    'clients',
+    'team',
+    'reports',
+    'admin-billing',
+    'knowledge',
+    'settings',
+  ],
+  employee: ['employee-dashboard', 'projects', 'knowledge', 'settings'],
+  client: ['client-dashboard', 'projects', 'requests', 'messages', 'client-billing', 'settings'],
 };
-
-const SECTION_ORDER: Section[] = ['workspace', 'knowledge', 'admin', 'account'];
 
 /* ======================================================================
    Props
@@ -379,7 +350,7 @@ function ClockPill({ userId }: { userId: string | null }) {
               clockedIn
                 ? 'Clock out'
                 : overdueCount > 0
-                  ? `Clock in — ${overdueCount} overdue ${overdueCount === 1 ? 'task' : 'tasks'}`
+                  ? `Clock in — ${overdueCount} overdue work item${overdueCount === 1 ? '' : 's'}`
                   : 'Clock in'
             }
           >
@@ -389,7 +360,7 @@ function ClockPill({ userId }: { userId: string | null }) {
             <span
               className="pointer-events-none absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-background bg-destructive px-1 font-mono text-[9px] font-bold leading-none text-destructive-foreground shadow-[0_0_6px_hsl(0_84%_60%/0.45)]"
               aria-hidden
-              title={`${overdueCount} overdue ${overdueCount === 1 ? 'task' : 'tasks'}`}
+              title={`${overdueCount} overdue work item${overdueCount === 1 ? '' : 's'}`}
             >
               {overdueCount > 9 ? '9+' : overdueCount}
             </span>
@@ -603,6 +574,7 @@ function SidebarBody({
   onLinkClick,
 }: QualiaSidebarProps & { onLinkClick?: () => void }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [tweaksOpen, setTweaksOpen] = useState(false);
   const [viewAsOpen, setViewAsOpen] = useState(false);
 
@@ -614,29 +586,32 @@ function SidebarBody({
   const isInternal = role === 'admin' || role === 'employee';
 
   const visiblePages = useMemo(() => {
+    const order = ROLE_ORDER[role];
     const filtered = PAGES.filter((p) => p.roles.includes(role));
-    if (!enabledApps || enabledApps.length === 0) return filtered;
-    // Settings is always available; gate the rest by enabledApps
-    return filtered.filter((p) => p.id === 'settings' || enabledApps.includes(p.appKey));
+    const gated =
+      !enabledApps || enabledApps.length === 0
+        ? filtered
+        : filtered.filter((p) => p.id === 'settings' || enabledApps.includes(p.appKey));
+    return gated.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   }, [role, enabledApps]);
 
-  const sectionedPages = useMemo(() => {
-    const map = new Map<Section, PageDef[]>();
-    for (const p of visiblePages) {
-      const arr = map.get(p.section) ?? [];
-      arr.push(p);
-      map.set(p.section, arr);
-    }
-    return SECTION_ORDER.filter((s) => (map.get(s)?.length ?? 0) > 0).map((s) => ({
-      id: s,
-      label: SECTION_LABEL[s],
-      items: map.get(s) ?? [],
-    }));
-  }, [visiblePages]);
-
   const isActivePage = (p: PageDef) => {
-    if (p.exact) return pathname === p.href;
-    return pathname === p.href || pathname.startsWith(`${p.href}/`);
+    const basePath = p.href.split('?')[0];
+
+    if (p.matchQuery) {
+      return pathname === basePath && searchParams.get(p.matchQuery.key) === p.matchQuery.value;
+    }
+
+    if (p.exact) {
+      if (pathname !== basePath) return false;
+      if (basePath === '/admin') {
+        const tab = searchParams.get('tab');
+        return !tab || tab === 'overview';
+      }
+      return true;
+    }
+
+    return pathname === basePath || pathname.startsWith(`${basePath}/`);
   };
 
   const brandName = branding?.company_name ?? 'Qualia';
@@ -648,7 +623,6 @@ function SidebarBody({
   };
 
   const handleJump = () => {
-    // Dispatch ⌘/Ctrl+K to the existing CommandMenu listener
     const evt = new KeyboardEvent('keydown', {
       key: 'k',
       metaKey: true,
@@ -663,7 +637,6 @@ function SidebarBody({
       className="bg-surface-1 flex h-full flex-col border-r border-border"
       aria-label="Primary navigation"
     >
-      {/* Brand + ⌘K */}
       <BrandRow
         brandName={brandName}
         brandLogoUrl={brandLogoUrl}
@@ -671,7 +644,6 @@ function SidebarBody({
         onJump={handleJump}
       />
 
-      {/* Optional company hint (admin viewing a client's portal) */}
       {companyName ? (
         <div className="border-t border-border px-4 py-2">
           <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
@@ -680,33 +652,24 @@ function SidebarBody({
         </div>
       ) : null}
 
-      {/* Sectioned nav */}
       <nav
-        className="flex-1 space-y-5 overflow-y-auto border-t border-border px-3 pb-4 pt-4"
+        className="flex-1 overflow-y-auto border-t border-border px-3 pb-4 pt-4"
         aria-label="Primary"
       >
-        {sectionedPages.map((section) => (
-          <div key={section.id}>
-            <div className="mb-2 px-3 font-mono text-[9.5px] font-semibold uppercase text-muted-foreground/70">
-              {section.label}
-            </div>
-            <div className="space-y-0.5">
-              {section.items.map((p) => (
-                <NavItem
-                  key={p.id}
-                  page={p}
-                  isActive={isActivePage(p)}
-                  disabled={isGated && p.id !== 'today' && p.id !== 'portal'}
-                  badge={p.id === 'chat' ? unread : undefined}
-                  onClick={onLinkClick}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+        <div className="space-y-0.5">
+          {visiblePages.map((p) => (
+            <NavItem
+              key={p.id}
+              page={p}
+              isActive={isActivePage(p)}
+              disabled={isGated && !p.id.endsWith('-dashboard')}
+              badge={p.id === 'messages' ? unread : undefined}
+              onClick={onLinkClick}
+            />
+          ))}
+        </div>
       </nav>
 
-      {/* Footer — clock pill + identity strip */}
       <div className="space-y-3 border-t border-border p-4">
         {isInternal ? <ClockPill userId={userId ?? null} /> : null}
 
@@ -721,7 +684,6 @@ function SidebarBody({
         />
       </div>
 
-      {/* Floating admin Tweaks panel */}
       {isAdmin && tweaksOpen ? (
         <QualiaTweaksPanel
           onClose={() => setTweaksOpen(false)}
@@ -733,7 +695,6 @@ function SidebarBody({
         />
       ) : null}
 
-      {/* View as dialog — admin only */}
       {isAdmin ? <ViewAsDialog open={viewAsOpen} onOpenChange={setViewAsOpen} /> : null}
     </aside>
   );

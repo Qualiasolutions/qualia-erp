@@ -2,15 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { AnimatePresence, m } from 'motion/react';
-import {
-  Sparkles,
-  AlertTriangle,
-  CheckCircle2,
-  ScanSearch,
-  TrendingUp,
-  TrendingDown,
-  Equal,
-} from 'lucide-react';
+import { Sparkles, ScanSearch, TrendingUp, TrendingDown, Equal } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
@@ -234,7 +226,7 @@ export function AuditDeepView({
           />
           <StatTile label="Projects worked" value={String(audit.projects.length)} />
           <StatTile
-            label="Tasks done"
+            label="Work completed"
             value={`${audit.tasks.completed}/${audit.tasks.totalAssigned}`}
             hint={`${audit.tasks.onTimePct}% on time`}
             tone={onTimeTone}
@@ -274,7 +266,7 @@ export function AuditDeepView({
                 <div className="flex items-center gap-3 font-mono text-[11px] tabular-nums text-muted-foreground">
                   <span>{p.hoursLogged.toFixed(1)}h</span>
                   <span>
-                    {p.tasksDoneOnProject}/{p.tasksOnProject} tasks
+                    {p.tasksDoneOnProject}/{p.tasksOnProject} progress
                   </span>
                   <span className="rounded border border-border px-1.5 py-0.5 uppercase tracking-wider">
                     {p.status}

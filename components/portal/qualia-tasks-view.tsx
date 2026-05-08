@@ -216,16 +216,16 @@ export function QualiaTasksView({
 
   const missingFilterLabel =
     missingFilter === 'phase'
-      ? 'Open project tasks without a phase'
+      ? 'Open project work without a milestone'
       : missingFilter === 'due_date'
-        ? 'Open tasks without a due date'
+        ? 'Open work without a review date'
         : null;
 
   const missingFilterDescription =
     missingFilter === 'phase'
-      ? 'These tasks need planning cleanup. Assign each one to the correct phase instead of using an unphased bucket.'
+      ? 'These work items need planning cleanup. Assign each one to the correct milestone instead of using an unphased bucket.'
       : missingFilter === 'due_date'
-        ? 'These tasks need a due date or an explicit decision to close or reschedule them.'
+        ? 'These work items need a review date or an explicit decision to close or reschedule them.'
         : null;
 
   const cleanupCount = cleanupTasks.length;
@@ -353,7 +353,7 @@ export function QualiaTasksView({
     if (missingFilter) {
       return `${cleanupCount} cleanup item${cleanupCount === 1 ? '' : 's'}`;
     }
-    return `${todayOpen.length} task${todayOpen.length === 1 ? '' : 's'} · ${weekDoneCount} done · 7d`;
+    return `${todayOpen.length} work item${todayOpen.length === 1 ? '' : 's'} · ${weekDoneCount} done · 7d`;
   }, [cleanupCount, missingFilter, todayOpen.length, weekDoneCount]);
 
   return (
@@ -373,7 +373,7 @@ export function QualiaTasksView({
             </div>
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">
-                {mode === 'all-tasks' ? 'Workspace tasks' : "Today's Focus"}
+                {mode === 'all-tasks' ? 'Workspace work' : "Today's Focus"}
               </h1>
               <p className="text-sm text-muted-foreground">{headerSubtitle}</p>
             </div>
@@ -385,7 +385,7 @@ export function QualiaTasksView({
             onClick={() => document.getElementById('quick-add-input')?.focus()}
           >
             <Plus className="h-4 w-4" />
-            New Task
+            New Work
           </Button>
         </div>
 
@@ -422,7 +422,7 @@ export function QualiaTasksView({
               <Zap className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
               <Input
                 id="quick-add-input"
-                placeholder="Quick add task… press Enter"
+                placeholder="Quick add work… press Enter"
                 value={quickAdd}
                 onChange={(e) => setQuickAdd(e.target.value)}
                 onKeyDown={handleQuickAdd}

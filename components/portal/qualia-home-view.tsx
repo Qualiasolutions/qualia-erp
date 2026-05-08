@@ -236,8 +236,8 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
           <span>
             {openTasksCount === 0
-              ? 'No open tasks. Inbox zero — enjoy the breathing room.'
-              : `${openTasksCount} open ${openTasksCount === 1 ? 'task' : 'tasks'} on your list.`}
+              ? 'No open work. Inbox zero — enjoy the breathing room.'
+              : `${openTasksCount} open work item${openTasksCount === 1 ? '' : 's'} on your list.`}
             {activeProjects.length > 0
               ? ` ${activeProjects.length} active ${
                   activeProjects.length === 1 ? 'project' : 'projects'
@@ -261,7 +261,7 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
       <div className="stagger-1 mb-4 grid flex-shrink-0 animate-fade-in grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Open Tasks
+            Open Work
           </p>
           <p className="text-3xl font-bold tabular-nums">{openTasksCount}</p>
         </div>
@@ -464,7 +464,7 @@ function TasksCard({
             Your Active Work
           </p>
           <h2 className="mt-0.5 text-lg font-semibold">
-            My tasks{' '}
+            My work{' '}
             {openTasksCount > 0 ? (
               <span className="ml-1 text-sm font-normal text-muted-foreground">
                 · {openTasksCount} open
@@ -475,7 +475,7 @@ function TasksCard({
         {isGated ? (
           <span
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
-            aria-label="Clock in to act on tasks"
+            aria-label="Clock in to act on work"
           >
             <Lock className="h-3 w-3" />
             Clock in
@@ -487,7 +487,7 @@ function TasksCard({
               size="sm"
               className="gap-2 text-muted-foreground hover:text-primary"
             >
-              All Tasks
+              All Work
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>

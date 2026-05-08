@@ -128,7 +128,7 @@ export async function clockIn(
   }
 
   if (!clockInNote?.trim()) {
-    return { success: false, error: 'Tell the team what you plan to ship this session.' };
+    return { success: false, error: 'Tell the team what you plan to work on this session.' };
   }
 
   if (!plannedDurationMinutes) {

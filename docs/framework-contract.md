@@ -4,12 +4,24 @@
 > [`qualia-framework/docs/erp-contract.md`](https://github.com/Qualiasolutions/qualia-framework/blob/main/docs/erp-contract.md).
 > Update it there first, then sync here with `cp ~/qualia-framework/docs/erp-contract.md docs/framework-contract.md`.
 >
-> **Last synced:** 2026-04-19 (framework v4.0.4).
+> **Last synced:** 2026-05-08 (framework `feat/erp-reporting-contract-2026-05-08` → main).
 
 This document specifies the API shape between the Qualia Framework (client)
 and this ERP (`portal.qualiasolutions.net`). Every `/qualia-report` run from
 a framework project POSTs a structured payload to `POST /api/v1/reports`
 on this backend.
+
+## Operating Model
+
+The ERP treats `/qualia-report` as an employee shift submission, not proof that an assigned task was finished. Employees clock out after their fixed daily hours and submit what happened during the shift: shipped work, partial progress, blockers, investigation, meetings, or no-code work.
+
+Primary ERP planning dates are:
+
+- Project deadline
+- Milestone deadline
+- Employee submission date from the uploaded report
+
+Phase and task counters remain framework telemetry. They help agents plan/build/verify, but they should not become the ERP's primary navigation, deadline model, or employee-performance label.
 
 ## Configuration
 
@@ -219,6 +231,11 @@ Authorization: Bearer <api-key>
   external callers. Internal idempotent UPSERT on `(project_id,
 client_report_id)` retries is the one exception (see "Idempotent UPSERT
   on retry" above).
+- The ERP resolves each report to a canonical internal project when possible.
+  Repository URL is the strongest signal, followed by repo/project slug, then
+  configured aliases, then the human report project name. This keeps legacy
+  repo/report names like `USD-Academy` or `USD-ACVADEMY` correctly linked to
+  ERP project names like `Underdog-Sales-Academy`.
 - **`dry_run` retention (v4.0.4+):** The ERP deletes rows where
   `dry_run = true AND submitted_at < now() - 7 days` via a daily cron at
   03:00 UTC. Production report views (list, project tree, email digests)
@@ -264,90 +281,3 @@ All other fields are optional but recommended for complete reporting.
 - Keys expire after 90 days (re-issue via Fawzi)
 - All traffic is HTTPS-only
 - No PII beyond team member names is transmitted
-
----
-
-## ERP-side implementation notes
-
-Mapping from contract fields to this ERP's schema. See
-`app/api/v1/reports/route.ts` for the full ingest handler and
-`supabase/migrations/20260418160000_*`, `20260419120000_*`,
-`20260419130000_*` for the schema evolution.
-
-### Database
-
-All reports land in `session_reports` (RLS: service_role-only).
-Payload fields map as follows:
-
-| Contract field                  | DB column                                     | Notes                                                                   |
-| ------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
-| `project`                       | `project_name`                                | Human display name                                                      |
-| `project_id`                    | `framework_project_id`                        | Framework's stable slug                                                 |
-| `team_id`                       | `team_id`                                     |                                                                         |
-| `client_report_id`              | `client_report_id`                            | Format `QS-REPORT-NN`, per-project sequential                           |
-| `dry_run`                       | `dry_run`                                     | `boolean NOT NULL DEFAULT false`                                        |
-| `milestones`                    | `milestones`                                  | `jsonb`                                                                 |
-| `gap_cycles` (number or object) | `gap_cycles` (int) + `gap_cycles_raw` (jsonb) | Polymorphism flattened to current phase; full shape preserved in `_raw` |
-| everything else                 | same-name column                              | See `types/database.ts` → `session_reports.Row`                         |
-
-### Unique constraints
-
-- `session_reports_client_report_id_uniq` — plain UNIQUE on
-  `(framework_project_id, client_report_id)`. Plain (not partial) so
-  Supabase's `.upsert({...}, { onConflict: 'framework_project_id,client_report_id' })`
-  resolves correctly. Composite-UNIQUE NULL semantics (pre-PG15 default)
-  allow multiple rows where either column is NULL — so legacy v3.x payloads
-  coexist with v4.0.4 UPSERT rows.
-
-### Read-path filter
-
-Every production read of `session_reports` applies `.neq('dry_run', true)`
-by default. Exported readers accept an `{ includeDryRun?: boolean }` option
-for admin diagnostics:
-
-- `getFrameworkReports`, `getFrameworkReportsStats`, `getFrameworkReportsProjects` (in `app/actions/reports.ts`)
-- `hasStructuredReportForSession`, `getSessionReportsForProject` (in `app/actions/work-sessions.ts`)
-
-### Retention
-
-`app/api/cron/cleanup-dry-run-reports/route.ts` deletes `dry_run=true` rows
-where `submitted_at < now() - 7 days`. Runs daily at 03:00 UTC via
-`vercel.json`. Partial index `session_reports_dry_run_expiry_idx` keeps
-the DELETE cheap.
-
-### Admin UI
-
-`app/(portal)/admin/reports/framework-reports-tab.tsx` renders reports with
-a "Report" column showing `client_report_id` when present (format
-`QS-REPORT-NN`, font-mono tabular), or a short UUID prefix in muted style
-for legacy rows.
-
-### Auth
-
-`app/api/v1/reports/route.ts` accepts two auth paths:
-
-1. `qlt_*` bearer tokens from `api_tokens` (per-user, preferred)
-2. Legacy `CLAUDE_API_KEY` shared key (grandfathered; responses include
-   `Deprecation` + `Sunset` headers per RFC 8594)
-
-### gap_cycles polymorphism
-
-Implemented in `app/api/v1/reports/route.ts` via `flattenGapCycles()` —
-accepts either a number (legacy) or `{[phase]: cycles}` object. Stores
-the current phase's number in `gap_cycles` (int column) and the full
-object in `gap_cycles_raw` (jsonb) for audit.
-
----
-
-## Rolling the ERP forward with a new framework version
-
-1. Read the updated `docs/erp-contract.md` in the framework repo
-2. Diff against this file to find the new fields or response shape changes
-3. For each schema change: write a new migration in `supabase/migrations/`
-4. For each field: update the Zod schema in `app/api/v1/reports/route.ts`
-5. If a new identifier format is introduced: update the Framework Reports
-   admin tab to render it
-6. Run the 4 verification curl round-trips against staging / prod before
-   declaring the sync shipped
-7. `cp ~/qualia-framework/docs/erp-contract.md docs/framework-contract.md`
-   to refresh this vendored copy

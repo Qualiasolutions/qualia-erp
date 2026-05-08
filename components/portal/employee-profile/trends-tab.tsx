@@ -63,7 +63,7 @@ export function TrendsTab({ profileId }: { profileId: string }) {
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
       {/* Row 1: velocity */}
-      <Card title="Tasks completed per week" subtitle="Last 8 weeks">
+      <Card title="Work completed per week" subtitle="Last 8 weeks">
         <MiniBarChart data={velocityValues} />
         <Footer
           left={`${velocityValues[velocityValues.length - 1] ?? 0} this week`}
@@ -78,7 +78,7 @@ export function TrendsTab({ profileId }: { profileId: string }) {
           <span className="text-sm text-muted-foreground">days</span>
         </div>
         {data.hoursPerCompletedTask != null ? (
-          <Footer left={`${data.hoursPerCompletedTask}h per task`} right={null} />
+          <Footer left={`${data.hoursPerCompletedTask}h per work item`} right={null} />
         ) : null}
       </Card>
 

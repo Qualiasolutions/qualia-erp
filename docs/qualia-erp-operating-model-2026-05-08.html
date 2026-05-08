@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Qualia ERP Operating Model</title>
+    <style>
+      :root {
+        --ink: #102326;
+        --muted: #607477;
+        --paper: #f6f1e8;
+        --card: #fffaf0;
+        --teal: #009aa6;
+        --teal-dark: #04717a;
+        --rust: #b85d3f;
+        --amber: #d99b32;
+        --line: rgba(16, 35, 38, 0.14);
+        --shadow: 0 24px 70px rgba(11, 31, 34, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(0, 154, 166, 0.18), transparent 34rem),
+          radial-gradient(circle at 85% 10%, rgba(217, 155, 50, 0.18), transparent 28rem),
+          linear-gradient(135deg, #f8f3ea 0%, #efe5d5 100%);
+        color: var(--ink);
+        font-family:
+          ui-serif, Georgia, Cambria, "Times New Roman", serif;
+      }
+
+      .shell {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 54px;
+      }
+
+      header.hero {
+        position: relative;
+        overflow: hidden;
+        min-height: 420px;
+        border: 1px solid var(--line);
+        border-radius: 32px;
+        background:
+          linear-gradient(120deg, rgba(255, 250, 240, 0.96), rgba(255, 250, 240, 0.72)),
+          repeating-linear-gradient(90deg, transparent 0 38px, rgba(0, 154, 166, 0.05) 38px 39px);
+        box-shadow: var(--shadow);
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        right: -120px;
+        bottom: -160px;
+        width: 420px;
+        height: 420px;
+        border-radius: 999px;
+        background: conic-gradient(from 130deg, var(--teal), var(--amber), var(--rust), var(--teal));
+        opacity: 0.15;
+      }
+
+      .hero-inner {
+        position: relative;
+        z-index: 1;
+        padding: clamp(28px, 5vw, 64px);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        color: var(--teal-dark);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--teal);
+        box-shadow: 0 0 0 6px rgba(0, 154, 166, 0.12);
+      }
+
+      h1 {
+        max-width: 850px;
+        margin: 22px 0 16px;
+        font-size: clamp(44px, 8vw, 88px);
+        line-height: 0.92;
+        letter-spacing: -0.055em;
+      }
+
+      .hero p {
+        max-width: 760px;
+        margin: 0;
+        color: var(--muted);
+        font-size: clamp(18px, 2vw, 24px);
+        line-height: 1.45;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 32px;
+      }
+
+      button,
+      .button {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--ink);
+        color: #fffaf0;
+        cursor: pointer;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        padding: 11px 16px;
+        text-decoration: none;
+        text-transform: uppercase;
+      }
+
+      button.secondary {
+        background: rgba(255, 250, 240, 0.82);
+        color: var(--ink);
+      }
+
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 26px 0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        padding: 12px 0;
+        backdrop-filter: blur(12px);
+      }
+
+      nav button {
+        background: rgba(255, 250, 240, 0.76);
+        color: var(--ink);
+      }
+
+      nav button.active {
+        background: var(--teal);
+        color: white;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .card,
+      section.panel {
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: rgba(255, 250, 240, 0.84);
+        box-shadow: 0 18px 50px rgba(11, 31, 34, 0.08);
+      }
+
+      .card {
+        padding: 22px;
+      }
+
+      .card strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 20px;
+        letter-spacing: -0.02em;
+      }
+
+      .card p,
+      li {
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      section.panel {
+        display: none;
+        padding: clamp(22px, 4vw, 40px);
+        margin-top: 16px;
+      }
+
+      section.panel.active {
+        display: block;
+        animation: rise 360ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      h2 {
+        margin: 0 0 18px;
+        font-size: clamp(30px, 4vw, 48px);
+        letter-spacing: -0.045em;
+        line-height: 1;
+      }
+
+      h3 {
+        margin: 0 0 10px;
+        font-size: 19px;
+        letter-spacing: -0.02em;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 0.9fr 1.1fr;
+        gap: 24px;
+        align-items: start;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 12px;
+        counter-reset: step;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 42px 1fr;
+        gap: 14px;
+        align-items: start;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.45);
+      }
+
+      .step::before {
+        counter-increment: step;
+        content: counter(step);
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        background: var(--teal);
+        color: white;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-weight: 800;
+      }
+
+      .role-table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border-radius: 20px;
+      }
+
+      .role-table th,
+      .role-table td {
+        border-bottom: 1px solid var(--line);
+        padding: 16px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .role-table th {
+        color: var(--teal-dark);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .pill {
+        display: inline-flex;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(0, 154, 166, 0.08);
+        color: var(--teal-dark);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 7px 10px;
+        text-transform: uppercase;
+      }
+
+      .callout {
+        border-left: 5px solid var(--rust);
+        border-radius: 18px;
+        background: rgba(184, 93, 63, 0.08);
+        padding: 18px;
+      }
+
+      .callout p {
+        margin: 0;
+        color: var(--ink);
+        font-size: 17px;
+        line-height: 1.5;
+      }
+
+      footer {
+        margin-top: 30px;
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 11px;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 860px) {
+        .grid,
+        .split {
+          grid-template-columns: 1fr;
+        }
+
+        nav {
+          position: static;
+        }
+      }
+
+      @media print {
+        body {
+          background: white;
+        }
+
+        .actions,
+        nav {
+          display: none;
+        }
+
+        section.panel {
+          display: block;
+          break-inside: avoid;
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Qualia ERP · operating model</div>
+          <h1>Project work, shift reports, and clear responsibility.</h1>
+          <p>
+            The ERP is being reframed away from employee task-chasing and toward a cleaner system:
+            employees clock in for fixed work hours, report what happened before clocking out, and
+            admins judge progress through projects, milestones, reports, deadlines, and framework quality.
+          </p>
+          <div class="actions">
+            <button onclick="window.print()">Print / PDF</button>
+            <button class="secondary" onclick="showPanel('routine')">Start With Daily Routine</button>
+          </div>
+        </div>
+      </header>
+
+      <nav aria-label="Presentation sections">
+        <button class="active" data-target="summary">Summary</button>
+        <button data-target="roles">Roles</button>
+        <button data-target="routine">Daily Routine</button>
+        <button data-target="reports">Reports</button>
+        <button data-target="quality">Quality</button>
+        <button data-target="next">Rollout</button>
+      </nav>
+
+      <section id="summary" class="panel active">
+        <h2>What changed</h2>
+        <div class="grid">
+          <article class="card">
+            <strong>Tasks are not the main ERP model.</strong>
+            <p>
+              Internal framework tasks can still exist for agent execution, but employees and admins
+              should think in projects, milestones, work updates, and shift reports.
+            </p>
+          </article>
+          <article class="card">
+            <strong>Clock-out means reporting, not finishing.</strong>
+            <p>
+              The employee completes required daily hours. Before clocking out, they submit what
+              happened: progress, blockers, investigation, unfinished work, and next handoff point.
+            </p>
+          </article>
+          <article class="card">
+            <strong>Deadlines stay simple.</strong>
+            <p>
+              Track project deadlines, milestone dates, and employee submission dates. Avoid turning
+              every phase/task into management overhead.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="roles" class="panel">
+        <h2>Who sees what</h2>
+        <table class="role-table">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Menu</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Admin</strong></td>
+              <td>
+                <div class="pill-row">
+                  <span class="pill">Dashboard</span><span class="pill">Projects</span
+                  ><span class="pill">Clients</span><span class="pill">Team</span
+                  ><span class="pill">Reports</span><span class="pill">Billing</span
+                  ><span class="pill">Knowledge</span><span class="pill">Settings</span>
+                </div>
+              </td>
+              <td>
+                Owns delivery, team visibility, finance, client health, shift reports, and quality
+                signals. Admins can still drill into work items when cleanup is needed.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Employee</strong></td>
+              <td>
+                <div class="pill-row">
+                  <span class="pill">Dashboard</span><span class="pill">Projects</span
+                  ><span class="pill">Knowledge</span><span class="pill">Settings</span>
+                </div>
+              </td>
+              <td>
+                Sees assigned projects, clocks in, works through Qualia Framework, submits reports,
+                and learns from visible strengths/weaknesses.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Client</strong></td>
+              <td>
+                <div class="pill-row">
+                  <span class="pill">Dashboard</span><span class="pill">Projects</span
+                  ><span class="pill">Requests</span><span class="pill">Messages</span
+                  ><span class="pill">Billing</span><span class="pill">Settings</span>
+                </div>
+              </td>
+              <td>
+                Sees only client-safe project progress, requests, messages, invoices, and relevant
+                delivery material.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="routine" class="panel">
+        <h2>Daily routine</h2>
+        <div class="split">
+          <div class="callout">
+            <p>
+              Fixed hours stay fixed. The ERP does not need to pretend every work session ends with
+              finished software. The important truth is what happened during the shift.
+            </p>
+          </div>
+          <div class="timeline">
+            <article class="step">
+              <div>
+                <h3>Clock in</h3>
+                <p>Select one or more projects and write the intended outcome for the shift.</p>
+              </div>
+            </article>
+            <article class="step">
+              <div>
+                <h3>Build with Qualia Framework</h3>
+                <p>
+                  Use commands like /qualia-plan, /qualia-build, /qualia-verify, and /qualia-report.
+                  The employee does not need to manually manage auth/RLS/backend terminology.
+                </p>
+              </div>
+            </article>
+            <article class="step">
+              <div>
+                <h3>Submit report before clock-out</h3>
+                <p>
+                  Every project touched in the shift needs a /qualia-report. The report can say
+                  pass, fail, blocked, partial, shipped, or investigated.
+                </p>
+              </div>
+            </article>
+            <article class="step">
+              <div>
+                <h3>Clock out</h3>
+                <p>
+                  Clock-out records time, submission date, and shift summary. This gives admin a
+                  clean record without requiring manual revision every time.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="reports" class="panel">
+        <h2>What reports mean</h2>
+        <div class="grid">
+          <article class="card">
+            <strong>Progress</strong>
+            <p>
+              What changed in the repo/product, which milestone it supports, and whether the work is
+              ready, partial, or blocked.
+            </p>
+          </article>
+          <article class="card">
+            <strong>Verification</strong>
+            <p>
+              Build/test/deploy checks, /qualia-verify result, failures, and exact next step when a
+              phase is not ready.
+            </p>
+          </article>
+          <article class="card">
+            <strong>Submission date</strong>
+            <p>
+              The ERP can show who reported, when they reported, and whether clock-out was backed by
+              real framework evidence.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="quality" class="panel">
+        <h2>How weakness becomes obvious</h2>
+        <div class="split">
+          <div>
+            <h3>Do not rank people by raw task count.</h3>
+            <p>
+              That rewards shallow output. Use framework progress, verification failures, gap cycles,
+              report quality, project difficulty, prompt discipline, and client-safe handoff quality.
+            </p>
+          </div>
+          <div class="timeline">
+            <article class="step">
+              <div>
+                <h3>Framework mastery</h3>
+                <p>Which commands they can run correctly without admin rescue.</p>
+              </div>
+            </article>
+            <article class="step">
+              <div>
+                <h3>Prompting quality</h3>
+                <p>Whether their instructions give agents clear context, scope, checks, and stop rules.</p>
+              </div>
+            </article>
+            <article class="step">
+              <div>
+                <h3>Verification quality</h3>
+                <p>Whether they catch real broken behavior before handing work to admin or client.</p>
+              </div>
+            </article>
+            <article class="step">
+              <div>
+                <h3>Handoff quality</h3>
+                <p>Whether another employee can continue from their report without rediscovering everything.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="next" class="panel">
+        <h2>Rollout plan</h2>
+        <div class="timeline">
+          <article class="step">
+            <div>
+              <h3>Use the simplified menu</h3>
+              <p>Employees stop hunting through admin/task pages. Their core flow is Dashboard, Projects, Knowledge.</p>
+            </div>
+          </article>
+          <article class="step">
+            <div>
+              <h3>Require reports for clock-out</h3>
+              <p>No report means no complete shift record. The report is required even if the work is blocked.</p>
+            </div>
+          </article>
+          <article class="step">
+            <div>
+              <h3>Review weekly by project and person</h3>
+              <p>Admin reviews project deadline risk, milestone risk, submitted reports, gap cycles, verification, and handoff quality.</p>
+            </div>
+          </article>
+          <article class="step">
+            <div>
+              <h3>Train against weak spots</h3>
+              <p>Assign work based on proven framework mastery, not guesses. Weakness should be visible to both employee and admin.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <footer>Prepared for Qualia Solutions · 2026-05-08</footer>
+    </main>
+
+    <script>
+      const navButtons = Array.from(document.querySelectorAll("nav button"));
+      const panels = Array.from(document.querySelectorAll("section.panel"));
+
+      function showPanel(id) {
+        panels.forEach((panel) => panel.classList.toggle("active", panel.id === id));
+        navButtons.forEach((button) =>
+          button.classList.toggle("active", button.dataset.target === id)
+        );
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      navButtons.forEach((button) => {
+        button.addEventListener("click", () => showPanel(button.dataset.target));
+      });
+    </script>
+  </body>
+</html>

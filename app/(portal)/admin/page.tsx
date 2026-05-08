@@ -19,8 +19,8 @@ import {
 import { QualiaControl, type QualiaControlData } from '@/components/portal/qualia-control';
 
 export const metadata: Metadata = {
-  title: 'Control | Qualia',
-  description: 'Admin console — pulse, team, finance, system',
+  title: 'Dashboard | Qualia',
+  description: 'Admin dashboard — pulse, team, finance, system',
 };
 
 function ControlSkeleton() {

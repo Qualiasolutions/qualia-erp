@@ -136,7 +136,7 @@ export default async function PortalLayout({ children }: { children: React.React
     'brain', // admin-only corpus search
     'clients',
     'status',
-    'control', // phase 15: admin-only Control surface (currently routes to /admin)
+    'control', // admin dashboard routes and tabs
     'reports',
   ];
   let enabledApps = allAppKeys;

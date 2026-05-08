@@ -83,11 +83,6 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
     notFound();
   }
 
-  // Demos don't have a detail page - redirect back to projects list
-  if (project.status === 'Demos') {
-    redirect('/projects');
-  }
-
   // Strip sensitive data from RSC payload for client users:
   // - profiles and clients lists are internal CRM data
   // - integrationStatus exposes internal tooling state

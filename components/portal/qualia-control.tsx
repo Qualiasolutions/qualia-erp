@@ -40,7 +40,7 @@ interface QualiaControlProps {
 }
 
 const ALL_TABS: Array<{ id: ControlTab; label: string; desc: string }> = [
-  { id: 'overview', label: 'Overview', desc: 'Pulse · health · this week' },
+  { id: 'overview', label: 'Dashboard', desc: 'Today, project risk, and this week' },
   { id: 'team', label: 'Team', desc: 'People, capacity, roles' },
   { id: 'finance', label: 'Finance', desc: 'Invoices, MRR, expenses' },
   { id: 'reports', label: 'Reports', desc: 'Team performance · weekly lens' },
@@ -70,11 +70,11 @@ const ControlOverview = memo(function ControlOverview({
 }: {
   data: OverviewPayload | undefined;
 }) {
-  if (!data) return <ControlTabPlaceholder label="Overview" />;
+  if (!data) return <ControlTabPlaceholder label="Dashboard" />;
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Command center — the operations bridge */}
+      {/* Daily overview for the main admin dashboard. */}
       <CommandCenter data={data.commandCenter} />
 
       {/* Planning health — orphan deadlines / missing dates */}
@@ -114,7 +114,7 @@ const ControlOverview = memo(function ControlOverview({
 
         <section className="rounded-xl border border-border bg-card p-5">
           <header className="mb-3 flex items-baseline justify-between">
-            <h3 className="text-sm font-semibold tracking-tight">Latest task completions</h3>
+            <h3 className="text-sm font-semibold tracking-tight">Latest work updates</h3>
             <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
               Live
@@ -122,7 +122,7 @@ const ControlOverview = memo(function ControlOverview({
           </header>
           {data.activity.length === 0 ? (
             <p className="py-4 text-center text-xs italic text-muted-foreground">
-              No tasks completed yet.
+              No work updates yet.
             </p>
           ) : (
             <ul className="flex flex-col">
@@ -184,7 +184,7 @@ function PlanningHealth({ data }: { data: OverviewPayload['planningHealth'] }) {
               Planning health is clean
             </h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              No active projects, phases, or open tasks need deadline cleanup.
+              No active projects, milestones, or open work items need deadline cleanup.
             </p>
           </div>
         </div>
@@ -318,14 +318,14 @@ export function QualiaControl({ initialTab, data, canViewFinance = false }: Qual
           <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight">
-                Control
+                Dashboard
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">{activeTab.desc}</p>
             </div>
           </div>
           <nav
             role="tablist"
-            aria-label="Control tabs"
+            aria-label="Dashboard tabs"
             className="mt-6 flex items-center gap-6 overflow-x-auto"
           >
             {TABS.map((t) => {

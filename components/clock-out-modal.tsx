@@ -143,7 +143,9 @@ export function ClockOutModal({
             <LogOut className="size-4 text-primary" />
             <DialogTitle>Clock Out</DialogTitle>
           </div>
-          <DialogDescription>Summarize your session before clocking out.</DialogDescription>
+          <DialogDescription>
+            Submit what happened during your shift before clocking out.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Session info row */}
@@ -167,7 +169,7 @@ export function ClockOutModal({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-sm font-medium">
-              Session Reports{' '}
+              Shift Reports{' '}
               <span className="text-xs font-normal text-muted-foreground">
                 {totalCount > 0 ? (
                   <>
@@ -239,7 +241,7 @@ export function ClockOutModal({
         {/* Summary field */}
         <div className="space-y-2">
           <Label htmlFor="clock-out-summary" className="text-sm font-medium">
-            What did you work on?
+            What happened during your shift?
           </Label>
           <Textarea
             id="clock-out-summary"
@@ -248,7 +250,7 @@ export function ClockOutModal({
               setSummary(e.target.value);
               if (error && e.target.value.trim()) setError(null);
             }}
-            placeholder="Describe what you completed during this session..."
+            placeholder="Summarize progress, blockers, investigation, unfinished work, and the next handoff point..."
             rows={4}
             required
             aria-required="true"
