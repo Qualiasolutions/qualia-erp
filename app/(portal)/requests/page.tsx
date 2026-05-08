@@ -90,18 +90,24 @@ export default async function PortalRequestsPage() {
   const projects = projectsData;
 
   return (
-    <div className="animate-fade-in-up space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
-      <div className="flex items-center justify-between">
+    <div className="animate-fade-in-up px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(2rem,4vw,3rem)] pt-16 md:pt-[clamp(2.5rem,4vw,3.5rem)]">
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Requests</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
+            <span>Conversations</span>
+          </div>
+          <h1 className="mt-3 text-[clamp(1.5rem,1rem+1.6vw,2rem)] font-semibold leading-tight tracking-tight text-foreground">
+            Requests
+          </h1>
+          <p className="mt-1.5 max-w-[480px] text-sm text-muted-foreground">
             {isEmployee
-              ? 'Client requests on your assigned projects'
-              : 'Track your feature requests and changes'}
+              ? 'Client requests on your assigned projects.'
+              : 'Ideas, changes, and questions — track every thread you’ve opened with us.'}
           </p>
         </div>
         {!isEmployee && <PortalRequestDialog projects={projects} />}
-      </div>
+      </header>
 
       <PortalRequestList
         requests={requests}

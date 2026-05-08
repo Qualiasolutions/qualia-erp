@@ -297,7 +297,7 @@ const RequestRow = memo(function RequestRow({
     <>
       <div
         className={cn(
-          'rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/20',
+          'rounded-2xl border border-border bg-card p-5 transition-colors duration-200 hover:border-primary/30 hover:bg-card/70',
           'animate-fade-in fill-mode-both'
         )}
         style={index < 10 ? { animationDelay: `${index * 30}ms` } : undefined}
@@ -503,10 +503,14 @@ export function PortalRequestList({ requests, currentUserId, userRole }: PortalR
 
   if (requests.length === 0) {
     return (
-      <div className="flex min-h-[320px] flex-col items-center justify-center px-4">
-        <Lightbulb className="h-12 w-12 text-muted-foreground/30" />
-        <h3 className="mt-4 text-base font-medium text-foreground">No requests yet</h3>
-        <p className="mt-1 max-w-xs text-center text-sm text-muted-foreground">
+      <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/40 px-4 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60">
+          <Lightbulb className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <h3 className="mt-5 text-base font-semibold tracking-tight text-foreground">
+          No requests yet
+        </h3>
+        <p className="mt-1.5 max-w-xs text-sm text-muted-foreground">
           Got an idea or need a change? Use “New Request” above to send one over.
         </p>
       </div>
@@ -514,10 +518,13 @@ export function PortalRequestList({ requests, currentUserId, userRole }: PortalR
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Filter tabs + sort */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <nav className="flex flex-wrap gap-1" aria-label="Filter by status">
+        <nav
+          className="flex flex-wrap gap-1 rounded-xl border border-border bg-card/40 p-1"
+          aria-label="Filter by status"
+        >
           {statusTabs.map((tab) => {
             const count = statusCounts[tab.value] || 0;
             if (tab.value !== 'all' && count === 0) return null;
@@ -526,29 +533,31 @@ export function PortalRequestList({ requests, currentUserId, userRole }: PortalR
                 key={tab.value}
                 onClick={() => setStatusFilter(tab.value)}
                 className={cn(
-                  'min-h-[44px] cursor-pointer rounded-lg px-3 py-2 text-xs font-medium transition-colors duration-150',
+                  'cursor-pointer rounded-lg px-3 py-1.5 text-[12px] font-medium transition-colors duration-150',
                   statusFilter === tab.value
                     ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
                 )}
                 aria-pressed={statusFilter === tab.value}
               >
                 {tab.label}
                 {count > 0 && (
-                  <span className="ml-1.5 text-[10px] tabular-nums opacity-60">{count}</span>
+                  <span className="ml-1.5 font-mono text-[10px] tabular-nums opacity-60">
+                    {count}
+                  </span>
                 )}
               </button>
             );
           })}
         </nav>
-        <div className="flex items-center gap-1.5">
-          <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+        <div className="flex items-center gap-1 rounded-xl border border-border bg-card/40 p-1">
+          <SlidersHorizontal className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
           {sortOptions.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setSortBy(opt.value)}
               className={cn(
-                'cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors duration-150',
+                'cursor-pointer rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors duration-150',
                 sortBy === opt.value
                   ? 'bg-muted text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
@@ -576,9 +585,9 @@ export function PortalRequestList({ requests, currentUserId, userRole }: PortalR
         ))}
 
         {filtered.length === 0 && (
-          <div className="flex min-h-[200px] flex-col items-center justify-center px-4 text-center">
-            <Lightbulb className="h-12 w-12 text-muted-foreground/30" />
-            <p className="mt-4 text-sm text-muted-foreground">
+          <div className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/40 px-4 py-12 text-center">
+            <Lightbulb className="h-8 w-8 text-muted-foreground/40" />
+            <p className="mt-3 text-sm text-muted-foreground">
               No requests matching &ldquo;{statusTabs.find((t) => t.value === statusFilter)?.label}
               &rdquo;
             </p>
