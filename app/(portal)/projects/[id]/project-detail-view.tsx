@@ -263,13 +263,14 @@ export function ProjectDetailView({
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Compact Header */}
-      <header className="relative shrink-0 border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
+      <header className="relative shrink-0 border-b border-border bg-card/60 px-6 py-4 backdrop-blur-xl sm:px-8">
         <div className="mx-auto flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <MobileMenuButton />
             <Link
               href="/projects"
-              className="group flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-primary"
+              className="group flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+              aria-label="Back to projects"
             >
               <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             </Link>
@@ -286,29 +287,27 @@ export function ProjectDetailView({
             />
 
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
+              {selectedProjectType && (
+                <div className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
+                  <selectedProjectType.icon
+                    className={cn('h-3 w-3', selectedProjectType.color.split(' ')[0])}
+                  />
+                  <span>{selectedProjectType.label}</span>
+                </div>
+              )}
+              <div className="mt-0.5 flex items-center gap-2">
                 <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
                   {project.name}
                 </h1>
                 <span
                   className={cn(
-                    'flex-shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                    'flex-shrink-0 rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em]',
                     statusColor
                   )}
                 >
                   {project.status}
                 </span>
               </div>
-              {selectedProjectType && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <selectedProjectType.icon
-                      className={cn('h-3 w-3', selectedProjectType.color.split(' ')[0])}
-                    />
-                    {selectedProjectType.label}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -364,7 +363,7 @@ export function ProjectDetailView({
           </div>
 
           {/* Right Panel (xl+ only) */}
-          <aside className="hidden w-80 flex-col border-l border-border bg-card/30 xl:flex">
+          <aside className="hidden w-80 flex-col border-l border-border bg-[hsl(var(--surface-2))]/40 dark:bg-card/30 xl:flex">
             {/* Client */}
             {project.client && (
               <div className="shrink-0 space-y-3 border-b border-border p-4">
