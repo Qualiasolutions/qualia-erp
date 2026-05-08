@@ -289,7 +289,7 @@ const EngagementRow = memo(function EngagementRow({
   return (
     <li>
       <Link
-        href={`/projects/${project.id}/roadmap`}
+        href={`/projects/${project.id}`}
         className={cn(
           'group relative block cursor-pointer py-6 transition-colors duration-200',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2'
