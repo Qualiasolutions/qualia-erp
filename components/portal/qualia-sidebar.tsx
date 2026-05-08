@@ -525,7 +525,7 @@ function BrandRow({
   onJump: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-5">
+    <div className="flex items-center gap-2.5 px-4 py-4">
       <Link
         href="/dashboard"
         onClick={onLinkClick}
@@ -542,13 +542,13 @@ function BrandRow({
           unoptimized={brandLogoUrl !== '/logo.webp'}
         />
       </Link>
-      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-foreground">
+      <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold tracking-tight text-foreground">
         {brandName}
       </span>
       <button
         type="button"
         onClick={onJump}
-        className="flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-border bg-muted/40 px-2 py-1.5 font-mono text-[10px] font-medium text-muted-foreground transition-colors duration-150 hover:border-primary/30 hover:bg-muted/70 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        className="flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-xl border border-border/70 bg-muted/40 px-2 font-mono text-[10px] font-medium text-muted-foreground transition-colors duration-150 hover:border-primary/30 hover:bg-muted/70 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
         aria-label="Open command menu"
       >
         <QIcon name="search" size={11} />
@@ -634,7 +634,7 @@ function SidebarBody({
 
   return (
     <aside
-      className="bg-surface-1 flex h-full flex-col border-r border-border"
+      className="dark:bg-surface-1 flex h-full flex-col border-r border-border bg-[hsl(var(--surface-2))]/55"
       aria-label="Primary navigation"
     >
       <BrandRow
@@ -645,17 +645,14 @@ function SidebarBody({
       />
 
       {companyName ? (
-        <div className="border-t border-border px-4 py-2">
-          <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        <div className="px-4 pb-3 pt-1">
+          <p className="truncate font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground/80">
             {companyName}
           </p>
         </div>
       ) : null}
 
-      <nav
-        className="flex-1 overflow-y-auto border-t border-border px-3 pb-4 pt-4"
-        aria-label="Primary"
-      >
+      <nav className="flex-1 overflow-y-auto px-3 pb-4 pt-1" aria-label="Primary">
         <div className="space-y-0.5">
           {visiblePages.map((p) => (
             <NavItem
@@ -670,7 +667,7 @@ function SidebarBody({
         </div>
       </nav>
 
-      <div className="space-y-3 border-t border-border p-4">
+      <div className="space-y-3 border-t border-border/80 p-4">
         {isInternal ? <ClockPill userId={userId ?? null} /> : null}
 
         <IdentityStrip
