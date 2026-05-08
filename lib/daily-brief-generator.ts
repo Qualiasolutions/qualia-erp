@@ -431,14 +431,66 @@ export async function generateDailyBrief(
   const bySource: Record<string, number> = {};
   for (const item of all) bySource[item.source_type] = (bySource[item.source_type] ?? 0) + 1;
 
-  if (all.length > 0) {
-    const { error: upsertError } = await supabase.from('daily_brief_items').upsert(all, {
-      onConflict: 'owner_id,for_date,source_type,source_id',
-      ignoreDuplicates: false,
+  // Idempotent regeneration WITHOUT relying on ON CONFLICT inference.
+  // The unique key on daily_brief_items is partial (`where source_type <>
+  // 'manual'`) and uses an expression (`coalesce(source_id, '')`), which
+  // supabase-js .upsert() cannot match on. Instead we:
+  //   1. Snapshot existing auto rows for this (owner, for_date) to capture
+  //      dismissed_at by (source_type, source_id) — dismissals must survive
+  //      regeneration so a ticked item stays ticked.
+  //   2. Delete the auto rows. Manual rows (source_type='manual') are
+  //      untouched so admin-added items persist.
+  //   3. Insert the freshly generated rows, copying dismissed_at from the
+  //      snapshot when keys match.
+  //
+  // The 1+2+3 sequence is racy under concurrent regeneration of the same
+  // (owner, for_date), but the operation is naturally serialized — only the
+  // owner triggers it (Refresh button) or the daily cron, and both produce
+  // the same set of items.
+
+  const { data: existing } = await supabase
+    .from('daily_brief_items')
+    .select('source_type, source_id, dismissed_at, dismissed_by')
+    .eq('owner_id', ownerId)
+    .eq('for_date', forDate)
+    .neq('source_type', 'manual');
+
+  const dismissedSnapshot = new Map<
+    string,
+    { dismissed_at: string | null; dismissed_by: string | null }
+  >();
+  for (const row of existing ?? []) {
+    if (!row.dismissed_at) continue;
+    const key = `${row.source_type}|${row.source_id ?? ''}`;
+    dismissedSnapshot.set(key, {
+      dismissed_at: row.dismissed_at,
+      dismissed_by: row.dismissed_by ?? null,
     });
-    if (upsertError) {
-      console.error('[daily-brief-generator] upsert failed:', upsertError.message);
-      throw new Error(upsertError.message);
+  }
+
+  await supabase
+    .from('daily_brief_items')
+    .delete()
+    .eq('owner_id', ownerId)
+    .eq('for_date', forDate)
+    .neq('source_type', 'manual');
+
+  if (all.length > 0) {
+    const withDismissals: BriefItemInsert[] = all.map((item) => {
+      const key = `${item.source_type}|${item.source_id ?? ''}`;
+      const prior = dismissedSnapshot.get(key);
+      if (!prior) return item;
+      return {
+        ...item,
+        dismissed_at: prior.dismissed_at,
+        dismissed_by: prior.dismissed_by,
+      };
+    });
+
+    const { error: insertError } = await supabase.from('daily_brief_items').insert(withDismissals);
+    if (insertError) {
+      console.error('[daily-brief-generator] insert failed:', insertError.message);
+      throw new Error(insertError.message);
     }
   }
 
