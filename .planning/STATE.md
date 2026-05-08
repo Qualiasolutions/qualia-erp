@@ -17,9 +17,12 @@ Progress: [██████████] 100% (M1–M4 closed; M5 rolling, no 
 
 See `.planning/ROADMAP.md` for M5 sub-track candidates and `.planning/JOURNEY.md` for the full milestone arc.
 
-| #   | Phase          | Goal                                                          | Status      |
-| --- | -------------- | ------------------------------------------------------------- | ----------- |
-| 1   | Rolling Polish | Direct-to-master ops + UX fixes (no phase ceremony, since M4) | in_progress |
+<!-- prettier-ignore-start -->
+<!-- state.js parses this table with a strict regex requiring single-space padding around column names. Do not let prettier reformat it. -->
+| # | Phase | Goal | Status |
+|---|---|---|---|
+| 1 | Rolling Polish | Direct-to-master ops + UX fixes (no phase ceremony, since M4) | in_progress |
+<!-- prettier-ignore-end -->
 
 ## Blockers
 
