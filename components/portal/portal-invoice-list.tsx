@@ -202,15 +202,19 @@ function formatCurrency(amount: number, currency: string) {
 export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
   if (invoices.length === 0) {
     return (
-      <div className="flex min-h-[320px] flex-col items-center justify-center px-4">
-        <Receipt className="h-12 w-12 text-muted-foreground/30" />
-        <h3 className="mt-4 text-base font-medium text-foreground">No invoices yet</h3>
-        <p className="mt-1 max-w-xs text-center text-sm text-muted-foreground">
+      <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/40 px-4 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60">
+          <Receipt className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <h3 className="mt-5 text-base font-semibold tracking-tight text-foreground">
+          No invoices yet
+        </h3>
+        <p className="mt-1.5 max-w-xs text-sm text-muted-foreground">
           Your invoices will appear here once your first project milestone is complete.
         </p>
         <a
           href="mailto:support@qualiasolutions.net"
-          className="mt-6 inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="mt-6 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Contact support
         </a>
@@ -219,37 +223,50 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
   }
 
   return (
-    <div
-      className="animate-fade-in overflow-hidden rounded-xl border border-border"
-      role="list"
-      aria-label="Invoices"
-    >
-      {/* Table header */}
-      <div
-        role="presentation"
-        className="hidden gap-4 bg-muted/30 px-5 py-3 sm:grid sm:grid-cols-[1fr_120px_120px_100px_80px]"
-      >
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Invoice
-        </span>
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Date
-        </span>
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Due
-        </span>
-        <span className="text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Amount
-        </span>
-        <span className="text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Status
+    <section className="animate-fade-in">
+      <div className="mb-3 flex items-baseline justify-between">
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-px w-6 bg-border" aria-hidden />
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+            Invoices
+          </span>
+        </div>
+        <span className="font-mono text-[10px] tabular-nums text-muted-foreground/70">
+          {invoices.length} total
         </span>
       </div>
+      <div
+        className="overflow-hidden rounded-2xl border border-border bg-card"
+        role="list"
+        aria-label="Invoices"
+      >
+        {/* Table header */}
+        <div
+          role="presentation"
+          className="hidden gap-4 border-b border-border bg-muted/20 px-5 py-3 sm:grid sm:grid-cols-[1fr_120px_120px_100px_80px]"
+        >
+          <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Invoice
+          </span>
+          <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Date
+          </span>
+          <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Due
+          </span>
+          <span className="text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Amount
+          </span>
+          <span className="text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Status
+          </span>
+        </div>
 
-      {/* Invoice rows */}
-      {invoices.map((invoice, index) => (
-        <InvoiceRow key={invoice.id} invoice={invoice} index={index} />
-      ))}
-    </div>
+        {/* Invoice rows */}
+        {invoices.map((invoice, index) => (
+          <InvoiceRow key={invoice.id} invoice={invoice} index={index} />
+        ))}
+      </div>
+    </section>
   );
 }

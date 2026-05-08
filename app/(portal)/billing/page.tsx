@@ -64,24 +64,34 @@ export default async function PortalBillingPage() {
   }>;
 
   return (
-    <div className="animate-fade-in-up space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="animate-fade-in-up px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(2rem,4vw,3rem)] pt-16 md:pt-[clamp(2.5rem,4vw,3.5rem)]">
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Billing</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            View and track your invoices and payment history
+          <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
+            <span>Finance</span>
+          </div>
+          <h1 className="mt-3 text-[clamp(1.5rem,1rem+1.6vw,2rem)] font-semibold leading-tight tracking-tight text-foreground">
+            Billing
+          </h1>
+          <p className="mt-1.5 max-w-[480px] text-sm text-muted-foreground">
+            Invoices, payments, and the running ledger of work delivered.
           </p>
         </div>
         {isAdmin && <PortalInvoiceFormDialog clients={clientList} />}
-      </div>
+      </header>
 
       {invoiceLoadError && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="mb-6 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {invoiceLoadError}
         </div>
       )}
 
-      {invoices.length > 0 && <PortalBillingSummary invoices={invoices} />}
+      {invoices.length > 0 && (
+        <div className="mb-8">
+          <PortalBillingSummary invoices={invoices} />
+        </div>
+      )}
 
       <PortalInvoiceList invoices={invoices} />
     </div>
