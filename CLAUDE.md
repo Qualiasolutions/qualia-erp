@@ -148,7 +148,7 @@ Always `vercel env pull` to sync locally — never create `.env` manually.
 - **Vercel team**: `qualia-glluztech` (Qualia-Glluztech) — transferred 2026-05-02 from `qualiasolutionscy`. `.vercel/project.json` is bound to this team; do not relink elsewhere.
 - **Production**: https://portal.qualiasolutions.net
 - **Deploy**: `vercel --prod --yes` (uses scope from `.vercel/project.json`; do NOT pass `--scope qualiasolutionscy`)
-- **Supabase ref**: `vbpzaiqovffpsroxaulv`
+- **Supabase ref**: `vbpzaiqovffpsroxaulv` (org: **Admin**, moved 2026-05-08 from `MAX`). The project-level Supabase MCP at `.mcp.json` is scoped via `?project_ref=` so it stays bound to this project regardless of org. After the move, re-run `npx supabase link --project-ref vbpzaiqovffpsroxaulv` to refresh `supabase/.temp/`.
 - Pre-commit: ESLint + Prettier via husky/lint-staged
 - Post-deploy checklist: HTTP 200, auth flow, console errors, API latency <500ms (see `~/.claude/rules/deployment.md`)
 
