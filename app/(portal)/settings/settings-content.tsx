@@ -95,16 +95,18 @@ function PasswordChangeSection() {
 
   return (
     <section
-      className="animate-fade-in rounded-xl border border-border bg-card p-6 fill-mode-both"
+      className="animate-fade-in rounded-2xl border border-border bg-card p-6 fill-mode-both md:p-7"
       style={{ animationDelay: '100ms' }}
     >
       <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/[0.08] dark:bg-primary/15">
           <Lock className="h-4 w-4 text-primary" />
         </div>
         <div>
-          <h2 className="text-base font-semibold text-foreground">Change Password</h2>
-          <p className="text-xs text-muted-foreground">Update your account password</p>
+          <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
+            Change password
+          </h2>
+          <p className="text-xs text-muted-foreground">Update your account password.</p>
         </div>
       </div>
 
@@ -143,17 +145,17 @@ function PasswordChangeSection() {
           <Button
             type="submit"
             disabled={isPending || !newPassword || !confirmPassword}
-            className="min-h-[44px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
+            className="min-h-[40px] cursor-pointer rounded-xl bg-primary text-primary-foreground"
           >
             {isPending ? (
               <>
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                Updating...
+                Updating…
               </>
             ) : (
               <>
                 <Lock className="mr-1.5 h-4 w-4" />
-                Update Password
+                Update password
               </>
             )}
           </Button>
@@ -226,250 +228,264 @@ export function SettingsContent({
   };
 
   return (
-    <div className="animate-fade-in-up space-y-6 p-6 lg:p-8">
-      <div className="mb-6 border-b border-border pb-4">
-        <h1 className="text-[clamp(1.25rem,1.1rem+0.75vw,1.625rem)] font-semibold tracking-tight text-foreground">
+    <div className="animate-fade-in-up px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(2rem,4vw,3rem)] pt-16 md:pt-[clamp(2.5rem,4vw,3.5rem)]">
+      <header className="mb-8">
+        <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+          <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
+          <span>Account</span>
+        </div>
+        <h1 className="mt-3 text-[clamp(1.5rem,1rem+1.6vw,2rem)] font-semibold leading-tight tracking-tight text-foreground">
           Settings
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your account and notification preferences
+        <p className="mt-1.5 max-w-[480px] text-sm text-muted-foreground">
+          Profile, password, notifications. Tweak how the portal feels for you.
         </p>
-      </div>
+      </header>
 
-      {/* Workspace & admin links — non-clients only */}
-      {userRole !== 'client' && (
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Link
-            href="/settings/integrations"
-            className="group flex items-start justify-between gap-4 rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-card/80"
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
-                <Plug className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-foreground">Integrations</h2>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  GitHub, Vercel, Zoho — connect external services to projects.
-                </p>
-              </div>
-            </div>
-            <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
-          </Link>
-
-          {userRole === 'admin' && (
+      <div className="space-y-6">
+        {/* Workspace & admin links — non-clients only */}
+        {userRole !== 'client' && (
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Link
-              href="/admin?tab=system"
-              className="group flex items-start justify-between gap-4 rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-card/80"
+              href="/settings/integrations"
+              className="group flex items-start justify-between gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-card/70"
             >
               <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
-                  <ShieldCheck className="h-4 w-4 text-primary" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/[0.08] dark:bg-primary/15">
+                  <Plug className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold text-foreground">Admin console</h2>
+                  <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                    Integrations
+                  </h2>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Workspace, team, finance, system health, API tokens.
+                    GitHub, Vercel, Zoho — connect external services to projects.
                   </p>
                 </div>
               </div>
               <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
             </Link>
-          )}
-        </section>
-      )}
 
-      {/* Profile Settings */}
-      <section className="animate-fade-in rounded-xl border border-border bg-card p-6 fill-mode-both">
-        <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
-            <User className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Profile Information</h2>
-            <p className="text-xs text-muted-foreground">Update your personal details</p>
-          </div>
-        </div>
+            {userRole === 'admin' && (
+              <Link
+                href="/admin?tab=system"
+                className="group flex items-start justify-between gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-card/70"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/[0.08] dark:bg-primary/15">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                      Admin console
+                    </h2>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Workspace, team, finance, system health, API tokens.
+                    </p>
+                  </div>
+                </div>
+                <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
+              </Link>
+            )}
+          </section>
+        )}
 
-        <form onSubmit={handleProfileSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="full_name" className="text-sm font-medium">
-              Display Name
-            </Label>
-            <Input
-              id="full_name"
-              type="text"
-              value={profileData.full_name}
-              onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-              placeholder="Your name"
-              required
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-sm font-medium">
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={profileData.email}
-              disabled
-              className="bg-muted/50"
-              aria-describedby="email-help"
-            />
-            <p id="email-help" className="text-xs text-muted-foreground">
-              Email cannot be changed. Contact support if you need to update it.
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="company" className="text-sm font-medium">
-              Company
-            </Label>
-            <Input
-              id="company"
-              type="text"
-              value={profileData.company}
-              onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
-              placeholder="Your company name (optional)"
-            />
-          </div>
-
-          <div className="pt-1">
-            <Button
-              type="submit"
-              disabled={profileSaving}
-              className="min-h-[44px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
-            >
-              {profileSaving ? (
-                <>
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-1.5 h-4 w-4" />
-                  Save Profile
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </section>
-
-      {/* Password Change */}
-      <PasswordChangeSection />
-
-      {/* Notification Preferences */}
-      <section
-        className="animate-fade-in overflow-hidden rounded-xl border border-border bg-card fill-mode-both"
-        style={{ animationDelay: '150ms' }}
-      >
-        <div className="p-6 pb-0">
+        {/* Profile Settings */}
+        <section className="animate-fade-in rounded-2xl border border-border bg-card p-6 fill-mode-both md:p-7">
           <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/[0.08] dark:bg-amber-500/15">
-              <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/[0.08] dark:bg-primary/15">
+              <User className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-foreground">Notification Preferences</h2>
-              <p className="text-xs text-muted-foreground">
-                Choose which notifications you receive
-              </p>
+              <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
+                Profile information
+              </h2>
+              <p className="text-xs text-muted-foreground">Update your personal details.</p>
             </div>
           </div>
-        </div>
 
-        <form onSubmit={handleNotificationSubmit}>
-          {/* Notification Toggles */}
-          <div className="divide-y divide-border/50">
-            {filteredNotificationItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex min-h-[56px] items-center justify-between px-6 py-4"
+          <form onSubmit={handleProfileSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="full_name" className="text-sm font-medium">
+                Display Name
+              </Label>
+              <Input
+                id="full_name"
+                type="text"
+                value={profileData.full_name}
+                onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+                placeholder="Your name"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-sm font-medium">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={profileData.email}
+                disabled
+                className="bg-muted/50"
+                aria-describedby="email-help"
+              />
+              <p id="email-help" className="text-xs text-muted-foreground">
+                Email cannot be changed. Contact support if you need to update it.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="company" className="text-sm font-medium">
+                Company
+              </Label>
+              <Input
+                id="company"
+                type="text"
+                value={profileData.company}
+                onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
+                placeholder="Your company name (optional)"
+              />
+            </div>
+
+            <div className="pt-1">
+              <Button
+                type="submit"
+                disabled={profileSaving}
+                className="min-h-[40px] cursor-pointer rounded-xl bg-primary text-primary-foreground"
               >
-                <div className="space-y-0.5">
-                  <Label htmlFor={item.id} className="cursor-pointer text-sm font-medium">
-                    {item.label}
-                  </Label>
-                  <p className="text-xs text-muted-foreground">{item.description}</p>
+                {profileSaving ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-1.5 h-4 w-4" />
+                    Save profile
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </section>
+
+        {/* Password Change */}
+        <PasswordChangeSection />
+
+        {/* Notification Preferences */}
+        <section
+          className="animate-fade-in overflow-hidden rounded-2xl border border-border bg-card fill-mode-both"
+          style={{ animationDelay: '150ms' }}
+        >
+          <div className="p-6 pb-0 md:p-7 md:pb-0">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/[0.1] dark:bg-amber-500/15">
+                <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
+                  Notification preferences
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Choose which notifications you receive.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleNotificationSubmit}>
+            {/* Notification Toggles */}
+            <div className="divide-y divide-border/50 px-1 md:px-2">
+              {filteredNotificationItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex min-h-[56px] items-center justify-between gap-4 px-5 py-4 md:px-5"
+                >
+                  <div className="space-y-0.5">
+                    <Label htmlFor={item.id} className="cursor-pointer text-sm font-medium">
+                      {item.label}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">{item.description}</p>
+                  </div>
+                  <Switch
+                    id={item.id}
+                    checked={notificationPrefs[item.id]}
+                    onCheckedChange={(checked) =>
+                      setNotificationPrefs({ ...notificationPrefs, [item.id]: checked })
+                    }
+                  />
                 </div>
-                <Switch
-                  id={item.id}
-                  checked={notificationPrefs[item.id]}
-                  onCheckedChange={(checked) =>
-                    setNotificationPrefs({ ...notificationPrefs, [item.id]: checked })
-                  }
-                />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          {/* Delivery Method */}
-          <div className="border-t border-border px-6 py-5">
-            <Label className="mb-3 block text-sm font-medium">Delivery Method</Label>
-            <RadioGroup
-              value={notificationPrefs.delivery_method}
-              onValueChange={(value: string) =>
-                setNotificationPrefs({
-                  ...notificationPrefs,
-                  delivery_method: value as 'email' | 'in_app' | 'both',
-                })
-              }
-              className="space-y-2.5"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="both" id="both" />
-                <Label
-                  htmlFor="both"
-                  className="cursor-pointer text-sm font-normal text-muted-foreground"
-                >
-                  Email and in-app notifications
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="email" id="email_method" />
-                <Label
-                  htmlFor="email_method"
-                  className="cursor-pointer text-sm font-normal text-muted-foreground"
-                >
-                  Email only
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="in_app" id="in_app" />
-                <Label
-                  htmlFor="in_app"
-                  className="cursor-pointer text-sm font-normal text-muted-foreground"
-                >
-                  In-app only
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
+            {/* Delivery Method */}
+            <div className="border-t border-border px-6 py-5 md:px-7">
+              <Label className="mb-3 block text-sm font-medium">Delivery method</Label>
+              <RadioGroup
+                value={notificationPrefs.delivery_method}
+                onValueChange={(value: string) =>
+                  setNotificationPrefs({
+                    ...notificationPrefs,
+                    delivery_method: value as 'email' | 'in_app' | 'both',
+                  })
+                }
+                className="space-y-2.5"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="both" id="both" />
+                  <Label
+                    htmlFor="both"
+                    className="cursor-pointer text-sm font-normal text-muted-foreground"
+                  >
+                    Email and in-app notifications
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="email" id="email_method" />
+                  <Label
+                    htmlFor="email_method"
+                    className="cursor-pointer text-sm font-normal text-muted-foreground"
+                  >
+                    Email only
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="in_app" id="in_app" />
+                  <Label
+                    htmlFor="in_app"
+                    className="cursor-pointer text-sm font-normal text-muted-foreground"
+                  >
+                    In-app only
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
 
-          {/* Save button */}
-          <div className="border-t border-border px-6 py-4">
-            <Button
-              type="submit"
-              disabled={notificationsSaving}
-              className="min-h-[44px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
-            >
-              {notificationsSaving ? (
-                <>
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-1.5 h-4 w-4" />
-                  Save Preferences
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </section>
+            {/* Save button */}
+            <div className="border-t border-border bg-muted/20 px-6 py-4 md:px-7">
+              <Button
+                type="submit"
+                disabled={notificationsSaving}
+                className="min-h-[40px] cursor-pointer rounded-xl bg-primary text-primary-foreground"
+              >
+                {notificationsSaving ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-1.5 h-4 w-4" />
+                    Save preferences
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </section>
+      </div>
     </div>
   );
 }
