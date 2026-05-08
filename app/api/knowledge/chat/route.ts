@@ -67,7 +67,7 @@ Three roles: admin, employee, client. (\`manager\` was removed 2026-04-18.)
 - Employee: internal tools, own tasks, own clock-in/out, /qualia-report at clock-out.
 - Client: read-only portal — projects, billing, requests, settings, client-visible tasks only.
 
-Key routes: /, /tasks (unified inbox + admin view), /projects, /clients, /schedule, /team, /payments, /knowledge, /research, /seo, /status, /agent, /admin, /admin/{assignments,attendance,reports,migrate}, /settings/{integrations,notifications}, /portal/*.
+Key routes: /, /projects, /clients, /requests, /messages, /billing, /knowledge, /admin, /admin?tab=team, /admin?tab=finance, /admin/reports, /settings/{integrations,notifications}, /portal/*.
 
 Time tracking: clock-in (with project options), clock-out (report required). Session reports POST to /api/v1/reports (Zod-validated, dual auth qlt_*, idempotent via Idempotency-Key, 24h replay window). Framework contract is v4.0.4: includes \`client_report_id\` (QS-REPORT-NN), \`dry_run\` flag, 7-day retention for dry-run rows. All production reads filter \`.neq('dry_run', true)\` by default.
 

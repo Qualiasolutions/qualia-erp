@@ -11,17 +11,13 @@ import {
   LayoutGrid,
   Folder,
   Building2,
-  Calendar,
-  Inbox,
   Sparkles,
   ArrowUp,
   Loader2,
-  CheckSquare,
   CalendarPlus,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { NewTaskModalControlled } from '@/components/new-task-modal';
 import { NewMeetingModalControlled } from '@/components/new-meeting-modal';
 
 type CommandMode = 'normal' | 'ai';
@@ -37,7 +33,6 @@ export function CommandMenu() {
   const [open, setOpen] = React.useState(false);
   const [mode, setMode] = React.useState<CommandMode>('normal');
   const [inputValue, setInputValue] = React.useState('');
-  const [showNewTaskModal, setShowNewTaskModal] = React.useState(false);
   const [showNewMeetingModal, setShowNewMeetingModal] = React.useState(false);
   const router = useRouter();
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
@@ -104,11 +99,6 @@ export function CommandMenu() {
 
       // Global shortcuts (when not in command palette or input elements)
       if (!open && !isInputElement(e.target)) {
-        // 'c' - Open New Task modal
-        if (e.key === 'c') {
-          e.preventDefault();
-          setShowNewTaskModal(true);
-        }
         // 'm' - Open New Meeting modal
         if (e.key === 'm') {
           e.preventDefault();
@@ -268,13 +258,6 @@ export function CommandMenu() {
                   <span>Dashboard</span>
                 </Command.Item>
                 <Command.Item
-                  onSelect={() => runCommand(() => router.push('/tasks'))}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
-                >
-                  <Inbox className="h-4 w-4" />
-                  <span>Tasks</span>
-                </Command.Item>
-                <Command.Item
                   onSelect={() => runCommand(() => router.push('/projects'))}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
                 >
@@ -288,13 +271,6 @@ export function CommandMenu() {
                   <Building2 className="h-4 w-4" />
                   <span>Clients</span>
                 </Command.Item>
-                <Command.Item
-                  onSelect={() => runCommand(() => router.push('/schedule'))}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
-                >
-                  <Calendar className="h-4 w-4" />
-                  <span>Schedule</span>
-                </Command.Item>
               </Command.Group>
 
               {/* Quick Actions */}
@@ -302,20 +278,6 @@ export function CommandMenu() {
                 heading="quick actions"
                 className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
               >
-                <Command.Item
-                  onSelect={() =>
-                    runCommand(() => {
-                      setShowNewTaskModal(true);
-                    })
-                  }
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
-                >
-                  <CheckSquare className="h-4 w-4 text-amber-500" />
-                  <span>New Task</span>
-                  <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
-                    c
-                  </kbd>
-                </Command.Item>
                 <Command.Item
                   onSelect={() =>
                     runCommand(() => {
@@ -365,20 +327,18 @@ export function CommandMenu() {
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <Sparkles className="mb-2 h-6 w-6 text-primary/50" />
                   <p className="text-[13px] text-muted-foreground">
-                    Ask me anything about your projects, tasks, or schedule.
+                    Ask me anything about your projects, clients, or billing.
                   </p>
                   <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-                    {['What are my overdue tasks?', 'Show my projects', 'Create a task'].map(
-                      (suggestion) => (
-                        <button
-                          key={suggestion}
-                          onClick={() => setInputValue(suggestion)}
-                          className="rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:text-foreground"
-                        >
-                          {suggestion}
-                        </button>
-                      )
-                    )}
+                    {['Show my projects', 'Open clients', 'Open billing'].map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => setInputValue(suggestion)}
+                        className="rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:text-foreground"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
                   </div>
                 </div>
               ) : (
@@ -440,7 +400,6 @@ export function CommandMenu() {
       </div>
 
       {/* Quick Action Modals */}
-      <NewTaskModalControlled open={showNewTaskModal} onOpenChange={setShowNewTaskModal} />
       <NewMeetingModalControlled open={showNewMeetingModal} onOpenChange={setShowNewMeetingModal} />
     </div>
   );

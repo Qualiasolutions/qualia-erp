@@ -98,20 +98,12 @@ const PAGES: PageDef[] = [
     appKey: 'clients',
   },
   {
-    id: 'tasks',
-    label: 'Tasks',
-    icon: 'tasks',
-    href: '/tasks',
-    roles: ['admin', 'employee'],
-    appKey: 'tasks',
-  },
-  {
     id: 'team',
     label: 'Team',
     icon: 'team',
     href: '/admin?tab=team',
     roles: ['admin'],
-    appKey: 'team',
+    appKey: 'control',
     matchQuery: { key: 'tab', value: 'team' },
   },
   {
@@ -128,7 +120,7 @@ const PAGES: PageDef[] = [
     icon: 'payments',
     href: '/admin?tab=finance',
     roles: ['admin'],
-    appKey: 'finance',
+    appKey: 'control',
     matchQuery: { key: 'tab', value: 'finance' },
   },
   {
@@ -178,14 +170,13 @@ const ROLE_ORDER: Record<Role, string[]> = {
     'admin-dashboard',
     'projects',
     'clients',
-    'tasks',
     'team',
     'reports',
     'admin-billing',
     'knowledge',
     'settings',
   ],
-  employee: ['employee-dashboard', 'tasks', 'projects', 'knowledge', 'settings'],
+  employee: ['employee-dashboard', 'projects', 'knowledge', 'settings'],
   client: ['client-dashboard', 'projects', 'requests', 'messages', 'client-billing', 'settings'],
 };
 
