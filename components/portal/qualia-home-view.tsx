@@ -3,7 +3,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Check, ExternalLink, Lock, Plus, RefreshCw, RotateCcw } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  ExternalLink,
+  Inbox,
+  Lock,
+  MessageSquare,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Sparkles,
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +29,8 @@ import {
   useEmployeeAssignments,
   useDailyBrief,
   invalidateDailyBrief,
+  useNotifications,
+  useCurrentWorkspaceId,
 } from '@/lib/swr';
 import {
   dismissBriefItem,
@@ -361,6 +375,8 @@ function AdminMainGrid({
           </Link>
         ) : null}
 
+        <ClientPulseCard />
+
         <TodayMeetingsCard meetings={meetings} isGated={false} />
 
         <WhosDoingWhatCard members={teamMembers} />
@@ -423,9 +439,10 @@ function EmployeeMainGrid({
         />
       </div>
 
-      {/* Right column — Today's Meetings + Next Ship */}
-      <div className="flex min-h-0 flex-col gap-6 overflow-hidden">
-        <TodayMeetingsCard meetings={meetings} isGated={isGated} className="min-h-0 flex-1" />
+      {/* Right column — Today's Meetings + Client Pulse + Next Ship */}
+      <div className="flex min-h-0 flex-col gap-6 overflow-y-auto">
+        <TodayMeetingsCard meetings={meetings} isGated={isGated} />
+        <ClientPulseCard />
         <NextShipCard nextShip={nextShip} isGated={isGated} />
       </div>
     </div>
@@ -710,6 +727,104 @@ function TodayMeetingsCard({
             );
           })}
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────── Client Pulse — recent client activity ─────────────────────────── */
+
+interface ClientPulseNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string | null;
+  created_at: string | null;
+  link: string | null;
+  metadata: Record<string, unknown> | null;
+}
+
+function pickPulseIcon(action: string | null): typeof Sparkles {
+  const a = (action ?? '').toLowerCase();
+  if (a.includes('message')) return MessageSquare;
+  if (a.includes('feature') || a.includes('request') || a.includes('submitted')) return Sparkles;
+  return Inbox;
+}
+
+function ClientPulseCard({ className }: { className?: string }) {
+  const { workspaceId } = useCurrentWorkspaceId();
+  const { notifications } = useNotifications(workspaceId || null);
+
+  const items = useMemo(() => {
+    const all = (notifications as ClientPulseNotification[]) ?? [];
+    return all.filter((n) => n.type === 'client_activity').slice(0, 5);
+  }, [notifications]);
+
+  return (
+    <div
+      className={cn(
+        'flex flex-col overflow-hidden rounded-2xl border border-border bg-card',
+        className
+      )}
+    >
+      <div className="flex items-baseline justify-between border-b border-border px-5 py-4">
+        <div>
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Client pulse
+          </p>
+          <h2 className="mt-0.5 text-base font-semibold tracking-tight">Recent activity</h2>
+        </div>
+        <Link
+          href="/requests"
+          className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-primary"
+        >
+          All <ArrowRight className="h-3 w-3" />
+        </Link>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="px-5 py-8 text-center">
+          <p className="text-sm text-muted-foreground">No client activity yet today.</p>
+          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70">
+            Quiet inbox
+          </p>
+        </div>
+      ) : (
+        <ul className="divide-y divide-border/60">
+          {items.map((item) => {
+            const Icon = pickPulseIcon(item.message);
+            const when = item.created_at
+              ? formatDistanceToNow(new Date(item.created_at), { addSuffix: true })
+              : '';
+            const inner = (
+              <div className="flex items-start gap-3 px-5 py-3 transition-colors hover:bg-muted/30">
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/[0.08] text-primary">
+                  <Icon className="h-3.5 w-3.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-medium leading-snug text-foreground">
+                    {item.message ?? item.title}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{item.title}</p>
+                  <p className="mt-1 font-mono text-[10px] tabular-nums text-muted-foreground/70">
+                    {when}
+                  </p>
+                </div>
+              </div>
+            );
+            return (
+              <li key={item.id}>
+                {item.link ? (
+                  <Link href={item.link} className="block">
+                    {inner}
+                  </Link>
+                ) : (
+                  inner
+                )}
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );

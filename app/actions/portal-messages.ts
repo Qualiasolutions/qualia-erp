@@ -5,7 +5,7 @@ import { sendMessageSchema, markChannelReadSchema, validateData } from '@/lib/va
 import type { ActionResult } from '@/app/actions/shared';
 import { getCachedUserRole } from '@/app/actions/shared';
 import { getClientProjectIds } from '@/lib/portal-utils';
-import { notifyAssignedEmployees } from '@/lib/notifications';
+import { notifyAdminsAndAssignedEmployees } from '@/lib/notifications';
 import { notifyAdminAndAssignedOfClientActivity } from '@/lib/email';
 
 // ============ RESULT TYPES ============
@@ -512,11 +512,16 @@ export async function sendMessage(input: {
         .eq('id', user.id)
         .single();
 
-      const senderName = senderProfile?.full_name || 'a client';
-      notifyAssignedEmployees(projectId, 'New message from ' + senderName, {
+      const senderName = senderProfile?.full_name || 'A client';
+      const preview = content.substring(0, 80).trim();
+      const headline = preview
+        ? `${senderName} sent a message: “${preview}${content.length > 80 ? '…' : ''}”`
+        : `${senderName} sent a message`;
+      notifyAdminsAndAssignedEmployees(projectId, headline, {
         type: 'portal_message',
         projectId,
         messagePreview: content.substring(0, 100),
+        link: '/messages',
       }).catch((err) => console.error('[sendMessage notify]', err));
 
       notifyAdminAndAssignedOfClientActivity({
