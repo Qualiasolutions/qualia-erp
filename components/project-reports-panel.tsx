@@ -60,7 +60,7 @@ export function ProjectReportsPanel({ projectName, className }: ProjectReportsPa
     <div className={cn('flex h-full flex-col', className)}>
       <div className="flex items-center justify-between border-b border-border px-4 py-2">
         <div>
-          <div className="text-[12px] font-semibold">Session Reports</div>
+          <div className="text-[12px] font-semibold">Shift Reports</div>
           <div className="text-[10px] text-muted-foreground">
             From <code className="font-mono text-[10px]">/qualia-report</code>
           </div>
@@ -85,7 +85,7 @@ export function ProjectReportsPanel({ projectName, className }: ProjectReportsPa
           </div>
         ) : reports.length === 0 ? (
           <div className="p-4 text-[12px] text-muted-foreground">
-            No session reports yet. Reports are posted automatically by{' '}
+            No shift reports yet. Reports are posted automatically by{' '}
             <code className="font-mono text-[11px]">/qualia-report</code>.
           </div>
         ) : (
@@ -152,7 +152,7 @@ export function ProjectReportsPanel({ projectName, className }: ProjectReportsPa
                         />
                       </div>
                       <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
-                        {r.tasks_done}/{r.tasks_total} tasks
+                        {r.tasks_done}/{r.tasks_total} progress
                       </span>
                     </div>
                   )}

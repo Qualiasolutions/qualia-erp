@@ -312,7 +312,7 @@ function TodayColumn({ data }: { data: CommandCenterPayload['today'] }) {
                   <span className="truncate font-semibold">{r.projectName}</span>
                   {r.tasksTotal != null && r.tasksTotal > 0 ? (
                     <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                      {r.tasksDone ?? 0}/{r.tasksTotal}
+                      progress {r.tasksDone ?? 0}/{r.tasksTotal}
                     </span>
                   ) : null}
                 </div>

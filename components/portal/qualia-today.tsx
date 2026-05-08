@@ -122,8 +122,8 @@ function TodayHero({
             style={{ color: 'var(--text-soft)' }}
           >
             {openTasks === 0
-              ? 'No open tasks. Inbox zero — enjoy the breathing room.'
-              : `${openTasks} open ${openTasks === 1 ? 'task' : 'tasks'} on your list.`}
+              ? 'No open work. Inbox zero — enjoy the breathing room.'
+              : `${openTasks} open work item${openTasks === 1 ? '' : 's'} on your list.`}
             {role === 'admin' && activeProjects > 0
               ? ` ${activeProjects} active projects in flight.`
               : ''}
@@ -136,7 +136,7 @@ function TodayHero({
         className="mt-5 flex flex-wrap gap-x-12 gap-y-3 border-t pt-4"
         style={{ borderColor: 'color-mix(in oklch, var(--accent-teal), transparent 82%)' }}
       >
-        <PulseStat label="Open tasks" value={String(openTasks)} />
+        <PulseStat label="Open work" value={String(openTasks)} />
         <PulseStat
           label="Active"
           value={String(activeProjects)}
@@ -256,7 +256,7 @@ const TeamOnDeck = memo(function TeamOnDeck({ members }: { members: TeamMemberTo
           href="/tasks?scope=all"
           className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--text-mute)] transition-colors hover:bg-[var(--surface-hi)] hover:text-[var(--text)]"
         >
-          All tasks <QIcon name="arrow-right" size={12} />
+          All work <QIcon name="arrow-right" size={12} />
         </Link>
       </div>
 
@@ -401,14 +401,14 @@ function TodayTimeline({ tasks, totalCount }: { tasks: TimelineTask[]; totalCoun
           href="/tasks"
           className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--text-mute)] transition-colors hover:bg-[var(--surface-hi)] hover:text-[var(--text)]"
         >
-          All tasks <QIcon name="arrow-right" size={12} />
+          All work <QIcon name="arrow-right" size={12} />
         </Link>
       </div>
 
       {tasks.length === 0 ? (
         <EmptyState
           icon={CheckCircle2}
-          title="No tasks today"
+          title="No work today"
           description="Nothing scoped for today. Enjoy the breathing room."
           compact
           minimal
@@ -460,7 +460,7 @@ function TodayTimeline({ tasks, totalCount }: { tasks: TimelineTask[]; totalCoun
               href="/tasks"
               className="mt-3 flex items-center justify-center gap-1.5 rounded-md py-2 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--text-mute)] transition-colors hover:bg-[var(--surface-hi)] hover:text-[var(--text)]"
             >
-              +{remaining} more {remaining === 1 ? 'task' : 'tasks'}
+              +{remaining} more work item{remaining === 1 ? '' : 's'}
               <QIcon name="arrow-right" size={12} />
             </Link>
           ) : null}

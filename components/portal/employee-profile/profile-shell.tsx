@@ -31,7 +31,7 @@ const PERIOD_OPTIONS: { value: Period; label: string }[] = [
 ];
 
 const TAB_OPTIONS: { value: TabKey; label: string }[] = [
-  { value: 'tasks', label: 'Tasks' },
+  { value: 'tasks', label: 'Work' },
   { value: 'trends', label: 'Trends' },
   { value: 'history', label: 'History' },
 ];
@@ -190,7 +190,7 @@ export function EmployeeProfileShell({
             compact
           />
           <StatCard
-            label="Tasks done"
+            label="Work done"
             value={profile.summary.tasksCompleted.toString()}
             deltaPct={profile.summary.tasksDeltaPct}
             deltaLabel="vs prev"

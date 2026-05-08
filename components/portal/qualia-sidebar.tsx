@@ -350,7 +350,7 @@ function ClockPill({ userId }: { userId: string | null }) {
               clockedIn
                 ? 'Clock out'
                 : overdueCount > 0
-                  ? `Clock in — ${overdueCount} overdue ${overdueCount === 1 ? 'task' : 'tasks'}`
+                  ? `Clock in — ${overdueCount} overdue work item${overdueCount === 1 ? '' : 's'}`
                   : 'Clock in'
             }
           >
@@ -360,7 +360,7 @@ function ClockPill({ userId }: { userId: string | null }) {
             <span
               className="pointer-events-none absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-background bg-destructive px-1 font-mono text-[9px] font-bold leading-none text-destructive-foreground shadow-[0_0_6px_hsl(0_84%_60%/0.45)]"
               aria-hidden
-              title={`${overdueCount} overdue ${overdueCount === 1 ? 'task' : 'tasks'}`}
+              title={`${overdueCount} overdue work item${overdueCount === 1 ? '' : 's'}`}
             >
               {overdueCount > 9 ? '9+' : overdueCount}
             </span>

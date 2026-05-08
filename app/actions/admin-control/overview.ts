@@ -87,9 +87,9 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
     commandCenter,
   ] = await Promise.all([
     getFinancialSummary(),
-    // Activity feed: recent task completions — the activity_log table is not
-    // wired up, so instead we read from the tasks table (which actually has
-    // data). Each row tells the operator "{actor} completed {target}".
+    // Activity feed: recent work updates. The activity_log table is not wired
+    // up, so we read from the existing tasks table without exposing "tasks" as
+    // the primary employee-management model.
     supabase
       .from('tasks')
       .select(
@@ -110,13 +110,13 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
       .select('id, status', { count: 'exact', head: false })
       .in('status', ['Active', 'Delayed'])
       .eq('workspace_id', workspaceId ?? ''),
-    // Item 17: head-only count for open tasks (no row data needed)
+    // Item 17: head-only count for open work items (no row data needed)
     supabase
       .from('issues')
       .select('id', { count: 'exact', head: true })
       .eq('workspace_id', workspaceId ?? '')
       .neq('status', 'Done'),
-    // Item 17: head-only count for overdue tasks
+    // Item 17: head-only count for overdue work items
     supabase
       .from('issues')
       .select('id', { count: 'exact', head: true })
@@ -157,7 +157,7 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
       positive: mrrDelta >= 0,
     },
     {
-      label: 'Open tasks',
+      label: 'Open work',
       value: String(openTasksCount),
       delta: overdue > 0 ? `${overdue} overdue` : null,
       positive: overdue === 0,
@@ -184,7 +184,7 @@ export async function loadOverviewTab(): Promise<OverviewPayload> {
 
   const week = [
     {
-      label: 'Tasks shipped',
+      label: 'Work updates',
       value: String(tasksShipped),
       kind: 'ok' as const,
     },
