@@ -21,6 +21,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.qualiasolutions.net';
+const enableVercelInsights = Boolean(process.env.VERCEL_URL);
 
 export const viewport: Viewport = {
   themeColor: [
@@ -141,8 +142,12 @@ export default function RootLayout({
           </ThemeProvider>
         </LazyMotionProvider>
         <Toaster position="top-center" richColors closeButton />
-        <Analytics />
-        <SpeedInsights />
+        {enableVercelInsights ? (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        ) : null}
       </body>
     </html>
   );
