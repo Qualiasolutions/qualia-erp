@@ -685,18 +685,18 @@ export function QualiaProjectsGallery({
         <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{summary}</span>
 
         {/* Filter pills */}
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-0.5 rounded-xl border border-border bg-card/40 p-1">
           {(['all', 'active', 'attention', 'launched'] as const).map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setFilter(f)}
               className={cn(
-                'h-9 cursor-pointer rounded-md px-2.5 text-[11px] font-medium capitalize transition-all duration-150',
+                'h-8 cursor-pointer rounded-lg px-2.5 text-[11px] font-medium capitalize transition-colors duration-150',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                 filter === f
                   ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
               )}
               aria-pressed={filter === f}
             >
@@ -706,7 +706,7 @@ export function QualiaProjectsGallery({
         </div>
 
         {/* View toggle */}
-        <div className="flex items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5">
+        <div className="flex items-center gap-0.5 rounded-xl border border-border bg-card/40 p-1">
           {(['columns', 'gallery', 'list'] as const).map((v) => {
             const Icon = v === 'columns' ? Columns3 : v === 'gallery' ? LayoutGrid : List;
             return (
@@ -716,7 +716,7 @@ export function QualiaProjectsGallery({
                 onClick={() => setViewMode(v)}
                 title={v === 'columns' ? 'Columns' : v === 'gallery' ? 'Gallery' : 'List'}
                 className={cn(
-                  'flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-sm transition-colors duration-150',
+                  'flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-colors duration-150',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                   viewMode === v
                     ? 'bg-background text-foreground shadow-sm'
@@ -771,25 +771,25 @@ export function QualiaProjectsGallery({
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-border bg-card">
+          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
             <div
-              className="sticky top-0 grid min-w-[600px] items-center gap-3 border-b border-border bg-card px-4 py-2.5"
+              className="sticky top-0 grid min-w-[600px] items-center gap-3 border-b border-border bg-muted/20 px-4 py-2.5"
               style={{ gridTemplateColumns: '24px 1.5fr 1fr 120px 100px 80px' }}
             >
               <span />
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Project
               </span>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Status
               </span>
-              <span className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-center font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Team
               </span>
-              <span className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-center font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Due
               </span>
-              <span className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Progress
               </span>
             </div>
