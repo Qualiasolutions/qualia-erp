@@ -170,9 +170,9 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="default" className="h-10 cursor-pointer gap-1.5 rounded-lg">
+        <Button size="default" className="h-10 cursor-pointer gap-1.5 rounded-xl">
           <Plus className="h-4 w-4" />
-          New Request
+          New request
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -181,13 +181,15 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10">
               <CheckCircle2 className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground">Request Submitted</h3>
+            <h3 className="text-lg font-semibold tracking-tight text-foreground">
+              Request submitted
+            </h3>
             <p className="mt-2 text-sm text-muted-foreground">
               We&apos;ll review your request and respond with updates.
             </p>
             <Button
               variant="outline"
-              className="mt-6 cursor-pointer rounded-lg"
+              className="mt-6 cursor-pointer rounded-xl"
               onClick={() => handleOpenChange(false)}
             >
               Close
@@ -301,7 +303,7 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="cursor-pointer gap-1.5 rounded-lg"
+                    className="cursor-pointer gap-1.5 rounded-xl"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={files.length >= MAX_FILES}
                   >
@@ -350,7 +352,7 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  className="cursor-pointer rounded-lg"
+                  className="cursor-pointer rounded-xl"
                   onClick={() => handleOpenChange(false)}
                   disabled={loading}
                 >
@@ -359,7 +361,7 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
                 <Button
                   type="submit"
                   disabled={loading || !title.trim()}
-                  className="cursor-pointer rounded-lg bg-primary text-primary-foreground"
+                  className="cursor-pointer rounded-xl bg-primary text-primary-foreground"
                 >
                   {loading ? (
                     <>
