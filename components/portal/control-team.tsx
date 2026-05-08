@@ -88,7 +88,7 @@ export function ControlTeam({ data }: { data: TeamPayload | undefined }) {
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <SummaryPill label="Clocked in" value={data.summary.activePeople} tone="emerald" />
         <SummaryPill label="Done this week" value={data.summary.completedThisWeek} tone="primary" />
-        <SummaryPill label="Overdue" value={data.summary.overdueTasks} tone="red" />
+        <SummaryPill label="Overdue work" value={data.summary.overdueTasks} tone="red" />
         <SummaryPill label="Blocked/stale" value={data.summary.blockedPeople} tone="amber" />
         <SummaryPill label="Overloaded" value={data.summary.overloadedPeople} tone="violet" />
       </section>
@@ -325,7 +325,7 @@ function CapacityBar({ person }: { person: TeamWorkloadPerson }) {
                 width: `${Math.max(4, (project.weightedLoad / total) * 100)}%`,
                 background: clientAccent(hue, 50, 0.16),
               }}
-              title={`${project.projectName}: ${project.taskCount} tasks`}
+              title={`${project.projectName}: ${project.taskCount} work item${project.taskCount === 1 ? '' : 's'}`}
             />
           );
         })}
@@ -371,7 +371,7 @@ function WorkloadPersonDetails({ person }: { person: TeamWorkloadPerson }) {
         <DetailPanel title="Due / overdue" icon={CalendarClock}>
           <TaskList
             rows={[...person.overdueTasks, ...person.dueThisWeek]}
-            empty="No dated tasks at risk this week."
+            empty="No dated work at risk this week."
           />
         </DetailPanel>
         <DetailPanel title="Stale / blockers" icon={Flame}>
@@ -389,7 +389,7 @@ function WorkloadPersonDetails({ person }: { person: TeamWorkloadPerson }) {
               </span>
             </Link>
           ) : null}
-          <TaskList rows={person.staleTasks} empty="No stale in-progress tasks." />
+          <TaskList rows={person.staleTasks} empty="No stale in-progress work." />
         </DetailPanel>
         <DetailPanel title="Drilldowns" icon={BarChart3}>
           <div className="flex flex-col gap-2">
@@ -411,7 +411,7 @@ function WorkloadPersonDetails({ person }: { person: TeamWorkloadPerson }) {
               className="inline-flex items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
               href="/tasks?scope=all"
             >
-              Workspace tasks
+              Workspace work
               <ArrowRight className="size-3" />
             </Link>
           </div>

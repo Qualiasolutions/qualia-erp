@@ -43,7 +43,7 @@ function dueLabel(task: EmployeeTaskStub): string {
 export const TasksTab = memo(function TasksTab({ profile }: { profile: EmployeeProfilePayload }) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      {/* LEFT — task list */}
+      {/* LEFT — work list */}
       <div className="flex flex-col gap-5">
         {profile.overdue.length > 0 ? (
           <Section title="Overdue" count={profile.overdue.length} icon={Flag} tone="critical">
@@ -74,7 +74,7 @@ export const TasksTab = memo(function TasksTab({ profile }: { profile: EmployeeP
           count={profile.doneInPeriod.length}
           icon={Sparkles}
           tone="positive"
-          emptyText="Nothing completed yet."
+          emptyText="No work completed yet."
         >
           <TaskList tasks={profile.doneInPeriod.slice(0, 25)} muted />
         </Section>

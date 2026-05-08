@@ -134,9 +134,10 @@ export const config = {
      * Match all request paths except:
      * - _next/static (static files)
      * - _next/image (image optimization files)
+     * - _vercel (analytics/speed-insights scripts)
      * - favicon.ico (favicon file)
-     * - public folder files (images, etc.)
+     * - public folder files and static assets
      */
-    '/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest|site\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|html)$).*)',
+    '/((?!_next/static|_next/image|_vercel|favicon.ico|manifest\\.webmanifest|site\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|html|js|css|map|json|txt|xml)$).*)',
   ],
 };

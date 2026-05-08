@@ -232,7 +232,7 @@ export function FrameworkReportsTab({ focusId }: { focusId?: string | null }) {
               <TableHead>Project</TableHead>
               <TableHead className="w-[120px]">Report</TableHead>
               <TableHead>Milestone / Phase</TableHead>
-              <TableHead>Tasks</TableHead>
+              <TableHead>Progress</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Verif</TableHead>
               <TableHead>Commits</TableHead>

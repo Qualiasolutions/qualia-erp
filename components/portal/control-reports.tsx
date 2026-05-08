@@ -168,7 +168,7 @@ export function ControlReports() {
       {/* Totals strip */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Totals label="Sessions" value={data.totals.sessions} />
-        <Totals label="Tasks done" value={data.totals.tasksDone} />
+        <Totals label="Framework progress" value={data.totals.tasksDone} />
         <Totals
           label="Gap cycles"
           value={data.totals.gapCycles}
@@ -468,7 +468,7 @@ function EmployeeCard({ row }: { row: EmployeePerfRow }) {
               {row.sessions === 1 ? '' : 's'}
             </span>
             <span>
-              tasks{' '}
+              progress{' '}
               <strong className="text-foreground">
                 {row.tasksDone}/{row.tasksTotal}
               </strong>
@@ -595,7 +595,7 @@ function ProjectCard({ row }: { row: ProjectPerfRow }) {
 
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] tabular-nums text-muted-foreground">
             <span>
-              tasks{' '}
+              progress{' '}
               <strong className="text-foreground">
                 {row.tasksDone}/{row.tasksTotal}
               </strong>

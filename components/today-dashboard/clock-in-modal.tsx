@@ -131,7 +131,7 @@ export function ClockInModal({
   function handleClockIn() {
     if (selectedIds.size === 0) return;
     if (!plannedOutcome.trim()) {
-      setError('Tell the team in one sentence what you plan to ship this session.');
+      setError('Tell the team in one sentence what you plan to work on this session.');
       return;
     }
     if (!plannedMinutes || plannedMinutes <= 0) {
@@ -184,8 +184,8 @@ export function ClockInModal({
           </div>
           <DialogDescription>
             {step === 'pick'
-              ? 'Tick every project you plan to work on this session — you’ll need a /qualia-report from each one to clock out.'
-              : 'One sentence on what you plan to ship — and how long you expect it to take.'}
+              ? 'Tick every project you plan to work on this shift — you’ll need a /qualia-report from each one to clock out.'
+              : 'One sentence on the intended outcome — and how long you expect the work to take.'}
           </DialogDescription>
         </DialogHeader>
 

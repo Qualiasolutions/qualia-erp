@@ -8,9 +8,9 @@ import { getCurrentWorkspaceId } from '@/app/actions/workspace';
  * Planning health — admin visibility for "missing deadline / needs planning"
  * surfaces flagged in the 2026-04-28 operations diagnosis.
  *
- * The point is to make orphan/un-dated work obvious to admins without
- * resurrecting the previously-deleted "Unphased" pseudo-bucket. Counts only —
- * detail drilldowns live on the linked routes.
+ * The point is to make orphan/un-dated work obvious to admins without making
+ * task management the primary ERP model. Counts only — detail drilldowns live
+ * on the linked routes.
  */
 
 export type PlanningHealthRow = {
@@ -99,30 +99,30 @@ async function loadPlanningHealthInternal(
   const rows: PlanningHealthRow[] = [
     {
       key: 'projects-no-target',
-      label: 'Active projects · no target date',
+      label: 'Projects · no deadline',
       description: 'Projects in Active/Demos/Launched/Delayed without a committed delivery date.',
       count: projectsRes.count ?? 0,
       href: '/projects?missing=target_date',
     },
     {
       key: 'phases-no-dates',
-      label: 'Active phases · missing dates',
-      description: 'In-progress or queued phases missing start or target date.',
+      label: 'Milestones · missing dates',
+      description: 'In-progress or queued milestone rows missing start or target date.',
       count: phasesRes.count ?? 0,
       href: '/projects?missing=phase_dates',
     },
     {
       key: 'tasks-no-phase',
-      label: 'Open project tasks · no phase',
+      label: 'Open work · no milestone',
       description:
-        'Tasks attached to a project but not pinned to a phase — needs planning, not the old "unphased" bucket.',
+        'Work attached to a project but not pinned to a milestone — needs planning, not the old "unphased" bucket.',
       count: tasksNoPhaseRes.count ?? 0,
       href: '/tasks?scope=all&missing=phase',
     },
     {
       key: 'tasks-no-due',
-      label: 'Open tasks · no due date',
-      description: 'Open tasks (not Done/Canceled) without a due date.',
+      label: 'Open work · no review date',
+      description: 'Open work items (not Done/Canceled) without a review date.',
       count: tasksNoDueRes.count ?? 0,
       href: '/tasks?scope=all&missing=due_date',
     },
