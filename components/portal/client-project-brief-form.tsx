@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { createFeatureRequest } from '@/app/actions/client-requests';
 import { cn } from '@/lib/utils';
@@ -15,27 +14,131 @@ interface ClientProjectBriefFormProps {
 }
 
 interface BriefFields {
+  type: string;
   goals: string;
   audience: string;
+  references: string;
   timeline: string;
   budget: string;
   notes: string;
 }
 
 const INITIAL: BriefFields = {
+  type: '',
   goals: '',
   audience: '',
+  references: '',
   timeline: '',
   budget: '',
   notes: '',
 };
 
+const TYPE_OPTIONS = [
+  { value: 'Website', label: 'Website' },
+  { value: 'Web app', label: 'Web app' },
+  { value: 'Mobile app', label: 'Mobile app' },
+  { value: 'AI agent', label: 'AI agent' },
+  { value: 'Voice agent', label: 'Voice agent' },
+  { value: 'Other', label: 'Other' },
+];
+
+const TIMELINE_OPTIONS = [
+  { value: 'ASAP', label: 'ASAP' },
+  { value: '1–3 months', label: '1–3 months' },
+  { value: '3–6 months', label: '3–6 months' },
+  { value: 'Flexible', label: 'Flexible' },
+];
+
+const BUDGET_OPTIONS = [
+  { value: 'Under €5k', label: 'Under €5k' },
+  { value: '€5k–€10k', label: '€5k–€10k' },
+  { value: '€10k–€25k', label: '€10k–€25k' },
+  { value: '€25k+', label: '€25k+' },
+  { value: 'Not sure yet', label: 'Not sure yet' },
+];
+
+interface Step {
+  key: keyof BriefFields;
+  eyebrow: string;
+  title: string;
+  hint?: string;
+  kind: 'chips' | 'textarea';
+  options?: { value: string; label: string }[];
+  placeholder?: string;
+  optional?: boolean;
+}
+
+const STEPS: Step[] = [
+  {
+    key: 'type',
+    eyebrow: 'Step 1',
+    title: 'What are we building?',
+    hint: 'Pick the closest match — we can refine later.',
+    kind: 'chips',
+    options: TYPE_OPTIONS,
+  },
+  {
+    key: 'goals',
+    eyebrow: 'Step 2',
+    title: 'What does success look like?',
+    hint: 'In a sentence or two — what should this project actually do?',
+    kind: 'textarea',
+    placeholder: 'e.g. Convert visitors into bookings, replace our spreadsheet, automate replies…',
+  },
+  {
+    key: 'audience',
+    eyebrow: 'Step 3',
+    title: 'Who is it for?',
+    hint: 'Your end users, customers, internal team — describe them briefly.',
+    kind: 'textarea',
+    placeholder: 'e.g. Restaurant operators in Cyprus, our sales team, parents of toddlers…',
+    optional: true,
+  },
+  {
+    key: 'references',
+    eyebrow: 'Step 4',
+    title: 'Anything similar you love?',
+    hint: 'Links, app names, screenshots — anything that nails the vibe.',
+    kind: 'textarea',
+    placeholder: 'https://… or "the way Linear handles X"',
+    optional: true,
+  },
+  {
+    key: 'timeline',
+    eyebrow: 'Step 5',
+    title: 'When do you need it?',
+    kind: 'chips',
+    options: TIMELINE_OPTIONS,
+  },
+  {
+    key: 'budget',
+    eyebrow: 'Step 6',
+    title: 'Budget range?',
+    hint: 'Helps us scope the right shape of build.',
+    kind: 'chips',
+    options: BUDGET_OPTIONS,
+  },
+  {
+    key: 'notes',
+    eyebrow: 'Step 7',
+    title: 'Anything else we should know?',
+    hint: 'Constraints, must-haves, things to avoid.',
+    kind: 'textarea',
+    placeholder: 'Optional — leave blank if nothing comes to mind.',
+    optional: true,
+  },
+];
+
+const STEP_LABELS = ['Type', 'Goal', 'Audience', 'Refs', 'Timeline', 'Budget', 'Notes'];
+
 function buildDescription(f: BriefFields): string {
   const sections: string[] = [];
+  if (f.type) sections.push(`**Project type**\n${f.type}`);
   if (f.goals.trim()) sections.push(`**Goals**\n${f.goals.trim()}`);
   if (f.audience.trim()) sections.push(`**Target audience**\n${f.audience.trim()}`);
-  if (f.timeline.trim()) sections.push(`**Timeline**\n${f.timeline.trim()}`);
-  if (f.budget.trim()) sections.push(`**Budget range**\n${f.budget.trim()}`);
+  if (f.references.trim()) sections.push(`**References / inspiration**\n${f.references.trim()}`);
+  if (f.timeline) sections.push(`**Timeline**\n${f.timeline}`);
+  if (f.budget) sections.push(`**Budget**\n${f.budget}`);
   if (f.notes.trim()) sections.push(`**Anything else**\n${f.notes.trim()}`);
   return sections.join('\n\n');
 }
@@ -45,14 +148,44 @@ export function ClientProjectBriefForm({
   projectName,
   className,
 }: ClientProjectBriefFormProps) {
+  const [stepIndex, setStepIndex] = useState(0);
   const [fields, setFields] = useState<BriefFields>(INITIAL);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const step = STEPS[stepIndex];
+  const isFirst = stepIndex === 0;
+  const isLast = stepIndex === STEPS.length - 1;
+  const value = fields[step.key];
+  const canAdvance = step.optional || value.trim().length > 0;
   const hasContent = Object.values(fields).some((v) => v.trim().length > 0);
 
   function update<K extends keyof BriefFields>(key: K, value: BriefFields[K]) {
     setFields((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function goNext() {
+    if (!canAdvance) {
+      toast.error('Pick an option to continue');
+      return;
+    }
+    if (isLast) {
+      handleSubmit();
+      return;
+    }
+    setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
+  }
+
+  function goBack() {
+    setStepIndex((i) => Math.max(i - 1, 0));
+  }
+
+  function skipStep() {
+    if (isLast) {
+      handleSubmit();
+      return;
+    }
+    setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
   }
 
   async function handleSubmit() {
@@ -75,6 +208,7 @@ export function ClientProjectBriefForm({
       toast.success('Brief sent — we’ll review and get back to you');
       setSubmitted(true);
       setFields(INITIAL);
+      setStepIndex(0);
     } else {
       toast.error(result.error || 'Failed to send brief');
     }
@@ -118,6 +252,8 @@ export function ClientProjectBriefForm({
     );
   }
 
+  const progressPct = ((stepIndex + 1) / STEPS.length) * 100;
+
   return (
     <div
       className={cn(
@@ -125,101 +261,150 @@ export function ClientProjectBriefForm({
         className
       )}
     >
+      {/* Header */}
       <div className="border-b border-border bg-gradient-to-b from-primary/[0.04] to-transparent px-7 pb-5 pt-6">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/85">
-          Project brief
-        </p>
-        <h2 className="mt-2 text-[19px] font-semibold tracking-tight text-foreground">
-          Tell us about {projectName}
-        </h2>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
-          A few details so we can scope the build and start moving. Skip any field that doesn&apos;t
-          apply.
-        </p>
-      </div>
-
-      <div className="space-y-5 px-7 py-6">
-        <Field label="Goals" hint="What does success look like?">
-          <Textarea
-            value={fields.goals}
-            onChange={(e) => update('goals', e.target.value)}
-            placeholder="What are you trying to achieve with this project?"
-            className="min-h-[88px] resize-none rounded-lg text-sm"
-          />
-        </Field>
-
-        <Field label="Target audience" hint="Who is this for?">
-          <Input
-            value={fields.audience}
-            onChange={(e) => update('audience', e.target.value)}
-            placeholder="e.g. SMB owners in Cyprus, restaurant operators"
-            className="h-10 rounded-lg text-sm"
-          />
-        </Field>
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Timeline" hint="When do you need this live?">
-            <Input
-              value={fields.timeline}
-              onChange={(e) => update('timeline', e.target.value)}
-              placeholder="e.g. mid June 2026"
-              className="h-10 rounded-lg text-sm"
-            />
-          </Field>
-
-          <Field label="Budget range" hint="Optional, helps us scope">
-            <Input
-              value={fields.budget}
-              onChange={(e) => update('budget', e.target.value)}
-              placeholder="e.g. €3k–€6k"
-              className="h-10 rounded-lg text-sm"
-            />
-          </Field>
+        <div className="flex items-baseline justify-between">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/85">
+            {step.eyebrow} of {STEPS.length}
+          </p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/65">
+            {STEP_LABELS[stepIndex]}
+          </p>
         </div>
 
-        <Field label="Anything else" hint="References, constraints, ideas">
-          <Textarea
-            value={fields.notes}
-            onChange={(e) => update('notes', e.target.value)}
-            placeholder="Inspiration links, must-haves, things to avoid…"
-            className="min-h-[96px] resize-none rounded-lg text-sm"
+        {/* Progress bar */}
+        <div className="bg-muted-foreground/12 mt-3 h-[3px] w-full overflow-hidden rounded-full">
+          <div
+            className="duration-[420ms] ease-[cubic-bezier(0.19,1,0.22,1)] h-full rounded-full bg-gradient-to-r from-primary/70 to-primary shadow-[0_0_12px_hsl(var(--primary)/0.6)] transition-[width]"
+            style={{ width: `${progressPct}%` }}
           />
-        </Field>
+        </div>
+
+        <h2 className="mt-5 text-[20px] font-semibold leading-tight tracking-tight text-foreground sm:text-[22px]">
+          {step.title}
+        </h2>
+        {step.hint && (
+          <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{step.hint}</p>
+        )}
       </div>
 
+      {/* Body */}
+      <div
+        key={stepIndex}
+        className="animate-[stepIn_320ms_cubic-bezier(0.19,1,0.22,1)_both] px-7 py-7"
+      >
+        {step.kind === 'chips' && step.options && (
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {step.options.map((opt) => {
+              const selected = value === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => update(step.key, opt.value)}
+                  className={cn(
+                    'group relative flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13.5px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    selected
+                      ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.6),0_8px_24px_-6px_hsl(var(--primary)/0.45)]'
+                      : 'border-border bg-card/50 text-muted-foreground hover:border-primary/40 hover:bg-primary/[0.04] hover:text-foreground'
+                  )}
+                >
+                  {opt.label}
+                  {selected && (
+                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        className="h-2.5 w-2.5"
+                      >
+                        <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {step.kind === 'textarea' && (
+          <Textarea
+            value={value}
+            onChange={(e) => update(step.key, e.target.value)}
+            placeholder={step.placeholder}
+            className="min-h-[140px] resize-none rounded-xl text-[14px] leading-relaxed"
+            autoFocus
+          />
+        )}
+      </div>
+
+      {/* Footer */}
       <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/20 px-7 py-4">
-        <p className="text-[11px] text-muted-foreground/70">Sent privately to your Qualia team.</p>
+        <div className="flex items-center gap-3">
+          {!isFirst ? (
+            <button
+              type="button"
+              onClick={goBack}
+              className="group flex min-h-[40px] cursor-pointer items-center gap-1 text-[12px] font-medium text-muted-foreground/75 transition-colors duration-150 hover:text-foreground focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
+                ←
+              </span>
+              Back
+            </button>
+          ) : (
+            <span aria-hidden="true" />
+          )}
+          {step.optional && !isLast && (
+            <button
+              type="button"
+              onClick={skipStep}
+              className="cursor-pointer text-[12px] text-muted-foreground/55 transition-colors duration-150 hover:text-foreground/80 focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              Skip
+            </button>
+          )}
+        </div>
+
         <Button
-          onClick={handleSubmit}
-          disabled={submitting || !hasContent}
-          className="h-9 min-w-[120px] gap-1.5 rounded-xl text-[12.5px] font-medium shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.45)] transition-all duration-200 hover:shadow-[0_8px_28px_-4px_hsl(var(--primary)/0.55)] hover:brightness-110"
+          onClick={goNext}
+          disabled={submitting || (!canAdvance && !step.optional)}
+          className="group h-10 min-w-[130px] gap-1.5 rounded-xl px-5 text-[12.5px] font-medium shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.45)] transition-all duration-200 hover:shadow-[0_8px_28px_-4px_hsl(var(--primary)/0.55)] hover:brightness-110"
         >
-          {submitting ? 'Sending…' : 'Send brief'}
-          {!submitting && (
-            <span className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
+          {submitting ? (
+            'Sending…'
+          ) : isLast ? (
+            <>
+              Send brief
+              <span className="transition-transform duration-200 group-hover:translate-x-0.5">
+                →
+              </span>
+            </>
+          ) : (
+            <>
+              Continue
+              <span className="transition-transform duration-200 group-hover:translate-x-0.5">
+                →
+              </span>
+            </>
           )}
         </Button>
       </div>
-    </div>
-  );
-}
 
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block space-y-1.5">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[12px] font-medium text-foreground/90">{label}</span>
-        {hint && <span className="text-[11px] text-muted-foreground/65">{hint}</span>}
-      </div>
-      {children}
-    </label>
+      <style>{`
+        @keyframes stepIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          @keyframes stepIn {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        }
+      `}</style>
+    </div>
   );
 }
