@@ -1,20 +1,24 @@
-# Production Review — 2026-05-02
+# Production Review — 2026-05-08
 
 Project: Qualia ERP / Portal v2 — live at https://portal.qualiasolutions.net
-Branch: `feat/daily-brief-done-toggle` · Phase: M5 Rolling Polish
+Branch: `master` (clean) · Phase: M5 Rolling Polish · Last commit: `759caaf9`
+
+**Scope:** `.planning/` hygiene + `.continue-here.md` + general code health (security, types, dead code).
+**Replaces:** prior 2026-05-02 review (all 3 HIGH items in that review were closed in commit `1eb07a4a`).
 
 ## Summary
 
-| Category  | Critical | High  | Medium       | Low          | Score     |
-| --------- | -------- | ----- | ------------ | ------------ | --------- |
-| Security  | 0        | 0     | 0            | 0            | **5/5**   |
-| Quality   | 0        | 0     | 1 (deferred) | 1 (accepted) | **5/5**   |
-| Perf      | 0        | 1     | 2            | 1            | **4/5**   |
-| **Total** | **0**    | **1** | **3**        | **2**        | **4.7/5** |
+| Category              | Critical | High  | Medium | Low   | Score     |
+| --------------------- | -------- | ----- | ------ | ----- | --------- |
+| Security              | 0        | 0     | 0      | 0     | **5/5**   |
+| Code Quality          | 0        | 0     | 0      | 2     | **5/5**   |
+| Planning Hygiene      | 0        | 3     | 4      | 1     | **3/5**   |
+| Performance (carried) | 0        | 4     | 5      | 5     | **3/5**   |
+| **Total**             | **0**    | **7** | **9**  | **8** | **4.0/5** |
 
-**Updated 2026-05-02 post-cleanup:** All 3 HIGH closed (commit `1eb07a4a`). M1, M2 closed in same commit. L5 fixed. L1/L3/L4 verified as false positives (re-graded). M3 explicitly deferred to M5b. M4/L2 accepted as-is.
+**Verdict:** PASS — no deploy blockers, prod is healthy. The findings cluster in **framework bookkeeping drift**, not code regressions. `.planning/` no longer reflects reality and the live `.continue-here.md` would mislead any future session that opens it. One commit can clean up most of it.
 
-**Verdict:** PASS — no critical, no security blockers. Quality has 3 HIGH findings worth fixing in a single commit (low-effort cleanup). Perf is fine at this scale; M5 candidate 5b (god-module split) addresses the bundle concern when it becomes user-visible.
+Performance findings (4 HIGH / 5 MEDIUM / 5 LOW) are carried forward from `OPTIMIZE.md` 2026-05-07 — they're tracked, scoped, and have explicit deferral reasons. Not new regressions.
 
 ---
 
@@ -22,129 +26,120 @@ Branch: `feat/daily-brief-done-toggle` · Phase: M5 Rolling Polish
 
 ### CRITICAL (0)
 
-None. Real positives worth noting:
+None. Re-verified:
 
-- `service_role` only appears in server-side code (`lib/supabase/server.ts`, server actions, API routes) — verified via grep with client-side filter
+- `service_role` only in server-side files (lib/supabase/server.ts, server actions, API routes) — 0 client-side hits
 - 0 `.env` files tracked in git
-- 0 `dangerouslySetInnerHTML`, 0 `eval(`
-- `npm audit`: 0 critical / 0 high / 0 moderate / 0 low (the "24 transitive Dependabot vulns" claim in JOURNEY.md M5d is **stale** — they've been resolved or never applied to this project's production lockfile; clean as of today)
-- TypeScript: 0 errors
-- ESLint: 0 errors, 1 warning (`react-hooks/exhaustive-deps` in `presence-broadcaster.tsx:51`)
-- All 9 API routes under `app/api/` use auth/session/cron-secret/webhook-signature guards
+- 0 `dangerouslySetInnerHTML`, 0 `eval(`, 0 hardcoded `sk_live`/`eyJ`-style secrets
+- `npx tsc --noEmit`: **0 errors**
+- 0 empty catch blocks
 
-### HIGH (3)
+### HIGH (3) — Planning hygiene
 
-**H1. `supabase-check` cron exists but is NOT registered — silent fail.**
+**P1. `.continue-here.md` is stale and would mislead a future session.**
 
-- `app/api/cron/supabase-check/route.ts` exists (full implementation)
-- `vercel.json` registers 8 crons; `supabase-check` is not in the list
-- Effect: the daily Supabase health check **never runs** in production. Whatever it was supposed to monitor has been silently invisible since this route was added.
-- Fix: add `{ "path": "/api/cron/supabase-check", "schedule": "10 5 * * *" }` to `vercel.json` crons array, or delete the route if unused.
+- File timestamp: 2026-05-08 04:39
+- Says current branch is `feat/sidebar-navigation-execution-2026-05-08` and "implementation is complete in working tree"
+- Reality: working tree is clean on `master`; that work shipped as PRs #102, #103, #104 (`ab6c3c2a`, `0c07aff4`, `759caaf9`)
+- Effect: a `/qualia-resume` or fresh session reading this file thinks there's pending work on a non-existent feature branch
+- **Fix:** delete `.continue-here.md`. Use `/qualia-pause` to write a fresh one only when actually pausing mid-work.
 
-**H2. Manager role dead code in billing page — wrong access logic.**
+**P2. `.planning/PROJECT.md` and `REQUIREMENTS.md` frozen at 2026-04-11 kickoff.**
 
-- `app/(portal)/billing/page.tsx:27` — `const isAdmin = profile?.role === 'admin' || profile?.role === 'manager';`
-- Per CLAUDE.md and `types/database.ts`: `user_role` enum is `admin` / `employee` / `client` — manager was removed 2026-04-18.
-- Effect: the `=== 'manager'` half is unreachable, but the intent is unclear — was this supposed to be a specific role check? Code reads like an admin-OR-something check that no longer makes sense.
-- Fix: simplify to `const isAdmin = profile?.role === 'admin'`. Audit whether the `||` was a workaround for a prior bug.
+- `PROJECT.md` mtime: 2026-04-11 — describes Portal v2 as "transform existing portal into Assembly-inspired hub" — that vision shipped in M1 (closed pre-2026-04)
+- `REQUIREMENTS.md` mtime: 2026-04-11 — FR-1..FR-8 enumerate Portal Shell, Messaging, Files, Billing, Tasks, Admin Controls. All shipped through M2/M3/M4.
+- Effect: any new contributor (human or agent) loading `PROJECT.md` for context gets a description of work already done, not the current product. Misleading.
+- **Fix:** rewrite `PROJECT.md` to describe Qualia ERP as it exists today (the things in CLAUDE.md tech stack + actual surfaces). Mark `REQUIREMENTS.md` as `STATUS: M1–M4 SHIPPED — historical record` at the top, or move it to `.planning/archive/`.
 
-**H3. Stale tests for `createTasksFromMilestone` (singular) — tests cover unused function.**
+**P3. `.planning/STATE.md` says "Last activity: 2026-05-02" — 6 days stale.**
 
-- `app/actions/auto-assign.ts:275` exports `createTasksFromMilestone` (singular). Production callers use `createTasksFromMilestones` (plural) everywhere (`project-assignments.ts:217`, `:398`, webhook).
-- The singular is referenced ONLY in test files: `__tests__/actions/auto-assign.test.ts`, `__tests__/actions/project-assignments.test.ts`, `__tests__/api/github-webhook-cascade.test.ts`.
-- Effect: ~30 test assertions exercise a function production never invokes. Test coverage that protects nothing real.
-- Fix: pick one — either delete `createTasksFromMilestone` (singular) and the tests covering it, or migrate the tests to cover `createTasksFromMilestones` (plural) properly. The singular looks like an evolutionary leftover.
+- `tracking.json.last_updated`: 2026-05-08T00:34:50Z
+- `STATE.md`: "Last session: 2026-05-02 / Last worked by: / Resume: —"
+- 5 commits have shipped since 2026-05-02 (PRs #100–104)
+- `state.js` reports `schema_errors: [{ field: "roadmap_table", message: "Roadmap table header not found" }]` — STATE.md format has drifted from what the router expects
+- Effect: state.js routes correctly because it reads `tracking.json`, but humans reading `STATE.md` directly see the wrong picture. The schema warning will keep firing.
+- **Fix:** regenerate `STATE.md` from `tracking.json` (or let `/qualia-pause`/`/qualia-report` do it). Reconcile the roadmap table header to whatever `state.js` parses.
 
 ### MEDIUM (4)
 
-**M1. `isManagerOrAbove` alias still exposed in admin-provider despite manager role gone.**
+**P4. Loose phase artifacts at the root of `.planning/` — predate archive convention.**
 
-- `components/admin-provider.tsx:21` declares `isManagerOrAbove: boolean`, line 165: `const isManagerOrAbove = isAdmin;`
-- 4 references to this alias remain. Confusing — readers expect a different role tier exists.
-- Fix: rename to `isAdmin` everywhere and remove the alias. Pure search-and-replace.
+20 files matching `phase-*.md` sit at the root: `phase-5-plan.md`, `phase-6..13-*.md`, `phase-18-verification.md`, `phase-admin-control-v2-research.md`. M2/M3/M4 followed the convention and live in `.planning/archive/milestone-*/`.
 
-**M2. `/inbox` route depends on next.config.ts redirect to not render blank.**
+- Effect: clutter at the planning root, plus they reference shipped work + the removed `manager` role (15 hits in stale plan/verification files). Greppable but misleading.
+- **Fix:** create `.planning/archive/milestone-foundation-core-portal/` and move the M1-era loose files into it. Mechanical, ~1 minute. Keep `phase-admin-control-v2-research.md` if active research; otherwise archive it too.
 
-- `app/(portal)/inbox/page.tsx` returns `null`. The redirect is configured in `next.config.ts:redirects()`.
-- It works today (verified — redirect block exists). But the page file is decoupled from its own behavior — if someone removes the redirect from `next.config.ts`, this becomes a silent blank page.
-- Fix: either replace `return null` with a server-side `redirect('/tasks')` (Next.js `next/navigation`), making the contract explicit and self-contained, or add a comment block explicitly tying the file to the config-side redirect.
+**P5. `.planning/decisions/` exists but is empty — ADRs not being written.**
 
-**M3. Heaviest files exceed 1500 LOC — god-modules.** **DEFERRED → M5b.**
+CLAUDE.md, `rules/architecture.md`, and `JOURNEY.md` reference ADRs at `.planning/decisions/`. Three hard-to-reverse decisions in the last 30 days have no ADR:
 
-- `lib/email.ts` — 2404 LOC
-- `lib/swr.ts` — 2300 LOC (37 hooks + 33 invalidation fns; documented in CLAUDE.md)
-- `app/actions/inbox.ts` — 1820 LOC
-- `components/project-workflow.tsx` — 1420 LOC
-- `lib/qualia-framework-templates.ts` — 1370 LOC
-- Splitting these is a multi-hour planned refactor with regression risk, not cleanup. Lives as **M5b "God-module split + use-cache"** in JOURNEY.md until perf becomes user-visible.
+- Manager role removal (2026-04-18)
+- Vercel team transfer to `qualia-glluztech` (2026-05-02)
+- Finance template system replacing manual Zoho stitching (2026-05-01, PR #92)
+- Effect: future archaeology will need to mine commit messages + CLAUDE.md narrative to reconstruct intent. ADRs exist for exactly this.
+- **Fix:** write 3 short ADRs (10 lines each) capturing the decision + reason + when. Going forward, draft an ADR whenever a hard-to-reverse call is made.
 
-**M4. 35 `eslint-disable` comments** — accepting as-is. Spot-checked sample: most are legitimate (test type casts, intentional dep-array exclusions, JSON.parse `any`, third-party gaps). Adding `// reason:` to all 35 is busywork without clear payoff; revisit if a specific disable is suspected of hiding a real bug.
+**P6. ROADMAP.md M5a contradicts the manager-role removal it depends on.**
 
-### LOW (5)
+`ROADMAP.md:43` lists sub-track 5a: _"Manager role + project workflow — Add `manager` role between admin and employee"_. But the manager role was **removed** 2026-04-18 (per CLAUDE.md). The sub-track is technically a _re-introduction_ of a deliberately-removed role, not a fresh add — but the wording reads like the role doesn't exist yet.
 
-**L1. 25 console.log** — **FALSE POSITIVE.** All are intentional structured ops logs in cron/webhook routes (e.g. `[cron/blog-tasks]`, `[Vercel Webhook]`). Vercel captures them in function logs; they're load-bearing for observability. No action needed.
+- Effect: future planner reads "Add manager role" and proceeds without realizing the role used to exist and was deleted. Ignores the rationale.
+- **Fix:** restate as _"Re-introduce manager role (removed 2026-04-18) for project workflow — link to ADR explaining why removal happened first"_.
 
-**L2. 18 `any` type usages** — accepting as-is. Mostly third-party type gaps (e.g. Supabase chain types, jest mock casts). Tightening would require investigation per-site for marginal gain.
+**P7. `.planning/codebase/` is a 2026-05-02 snapshot — likely stale.**
 
-**L3. 25 TODO/FIXME/HACK/XXX markers** — **FALSE POSITIVE.** Re-grep with proper regex returns 0 matches; the original count was a tooling artifact. No action needed.
+`.planning/codebase/{architecture,concerns,conventions,stack}.md` were generated by `/qualia-map` on 2026-05-02. Since then 5 PRs have shipped, including admin/reports simplification (#101) and sidebar refactor (#102/#103). The snapshot may still be roughly accurate, but it's not authoritative.
 
-**L4. 2 raw `<img>` tags** — **FALSE POSITIVE.** Both (`portal-welcome-tour.tsx:344`, `qualia-sidebar.tsx:464`) already have `// eslint-disable-next-line @next/next/no-img-element` with intentional reason: dynamic cache-bust URLs don't fit `next/image`'s known-dimensions pattern. No action needed.
+- Effect: anything reading these as "current architecture" will be slightly out of date.
+- **Fix:** either re-run `/qualia-map` on a milestone close, or add a `STATUS: snapshot YYYY-MM-DD` header so readers know the freshness.
 
-**L5. ESLint warning** in `presence-broadcaster.tsx:51` — **FIXED 2026-05-02.** Added `eslint-disable-next-line react-hooks/exhaustive-deps` with a reason comment explaining why `pathname` is intentionally excluded (the second useEffect handles route changes without re-subscribing).
+### LOW (2)
+
+**P8. `.planning/reports/` has 23 files with no rotation policy.**
+
+Will grow indefinitely. Today it's fine; in 6 months `ls .planning/reports/` won't be useful.
+
+- **Fix:** monthly rollup — at month boundary, gzip month's reports into `.planning/reports/archive/2026-04.tar.gz` and keep last 30 days loose. Or do nothing — it's plain markdown, cheap to keep.
+
+**P9. Code-quality smells (count-only, all LOW).**
+
+- 18 `: any` / `as any` usages
+- 27 `console.log` in production code paths
+- 2 TODO/FIXME comments
+- **Fix:** none required. Track if `any` count climbs past ~30.
 
 ---
 
-## Things that DO NOT work / silent fails — explicit list
+## Performance findings — carried from `OPTIMIZE.md` 2026-05-07 (no scan re-run)
 
-User's specific ask. Above findings restated as a punch-list:
+Already documented + scoped + deferred with reasons. Listing for completeness:
 
-1. **`supabase-check` daily cron — not running.** Code exists, schedule does not. Silent.
-2. **Manager-role check in billing page — vestigial.** Compiles, runs, never matches the missing half.
-3. **Singular `createTasksFromMilestone` + its tests — orphan.** Production never reaches it; tests assert behavior that doesn't ship.
-4. **`/inbox` page — blank without next.config.ts.** Implicit cross-file dependency.
-5. **`isManagerOrAbove` everywhere — naming lie.** Maps to plain `isAdmin`.
+- **H1** Action preamble repeated 271 times across 56 modules → `withAuth(fn)` HOF in `app/actions/shared.ts`
+- **H2** Silent mutations without `.select()` → 20+ sites where RLS-blocked deletes/updates report success
+- **H3** `lib/swr.ts` 2337-LOC god module → split into `lib/swr/{keys,config,tasks,projects,portal,comms,team}.ts`
+- **H4** God components bypassing SWR via `useEffect` → 7 components, largest is `project-workflow.tsx` (1420 LOC)
 
----
-
-## Duplication & dead code — verified non-issues (worth noting)
-
-These looked suspicious but check out:
-
-- **`task-detail-dialog.tsx` ×2** — `components/task-detail-dialog.tsx` (329 LOC, admin) and `components/portal/task-detail-dialog.tsx` (178 LOC, employee read-only) are **intentionally split by role**, both actively imported. By design.
-- **Two `chat` API routes** — `/api/chat` (general AI) and `/api/knowledge/chat` (knowledge base RAG). Different surfaces. By design.
-- **`createTasksFromPhases = createTasksFromMilestones` alias** — backwards-compat re-export for old callers. Cheap, intentional.
+All four are P2 tech debt — own-PR scope, not blockers.
 
 ---
 
 ## Recommended cleanup commit
 
-One commit, one PR, ~30 minutes work. Closes H1, H2, H3, M1, M2 (5 findings, all HIGH + 2 MEDIUM):
+A single small commit closes most planning-hygiene HIGHs:
 
 ```
-fix(cleanup): retire manager-role dead code, register supabase-check cron, drop orphan singular createTasksFromMilestone
+chore(planning): refresh STATE/PROJECT, archive M1 loose files, drop stale handoff
 
-- vercel.json: register supabase-check cron
-- app/(portal)/billing/page.tsx: drop ` || profile?.role === 'manager'`
-- components/admin-provider.tsx: rename isManagerOrAbove → isAdmin everywhere, remove alias
-- app/actions/auto-assign.ts: delete singular createTasksFromMilestone
-- __tests__/: drop the 3 stale test blocks covering the singular
-- app/(portal)/inbox/page.tsx: replace `return null` with `redirect('/tasks')` (server-side)
+- Delete .continue-here.md (sidebar work shipped as #102/#103)
+- Rewrite PROJECT.md to describe current ERP (was kickoff vision)
+- Mark REQUIREMENTS.md as M1–M4 historical
+- Regenerate STATE.md from tracking.json (fix roadmap_table schema warning)
+- Move phase-{5..13,18,admin-control-v2}-*.md → .planning/archive/milestone-foundation-core-portal/
+- Add 3 ADRs: manager-role-removal, vercel-team-transfer, finance-template-system
+- Restate ROADMAP.md M5a as re-introduction (not fresh add)
 ```
 
-That single commit takes the project from 3.7/5 to ≈4.5/5.
+## Next
 
----
-
-## What I did NOT find
-
-- No `service_role` leakage to client
-- No tracked secrets
-- No XSS sinks (`dangerouslySetInnerHTML` / `eval`)
-- No `.env*` in git
-- No empty `catch {}` blocks
-- No npm audit vulnerabilities
-- No TS errors
-- No ESLint errors (1 warning only)
-- No unauthenticated API routes
-
-This codebase is in healthy shape. The findings above are housekeeping, not firefighting.
+`/qualia-task` to execute the cleanup commit above (touches `.planning/` only, low risk, atomic).
+Or stay rolling on master — none of these block production. Prod is healthy.
