@@ -18,9 +18,11 @@ import {
   FolderOpen,
   CheckCircle2,
   Archive,
+  Ban,
   MoreHorizontal,
   Check,
   ChevronDown,
+  Trash2,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -36,7 +38,12 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { hueFromId } from '@/lib/color-constants';
-import { setProjectPipelineStage, updateProjectStatus } from '@/app/actions/projects';
+import {
+  setProjectPipelineStage,
+  updateProjectStatus,
+  deleteProject,
+} from '@/app/actions/projects';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { ProjectType } from '@/types/database';
 
 /* ======================================================================
@@ -275,16 +282,26 @@ function generateSummary(projects: GalleryProject[]): string {
    Stage Dropdown (admin only)
    ====================================================================== */
 
-type TerminalStatus = 'Done' | 'Archived';
+type TerminalStatus = 'Done' | 'Archived' | 'Canceled';
 
 const TERMINAL_STATUSES: { label: string; value: TerminalStatus; icon: typeof Beaker }[] = [
   { label: 'Finished', value: 'Done', icon: CheckCircle2 },
   { label: 'Archived', value: 'Archived', icon: Archive },
+  { label: 'Canceled', value: 'Canceled', icon: Ban },
 ];
 
-function StageDropdown({ project }: { project: GalleryProject }) {
+function StageDropdown({
+  project,
+  trigger,
+}: {
+  project: GalleryProject;
+  /** Optional custom trigger. Defaults to the floating "..." button used on
+   *  pipeline cards. The Finished/Archived rows pass their own inline trigger. */
+  trigger?: React.ReactNode;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const currentStage = getCurrentStage(project);
   const currentStatus = project.status;
 
@@ -314,81 +331,118 @@ function StageDropdown({ project }: { project: GalleryProject }) {
     });
   }
 
+  function handleDelete() {
+    startTransition(async () => {
+      const result = await deleteProject(project.id);
+      if (result.success) {
+        toast.success(`Deleted "${project.name}"`);
+        router.refresh();
+      } else {
+        toast.error(result.error || 'Failed to delete project');
+      }
+    });
+  }
+
+  const defaultTrigger = (
+    <button
+      type="button"
+      className={cn(
+        'absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md',
+        'bg-card/80 text-muted-foreground opacity-0 backdrop-blur-sm transition-all duration-150',
+        'hover:bg-muted hover:text-foreground',
+        'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+        'group-hover:opacity-100',
+        'cursor-pointer',
+        isPending && 'pointer-events-none opacity-50'
+      )}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      aria-label={`Move ${project.name} to another stage`}
+    >
+      <MoreHorizontal className="h-3.5 w-3.5" />
+    </button>
+  );
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md',
-            'bg-card/80 text-muted-foreground opacity-0 backdrop-blur-sm transition-all duration-150',
-            'hover:bg-muted hover:text-foreground',
-            'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-            'group-hover:opacity-100',
-            'cursor-pointer',
-            isPending && 'pointer-events-none opacity-50'
-          )}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          aria-label={`Move ${project.name} to another stage`}
-        >
-          <MoreHorizontal className="h-3.5 w-3.5" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          Move to stage
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {PIPELINE_STAGES.map((s) => {
-          const isCurrent = s.value === currentStage;
-          const Icon = s.icon;
-          return (
-            <DropdownMenuItem
-              key={s.value}
-              disabled={isCurrent}
-              className={cn('cursor-pointer gap-2 text-xs', isCurrent && 'opacity-50')}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleStageChange(s.value);
-              }}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {s.label}
-              {isCurrent && <Check className="ml-auto h-3 w-3 text-primary" />}
-            </DropdownMenuItem>
-          );
-        })}
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          Close out
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {TERMINAL_STATUSES.map((s) => {
-          const isCurrent = s.value === currentStatus;
-          const Icon = s.icon;
-          return (
-            <DropdownMenuItem
-              key={s.value}
-              disabled={isCurrent}
-              className={cn('cursor-pointer gap-2 text-xs', isCurrent && 'opacity-50')}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleTerminalChange(s.value, s.label);
-              }}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {s.label}
-              {isCurrent && <Check className="ml-auto h-3 w-3 text-primary" />}
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>{trigger ?? defaultTrigger}</DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Move to stage
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {PIPELINE_STAGES.map((s) => {
+            const isCurrent = s.value === currentStage;
+            const Icon = s.icon;
+            return (
+              <DropdownMenuItem
+                key={s.value}
+                disabled={isCurrent}
+                className={cn('cursor-pointer gap-2 text-xs', isCurrent && 'opacity-50')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleStageChange(s.value);
+                }}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {s.label}
+                {isCurrent && <Check className="ml-auto h-3 w-3 text-primary" />}
+              </DropdownMenuItem>
+            );
+          })}
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Close out
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {TERMINAL_STATUSES.map((s) => {
+            const isCurrent = s.value === currentStatus;
+            const Icon = s.icon;
+            return (
+              <DropdownMenuItem
+                key={s.value}
+                disabled={isCurrent}
+                className={cn('cursor-pointer gap-2 text-xs', isCurrent && 'opacity-50')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleTerminalChange(s.value, s.label);
+                }}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {s.label}
+                {isCurrent && <Check className="ml-auto h-3 w-3 text-primary" />}
+              </DropdownMenuItem>
+            );
+          })}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer gap-2 text-xs text-destructive focus:bg-destructive/10 focus:text-destructive"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setConfirmDelete(true);
+            }}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete project
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={(open) => !open && setConfirmDelete(false)}
+        title={`Delete "${project.name}"?`}
+        description="This permanently deletes the project, its phases, tasks, and uploads. This cannot be undone."
+        confirmLabel="Delete project"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
+    </>
   );
 }
 
@@ -928,47 +982,29 @@ function FinishedRow({
   );
 }
 
-function ReactivateButton({
-  project,
-  targetStage = 'Building',
-}: {
-  project: GalleryProject;
-  targetStage?: PipelineStage;
-}) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-
-  function handleReactivate(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    startTransition(async () => {
-      const result = await setProjectPipelineStage(project.id, targetStage);
-      if (result.success) {
-        toast.success(`Reactivated "${project.name}" → ${targetStage}`);
-        router.refresh();
-      } else {
-        toast.error(result.error || 'Failed to reactivate');
-      }
-    });
-  }
-
+/** Inline trigger used on Finished + Archived rows. Opens the same
+ *  StageDropdown that pipeline cards use, so admins can move terminated
+ *  projects to ANY state (or delete) instead of being stuck with a single
+ *  "back to Building" hammer. */
+function ProjectMenuTrigger({ project }: { project: GalleryProject }) {
   return (
     <button
       type="button"
-      onClick={handleReactivate}
-      disabled={isPending}
-      title={`Move "${project.name}" back to ${targetStage}`}
-      aria-label={`Reactivate ${project.name}`}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      title={`Manage "${project.name}"`}
+      aria-label={`Manage ${project.name}`}
       className={cn(
         'inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-md',
-        'bg-primary/10 text-primary opacity-0 transition-all duration-150',
-        'hover:bg-primary/20 focus-visible:opacity-100',
+        'bg-muted/60 text-muted-foreground opacity-0 transition-all duration-150',
+        'hover:bg-primary/15 hover:text-primary focus-visible:opacity-100',
         'group-hover/projrow:opacity-100',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-        isPending && 'pointer-events-none opacity-50'
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
       )}
     >
-      <Hammer className="h-3 w-3" />
+      <MoreHorizontal className="h-3 w-3" />
     </button>
   );
 }
@@ -1005,7 +1041,9 @@ function FinishedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
           {project.name}
         </span>
-        {isAdmin ? <ReactivateButton project={project} /> : null}
+        {isAdmin ? (
+          <StageDropdown project={project} trigger={<ProjectMenuTrigger project={project} />} />
+        ) : null}
         <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
           {typeLabel}
         </span>
@@ -1097,7 +1135,9 @@ function ArchivedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
           />
         )}
         <span className="min-w-0 flex-1 truncate text-xs font-medium">{project.name}</span>
-        {isAdmin ? <ReactivateButton project={project} /> : null}
+        {isAdmin ? (
+          <StageDropdown project={project} trigger={<ProjectMenuTrigger project={project} />} />
+        ) : null}
         <span className="shrink-0 rounded bg-muted/60 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider">
           {typeLabel}
         </span>
