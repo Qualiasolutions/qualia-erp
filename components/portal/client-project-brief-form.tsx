@@ -20,11 +20,17 @@ interface BriefFields {
   goalsNote: string;
   audience: string[];
   audienceNote: string;
+  geography: string[];
+  geographyNote: string;
+  integrations: string[];
+  integrationsNote: string;
   references: string;
   timeline: string;
   timelineNote: string;
   budget: string;
   budgetNote: string;
+  ownership: string;
+  ownershipNote: string;
   notes: string;
 }
 
@@ -35,37 +41,67 @@ const INITIAL: BriefFields = {
   goalsNote: '',
   audience: [],
   audienceNote: '',
+  geography: [],
+  geographyNote: '',
+  integrations: [],
+  integrationsNote: '',
   references: '',
   timeline: '',
   timelineNote: '',
   budget: '',
   budgetNote: '',
+  ownership: '',
+  ownershipNote: '',
   notes: '',
 };
 
 const TYPE_OPTIONS = [
-  { value: 'Website', label: 'Website' },
-  { value: 'Web app', label: 'Web app' },
-  { value: 'Mobile app', label: 'Mobile app' },
-  { value: 'AI agent', label: 'AI agent' },
-  { value: 'Voice agent', label: 'Voice agent' },
+  { value: 'Booking / ticketing platform', label: 'Booking / ticketing' },
+  { value: 'Marketplace / multi-vendor', label: 'Marketplace' },
+  { value: 'Custom SaaS / dashboard', label: 'Custom SaaS' },
+  { value: 'E-commerce store', label: 'E-commerce' },
+  { value: 'Mobile app (React Native)', label: 'Mobile app' },
+  { value: 'Internal admin tool', label: 'Admin tool' },
   { value: 'Other', label: 'Other' },
 ];
 
 const GOAL_OPTIONS = [
-  { value: 'Win new customers', label: 'Win new customers' },
-  { value: 'Replace a spreadsheet / manual work', label: 'Replace a spreadsheet' },
-  { value: 'Automate replies / support', label: 'Automate replies' },
-  { value: 'Look more professional', label: 'Look more professional' },
-  { value: 'Sell online', label: 'Sell online' },
-  { value: 'Internal team tool', label: 'Internal team tool' },
+  { value: 'Sell tickets / drive event signups', label: 'Sell tickets / events' },
+  { value: 'Launch a new revenue stream', label: 'New revenue stream' },
+  { value: 'Showcase a service / generate leads', label: 'Generate leads' },
+  { value: 'Replace a manual / spreadsheet process', label: 'Replace manual process' },
+  { value: 'Demo for partners / investors', label: 'Partner / investor demo' },
+  { value: 'White-label & resell to clients', label: 'White-label & resell' },
 ];
 
 const AUDIENCE_OPTIONS = [
-  { value: 'My customers', label: 'My customers' },
-  { value: 'My team', label: 'My team' },
-  { value: 'Partners / suppliers', label: 'Partners / suppliers' },
-  { value: 'The general public', label: 'General public' },
+  { value: 'Event-goers / ticket buyers', label: 'Event-goers' },
+  { value: 'Vendors managing their own page', label: 'Vendors' },
+  { value: 'Internal admin team', label: 'Admin team' },
+  { value: 'End customers buying products', label: 'End customers' },
+  { value: 'Referral / affiliate users', label: 'Affiliates' },
+];
+
+const GEOGRAPHY_OPTIONS = [
+  { value: 'Cyprus', label: 'Cyprus' },
+  { value: 'UAE', label: 'UAE' },
+  { value: 'Jordan', label: 'Jordan' },
+  { value: 'Italy', label: 'Italy' },
+  { value: 'USA', label: 'USA' },
+  { value: 'Multi-region', label: 'Multi-region' },
+];
+
+const INTEGRATION_OPTIONS = [
+  { value: 'JCC payment gateway', label: 'JCC' },
+  { value: 'Revolut payment links', label: 'Revolut' },
+  { value: 'Stripe', label: 'Stripe' },
+  { value: 'Email (Resend / SendGrid)', label: 'Email' },
+  { value: 'SMS / WhatsApp', label: 'SMS / WhatsApp' },
+  { value: 'Google Calendar', label: 'Calendar' },
+  { value: 'Referral / affiliate program', label: 'Referrals' },
+  { value: 'Ticketing engine', label: 'Ticketing engine' },
+  { value: 'Analytics (GA / Posthog)', label: 'Analytics' },
+  { value: 'WordPress / CMS', label: 'CMS' },
 ];
 
 const TIMELINE_OPTIONS = [
@@ -76,10 +112,16 @@ const TIMELINE_OPTIONS = [
 ];
 
 const BUDGET_OPTIONS = [
-  { value: 'Under €5k', label: 'Under €5k' },
-  { value: '€5k–€10k', label: '€5k–€10k' },
   { value: '€10k–€25k', label: '€10k–€25k' },
-  { value: '€25k+', label: '€25k+' },
+  { value: '€25k–€50k', label: '€25k–€50k' },
+  { value: '€50k–€100k', label: '€50k–€100k' },
+  { value: '€100k+', label: '€100k+' },
+];
+
+const OWNERSHIP_OPTIONS = [
+  { value: 'Full handover (code + hosting + docs to me)', label: 'Full handover' },
+  { value: 'Qualia-managed (you host + support)', label: 'Qualia-managed' },
+  { value: 'Hybrid (Qualia hosts year 1, then hand over)', label: 'Hybrid' },
 ];
 
 type StepKind = 'chips' | 'multi-chips' | 'textarea';
@@ -102,37 +144,59 @@ const STEPS: Step[] = [
     key: 'type',
     noteKey: 'typeNote',
     eyebrow: 'Step 1',
-    title: 'What are we building?',
+    title: 'What kind of platform are we building?',
     hint: 'Pick the closest match — we can refine later.',
     kind: 'chips',
     options: TYPE_OPTIONS,
-    notePlaceholder: 'Anything to add about the type? (optional)',
+    notePlaceholder: 'A specific platform name or scope detail? (optional)',
   },
   {
     key: 'goals',
     noteKey: 'goalsNote',
     eyebrow: 'Step 2',
-    title: 'What does success look like?',
+    title: 'What is this project supposed to do?',
     hint: 'Pick everything that fits — pick more than one.',
     kind: 'multi-chips',
     options: GOAL_OPTIONS,
-    notePlaceholder: 'Add your own goal in your words (optional)',
+    notePlaceholder: 'Add the #1 outcome in your words (optional)',
   },
   {
     key: 'audience',
     noteKey: 'audienceNote',
     eyebrow: 'Step 3',
-    title: 'Who is it for?',
-    hint: 'Pick the people who will actually use it.',
+    title: 'Who is the end user?',
+    hint: 'Pick everyone who will actually use it.',
     kind: 'multi-chips',
     options: AUDIENCE_OPTIONS,
     notePlaceholder: 'Describe them in a sentence (optional)',
     optional: true,
   },
   {
-    key: 'references',
+    key: 'geography',
+    noteKey: 'geographyNote',
     eyebrow: 'Step 4',
-    title: 'Anything similar you love?',
+    title: 'Where will it operate?',
+    hint: 'Pick every market the platform serves.',
+    kind: 'multi-chips',
+    options: GEOGRAPHY_OPTIONS,
+    notePlaceholder: 'Specific cities or rollout order? (optional)',
+    optional: true,
+  },
+  {
+    key: 'integrations',
+    noteKey: 'integrationsNote',
+    eyebrow: 'Step 5',
+    title: 'Must-have integrations?',
+    hint: 'Pick everything you need wired up at launch.',
+    kind: 'multi-chips',
+    options: INTEGRATION_OPTIONS,
+    notePlaceholder: 'Other tools or APIs to integrate? (optional)',
+    optional: true,
+  },
+  {
+    key: 'references',
+    eyebrow: 'Step 6',
+    title: 'Reference platforms you love?',
     hint: 'Links, app names, screenshots — anything that nails the vibe.',
     kind: 'textarea',
     placeholder: 'https://… or "the way Linear handles X"',
@@ -141,16 +205,16 @@ const STEPS: Step[] = [
   {
     key: 'timeline',
     noteKey: 'timelineNote',
-    eyebrow: 'Step 5',
-    title: 'When do you want it?',
+    eyebrow: 'Step 7',
+    title: 'When do you want it launched?',
     kind: 'chips',
     options: TIMELINE_OPTIONS,
-    notePlaceholder: 'A specific date or deadline? (optional)',
+    notePlaceholder: 'A specific event or deadline? (optional)',
   },
   {
     key: 'budget',
     noteKey: 'budgetNote',
-    eyebrow: 'Step 6',
+    eyebrow: 'Step 8',
     title: 'Budget range?',
     hint: 'Helps us scope the right shape of build.',
     kind: 'chips',
@@ -158,8 +222,18 @@ const STEPS: Step[] = [
     notePlaceholder: 'Any context on the budget? (optional)',
   },
   {
+    key: 'ownership',
+    noteKey: 'ownershipNote',
+    eyebrow: 'Step 9',
+    title: 'Ownership preference?',
+    hint: 'How should the project be handed over after launch?',
+    kind: 'chips',
+    options: OWNERSHIP_OPTIONS,
+    notePlaceholder: 'Anything specific about handover or hosting? (optional)',
+  },
+  {
     key: 'notes',
-    eyebrow: 'Step 7',
+    eyebrow: 'Step 10',
     title: 'Anything else we should know?',
     hint: 'Constraints, must-haves, things to avoid.',
     kind: 'textarea',
@@ -168,7 +242,18 @@ const STEPS: Step[] = [
   },
 ];
 
-const STEP_LABELS = ['Type', 'Goal', 'Audience', 'Refs', 'Timeline', 'Budget', 'Notes'];
+const STEP_LABELS = [
+  'Type',
+  'Goal',
+  'Audience',
+  'Geography',
+  'Integrations',
+  'Refs',
+  'Timeline',
+  'Budget',
+  'Ownership',
+  'Notes',
+];
 
 function buildDescription(f: BriefFields): string {
   const sections: string[] = [];
@@ -190,6 +275,20 @@ function buildDescription(f: BriefFields): string {
       }`
     );
   }
+  if (f.geography.length > 0 || f.geographyNote.trim()) {
+    const geography = f.geography.length > 0 ? f.geography.join(', ') : '(see note)';
+    sections.push(
+      `**Geography**\n${geography}${f.geographyNote.trim() ? `\n_${f.geographyNote.trim()}_` : ''}`
+    );
+  }
+  if (f.integrations.length > 0 || f.integrationsNote.trim()) {
+    const integrations = f.integrations.length > 0 ? f.integrations.join(', ') : '(see note)';
+    sections.push(
+      `**Must-have integrations**\n${integrations}${
+        f.integrationsNote.trim() ? `\n_${f.integrationsNote.trim()}_` : ''
+      }`
+    );
+  }
   if (f.references.trim()) sections.push(`**References / inspiration**\n${f.references.trim()}`);
   if (f.timeline) {
     sections.push(
@@ -199,6 +298,13 @@ function buildDescription(f: BriefFields): string {
   if (f.budget) {
     sections.push(
       `**Budget**\n${f.budget}${f.budgetNote.trim() ? `\n_${f.budgetNote.trim()}_` : ''}`
+    );
+  }
+  if (f.ownership) {
+    sections.push(
+      `**Ownership preference**\n${f.ownership}${
+        f.ownershipNote.trim() ? `\n_${f.ownershipNote.trim()}_` : ''
+      }`
     );
   }
   if (f.notes.trim()) sections.push(`**Anything else**\n${f.notes.trim()}`);
@@ -232,15 +338,21 @@ export function ClientProjectBriefForm({
     fields.type ||
     fields.goals.length > 0 ||
     fields.audience.length > 0 ||
+    fields.geography.length > 0 ||
+    fields.integrations.length > 0 ||
     [
       fields.typeNote,
       fields.goalsNote,
       fields.audienceNote,
+      fields.geographyNote,
+      fields.integrationsNote,
       fields.references,
       fields.timeline,
       fields.timelineNote,
       fields.budget,
       fields.budgetNote,
+      fields.ownership,
+      fields.ownershipNote,
       fields.notes,
     ].some((v) => v.trim().length > 0);
 
