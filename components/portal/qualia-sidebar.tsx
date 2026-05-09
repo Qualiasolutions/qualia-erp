@@ -118,10 +118,9 @@ const PAGES: PageDef[] = [
     id: 'admin-billing',
     label: 'Billing',
     icon: 'payments',
-    href: '/admin?tab=finance',
+    href: '/billing',
     roles: ['admin'],
-    appKey: 'control',
-    matchQuery: { key: 'tab', value: 'finance' },
+    appKey: 'billing',
   },
   {
     id: 'knowledge',
