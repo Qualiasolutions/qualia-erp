@@ -19,6 +19,7 @@ interface ProjectsClientProps {
   archived: ProjectData[];
   isAdmin?: boolean;
   expandTerminalGroups?: boolean;
+  clientView?: boolean;
   missingFilter?: MissingProjectFilter;
 }
 
@@ -49,6 +50,7 @@ export function ProjectsClient({
   archived,
   isAdmin,
   expandTerminalGroups,
+  clientView,
   missingFilter,
 }: ProjectsClientProps) {
   const all: GalleryProject[] = [
@@ -95,6 +97,7 @@ export function ProjectsClient({
         projects={all}
         isAdmin={isAdmin}
         expandTerminalGroups={expandTerminalGroups}
+        clientView={clientView}
       />
     </div>
   );

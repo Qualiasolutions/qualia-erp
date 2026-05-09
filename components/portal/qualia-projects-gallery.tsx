@@ -155,6 +155,8 @@ interface QualiaProjectsGalleryProps {
   projects: GalleryProject[];
   isAdmin?: boolean;
   expandTerminalGroups?: boolean;
+  /** Client-portal view — fewer projects, so render larger, more spacious cards. */
+  clientView?: boolean;
 }
 
 /* ======================================================================
@@ -529,9 +531,11 @@ function ProgressRing({
 const ProjectCardTile = memo(function ProjectCardTile({
   project,
   isAdmin,
+  clientView,
 }: {
   project: GalleryProject;
   isAdmin?: boolean;
+  clientView?: boolean;
 }) {
   const { progressStroke } = getProjectStyle(project);
   const progress = getProgress(project);
@@ -547,11 +551,14 @@ const ProjectCardTile = memo(function ProjectCardTile({
     <Link
       href={`/projects/${project.id}`}
       className={cn(
-        'group relative flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5',
+        'group relative flex items-center border border-border bg-card/60',
         'transition-all duration-200 ease-premium',
         'hover:border-primary/30 hover:bg-card hover:shadow-[var(--elevation-resting)]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-        'cursor-pointer'
+        'cursor-pointer',
+        clientView
+          ? 'gap-4 rounded-2xl px-5 py-4 shadow-[0_1px_2px_0_hsl(var(--border)/0.5)]'
+          : 'gap-3 rounded-lg px-3 py-2.5'
       )}
     >
       {/* Admin stage dropdown — absolute, top-right */}
@@ -560,6 +567,8 @@ const ProjectCardTile = memo(function ProjectCardTile({
       {/* Left: circular progress ring with project/client logo inside */}
       <ProgressRing
         value={progress}
+        size={clientView ? 56 : 36}
+        strokeWidth={clientView ? 3 : 2.5}
         strokeClass={progressStroke}
         logoUrl={project.logo_url}
         fallbackInitial={(project.name?.charAt(0) ?? '?').toUpperCase()}
@@ -567,29 +576,43 @@ const ProjectCardTile = memo(function ProjectCardTile({
       />
 
       {/* Center: name (top) + type label (bottom) */}
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <div className={cn('flex min-w-0 flex-1 flex-col', clientView ? 'gap-1.5' : 'gap-0.5')}>
         <div className="flex items-center gap-1.5">
-          <h3 className="truncate text-sm font-semibold leading-tight text-foreground">
+          <h3
+            className={cn(
+              'truncate font-semibold leading-tight text-foreground',
+              clientView ? 'text-[16px]' : 'text-sm'
+            )}
+          >
             {project.name}
           </h3>
           {attention && (
             <AlertTriangle
-              className="h-3 w-3 shrink-0 text-amber-500"
+              className={cn('shrink-0 text-amber-500', clientView ? 'h-4 w-4' : 'h-3 w-3')}
               aria-label="Needs attention"
             />
           )}
         </div>
         <span
-          className={cn('font-mono text-[9px] font-semibold uppercase tracking-wider', typeColor)}
+          className={cn(
+            'font-mono font-semibold uppercase tracking-wider',
+            typeColor,
+            clientView ? 'text-[10.5px]' : 'text-[9px]'
+          )}
         >
           {typeLabel}
         </span>
+        {clientView && (
+          <span className="mt-0.5 font-mono text-[11px] tabular-nums text-muted-foreground/80">
+            {progress}% complete
+          </span>
+        )}
       </div>
 
       {/* Right: avatars (admin dropdown overlaps via absolute positioning) */}
       {avatars.length > 0 && (
-        <div className="shrink-0 pr-6">
-          <AvatarStack people={avatars} size={20} max={3} />
+        <div className={cn('shrink-0', clientView ? 'pr-2' : 'pr-6')}>
+          <AvatarStack people={avatars} size={clientView ? 26 : 20} max={3} />
         </div>
       )}
     </Link>
@@ -672,6 +695,7 @@ export function QualiaProjectsGallery({
   projects,
   isAdmin,
   expandTerminalGroups,
+  clientView,
 }: QualiaProjectsGalleryProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('columns');
   const [filter, setFilter] = useState<FilterMode>('all');
@@ -798,13 +822,14 @@ export function QualiaProjectsGallery({
             />
           </div>
         ) : viewMode === 'columns' ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-3">
-            <StageColumns stages={stages} isAdmin={isAdmin} />
+          <div className={cn('flex min-h-0 flex-1 flex-col', clientView ? 'gap-5' : 'gap-3')}>
+            <StageColumns stages={stages} isAdmin={isAdmin} clientView={clientView} />
             {finishedProjects.length > 0 && (
               <FinishedRow
                 projects={finishedProjects}
                 isAdmin={isAdmin}
                 defaultOpen={expandTerminalGroups}
+                clientView={clientView}
               />
             )}
             {archivedProjects.length > 0 && (
@@ -812,6 +837,7 @@ export function QualiaProjectsGallery({
                 projects={archivedProjects}
                 isAdmin={isAdmin}
                 defaultOpen={expandTerminalGroups}
+                clientView={clientView}
               />
             )}
           </div>
@@ -866,15 +892,28 @@ export function QualiaProjectsGallery({
 function StageColumns({
   stages,
   isAdmin,
+  clientView,
 }: {
   stages: Record<StageKey, GalleryProject[]>;
   isAdmin?: boolean;
+  clientView?: boolean;
 }) {
   const order: StageKey[] = ['demo', 'building', 'preProduction', 'live'];
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div
+      className={cn(
+        'grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2 xl:grid-cols-4',
+        clientView ? 'gap-5' : 'gap-3'
+      )}
+    >
       {order.map((key) => (
-        <StageColumn key={key} stage={key} projects={stages[key]} isAdmin={isAdmin} />
+        <StageColumn
+          key={key}
+          stage={key}
+          projects={stages[key]}
+          isAdmin={isAdmin}
+          clientView={clientView}
+        />
       ))}
     </div>
   );
@@ -884,39 +923,84 @@ function StageColumn({
   stage,
   projects,
   isAdmin,
+  clientView,
 }: {
   stage: StageKey;
   projects: GalleryProject[];
   isAdmin?: boolean;
+  clientView?: boolean;
 }) {
   const config = STAGE_CONFIG[stage];
   const Icon = config.icon;
 
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-muted/10">
-      <header className="flex shrink-0 items-center gap-2 px-3 py-2.5">
-        <Icon className={cn('h-3.5 w-3.5', config.accent)} aria-hidden />
-        <h2 className="text-xs font-semibold tracking-tight text-foreground">{config.title}</h2>
+    <section
+      className={cn(
+        'flex min-h-0 flex-col overflow-hidden border border-border/60 bg-muted/10',
+        clientView
+          ? 'rounded-2xl bg-card/50 shadow-[0_1px_0_0_hsl(var(--border)/0.4)]'
+          : 'rounded-xl'
+      )}
+    >
+      <header
+        className={cn(
+          'flex shrink-0 items-center gap-2',
+          clientView ? 'border-b border-border/40 bg-muted/20 px-5 py-4' : 'px-3 py-2.5'
+        )}
+      >
+        <Icon className={cn(clientView ? 'h-5 w-5' : 'h-3.5 w-3.5', config.accent)} aria-hidden />
+        <h2
+          className={cn(
+            'font-semibold tracking-tight text-foreground',
+            clientView ? 'text-[15px]' : 'text-xs'
+          )}
+        >
+          {config.title}
+        </h2>
         {projects.length > 0 && (
-          <span className="ml-auto font-mono text-[10px] tabular-nums text-muted-foreground">
+          <span
+            className={cn(
+              'ml-auto font-mono tabular-nums text-muted-foreground',
+              clientView ? 'text-[12px]' : 'text-[10px]'
+            )}
+          >
             {projects.length}
           </span>
         )}
       </header>
 
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
+      <div
+        className={cn(
+          'flex flex-1 flex-col overflow-y-auto',
+          clientView ? 'gap-3 px-3 pb-3 pt-3' : 'gap-2 px-2 pb-2'
+        )}
+      >
         {projects.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
+          <div
+            className={cn(
+              'flex flex-1 flex-col items-center justify-center text-center',
+              clientView ? 'py-12' : 'py-8'
+            )}
+          >
             <CheckCircle2
-              className="mb-2 h-5 w-5 text-muted-foreground/40"
+              className={cn('mb-2 text-muted-foreground/40', clientView ? 'h-7 w-7' : 'h-5 w-5')}
               aria-hidden
               strokeWidth={1.5}
             />
-            <p className="text-[11px] text-muted-foreground/70">No projects</p>
+            <p
+              className={cn('text-muted-foreground/70', clientView ? 'text-[13px]' : 'text-[11px]')}
+            >
+              No projects
+            </p>
           </div>
         ) : (
           projects.map((project) => (
-            <ProjectCardTile key={project.id} project={project} isAdmin={isAdmin} />
+            <ProjectCardTile
+              key={project.id}
+              project={project}
+              isAdmin={isAdmin}
+              clientView={clientView}
+            />
           ))
         )}
       </div>
@@ -938,6 +1022,7 @@ function FinishedRow({
   projects: GalleryProject[];
   isAdmin?: boolean;
   defaultOpen?: boolean;
+  clientView?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -1060,6 +1145,7 @@ function ArchivedRow({
   projects: GalleryProject[];
   isAdmin?: boolean;
   defaultOpen?: boolean;
+  clientView?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (

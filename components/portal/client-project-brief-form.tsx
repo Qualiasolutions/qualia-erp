@@ -15,21 +15,31 @@ interface ClientProjectBriefFormProps {
 
 interface BriefFields {
   type: string;
-  goals: string;
-  audience: string;
+  typeNote: string;
+  goals: string[];
+  goalsNote: string;
+  audience: string[];
+  audienceNote: string;
   references: string;
   timeline: string;
+  timelineNote: string;
   budget: string;
+  budgetNote: string;
   notes: string;
 }
 
 const INITIAL: BriefFields = {
   type: '',
-  goals: '',
-  audience: '',
+  typeNote: '',
+  goals: [],
+  goalsNote: '',
+  audience: [],
+  audienceNote: '',
   references: '',
   timeline: '',
+  timelineNote: '',
   budget: '',
+  budgetNote: '',
   notes: '',
 };
 
@@ -42,11 +52,27 @@ const TYPE_OPTIONS = [
   { value: 'Other', label: 'Other' },
 ];
 
+const GOAL_OPTIONS = [
+  { value: 'Win new customers', label: 'Win new customers' },
+  { value: 'Replace a spreadsheet / manual work', label: 'Replace a spreadsheet' },
+  { value: 'Automate replies / support', label: 'Automate replies' },
+  { value: 'Look more professional', label: 'Look more professional' },
+  { value: 'Sell online', label: 'Sell online' },
+  { value: 'Internal team tool', label: 'Internal team tool' },
+];
+
+const AUDIENCE_OPTIONS = [
+  { value: 'My customers', label: 'My customers' },
+  { value: 'My team', label: 'My team' },
+  { value: 'Partners / suppliers', label: 'Partners / suppliers' },
+  { value: 'The general public', label: 'General public' },
+];
+
 const TIMELINE_OPTIONS = [
-  { value: 'ASAP', label: 'ASAP' },
-  { value: '1–3 months', label: '1–3 months' },
-  { value: '3–6 months', label: '3–6 months' },
-  { value: 'Flexible', label: 'Flexible' },
+  { value: 'Now', label: 'Now' },
+  { value: 'In the next month', label: 'In the next month' },
+  { value: 'In 2 months', label: 'In 2 months' },
+  { value: 'LATER', label: 'Later' },
 ];
 
 const BUDGET_OPTIONS = [
@@ -54,44 +80,53 @@ const BUDGET_OPTIONS = [
   { value: '€5k–€10k', label: '€5k–€10k' },
   { value: '€10k–€25k', label: '€10k–€25k' },
   { value: '€25k+', label: '€25k+' },
-  { value: 'Not sure yet', label: 'Not sure yet' },
 ];
+
+type StepKind = 'chips' | 'multi-chips' | 'textarea';
 
 interface Step {
   key: keyof BriefFields;
+  noteKey?: keyof BriefFields;
   eyebrow: string;
   title: string;
   hint?: string;
-  kind: 'chips' | 'textarea';
+  kind: StepKind;
   options?: { value: string; label: string }[];
   placeholder?: string;
+  notePlaceholder?: string;
   optional?: boolean;
 }
 
 const STEPS: Step[] = [
   {
     key: 'type',
+    noteKey: 'typeNote',
     eyebrow: 'Step 1',
     title: 'What are we building?',
     hint: 'Pick the closest match — we can refine later.',
     kind: 'chips',
     options: TYPE_OPTIONS,
+    notePlaceholder: 'Anything to add about the type? (optional)',
   },
   {
     key: 'goals',
+    noteKey: 'goalsNote',
     eyebrow: 'Step 2',
     title: 'What does success look like?',
-    hint: 'In a sentence or two — what should this project actually do?',
-    kind: 'textarea',
-    placeholder: 'e.g. Convert visitors into bookings, replace our spreadsheet, automate replies…',
+    hint: 'Pick everything that fits — pick more than one.',
+    kind: 'multi-chips',
+    options: GOAL_OPTIONS,
+    notePlaceholder: 'Add your own goal in your words (optional)',
   },
   {
     key: 'audience',
+    noteKey: 'audienceNote',
     eyebrow: 'Step 3',
     title: 'Who is it for?',
-    hint: 'Your end users, customers, internal team — describe them briefly.',
-    kind: 'textarea',
-    placeholder: 'e.g. Restaurant operators in Cyprus, our sales team, parents of toddlers…',
+    hint: 'Pick the people who will actually use it.',
+    kind: 'multi-chips',
+    options: AUDIENCE_OPTIONS,
+    notePlaceholder: 'Describe them in a sentence (optional)',
     optional: true,
   },
   {
@@ -105,18 +140,22 @@ const STEPS: Step[] = [
   },
   {
     key: 'timeline',
+    noteKey: 'timelineNote',
     eyebrow: 'Step 5',
-    title: 'When do you need it?',
+    title: 'When do you want it?',
     kind: 'chips',
     options: TIMELINE_OPTIONS,
+    notePlaceholder: 'A specific date or deadline? (optional)',
   },
   {
     key: 'budget',
+    noteKey: 'budgetNote',
     eyebrow: 'Step 6',
     title: 'Budget range?',
     hint: 'Helps us scope the right shape of build.',
     kind: 'chips',
     options: BUDGET_OPTIONS,
+    notePlaceholder: 'Any context on the budget? (optional)',
   },
   {
     key: 'notes',
@@ -133,12 +172,35 @@ const STEP_LABELS = ['Type', 'Goal', 'Audience', 'Refs', 'Timeline', 'Budget', '
 
 function buildDescription(f: BriefFields): string {
   const sections: string[] = [];
-  if (f.type) sections.push(`**Project type**\n${f.type}`);
-  if (f.goals.trim()) sections.push(`**Goals**\n${f.goals.trim()}`);
-  if (f.audience.trim()) sections.push(`**Target audience**\n${f.audience.trim()}`);
+  if (f.type) {
+    sections.push(
+      `**Project type**\n${f.type}${f.typeNote.trim() ? `\n_${f.typeNote.trim()}_` : ''}`
+    );
+  }
+  if (f.goals.length > 0) {
+    sections.push(
+      `**Goals**\n${f.goals.join(', ')}${f.goalsNote.trim() ? `\n_${f.goalsNote.trim()}_` : ''}`
+    );
+  }
+  if (f.audience.length > 0 || f.audienceNote.trim()) {
+    const audience = f.audience.length > 0 ? f.audience.join(', ') : '(see note)';
+    sections.push(
+      `**Target audience**\n${audience}${
+        f.audienceNote.trim() ? `\n_${f.audienceNote.trim()}_` : ''
+      }`
+    );
+  }
   if (f.references.trim()) sections.push(`**References / inspiration**\n${f.references.trim()}`);
-  if (f.timeline) sections.push(`**Timeline**\n${f.timeline}`);
-  if (f.budget) sections.push(`**Budget**\n${f.budget}`);
+  if (f.timeline) {
+    sections.push(
+      `**Timeline**\n${f.timeline}${f.timelineNote.trim() ? `\n_${f.timelineNote.trim()}_` : ''}`
+    );
+  }
+  if (f.budget) {
+    sections.push(
+      `**Budget**\n${f.budget}${f.budgetNote.trim() ? `\n_${f.budgetNote.trim()}_` : ''}`
+    );
+  }
   if (f.notes.trim()) sections.push(`**Anything else**\n${f.notes.trim()}`);
   return sections.join('\n\n');
 }
@@ -157,11 +219,43 @@ export function ClientProjectBriefForm({
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === STEPS.length - 1;
   const value = fields[step.key];
-  const canAdvance = step.optional || value.trim().length > 0;
-  const hasContent = Object.values(fields).some((v) => v.trim().length > 0);
+  const noteValue =
+    step.noteKey && typeof fields[step.noteKey] === 'string'
+      ? (fields[step.noteKey] as string)
+      : '';
+  const hasPrimary =
+    step.kind === 'multi-chips'
+      ? Array.isArray(value) && value.length > 0
+      : typeof value === 'string' && value.trim().length > 0;
+  const canAdvance = step.optional || hasPrimary || noteValue.trim().length > 0;
+  const hasContent =
+    fields.type ||
+    fields.goals.length > 0 ||
+    fields.audience.length > 0 ||
+    [
+      fields.typeNote,
+      fields.goalsNote,
+      fields.audienceNote,
+      fields.references,
+      fields.timeline,
+      fields.timelineNote,
+      fields.budget,
+      fields.budgetNote,
+      fields.notes,
+    ].some((v) => v.trim().length > 0);
 
-  function update<K extends keyof BriefFields>(key: K, value: BriefFields[K]) {
-    setFields((prev) => ({ ...prev, [key]: value }));
+  function update<K extends keyof BriefFields>(key: K, next: BriefFields[K]) {
+    setFields((prev) => ({ ...prev, [key]: next }));
+  }
+
+  function toggleMulti(key: keyof BriefFields, optionValue: string) {
+    setFields((prev) => {
+      const current = prev[key];
+      if (!Array.isArray(current)) return prev;
+      const exists = current.includes(optionValue);
+      const next = exists ? current.filter((v) => v !== optionValue) : [...current, optionValue];
+      return { ...prev, [key]: next } as BriefFields;
+    });
   }
 
   function goNext() {
@@ -291,7 +385,7 @@ export function ClientProjectBriefForm({
       {/* Body */}
       <div
         key={stepIndex}
-        className="animate-[stepIn_320ms_cubic-bezier(0.19,1,0.22,1)_both] px-7 py-7"
+        className="animate-[stepIn_320ms_cubic-bezier(0.19,1,0.22,1)_both] space-y-5 px-7 py-7"
       >
         {step.kind === 'chips' && step.options && (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -301,7 +395,43 @@ export function ClientProjectBriefForm({
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => update(step.key, opt.value)}
+                  onClick={() => update(step.key, opt.value as BriefFields[typeof step.key])}
+                  className={cn(
+                    'group relative flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13.5px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    selected
+                      ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.6),0_8px_24px_-6px_hsl(var(--primary)/0.45)]'
+                      : 'border-border bg-card/50 text-muted-foreground hover:border-primary/40 hover:bg-primary/[0.04] hover:text-foreground'
+                  )}
+                >
+                  {opt.label}
+                  {selected && (
+                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        className="h-2.5 w-2.5"
+                      >
+                        <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {step.kind === 'multi-chips' && step.options && (
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {step.options.map((opt) => {
+              const selected = Array.isArray(value) && value.includes(opt.value);
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => toggleMulti(step.key, opt.value)}
                   className={cn(
                     'group relative flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13.5px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     selected
@@ -331,11 +461,21 @@ export function ClientProjectBriefForm({
 
         {step.kind === 'textarea' && (
           <Textarea
-            value={value}
-            onChange={(e) => update(step.key, e.target.value)}
+            value={typeof value === 'string' ? value : ''}
+            onChange={(e) => update(step.key, e.target.value as BriefFields[typeof step.key])}
             placeholder={step.placeholder}
             className="min-h-[140px] resize-none rounded-xl text-[14px] leading-relaxed"
             autoFocus
+          />
+        )}
+
+        {/* Optional extra-text under chip-style steps */}
+        {(step.kind === 'chips' || step.kind === 'multi-chips') && step.noteKey && (
+          <Textarea
+            value={noteValue}
+            onChange={(e) => update(step.noteKey as keyof BriefFields, e.target.value as never)}
+            placeholder={step.notePlaceholder ?? 'Anything to add? (optional)'}
+            className="min-h-[80px] resize-none rounded-xl text-[13.5px] leading-relaxed text-foreground/90 placeholder:text-muted-foreground/55"
           />
         )}
       </div>
