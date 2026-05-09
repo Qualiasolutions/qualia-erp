@@ -20,6 +20,9 @@ interface StatCardProps {
   tone?: Tone;
   /** Tighter padding for use inside a strip. */
   compact?: boolean;
+  /** Render without border/radius — for use inside a divider-driven strip
+   *  where the outer container provides the chrome. */
+  flat?: boolean;
   className?: string;
   /** Slot at the top-right of the card (e.g. an icon or count badge). */
   adornment?: React.ReactNode;
@@ -47,6 +50,7 @@ export function StatCard({
   deltaLabel,
   tone = 'neutral',
   compact,
+  flat,
   className,
   adornment,
 }: StatCardProps) {
@@ -65,9 +69,9 @@ export function StatCard({
   return (
     <div
       className={cn(
-        'group flex flex-col rounded-xl border transition-colors',
-        compact ? 'gap-1.5 p-3' : 'gap-2 p-4',
-        TONE_CLASSES[tone],
+        'group flex flex-col transition-colors',
+        flat ? 'p-5' : cn('rounded-xl border', compact ? 'gap-1.5 p-3' : 'gap-2 p-4'),
+        flat ? null : TONE_CLASSES[tone],
         className
       )}
     >
