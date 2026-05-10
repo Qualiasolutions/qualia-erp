@@ -58,7 +58,7 @@ const PAGES: PageDef[] = [
     id: 'admin-dashboard',
     label: 'Dashboard',
     icon: 'home',
-    href: '/admin',
+    href: '/dashboard',
     exact: true,
     roles: ['admin'],
     appKey: 'home',
@@ -88,14 +88,6 @@ const PAGES: PageDef[] = [
     href: '/projects',
     roles: ['admin', 'employee', 'client'],
     appKey: 'projects',
-  },
-  {
-    id: 'tasks',
-    label: 'Tasks',
-    icon: 'tasks',
-    href: '/tasks',
-    roles: ['admin', 'employee'],
-    appKey: 'tasks',
   },
   {
     id: 'schedule',
