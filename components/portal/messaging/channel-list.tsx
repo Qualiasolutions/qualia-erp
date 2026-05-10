@@ -38,39 +38,43 @@ export function ChannelList({
     : channels;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-[hsl(var(--surface-2))]/40 dark:bg-card">
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-        <h2 className="text-base font-semibold text-foreground">Messages</h2>
+      <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-5">
+        <div>
+          <div className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
+            Channels
+          </div>
+          <h2 className="mt-1 text-base font-semibold tracking-tight text-foreground">Messages</h2>
+        </div>
         <button
           type="button"
           onClick={onNewConversation}
           className={cn(
-            'flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5',
-            'text-xs font-medium text-foreground transition-colors duration-150',
-            'hover:border-primary/30 hover:bg-primary/[0.06] hover:text-primary',
+            'flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card',
+            'text-foreground transition-colors duration-150',
+            'hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary',
             'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
           )}
           aria-label="Start a new conversation"
         >
-          <Plus className="h-3.5 w-3.5" />
-          New
+          <Plus className="h-4 w-4" />
         </button>
       </div>
 
       {/* Search */}
-      <div className="shrink-0 px-3 py-2">
+      <div className="shrink-0 px-3 pb-3 pt-1">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search projects..."
+            placeholder="Search projects…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={cn(
-              'h-9 w-full rounded-lg border border-border bg-background pl-8 pr-3',
+              'h-10 w-full rounded-xl border border-border bg-card pl-9 pr-3',
               'text-sm text-foreground placeholder:text-muted-foreground',
-              'focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30',
+              'focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/30',
               'transition-colors duration-150'
             )}
             aria-label="Search conversations"
@@ -79,28 +83,34 @@ export function ChannelList({
       </div>
 
       {/* Channel list */}
-      <div className="flex-1 overflow-y-auto" role="listbox" aria-label="Message channels">
+      <div
+        className="flex-1 overflow-y-auto px-2 pb-3"
+        role="listbox"
+        aria-label="Message channels"
+      >
         {isLoading ? (
           <ChannelListSkeleton />
         ) : filteredChannels.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
-            <MessageSquare className="mb-3 h-12 w-12 text-muted-foreground/30" />
-            <p className="text-sm font-medium text-foreground">
-              {searchQuery.trim() ? 'No matching conversations' : 'No conversations yet'}
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60">
+              <MessageSquare className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="mt-4 text-sm font-semibold tracking-tight text-foreground">
+              {searchQuery.trim() ? 'No matches' : 'No conversations yet'}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {searchQuery.trim()
-                ? 'Try a different search term'
-                : 'Start a conversation about any of your projects'}
+                ? 'Try a different search term.'
+                : 'Start a thread on any of your projects.'}
             </p>
             {!searchQuery.trim() && (
               <button
                 type="button"
                 onClick={onNewConversation}
                 className={cn(
-                  'mt-4 inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/[0.06] px-3 py-1.5',
+                  'mt-4 inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/[0.08] px-3 py-2',
                   'text-xs font-medium text-primary transition-colors duration-150',
-                  'hover:bg-primary/10',
+                  'hover:bg-primary/15',
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
                 )}
               >
@@ -110,59 +120,61 @@ export function ChannelList({
             )}
           </div>
         ) : (
-          filteredChannels.map((channel) => {
-            const isActive = channel.projectId === selectedProjectId;
-            const projectName = channel.project?.name || 'Unknown Project';
-            const senderName = channel.lastMessageSender?.full_name || null;
-            const preview = channel.lastMessagePreview || null;
-            const timeAgo = channel.lastMessageAt
-              ? formatRelativeTime(channel.lastMessageAt)
-              : null;
+          <div className="space-y-0.5">
+            {filteredChannels.map((channel) => {
+              const isActive = channel.projectId === selectedProjectId;
+              const projectName = channel.project?.name || 'Unknown Project';
+              const senderName = channel.lastMessageSender?.full_name || null;
+              const preview = channel.lastMessagePreview || null;
+              const timeAgo = channel.lastMessageAt
+                ? formatRelativeTime(channel.lastMessageAt)
+                : null;
 
-            return (
-              <button
-                key={channel.id}
-                role="option"
-                aria-selected={isActive}
-                onClick={() => onSelectChannel(channel.projectId, channel.id)}
-                className={cn(
-                  'flex w-full cursor-pointer items-start gap-3 border-b border-border/30 px-3 py-3 text-left transition-colors duration-150',
-                  isActive
-                    ? 'border-l-2 border-l-primary bg-primary/[0.06]'
-                    : 'border-l-2 border-l-transparent hover:bg-muted/50'
-                )}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p
-                      className={cn(
-                        'truncate text-sm',
-                        channel.unreadCount > 0
-                          ? 'font-semibold text-foreground'
-                          : 'font-medium text-foreground'
+              return (
+                <button
+                  key={channel.id}
+                  role="option"
+                  aria-selected={isActive}
+                  onClick={() => onSelectChannel(channel.projectId, channel.id)}
+                  className={cn(
+                    'flex w-full cursor-pointer items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-150',
+                    isActive ? 'bg-primary/[0.1] text-foreground' : 'hover:bg-card'
+                  )}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p
+                        className={cn(
+                          'truncate text-[13.5px]',
+                          channel.unreadCount > 0
+                            ? 'font-semibold text-foreground'
+                            : 'font-medium text-foreground'
+                        )}
+                      >
+                        {projectName}
+                      </p>
+                      {timeAgo && (
+                        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                          {timeAgo}
+                        </span>
                       )}
-                    >
-                      {projectName}
-                    </p>
-                    {timeAgo && (
-                      <span className="shrink-0 text-[10px] text-muted-foreground">{timeAgo}</span>
+                    </div>
+                    {preview && (
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {senderName ? `${senderName}: ` : ''}
+                        {preview}
+                      </p>
                     )}
                   </div>
-                  {preview && (
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {senderName ? `${senderName}: ` : ''}
-                      {preview}
-                    </p>
+                  {channel.unreadCount > 0 && (
+                    <span className="mt-0.5 flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold text-primary-foreground">
+                      {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
+                    </span>
                   )}
-                </div>
-                {channel.unreadCount > 0 && (
-                  <span className="mt-0.5 flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                    {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
-                  </span>
-                )}
-              </button>
-            );
-          })
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

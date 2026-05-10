@@ -3,7 +3,7 @@
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import { type ActionResult, isUserAdmin } from './shared';
-import { notifyAssignedEmployees } from '@/lib/notifications';
+import { notifyAdminsAndAssignedEmployees } from '@/lib/notifications';
 import { notifyAdminAndAssignedOfClientActivity } from '@/lib/email';
 import { getEmployeeProjectIds } from '@/lib/auth/is-staff-on-project';
 import { FeatureRequestCreateSchema, UpdateFeatureRequestSchema } from '@/lib/validation';
@@ -87,24 +87,27 @@ export async function createFeatureRequest(input: {
           is_client_visible: true,
         });
 
-        await notifyAssignedEmployees(
-          resolvedProjectId,
-          `Client submitted feature request: ${safeInput.title}`,
-          {
-            request_id: data.id,
-            action_type: 'feature_request',
-          }
-        );
-
         const { data: clientProfile } = await supabase
           .from('profiles')
           .select('full_name')
           .eq('id', user.id)
           .single();
+        const actorName = clientProfile?.full_name || 'A client';
+
+        // In-app pulse — admins + assigned employees
+        await notifyAdminsAndAssignedEmployees(
+          resolvedProjectId,
+          `${actorName} submitted a request: ${safeInput.title}`,
+          {
+            request_id: data.id,
+            action_type: 'feature_request',
+            link: '/requests',
+          }
+        );
 
         notifyAdminAndAssignedOfClientActivity({
           projectId: resolvedProjectId,
-          clientName: clientProfile?.full_name || 'A client',
+          clientName: actorName,
           activityType: 'submitted a feature request',
           activityDetails: `${safeInput.title}${safeInput.description ? `\n\n${safeInput.description}` : ''}`,
         }).catch((err) => console.error('[createFeatureRequest email]', err));

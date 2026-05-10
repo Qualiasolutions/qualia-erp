@@ -111,7 +111,7 @@ export function PortalInvoiceFormDialog({ clients }: PortalInvoiceFormDialogProp
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="default" className="h-10 cursor-pointer gap-1.5 rounded-lg">
+        <Button size="default" className="h-10 cursor-pointer gap-1.5 rounded-xl">
           <Plus className="h-4 w-4" />
           New invoice
         </Button>
@@ -257,7 +257,7 @@ export function PortalInvoiceFormDialog({ clients }: PortalInvoiceFormDialogProp
             <Button
               type="button"
               variant="outline"
-              className="cursor-pointer rounded-lg"
+              className="cursor-pointer rounded-xl"
               onClick={() => handleOpenChange(false)}
             >
               Cancel
@@ -265,7 +265,7 @@ export function PortalInvoiceFormDialog({ clients }: PortalInvoiceFormDialogProp
             <Button
               type="submit"
               disabled={loading || !invoiceNumber.trim() || !total || !clientId}
-              className="cursor-pointer rounded-lg bg-primary text-primary-foreground"
+              className="cursor-pointer rounded-xl bg-primary text-primary-foreground"
             >
               {loading ? (
                 <>

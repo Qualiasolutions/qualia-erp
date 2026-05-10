@@ -322,6 +322,7 @@ async function ClientProjectListLoader({ clientId }: { clientId: string }) {
       archived={archived}
       isAdmin={false}
       expandTerminalGroups
+      clientView
     />
   );
 }

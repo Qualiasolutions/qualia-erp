@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, MessageSquare, FileText } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { hueFromId, clientAccent, clientAccentGradient } from '@/lib/color-constants';
+import { hueFromId, clientAccent } from '@/lib/color-constants';
 import { formatEURCompact } from '@/lib/currency';
 
 /* ======================================================================
@@ -64,8 +64,16 @@ function getStatusMeta(status: string) {
   return STATUS_META[status] ?? { label: status, tone: 'bg-muted-foreground' };
 }
 
+function getGreeting(hour: number): string {
+  if (hour < 5) return 'Still up';
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  if (hour < 20) return 'Good evening';
+  return 'Still up';
+}
+
 /* ======================================================================
-   QualiaPortalHub — luxury client home
+   QualiaPortalHub — calm client cockpit
    ====================================================================== */
 
 export function QualiaPortalHub({
@@ -79,10 +87,12 @@ export function QualiaPortalHub({
   enabledApps,
 }: QualiaPortalHubProps) {
   const hue = useMemo(() => hueFromId(clientId), [clientId]);
-  const gradient = useMemo(() => clientAccentGradient(hue), [hue]);
   const accentColor = useMemo(() => clientAccent(hue), [hue]);
+  const accentSoft = useMemo(() => clientAccent(hue, 60, 0.08), [hue]);
   const firstName = displayName.split(' ')[0] ?? displayName;
   const clientName = companyName ?? displayName ?? 'Client';
+
+  const greeting = useMemo(() => getGreeting(new Date().getHours()), []);
 
   const threadDestination = enabledApps?.includes('messages')
     ? '/messages'
@@ -105,76 +115,88 @@ export function QualiaPortalHub({
   }
 
   return (
-    <div className="relative flex flex-col">
-      {/* Hero */}
-      <section
-        className="relative overflow-hidden px-6 pb-14 pt-10 text-white md:px-10 md:pb-16 md:pt-12"
-        style={{ background: gradient }}
-      >
-        <div className="relative grid w-full grid-cols-1 items-end gap-8 lg:grid-cols-[2fr_1fr]">
-          <div>
-            <div className="mb-4 font-mono text-[11px] uppercase text-white/70">
-              Welcome back, {firstName}
-            </div>
-            <h1 className="text-[clamp(1.875rem,1.2rem+3vw,3rem)] font-semibold leading-[1.1]">
-              {clientName}
-            </h1>
-            <p className="mt-4 max-w-[560px] text-[15px] leading-relaxed text-white/75">
-              Your projects, your invoices, your conversations — the full picture of what we&apos;re
-              building for you.
-            </p>
-          </div>
+    <div
+      className="relative flex flex-col"
+      style={
+        {
+          '--client-accent': accentColor,
+          '--client-accent-soft': accentSoft,
+        } as React.CSSProperties
+      }
+    >
+      {/* Aurora wash — subtle accent ambience, no hard edge */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] opacity-[0.55] dark:opacity-[0.32]"
+        style={{
+          background: `radial-gradient(ellipse 80% 60% at 20% 0%, ${accentSoft} 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 100% 0%, ${accentSoft} 0%, transparent 65%)`,
+        }}
+      />
+
+      {/* Header */}
+      <header className="relative px-[clamp(1.5rem,4vw,2.5rem)] pb-8 pt-12 md:pt-14">
+        <div className="flex items-baseline gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+          <span
+            className="inline-block size-1.5 rounded-full"
+            style={{ background: accentColor }}
+            aria-hidden
+          />
+          <span>{greeting},</span>
+          <span className="text-foreground">{firstName}</span>
+        </div>
+        <h1 className="mt-3 text-[clamp(1.75rem,1.1rem+2.4vw,2.625rem)] font-semibold leading-[1.05] tracking-tight text-foreground">
+          {clientName}
+        </h1>
+        <p className="mt-3 max-w-[560px] text-[14.5px] leading-relaxed text-muted-foreground">
+          Your projects, invoices, and conversations — the full picture of what we&apos;re building
+          for you.
+        </p>
+      </header>
+
+      {/* Stat strip — flat, separator-divided, sits on the wash */}
+      <section className="relative border-y border-border/70 bg-card/40 backdrop-blur-[2px]">
+        <div className="grid grid-cols-2 divide-x divide-border/70 md:grid-cols-4">
+          <PulseMetric
+            label="Active projects"
+            value={stats?.projectCount ?? (isLoading ? '—' : 0)}
+            hint={!isLoading && (stats?.projectCount ?? 0) === 0 ? 'no active work' : undefined}
+          />
+          <PulseMetric
+            label="Open requests"
+            value={stats?.pendingRequests ?? (isLoading ? '—' : 0)}
+            hint={!isLoading && (stats?.pendingRequests ?? 0) === 0 ? 'inbox zero' : undefined}
+          />
+          <PulseMetric
+            label="Unpaid invoices"
+            value={stats?.unpaidInvoiceCount ?? (isLoading ? '—' : 0)}
+            hint={!isLoading && (stats?.unpaidInvoiceCount ?? 0) === 0 ? 'all clear' : undefined}
+          />
+          <PulseMetric
+            label="Outstanding"
+            value={
+              isLoading ? '—' : stats?.unpaidTotal ? formatEURCompact(stats.unpaidTotal) : '€0'
+            }
+            hint={!isLoading && !stats?.unpaidTotal ? 'nothing due' : undefined}
+            emphasized={!!stats?.unpaidTotal}
+          />
         </div>
       </section>
 
-      {/* Content panel */}
-      <div className="relative -mt-6 min-h-[600px] rounded-t-[32px] bg-background px-6 pb-16 pt-12 md:px-10">
-        <div className="w-full">
-          {/* Pulse row */}
-          <div className="mb-10 grid grid-cols-2 gap-6 border-b border-border pb-10 md:grid-cols-4">
-            <PulseMetric
-              label="Active projects"
-              value={stats?.projectCount ?? (isLoading ? '—' : 0)}
-              hint={!isLoading && (stats?.projectCount ?? 0) === 0 ? 'no active work' : undefined}
+      {/* Body */}
+      <div className="relative px-[clamp(1.5rem,4vw,2.5rem)] pb-16 pt-10">
+        <div className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-[2fr_1fr]">
+          <EngagementsSection projects={projects} accentColor={accentColor} isLoading={isLoading} />
+          <aside className="flex flex-col gap-8">
+            <InvoicesSidebar
+              unpaidCount={stats?.unpaidInvoiceCount ?? 0}
+              unpaidTotal={stats?.unpaidTotal ?? 0}
             />
-            <PulseMetric
-              label="Open requests"
-              value={stats?.pendingRequests ?? (isLoading ? '—' : 0)}
-              hint={!isLoading && (stats?.pendingRequests ?? 0) === 0 ? 'inbox zero' : undefined}
-            />
-            <PulseMetric
-              label="Unpaid invoices"
-              value={stats?.unpaidInvoiceCount ?? (isLoading ? '—' : 0)}
-              hint={!isLoading && (stats?.unpaidInvoiceCount ?? 0) === 0 ? 'all clear' : undefined}
-            />
-            <PulseMetric
-              label="Outstanding"
-              value={
-                isLoading ? '—' : stats?.unpaidTotal ? formatEURCompact(stats.unpaidTotal) : '€0'
-              }
-              hint={!isLoading && !stats?.unpaidTotal ? 'nothing due' : undefined}
-            />
-          </div>
-
-          {/* Two-column body */}
-          <div className="grid grid-cols-1 gap-10 lg:grid-cols-[2fr_1fr]">
-            <EngagementsSection
-              projects={projects}
+            <ThreadCard
+              destination={threadDestination}
+              appLabel={threadAppLabel}
               accentColor={accentColor}
-              isLoading={isLoading}
             />
-            <aside className="flex flex-col gap-8">
-              <InvoicesSidebar
-                unpaidCount={stats?.unpaidInvoiceCount ?? 0}
-                unpaidTotal={stats?.unpaidTotal ?? 0}
-              />
-              <ThreadCard
-                destination={threadDestination}
-                appLabel={threadAppLabel}
-                accentColor={accentColor}
-              />
-            </aside>
-          </div>
+          </aside>
         </div>
       </div>
     </div>
@@ -182,28 +204,35 @@ export function QualiaPortalHub({
 }
 
 /* ======================================================================
-   PulseMetric
+   PulseMetric — flat tile, no border, separator-driven
    ====================================================================== */
 
 function PulseMetric({
   label,
   value,
   hint,
+  emphasized = false,
 }: {
   label: string;
   value: string | number;
   hint?: string;
+  emphasized?: boolean;
 }) {
   return (
-    <div>
+    <div className="px-[clamp(1.25rem,3vw,2rem)] py-5">
       <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
         {label}
       </div>
-      <div className="mt-2 text-[28px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
+      <div
+        className={cn(
+          'mt-2 text-[26px] font-semibold tabular-nums leading-none tracking-tight',
+          emphasized ? 'text-amber-600 dark:text-amber-400' : 'text-foreground'
+        )}
+      >
         {value}
       </div>
       {hint ? (
-        <div className="mt-1.5 font-mono text-[10.5px] tabular-nums text-muted-foreground/70">
+        <div className="mt-1.5 font-mono text-[10px] tabular-nums text-muted-foreground/70">
           {hint}
         </div>
       ) : null}
@@ -224,16 +253,23 @@ const EngagementsSection = memo(function EngagementsSection({
   accentColor: string;
   isLoading: boolean;
 }) {
+  const heading = (
+    <div className="mb-1 flex items-center gap-2">
+      <span className="inline-block h-px w-6" style={{ background: accentColor }} aria-hidden />
+      <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+        Engagements
+      </span>
+    </div>
+  );
+
   if (isLoading && projects.length === 0) {
     return (
       <section>
-        <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          Engagements
-        </div>
-        <h2 className="mt-2 text-lg font-semibold tracking-tight">Currently building</h2>
-        <div className="mt-6 space-y-6">
+        {heading}
+        <h2 className="text-lg font-semibold tracking-tight">Currently building</h2>
+        <div className="mt-6 space-y-4">
           {[0, 1].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-lg bg-muted" />
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-muted/60" />
           ))}
         </div>
       </section>
@@ -243,11 +279,9 @@ const EngagementsSection = memo(function EngagementsSection({
   if (projects.length === 0) {
     return (
       <section>
-        <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          Engagements
-        </div>
-        <h2 className="mt-2 text-lg font-semibold tracking-tight">Currently building</h2>
-        <div className="mt-6 rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center">
+        {heading}
+        <h2 className="text-lg font-semibold tracking-tight">Currently building</h2>
+        <div className="mt-6 rounded-2xl border border-dashed border-border bg-card/40 p-10 text-center">
           <p className="text-sm italic text-muted-foreground">
             No active projects yet. Your next engagement will appear here.
           </p>
@@ -258,11 +292,9 @@ const EngagementsSection = memo(function EngagementsSection({
 
   return (
     <section>
-      <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-        Engagements
-      </div>
-      <h2 className="mt-2 text-lg font-semibold tracking-tight">Currently building</h2>
-      <ul className="mt-6 flex flex-col divide-y divide-border">
+      {heading}
+      <h2 className="text-lg font-semibold tracking-tight">Currently building</h2>
+      <ul className="mt-6 flex flex-col divide-y divide-border/70">
         {projects.map((project, i) => (
           <EngagementRow key={project.id} project={project} index={i} accentColor={accentColor} />
         ))}
@@ -289,40 +321,41 @@ const EngagementRow = memo(function EngagementRow({
   return (
     <li>
       <Link
-        href={`/projects/${project.id}/roadmap`}
+        href={`/projects/${project.id}`}
         className={cn(
-          'group relative block cursor-pointer py-6 transition-colors duration-200',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2'
+          'group relative -mx-3 block cursor-pointer rounded-xl px-3 py-5 transition-colors duration-200',
+          'hover:bg-card/50',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
         )}
       >
         <div className="flex items-baseline justify-between gap-6">
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-2.5">
-              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+              <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
                 Engagement No.{String(index + 1).padStart(2, '0')}
               </span>
               <span className={cn('size-1.5 rounded-full', status.tone)} aria-hidden />
-              <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
+              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                 {status.label}
               </span>
             </div>
             <div className="text-base font-semibold leading-snug tracking-tight text-foreground">
               {project.name}
             </div>
-            <div className="mt-1.5 text-sm text-muted-foreground">{phaseText}</div>
+            <div className="mt-1 text-sm text-muted-foreground">{phaseText}</div>
           </div>
           <div className="flex flex-col items-end gap-1.5">
             <div
-              className="font-mono text-[34px] font-light tabular-nums leading-none tracking-tight"
+              className="font-mono text-[30px] font-light tabular-nums leading-none tracking-tight"
               style={{ color: accentColor }}
             >
               {pct}
-              <span className="text-lg">%</span>
+              <span className="text-base">%</span>
             </div>
             <span
               className={cn(
-                'inline-flex items-center gap-1 font-mono text-[11px] transition-transform duration-200',
-                'motion-safe:group-hover:translate-x-1.5'
+                'inline-flex items-center gap-1 font-mono text-[10.5px] uppercase tracking-[0.08em]',
+                'transition-transform duration-200 motion-safe:group-hover:translate-x-1'
               )}
               style={{ color: accentColor }}
               aria-hidden
@@ -331,7 +364,7 @@ const EngagementRow = memo(function EngagementRow({
             </span>
           </div>
         </div>
-        <div className="mt-4 h-0.5 overflow-hidden rounded-full bg-border/30">
+        <div className="mt-4 h-[3px] overflow-hidden rounded-full bg-border/40">
           <div
             className="h-full rounded-full transition-[width] duration-700 ease-premium"
             style={{
@@ -358,12 +391,15 @@ function InvoicesSidebar({
 }) {
   return (
     <section>
-      <div className="mb-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-        Recent invoices
+      <div className="mb-3 flex items-center gap-2">
+        <span className="inline-block h-px w-6 bg-border" aria-hidden />
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+          Recent invoices
+        </span>
       </div>
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border p-4">
-          <div>
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <div className="min-w-0">
             <div className="text-sm font-medium text-foreground">
               {unpaidCount > 0 ? `${unpaidCount} unpaid` : 'All paid'}
             </div>
@@ -380,10 +416,10 @@ function InvoicesSidebar({
             <FileText className="size-3" aria-hidden /> View all
           </Link>
         </div>
-        <div className="flex items-center gap-3 px-4 py-3 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 px-5 py-3 text-xs text-muted-foreground">
           <span className="font-mono text-[10px] uppercase tracking-[0.08em]">Billing</span>
           <span>·</span>
-          <span>Invoices, payments and payment history</span>
+          <span>Invoices, payments and history</span>
         </div>
       </div>
     </section>
@@ -405,19 +441,23 @@ function ThreadCard({
 }) {
   return (
     <section>
-      <div className="mb-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-        Open a {appLabel}
+      <div className="mb-3 flex items-center gap-2">
+        <span className="inline-block h-px w-6 bg-border" aria-hidden />
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+          Open a {appLabel}
+        </span>
       </div>
-      <div className="rounded-xl border border-border bg-card p-5">
+      <div className="rounded-2xl border border-border bg-card p-5">
         <p className="text-sm leading-relaxed text-muted-foreground">
           Questions, feedback, a new idea? Drop a note — we typically reply within the hour.
         </p>
         <Link
           href={destination}
           className={cn(
-            'mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg',
-            'text-sm font-medium text-white transition-opacity duration-150',
-            'hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
+            'mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl',
+            'text-sm font-medium text-white shadow-sm transition-all duration-150',
+            'hover:translate-y-[-1px] hover:shadow-md',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
           )}
           style={{ background: accentColor }}
         >

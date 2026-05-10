@@ -24,33 +24,29 @@ export async function getProjectPhases(projectId: string) {
   const hasAccess = await canAccessProject(user.id, projectId);
   if (!hasAccess) return [];
 
-  // Item 16: Explicit column projection instead of select('*')
-  const { data, error } = await supabase
-    .from('project_phases')
-    .select(
-      'id, name, status, sort_order, description, completed_at, is_locked, phase_type, project_id, workspace_id, started_at, created_at, updated_at, milestone_number, plan_count, plans_completed, github_synced_at, start_date, target_date'
-    )
-    .eq('project_id', projectId)
-    .order('sort_order', { ascending: true });
+  // Run the phases query and the role lookup in parallel — the role only
+  // gates field stripping at return time, so it doesn't need to block the
+  // phases fetch.
+  const [phasesResult, profileResult] = await Promise.all([
+    supabase
+      .from('project_phases')
+      .select(
+        'id, name, status, sort_order, description, completed_at, is_locked, phase_type, project_id, workspace_id, started_at, created_at, updated_at, milestone_number, plan_count, plans_completed, github_synced_at, start_date, target_date'
+      )
+      .eq('project_id', projectId)
+      .order('sort_order', { ascending: true }),
+    supabase.from('profiles').select('role').eq('id', user.id).single(),
+  ]);
 
-  if (error) {
-    console.error('[getProjectPhases] Error:', error);
+  if (phasesResult.error) {
+    console.error('[getProjectPhases] Error:', phasesResult.error);
     return [];
   }
 
   // Strip internal-only fields when the caller is a client. Phase descriptions
   // come from PLAN.md via the GitHub sync and may contain internal notes.
-  // Clients see milestone descriptions (high-level user-facing markers) and
-  // phase metadata, but not the synced phase descriptions or framework
-  // internals like plan counts and last-sync timestamps.
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.role === 'client') {
-    return (data || []).map((phase) => ({
+  if (profileResult.data?.role === 'client') {
+    return (phasesResult.data || []).map((phase) => ({
       ...phase,
       description: phase.phase_type === 'milestone' ? phase.description : null,
       plan_count: null,
@@ -59,7 +55,7 @@ export async function getProjectPhases(projectId: string) {
     }));
   }
 
-  return data;
+  return phasesResult.data;
 }
 
 export interface FrameworkPhaseItem {
@@ -97,37 +93,35 @@ export async function getPhaseItems(phaseId: string): Promise<FrameworkPhaseItem
   const hasAccess = await canAccessProject(user.id, phase.project_id);
   if (!hasAccess) return [];
 
-  const { data, error } = await supabase
-    .from('phase_items')
-    .select(
-      'id, title, description, display_order, is_completed, completed_at, status, template_key, is_custom'
-    )
-    .eq('phase_id', phaseId)
-    .order('display_order', { ascending: true });
+  // Parallel: items query + role lookup. Role only gates field stripping.
+  const [itemsResult, profileResult] = await Promise.all([
+    supabase
+      .from('phase_items')
+      .select(
+        'id, title, description, display_order, is_completed, completed_at, status, template_key, is_custom'
+      )
+      .eq('phase_id', phaseId)
+      .order('display_order', { ascending: true }),
+    supabase.from('profiles').select('role').eq('id', user.id).single(),
+  ]);
 
-  if (error) {
-    console.error('[getPhaseItems] Error:', error);
+  if (itemsResult.error) {
+    console.error('[getPhaseItems] Error:', itemsResult.error);
     return [];
   }
 
   // Strip framework-sync internals from phase items for clients. Descriptions
   // on framework-sourced items (template_key set, is_custom = false) come from
   // PLAN.md and may contain internal notes — clients see the title only.
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.role === 'client') {
-    return (data ?? []).map((item) => ({
+  if (profileResult.data?.role === 'client') {
+    return (itemsResult.data ?? []).map((item) => ({
       ...item,
       description: item.is_custom ? item.description : null,
       template_key: null,
     })) as FrameworkPhaseItem[];
   }
 
-  return (data ?? []) as FrameworkPhaseItem[];
+  return (itemsResult.data ?? []) as FrameworkPhaseItem[];
 }
 
 export async function createProjectPhase(projectId: string, name: string) {

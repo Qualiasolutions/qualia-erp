@@ -135,7 +135,7 @@ export function MessagesContent({ userId, userName, userRole }: MessagesContentP
       {/* Channel List — left panel */}
       <div
         className={cn(
-          'h-full w-full shrink-0 border-r border-border bg-card md:w-[280px]',
+          'h-full w-full shrink-0 border-r border-border md:w-[300px]',
           mobileView === 'channels' ? 'block' : 'hidden md:block'
         )}
       >
@@ -198,10 +198,14 @@ export function MessagesContent({ userId, userName, userRole }: MessagesContentP
 function EmptyThreadPlaceholder() {
   return (
     <div className="flex h-full flex-col items-center justify-center px-4 text-center">
-      <MessageSquare className="mb-3 h-12 w-12 text-muted-foreground/30" />
-      <p className="text-base font-medium text-foreground">Select a conversation</p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Choose a project from the list to view messages
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50">
+        <MessageSquare className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <p className="mt-5 text-base font-semibold tracking-tight text-foreground">
+        Select a conversation
+      </p>
+      <p className="mt-1.5 max-w-xs text-sm text-muted-foreground">
+        Choose a project from the list to view messages, or start a new thread.
       </p>
     </div>
   );

@@ -18,9 +18,11 @@ import {
   FolderOpen,
   CheckCircle2,
   Archive,
+  Ban,
   MoreHorizontal,
   Check,
   ChevronDown,
+  Trash2,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -36,7 +38,12 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { hueFromId } from '@/lib/color-constants';
-import { setProjectPipelineStage, updateProjectStatus } from '@/app/actions/projects';
+import {
+  setProjectPipelineStage,
+  updateProjectStatus,
+  deleteProject,
+} from '@/app/actions/projects';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { ProjectType } from '@/types/database';
 
 /* ======================================================================
@@ -148,6 +155,8 @@ interface QualiaProjectsGalleryProps {
   projects: GalleryProject[];
   isAdmin?: boolean;
   expandTerminalGroups?: boolean;
+  /** Client-portal view — fewer projects, so render larger, more spacious cards. */
+  clientView?: boolean;
 }
 
 /* ======================================================================
@@ -275,16 +284,26 @@ function generateSummary(projects: GalleryProject[]): string {
    Stage Dropdown (admin only)
    ====================================================================== */
 
-type TerminalStatus = 'Done' | 'Archived';
+type TerminalStatus = 'Done' | 'Archived' | 'Canceled';
 
 const TERMINAL_STATUSES: { label: string; value: TerminalStatus; icon: typeof Beaker }[] = [
   { label: 'Finished', value: 'Done', icon: CheckCircle2 },
   { label: 'Archived', value: 'Archived', icon: Archive },
+  { label: 'Canceled', value: 'Canceled', icon: Ban },
 ];
 
-function StageDropdown({ project }: { project: GalleryProject }) {
+function StageDropdown({
+  project,
+  trigger,
+}: {
+  project: GalleryProject;
+  /** Optional custom trigger. Defaults to the floating "..." button used on
+   *  pipeline cards. The Finished/Archived rows pass their own inline trigger. */
+  trigger?: React.ReactNode;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const currentStage = getCurrentStage(project);
   const currentStatus = project.status;
 
@@ -314,81 +333,118 @@ function StageDropdown({ project }: { project: GalleryProject }) {
     });
   }
 
+  function handleDelete() {
+    startTransition(async () => {
+      const result = await deleteProject(project.id);
+      if (result.success) {
+        toast.success(`Deleted "${project.name}"`);
+        router.refresh();
+      } else {
+        toast.error(result.error || 'Failed to delete project');
+      }
+    });
+  }
+
+  const defaultTrigger = (
+    <button
+      type="button"
+      className={cn(
+        'absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md',
+        'bg-card/80 text-muted-foreground opacity-0 backdrop-blur-sm transition-all duration-150',
+        'hover:bg-muted hover:text-foreground',
+        'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+        'group-hover:opacity-100',
+        'cursor-pointer',
+        isPending && 'pointer-events-none opacity-50'
+      )}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      aria-label={`Move ${project.name} to another stage`}
+    >
+      <MoreHorizontal className="h-3.5 w-3.5" />
+    </button>
+  );
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md',
-            'bg-card/80 text-muted-foreground opacity-0 backdrop-blur-sm transition-all duration-150',
-            'hover:bg-muted hover:text-foreground',
-            'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-            'group-hover:opacity-100',
-            'cursor-pointer',
-            isPending && 'pointer-events-none opacity-50'
-          )}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          aria-label={`Move ${project.name} to another stage`}
-        >
-          <MoreHorizontal className="h-3.5 w-3.5" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          Move to stage
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {PIPELINE_STAGES.map((s) => {
-          const isCurrent = s.value === currentStage;
-          const Icon = s.icon;
-          return (
-            <DropdownMenuItem
-              key={s.value}
-              disabled={isCurrent}
-              className={cn('cursor-pointer gap-2 text-xs', isCurrent && 'opacity-50')}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleStageChange(s.value);
-              }}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {s.label}
-              {isCurrent && <Check className="ml-auto h-3 w-3 text-primary" />}
-            </DropdownMenuItem>
-          );
-        })}
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          Close out
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {TERMINAL_STATUSES.map((s) => {
-          const isCurrent = s.value === currentStatus;
-          const Icon = s.icon;
-          return (
-            <DropdownMenuItem
-              key={s.value}
-              disabled={isCurrent}
-              className={cn('cursor-pointer gap-2 text-xs', isCurrent && 'opacity-50')}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleTerminalChange(s.value, s.label);
-              }}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {s.label}
-              {isCurrent && <Check className="ml-auto h-3 w-3 text-primary" />}
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>{trigger ?? defaultTrigger}</DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Move to stage
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {PIPELINE_STAGES.map((s) => {
+            const isCurrent = s.value === currentStage;
+            const Icon = s.icon;
+            return (
+              <DropdownMenuItem
+                key={s.value}
+                disabled={isCurrent}
+                className={cn('cursor-pointer gap-2 text-xs', isCurrent && 'opacity-50')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleStageChange(s.value);
+                }}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {s.label}
+                {isCurrent && <Check className="ml-auto h-3 w-3 text-primary" />}
+              </DropdownMenuItem>
+            );
+          })}
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Close out
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {TERMINAL_STATUSES.map((s) => {
+            const isCurrent = s.value === currentStatus;
+            const Icon = s.icon;
+            return (
+              <DropdownMenuItem
+                key={s.value}
+                disabled={isCurrent}
+                className={cn('cursor-pointer gap-2 text-xs', isCurrent && 'opacity-50')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleTerminalChange(s.value, s.label);
+                }}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {s.label}
+                {isCurrent && <Check className="ml-auto h-3 w-3 text-primary" />}
+              </DropdownMenuItem>
+            );
+          })}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer gap-2 text-xs text-destructive focus:bg-destructive/10 focus:text-destructive"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setConfirmDelete(true);
+            }}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete project
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={(open) => !open && setConfirmDelete(false)}
+        title={`Delete "${project.name}"?`}
+        description="This permanently deletes the project, its phases, tasks, and uploads. This cannot be undone."
+        confirmLabel="Delete project"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
+    </>
   );
 }
 
@@ -475,9 +531,11 @@ function ProgressRing({
 const ProjectCardTile = memo(function ProjectCardTile({
   project,
   isAdmin,
+  clientView,
 }: {
   project: GalleryProject;
   isAdmin?: boolean;
+  clientView?: boolean;
 }) {
   const { progressStroke } = getProjectStyle(project);
   const progress = getProgress(project);
@@ -493,11 +551,14 @@ const ProjectCardTile = memo(function ProjectCardTile({
     <Link
       href={`/projects/${project.id}`}
       className={cn(
-        'group relative flex items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-2.5',
+        'group relative flex items-center border border-border bg-card/60',
         'transition-all duration-200 ease-premium',
         'hover:border-primary/30 hover:bg-card hover:shadow-[var(--elevation-resting)]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-        'cursor-pointer'
+        'cursor-pointer',
+        clientView
+          ? 'gap-4 rounded-2xl px-5 py-4 shadow-[0_1px_2px_0_hsl(var(--border)/0.5)]'
+          : 'gap-3 rounded-lg px-3 py-2.5'
       )}
     >
       {/* Admin stage dropdown — absolute, top-right */}
@@ -506,6 +567,8 @@ const ProjectCardTile = memo(function ProjectCardTile({
       {/* Left: circular progress ring with project/client logo inside */}
       <ProgressRing
         value={progress}
+        size={clientView ? 56 : 36}
+        strokeWidth={clientView ? 3 : 2.5}
         strokeClass={progressStroke}
         logoUrl={project.logo_url}
         fallbackInitial={(project.name?.charAt(0) ?? '?').toUpperCase()}
@@ -513,29 +576,43 @@ const ProjectCardTile = memo(function ProjectCardTile({
       />
 
       {/* Center: name (top) + type label (bottom) */}
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <div className={cn('flex min-w-0 flex-1 flex-col', clientView ? 'gap-1.5' : 'gap-0.5')}>
         <div className="flex items-center gap-1.5">
-          <h3 className="truncate text-sm font-semibold leading-tight text-foreground">
+          <h3
+            className={cn(
+              'truncate font-semibold leading-tight text-foreground',
+              clientView ? 'text-[16px]' : 'text-sm'
+            )}
+          >
             {project.name}
           </h3>
           {attention && (
             <AlertTriangle
-              className="h-3 w-3 shrink-0 text-amber-500"
+              className={cn('shrink-0 text-amber-500', clientView ? 'h-4 w-4' : 'h-3 w-3')}
               aria-label="Needs attention"
             />
           )}
         </div>
         <span
-          className={cn('font-mono text-[9px] font-semibold uppercase tracking-wider', typeColor)}
+          className={cn(
+            'font-mono font-semibold uppercase tracking-wider',
+            typeColor,
+            clientView ? 'text-[10.5px]' : 'text-[9px]'
+          )}
         >
           {typeLabel}
         </span>
+        {clientView && (
+          <span className="mt-0.5 font-mono text-[11px] tabular-nums text-muted-foreground/80">
+            {progress}% complete
+          </span>
+        )}
       </div>
 
       {/* Right: avatars (admin dropdown overlaps via absolute positioning) */}
       {avatars.length > 0 && (
-        <div className="shrink-0 pr-6">
-          <AvatarStack people={avatars} size={20} max={3} />
+        <div className={cn('shrink-0', clientView ? 'pr-2' : 'pr-6')}>
+          <AvatarStack people={avatars} size={clientView ? 26 : 20} max={3} />
         </div>
       )}
     </Link>
@@ -618,6 +695,7 @@ export function QualiaProjectsGallery({
   projects,
   isAdmin,
   expandTerminalGroups,
+  clientView,
 }: QualiaProjectsGalleryProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('columns');
   const [filter, setFilter] = useState<FilterMode>('all');
@@ -685,18 +763,18 @@ export function QualiaProjectsGallery({
         <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{summary}</span>
 
         {/* Filter pills */}
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-0.5 rounded-xl border border-border bg-card/40 p-1">
           {(['all', 'active', 'attention', 'launched'] as const).map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setFilter(f)}
               className={cn(
-                'h-9 cursor-pointer rounded-md px-2.5 text-[11px] font-medium capitalize transition-all duration-150',
+                'h-8 cursor-pointer rounded-lg px-2.5 text-[11px] font-medium capitalize transition-colors duration-150',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                 filter === f
                   ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
               )}
               aria-pressed={filter === f}
             >
@@ -706,7 +784,7 @@ export function QualiaProjectsGallery({
         </div>
 
         {/* View toggle */}
-        <div className="flex items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5">
+        <div className="flex items-center gap-0.5 rounded-xl border border-border bg-card/40 p-1">
           {(['columns', 'gallery', 'list'] as const).map((v) => {
             const Icon = v === 'columns' ? Columns3 : v === 'gallery' ? LayoutGrid : List;
             return (
@@ -716,7 +794,7 @@ export function QualiaProjectsGallery({
                 onClick={() => setViewMode(v)}
                 title={v === 'columns' ? 'Columns' : v === 'gallery' ? 'Gallery' : 'List'}
                 className={cn(
-                  'flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-sm transition-colors duration-150',
+                  'flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-colors duration-150',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                   viewMode === v
                     ? 'bg-background text-foreground shadow-sm'
@@ -744,13 +822,14 @@ export function QualiaProjectsGallery({
             />
           </div>
         ) : viewMode === 'columns' ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-3">
-            <StageColumns stages={stages} isAdmin={isAdmin} />
+          <div className={cn('flex min-h-0 flex-1 flex-col', clientView ? 'gap-5' : 'gap-3')}>
+            <StageColumns stages={stages} isAdmin={isAdmin} clientView={clientView} />
             {finishedProjects.length > 0 && (
               <FinishedRow
                 projects={finishedProjects}
                 isAdmin={isAdmin}
                 defaultOpen={expandTerminalGroups}
+                clientView={clientView}
               />
             )}
             {archivedProjects.length > 0 && (
@@ -758,6 +837,7 @@ export function QualiaProjectsGallery({
                 projects={archivedProjects}
                 isAdmin={isAdmin}
                 defaultOpen={expandTerminalGroups}
+                clientView={clientView}
               />
             )}
           </div>
@@ -771,25 +851,25 @@ export function QualiaProjectsGallery({
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-border bg-card">
+          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
             <div
-              className="sticky top-0 grid min-w-[600px] items-center gap-3 border-b border-border bg-card px-4 py-2.5"
+              className="sticky top-0 grid min-w-[600px] items-center gap-3 border-b border-border bg-muted/20 px-4 py-2.5"
               style={{ gridTemplateColumns: '24px 1.5fr 1fr 120px 100px 80px' }}
             >
               <span />
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Project
               </span>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Status
               </span>
-              <span className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-center font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Team
               </span>
-              <span className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-center font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Due
               </span>
-              <span className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Progress
               </span>
             </div>
@@ -812,15 +892,28 @@ export function QualiaProjectsGallery({
 function StageColumns({
   stages,
   isAdmin,
+  clientView,
 }: {
   stages: Record<StageKey, GalleryProject[]>;
   isAdmin?: boolean;
+  clientView?: boolean;
 }) {
   const order: StageKey[] = ['demo', 'building', 'preProduction', 'live'];
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div
+      className={cn(
+        'grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2 xl:grid-cols-4',
+        clientView ? 'gap-5' : 'gap-3'
+      )}
+    >
       {order.map((key) => (
-        <StageColumn key={key} stage={key} projects={stages[key]} isAdmin={isAdmin} />
+        <StageColumn
+          key={key}
+          stage={key}
+          projects={stages[key]}
+          isAdmin={isAdmin}
+          clientView={clientView}
+        />
       ))}
     </div>
   );
@@ -830,39 +923,84 @@ function StageColumn({
   stage,
   projects,
   isAdmin,
+  clientView,
 }: {
   stage: StageKey;
   projects: GalleryProject[];
   isAdmin?: boolean;
+  clientView?: boolean;
 }) {
   const config = STAGE_CONFIG[stage];
   const Icon = config.icon;
 
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-muted/10">
-      <header className="flex shrink-0 items-center gap-2 px-3 py-2.5">
-        <Icon className={cn('h-3.5 w-3.5', config.accent)} aria-hidden />
-        <h2 className="text-xs font-semibold tracking-tight text-foreground">{config.title}</h2>
+    <section
+      className={cn(
+        'flex min-h-0 flex-col overflow-hidden border border-border/60 bg-muted/10',
+        clientView
+          ? 'rounded-2xl bg-card/50 shadow-[0_1px_0_0_hsl(var(--border)/0.4)]'
+          : 'rounded-xl'
+      )}
+    >
+      <header
+        className={cn(
+          'flex shrink-0 items-center gap-2',
+          clientView ? 'border-b border-border/40 bg-muted/20 px-5 py-4' : 'px-3 py-2.5'
+        )}
+      >
+        <Icon className={cn(clientView ? 'h-5 w-5' : 'h-3.5 w-3.5', config.accent)} aria-hidden />
+        <h2
+          className={cn(
+            'font-semibold tracking-tight text-foreground',
+            clientView ? 'text-[15px]' : 'text-xs'
+          )}
+        >
+          {config.title}
+        </h2>
         {projects.length > 0 && (
-          <span className="ml-auto font-mono text-[10px] tabular-nums text-muted-foreground">
+          <span
+            className={cn(
+              'ml-auto font-mono tabular-nums text-muted-foreground',
+              clientView ? 'text-[12px]' : 'text-[10px]'
+            )}
+          >
             {projects.length}
           </span>
         )}
       </header>
 
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
+      <div
+        className={cn(
+          'flex flex-1 flex-col overflow-y-auto',
+          clientView ? 'gap-3 px-3 pb-3 pt-3' : 'gap-2 px-2 pb-2'
+        )}
+      >
         {projects.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
+          <div
+            className={cn(
+              'flex flex-1 flex-col items-center justify-center text-center',
+              clientView ? 'py-12' : 'py-8'
+            )}
+          >
             <CheckCircle2
-              className="mb-2 h-5 w-5 text-muted-foreground/40"
+              className={cn('mb-2 text-muted-foreground/40', clientView ? 'h-7 w-7' : 'h-5 w-5')}
               aria-hidden
               strokeWidth={1.5}
             />
-            <p className="text-[11px] text-muted-foreground/70">No projects</p>
+            <p
+              className={cn('text-muted-foreground/70', clientView ? 'text-[13px]' : 'text-[11px]')}
+            >
+              No projects
+            </p>
           </div>
         ) : (
           projects.map((project) => (
-            <ProjectCardTile key={project.id} project={project} isAdmin={isAdmin} />
+            <ProjectCardTile
+              key={project.id}
+              project={project}
+              isAdmin={isAdmin}
+              clientView={clientView}
+            />
           ))
         )}
       </div>
@@ -884,6 +1022,7 @@ function FinishedRow({
   projects: GalleryProject[];
   isAdmin?: boolean;
   defaultOpen?: boolean;
+  clientView?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -928,47 +1067,29 @@ function FinishedRow({
   );
 }
 
-function ReactivateButton({
-  project,
-  targetStage = 'Building',
-}: {
-  project: GalleryProject;
-  targetStage?: PipelineStage;
-}) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-
-  function handleReactivate(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    startTransition(async () => {
-      const result = await setProjectPipelineStage(project.id, targetStage);
-      if (result.success) {
-        toast.success(`Reactivated "${project.name}" → ${targetStage}`);
-        router.refresh();
-      } else {
-        toast.error(result.error || 'Failed to reactivate');
-      }
-    });
-  }
-
+/** Inline trigger used on Finished + Archived rows. Opens the same
+ *  StageDropdown that pipeline cards use, so admins can move terminated
+ *  projects to ANY state (or delete) instead of being stuck with a single
+ *  "back to Building" hammer. */
+function ProjectMenuTrigger({ project }: { project: GalleryProject }) {
   return (
     <button
       type="button"
-      onClick={handleReactivate}
-      disabled={isPending}
-      title={`Move "${project.name}" back to ${targetStage}`}
-      aria-label={`Reactivate ${project.name}`}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      title={`Manage "${project.name}"`}
+      aria-label={`Manage ${project.name}`}
       className={cn(
         'inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-md',
-        'bg-primary/10 text-primary opacity-0 transition-all duration-150',
-        'hover:bg-primary/20 focus-visible:opacity-100',
+        'bg-muted/60 text-muted-foreground opacity-0 transition-all duration-150',
+        'hover:bg-primary/15 hover:text-primary focus-visible:opacity-100',
         'group-hover/projrow:opacity-100',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-        isPending && 'pointer-events-none opacity-50'
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
       )}
     >
-      <Hammer className="h-3 w-3" />
+      <MoreHorizontal className="h-3 w-3" />
     </button>
   );
 }
@@ -1005,7 +1126,9 @@ function FinishedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
           {project.name}
         </span>
-        {isAdmin ? <ReactivateButton project={project} /> : null}
+        {isAdmin ? (
+          <StageDropdown project={project} trigger={<ProjectMenuTrigger project={project} />} />
+        ) : null}
         <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
           {typeLabel}
         </span>
@@ -1022,6 +1145,7 @@ function ArchivedRow({
   projects: GalleryProject[];
   isAdmin?: boolean;
   defaultOpen?: boolean;
+  clientView?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -1097,7 +1221,9 @@ function ArchivedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
           />
         )}
         <span className="min-w-0 flex-1 truncate text-xs font-medium">{project.name}</span>
-        {isAdmin ? <ReactivateButton project={project} /> : null}
+        {isAdmin ? (
+          <StageDropdown project={project} trigger={<ProjectMenuTrigger project={project} />} />
+        ) : null}
         <span className="shrink-0 rounded bg-muted/60 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider">
           {typeLabel}
         </span>

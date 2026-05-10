@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState, useTransition, useMemo } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format, formatDistanceToNowStrict } from 'date-fns';
@@ -9,14 +9,11 @@ import { toast } from 'sonner';
 import {
   AlertTriangle,
   Calendar as CalendarIcon,
-  CircleDollarSign,
   Pencil,
   Plus,
   Receipt,
   Repeat,
   Trash2,
-  TrendingUp,
-  Wallet,
 } from 'lucide-react';
 import { StatCard } from '@/components/ui/stat-card';
 import { cn } from '@/lib/utils';
@@ -49,12 +46,9 @@ import {
 } from '@/app/actions/recurring-payments';
 import type {
   FinancePayload,
-  FinancePaymentRow,
   FinanceInvoiceRow,
   FinanceRecurringRow,
-  FinanceCashFlowMonth,
   FinanceUpcomingBucket,
-  FinanceClientHealthRow,
   FinanceAgingBand,
 } from '@/app/actions/admin-control';
 import { FinanceTemplateInvoiceDialog } from './finance-template-invoice-dialog';
@@ -75,27 +69,39 @@ export function ControlFinance({ data }: { data: FinancePayload | undefined }) {
     );
   }
 
+  const lastSyncedLabel = data.lastSyncedAt
+    ? `Synced ${formatDistanceToNowStrict(new Date(data.lastSyncedAt), { addSuffix: true })}`
+    : 'Not synced yet';
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-baseline justify-between gap-3">
+    <div className="flex flex-col gap-7">
+      {/* Header — eyebrow + display heading + actions */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Finance</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            MRR, expected inflow, recurring contracts, and Zoho-synced payments.
+          <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
+            <span>Finance</span>
+          </div>
+          <h2 className="mt-2 text-[clamp(1.5rem,1rem+1.4vw,1.875rem)] font-semibold leading-tight tracking-tight text-foreground">
+            What needs paying, what’s landing
+          </h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {lastSyncedLabel}. Chase what’s overdue, watch what’s coming, manage the retainers.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <FinanceTemplateInvoiceDialog clients={data.billableClients} />
           <Link
-            href="/admin/reports"
-            className="font-mono text-[11px] text-primary underline-offset-4 hover:underline"
+            href="/billing"
+            className="font-mono text-[11px] uppercase tracking-[0.08em] text-primary underline-offset-4 hover:underline"
           >
-            Full reports →
+            All invoices →
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {/* KPI strip — flat divider-driven, parity with billing summary */}
+      <div className="grid grid-cols-2 divide-x divide-border/70 overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-4">
         {data.kpis.map((k) => (
           <StatCard
             key={k.label}
@@ -104,156 +110,24 @@ export function ControlFinance({ data }: { data: FinancePayload | undefined }) {
             helperText={k.sub ?? undefined}
             deltaPct={k.deltaPct ?? null}
             deltaLabel={k.deltaPct != null ? 'vs last month' : undefined}
+            flat
           />
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.7fr)]">
-        <CashFlowChart rows={data.cashFlow} />
-        <RecurringSplit
-          recurringSharePct={data.recurringSharePct}
-          mrr={data.mrrCurrent}
-          oneOff={data.oneOffThisMonth}
-          expected={data.expectedThisMonth}
-          lastSyncedAt={data.lastSyncedAt}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.75fr)]">
-        <UpcomingInvoicesSection buckets={data.upcomingBuckets} />
+      {/* Action surfaces — Overdue (chase) + Upcoming (watch) side by side */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <OverdueAgingSection
           rows={data.openInvoices}
           aging={data.agingBands}
           total={data.totalOverdue}
         />
+        <UpcomingInvoicesSection buckets={data.upcomingBuckets} />
       </div>
 
-      <ClientHealthSection rows={data.clientHealth} />
-
+      {/* Recurring — manage retainers */}
       <RecurringRevenueSection rows={data.recurring} />
-
-      {(data.recentPayments.length > 0 || data.openInvoices.length > 0) && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <RecentPaymentsTable rows={data.recentPayments} />
-          <OpenInvoicesTable rows={data.openInvoices} />
-        </div>
-      )}
     </div>
-  );
-}
-
-function CashFlowChart({ rows }: { rows: FinanceCashFlowMonth[] }) {
-  const max = Math.max(1, ...rows.map((r) => Math.max(r.revenue, r.expenses)));
-  return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <header className="mb-5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="size-4 text-primary" aria-hidden />
-          <h3 className="text-sm font-semibold tracking-tight">Cash rhythm</h3>
-        </div>
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-          Last 6 months
-        </span>
-      </header>
-      {rows.length === 0 ? (
-        <p className="py-8 text-center text-xs italic text-muted-foreground">
-          Cash-flow history will appear after Zoho sync.
-        </p>
-      ) : (
-        <div className="grid h-56 grid-cols-6 items-end gap-3">
-          {rows.map((row) => {
-            const revenueHeight = Math.max(6, (row.revenue / max) * 100);
-            const expenseHeight = Math.max(3, (row.expenses / max) * 100);
-            return (
-              <div key={row.month} className="flex h-full min-w-0 flex-col justify-end gap-2">
-                <div className="flex flex-1 items-end gap-1.5">
-                  <div
-                    className="w-full rounded-t-md bg-primary/80"
-                    style={{ height: `${revenueHeight}%` }}
-                    title={`Revenue ${formatEUR(row.revenue)}`}
-                  />
-                  <div
-                    className="w-full rounded-t-md bg-red-500/35"
-                    style={{ height: `${expenseHeight}%` }}
-                    title={`Expenses ${formatEUR(row.expenses)}`}
-                  />
-                </div>
-                <div className="min-w-0 text-center">
-                  <div
-                    className={cn(
-                      'font-mono text-[10px] font-semibold tabular-nums',
-                      row.net >= 0
-                        ? 'text-emerald-700 dark:text-emerald-400'
-                        : 'text-red-600 dark:text-red-400'
-                    )}
-                  >
-                    {formatEUR(row.net)}
-                  </div>
-                  <div className="mt-0.5 truncate font-mono text-[10px] uppercase text-muted-foreground">
-                    {format(new Date(`${row.month}-01T00:00:00`), 'MMM')}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function RecurringSplit({
-  recurringSharePct,
-  mrr,
-  oneOff,
-  expected,
-  lastSyncedAt,
-}: {
-  recurringSharePct: number | null;
-  mrr: number;
-  oneOff: number;
-  expected: number;
-  lastSyncedAt: string | null;
-}) {
-  const pct = Math.min(100, Math.max(0, recurringSharePct ?? 0));
-  return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <header className="mb-4 flex items-center gap-2">
-        <Wallet className="size-4 text-primary" aria-hidden />
-        <h3 className="text-sm font-semibold tracking-tight">Revenue floor</h3>
-      </header>
-      <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-        Recurring share
-      </div>
-      <div className="mt-2 flex items-end gap-2">
-        <span className="font-mono text-4xl font-semibold tabular-nums tracking-tight">
-          {recurringSharePct ?? 0}%
-        </span>
-        <span className="pb-1 text-xs text-muted-foreground">of expected month</span>
-      </div>
-      <div className="mt-4 h-3 overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full bg-primary transition-all duration-500"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
-        <div className="rounded-lg bg-muted/40 p-3">
-          <dt className="text-muted-foreground">MRR base</dt>
-          <dd className="mt-1 font-mono font-semibold tabular-nums">{formatEUR(mrr)}</dd>
-        </div>
-        <div className="rounded-lg bg-muted/40 p-3">
-          <dt className="text-muted-foreground">Variable</dt>
-          <dd className="mt-1 font-mono font-semibold tabular-nums">{formatEUR(oneOff)}</dd>
-        </div>
-      </dl>
-      <p className="mt-3 text-[11px] text-muted-foreground">
-        Expected month: {formatEUR(expected)}
-        {lastSyncedAt
-          ? ` · synced ${formatDistanceToNowStrict(new Date(lastSyncedAt), { addSuffix: true })}`
-          : ''}
-      </p>
-    </section>
   );
 }
 
@@ -361,71 +235,6 @@ function OverdueAgingSection({
         <p className="mt-4 text-xs italic text-muted-foreground">Nothing overdue.</p>
       )}
     </section>
-  );
-}
-
-function ClientHealthSection({ rows }: { rows: FinanceClientHealthRow[] }) {
-  if (rows.length === 0) return null;
-  return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card">
-      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2">
-          <CircleDollarSign className="size-4 text-primary" aria-hidden />
-          <h3 className="text-sm font-semibold tracking-tight">Client payment health</h3>
-        </div>
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-          MRR · outstanding · reliability
-        </span>
-      </header>
-      <ul className="divide-y divide-border">
-        {rows.map((row) => (
-          <li
-            key={row.customerName}
-            className="grid grid-cols-1 items-center gap-2 px-4 py-3 text-xs md:grid-cols-[1fr_110px_120px_120px_120px]"
-          >
-            <span className="truncate font-medium text-foreground">{row.customerName}</span>
-            <span className="font-mono tabular-nums text-muted-foreground">
-              {formatEUR(row.mrr)}
-            </span>
-            <span className="font-mono tabular-nums text-foreground">
-              {formatEUR(row.outstanding)}
-            </span>
-            <ReliabilityBadge value={row.reliabilityPct} />
-            <span className="font-mono text-[10px] text-muted-foreground">
-              {row.lastPaidAt
-                ? formatDistanceToNowStrict(new Date(row.lastPaidAt), { addSuffix: true })
-                : 'no payment'}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function ReliabilityBadge({ value }: { value: number | null }) {
-  if (value === null) {
-    return (
-      <span className="w-fit rounded-md bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-        n/a
-      </span>
-    );
-  }
-  const tone =
-    value >= 90
-      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-      : value >= 70
-        ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-        : 'bg-red-500/10 text-red-700 dark:text-red-400';
-  return (
-    <span
-      className={cn(
-        'w-fit rounded-md px-2 py-0.5 font-mono text-[10px] font-semibold tabular-nums',
-        tone
-      )}
-    >
-      {value}%
-    </span>
   );
 }
 
@@ -777,121 +586,3 @@ function RecurringEditDialog({
     </Dialog>
   );
 }
-
-/* ======================================================================
-   RecentPaymentsTable
-   ====================================================================== */
-
-const RecentPaymentsTable = memo(function RecentPaymentsTable({
-  rows,
-}: {
-  rows: FinancePaymentRow[];
-}) {
-  return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card">
-      <header className="flex items-baseline justify-between border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold tracking-tight">Recent payments</h3>
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-          Last {rows.length}
-        </span>
-      </header>
-      {rows.length === 0 ? (
-        <EmptyState
-          icon={Receipt}
-          title="No recent payments"
-          description="Payment history will appear here."
-          compact
-          minimal
-        />
-      ) : (
-        <ul className="divide-y divide-border">
-          {rows.map((p) => (
-            <li
-              key={p.id}
-              className="grid items-center gap-3 px-4 py-2.5"
-              style={{ gridTemplateColumns: '80px 1fr 110px' }}
-            >
-              <span className="font-mono text-[11px] text-muted-foreground">
-                {format(new Date(p.date), 'dd MMM')}
-              </span>
-              <div className="min-w-0">
-                <div className="truncate text-xs font-medium text-foreground">
-                  {p.customer_name}
-                </div>
-                {p.reference ? (
-                  <div className="truncate text-[10px] text-muted-foreground">{p.reference}</div>
-                ) : null}
-              </div>
-              <span className="text-right font-mono text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
-                {formatEUR(p.amount)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-});
-
-/* ======================================================================
-   OpenInvoicesTable
-   ====================================================================== */
-
-const STATUS_TONE: Record<string, string> = {
-  overdue: 'bg-red-500/10 text-red-700 dark:text-red-400',
-  sent: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-  draft: 'bg-muted text-muted-foreground',
-  partially_paid: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
-};
-
-const OpenInvoicesTable = memo(function OpenInvoicesTable({ rows }: { rows: FinanceInvoiceRow[] }) {
-  return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card">
-      <header className="flex items-baseline justify-between border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold tracking-tight">Open invoices</h3>
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-          {rows.length}
-        </span>
-      </header>
-      {rows.length === 0 ? (
-        <EmptyState
-          icon={Receipt}
-          title="No open invoices"
-          description="All invoices are settled."
-          compact
-          minimal
-        />
-      ) : (
-        <ul className="divide-y divide-border">
-          {rows.map((inv) => (
-            <li
-              key={inv.id}
-              className="grid items-center gap-3 px-4 py-2.5"
-              style={{ gridTemplateColumns: '1fr 90px 110px' }}
-            >
-              <div className="min-w-0">
-                <div className="truncate text-xs font-medium text-foreground">
-                  {inv.customer_name}
-                </div>
-                <div className="truncate font-mono text-[10px] text-muted-foreground">
-                  {inv.invoice_number}
-                </div>
-              </div>
-              <span
-                className={cn(
-                  'inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize',
-                  STATUS_TONE[inv.status] ?? 'bg-muted text-muted-foreground'
-                )}
-              >
-                {inv.status.replace(/_/g, ' ')}
-              </span>
-              <span className="text-right font-mono text-xs font-semibold tabular-nums text-foreground">
-                {formatEUR(inv.balance)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-});

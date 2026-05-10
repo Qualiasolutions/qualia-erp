@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { safeCompare } from '@/lib/auth-utils';
 import { extractBearer, hashToken, TOKEN_PREFIX, LEGACY_DEPRECATION_HEADERS } from '@/lib/api-auth';
+import { apiRateLimiter } from '@/lib/rate-limit';
 
 /**
  * POST /api/claude/report-upload
@@ -67,6 +68,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     isLegacyAuth = true;
+  }
+
+  const rateLimitResult = await apiRateLimiter(
+    `claude:report-upload:${tokenProfileId ?? 'legacy'}`
+  );
+  if (!rateLimitResult.success) {
+    const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
+    return NextResponse.json(
+      { error: 'Rate limit exceeded', retryAfter },
+      { status: 429, headers: { 'Retry-After': retryAfter.toString() } }
+    );
   }
 
   let formData: FormData;

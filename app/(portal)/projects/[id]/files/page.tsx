@@ -65,43 +65,59 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
   const internalFiles = files.filter((f) => !f.is_client_upload);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Page Header */}
-      <div className="flex items-center gap-4">
+      <header className="flex items-start gap-3">
         <Link
           href={`/projects/${projectId}`}
           aria-label={`Back to ${project.name}`}
-          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="mt-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="font-semibold tracking-tight text-foreground">Project Files</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{project.name}</p>
+          <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
+            <span>{project.name}</span>
+          </div>
+          <h1 className="mt-2 text-[clamp(1.375rem,1rem+1.2vw,1.75rem)] font-semibold leading-tight tracking-tight text-foreground">
+            Project files
+          </h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Briefs, drafts, and deliverables — everything we share for this engagement.
+          </p>
         </div>
-      </div>
+      </header>
 
       {/* Upload Form */}
       <FileUploadForm projectId={projectId} phases={phases || []} />
 
       {/* Client Uploads Section — shown only when client uploads exist */}
       {clientFiles.length > 0 && (
-        <div>
+        <section>
           <div className="mb-4 flex items-center gap-2">
-            <h2 className="font-semibold tracking-tight text-foreground">Client Uploads</h2>
-            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+            <span className="inline-block h-px w-6 bg-border" aria-hidden />
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+              Client uploads
+            </span>
+            <span className="rounded-full border border-amber-500/30 bg-amber-500/[0.08] px-2 py-0.5 font-mono text-[10px] font-medium text-amber-700 dark:text-amber-400">
               {clientFiles.length}
             </span>
           </div>
           <FileList files={clientFiles} />
-        </div>
+        </section>
       )}
 
       {/* Internal Files List */}
-      <div>
-        <h2 className="mb-4 font-semibold tracking-tight text-foreground">Internal Files</h2>
+      <section>
+        <div className="mb-4 flex items-center gap-2">
+          <span className="inline-block h-px w-6 bg-border" aria-hidden />
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+            Internal files
+          </span>
+        </div>
         <FileList files={internalFiles} />
-      </div>
+      </section>
     </div>
   );
 }

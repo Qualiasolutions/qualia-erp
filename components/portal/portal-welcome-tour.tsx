@@ -3,7 +3,6 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
-import { X, ArrowRight, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 /* ------------------------------------------------------------------ */
@@ -40,13 +39,13 @@ type TooltipPlacement = 'right' | 'left' | 'bottom' | 'top';
 /* Constants                                                           */
 /* ------------------------------------------------------------------ */
 
-const TOUR_STORAGE_KEY = 'qualia-portal-tour-v3';
+const TOUR_STORAGE_KEY = 'qualia-portal-tour-v4';
 
-const SPOTLIGHT_PADDING = 8;
-const SPOTLIGHT_RADIUS = 12;
-const TOOLTIP_MAX_WIDTH = 380;
-const TOOLTIP_GAP = 14;
-const GLOW_PADDING = 4;
+const SPOTLIGHT_PADDING = 10;
+const SPOTLIGHT_RADIUS = 14;
+const TOOLTIP_MAX_WIDTH = 400;
+const TOOLTIP_GAP = 18;
+const GLOW_PADDING = 6;
 
 const TOUR_STEPS: TourStepDef[] = [
   {
@@ -128,8 +127,8 @@ function computePlacement(
 
   if (spaceRight >= TOOLTIP_MAX_WIDTH) return 'right';
   if (spaceLeft >= TOOLTIP_MAX_WIDTH) return 'left';
-  if (spaceBottom >= 200) return 'bottom';
-  if (spaceTop >= 200) return 'top';
+  if (spaceBottom >= 220) return 'bottom';
+  if (spaceTop >= 220) return 'top';
   return 'bottom';
 }
 
@@ -146,7 +145,7 @@ function getTooltipStyle(
       left: 0,
       right: 0,
       maxWidth: '100%',
-      borderRadius: '16px 16px 0 0',
+      borderRadius: '20px 20px 0 0',
     };
   }
 
@@ -195,7 +194,6 @@ function useFocusTrap(containerRef: React.RefObject<HTMLDivElement | null>, acti
     const first = focusables[0];
     const last = focusables[focusables.length - 1];
 
-    // Focus the first element on mount
     first.focus();
 
     function handleKeyDown(e: KeyboardEvent) {
@@ -220,7 +218,7 @@ function useFocusTrap(containerRef: React.RefObject<HTMLDivElement | null>, acti
 }
 
 /* ------------------------------------------------------------------ */
-/* SVG Overlay                                                         */
+/* SVG Overlay — multi-layer glow, breathing pulse                     */
 /* ------------------------------------------------------------------ */
 
 function SpotlightOverlay({
@@ -231,8 +229,9 @@ function SpotlightOverlay({
   reducedMotion: boolean;
 }) {
   const maskId = useId();
-  const duration = reducedMotion ? '0ms' : '320ms';
-  const easing = 'cubic-bezier(0.19, 1, 0.22, 1)'; // ease-out-expo
+  const glowId = useId();
+  const duration = reducedMotion ? '0ms' : '420ms';
+  const easing = 'cubic-bezier(0.19, 1, 0.22, 1)';
 
   return (
     <svg className="pointer-events-none fixed inset-0 z-[70] h-screen w-screen" aria-hidden="true">
@@ -252,15 +251,55 @@ function SpotlightOverlay({
             }}
           />
         </mask>
+        <radialGradient id={glowId} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="hsl(174 70% 45%)" stopOpacity="0.55" />
+          <stop offset="60%" stopColor="hsl(174 70% 45%)" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="hsl(174 70% 45%)" stopOpacity="0" />
+        </radialGradient>
       </defs>
-      {/* Tinted dark overlay */}
+
+      {/* Backdrop — deeper, more cinematic */}
       <rect
         width="100%"
         height="100%"
-        className="fill-[hsl(185_40%_6%_/_0.72)] dark:fill-[hsl(185_30%_4%_/_0.80)]"
+        className="fill-[hsl(195_45%_4%_/_0.82)] dark:fill-[hsl(195_50%_3%_/_0.88)]"
         mask={`url(#${maskId})`}
       />
-      {/* Glow ring around cutout */}
+
+      {/* Outer ambient glow */}
+      <rect
+        x={rect.x - 32}
+        y={rect.y - 32}
+        width={rect.width + 64}
+        height={rect.height + 64}
+        rx={rect.radius + 16}
+        ry={rect.radius + 16}
+        fill={`url(#${glowId})`}
+        style={{
+          mixBlendMode: 'screen',
+          opacity: 0.7,
+          transition: `x ${duration} ${easing}, y ${duration} ${easing}, width ${duration} ${easing}, height ${duration} ${easing}`,
+        }}
+        className={reducedMotion ? '' : 'animate-[spotlightPulse_2.8s_ease-in-out_infinite]'}
+      />
+
+      {/* Inner crisp ring */}
+      <rect
+        x={rect.x - 1}
+        y={rect.y - 1}
+        width={rect.width + 2}
+        height={rect.height + 2}
+        rx={rect.radius + 1}
+        ry={rect.radius + 1}
+        fill="none"
+        stroke="hsl(174 75% 55% / 0.85)"
+        strokeWidth="1.5"
+        style={{
+          transition: `x ${duration} ${easing}, y ${duration} ${easing}, width ${duration} ${easing}, height ${duration} ${easing}`,
+        }}
+      />
+
+      {/* Outer soft halo */}
       <rect
         x={rect.x - GLOW_PADDING}
         y={rect.y - GLOW_PADDING}
@@ -269,9 +308,8 @@ function SpotlightOverlay({
         rx={rect.radius + GLOW_PADDING}
         ry={rect.radius + GLOW_PADDING}
         fill="none"
-        stroke="hsl(174 60% 34% / 0.40)"
-        strokeWidth="2"
-        className="drop-shadow-[0_0_8px_hsl(174_60%_34%_/_0.25)]"
+        stroke="hsl(174 60% 50% / 0.25)"
+        strokeWidth="3"
         style={{
           transition: `x ${duration} ${easing}, y ${duration} ${easing}, width ${duration} ${easing}, height ${duration} ${easing}`,
         }}
@@ -281,7 +319,7 @@ function SpotlightOverlay({
 }
 
 /* ------------------------------------------------------------------ */
-/* Welcome Modal (Step 0)                                              */
+/* Welcome Modal — refined, no gradient blob                           */
 /* ------------------------------------------------------------------ */
 
 function WelcomeModal({
@@ -290,7 +328,6 @@ function WelcomeModal({
   onDismiss,
   exiting,
   headingId,
-  logoUrl,
 }: {
   name: string;
   onStart: () => void;
@@ -305,11 +342,11 @@ function WelcomeModal({
   return (
     <div
       className={cn(
-        'fixed inset-0 z-[70] flex items-center justify-center',
-        'bg-[hsl(185_40%_6%_/_0.72)] dark:bg-[hsl(185_30%_4%_/_0.80)]',
+        'fixed inset-0 z-[70] flex items-center justify-center backdrop-blur-md',
+        'bg-[hsl(195_45%_4%_/_0.78)] dark:bg-[hsl(195_50%_3%_/_0.88)]',
         exiting
           ? 'opacity-0 transition-opacity duration-200'
-          : 'animate-[fadeIn_240ms_cubic-bezier(0.19,1,0.22,1)_both]'
+          : 'animate-[fadeIn_320ms_cubic-bezier(0.19,1,0.22,1)_both]'
       )}
       role="dialog"
       aria-modal="true"
@@ -318,58 +355,87 @@ function WelcomeModal({
       <div
         ref={containerRef}
         className={cn(
-          'relative mx-4 w-full max-w-md overflow-hidden rounded-2xl',
-          'border border-primary/[0.12] bg-background shadow-2xl shadow-primary/[0.08]',
-          'dark:border-primary/[0.16]',
+          'relative mx-4 w-full max-w-[440px] overflow-hidden rounded-[20px]',
+          'border border-primary/[0.18] bg-background/95 backdrop-blur-xl',
+          'shadow-[0_32px_80px_-12px_hsl(var(--primary)/0.22),0_0_0_1px_hsl(var(--primary)/0.04)]',
+          'dark:border-primary/[0.20]',
           exiting
             ? 'scale-[0.96] opacity-0 transition-all duration-200'
-            : 'animate-[zoomFadeIn_240ms_cubic-bezier(0.19,1,0.22,1)_both]'
+            : 'animate-[zoomFadeIn_380ms_cubic-bezier(0.19,1,0.22,1)_both]'
         )}
       >
-        {/* Close */}
+        {/* Top accent bar */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+
+        {/* Close — text glyph, no lucide */}
         <button
           type="button"
           onClick={onDismiss}
-          className="absolute right-3 top-3 z-10 cursor-pointer rounded-lg p-1.5 text-muted-foreground/40 transition-colors duration-150 hover:bg-muted/50 hover:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          className="absolute right-4 top-4 z-10 flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground/50 transition-colors duration-150 hover:bg-muted/40 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           aria-label="Close tour"
         >
-          <X className="size-4" />
+          <span className="text-[15px] leading-none">×</span>
         </button>
 
-        <div className="px-8 pb-8 pt-12 text-center">
-          {/* Client/project logo mark — falls back to first letter */}
-          <div className="mx-auto mb-6 flex size-14 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/20 ring-4 ring-primary/[0.12]">
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt={`${name} logo`} className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-xl font-bold text-primary-foreground">
-                {name.charAt(0).toUpperCase()}
-              </span>
-            )}
+        <div className="px-9 pb-9 pt-12 text-center">
+          {/* Refined wordmark — Q monogram in a soft glow ring, no gradient blob */}
+          <div className="relative mx-auto mb-7 flex h-16 w-16 items-center justify-center">
+            <div
+              className="absolute inset-0 rounded-full bg-primary/10 blur-xl"
+              aria-hidden="true"
+            />
+            <div
+              className="absolute inset-0 rounded-full ring-1 ring-primary/25"
+              aria-hidden="true"
+            />
+            <div
+              className="absolute inset-1.5 rounded-full ring-1 ring-primary/15"
+              aria-hidden="true"
+            />
+            <svg
+              viewBox="0 0 32 32"
+              className="relative size-8 text-primary"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <circle cx="16" cy="16" r="11" />
+              <line x1="22" y1="22" x2="27" y2="27" strokeLinecap="round" />
+            </svg>
           </div>
 
-          <h2 id={headingId} className="text-xl font-semibold tracking-tight text-foreground">
-            Welcome, {name}
+          {/* Eyebrow */}
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-primary/80">
+            Welcome aboard
+          </p>
+
+          <h2
+            id={headingId}
+            className="mt-2.5 text-[22px] font-semibold leading-tight tracking-tight text-foreground"
+          >
+            Hello, {name}
           </h2>
 
-          <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground/80">
-            Your portal is ready. Let us show you around — it only takes a moment.
+          <p className="mx-auto mt-3 max-w-[300px] text-[13.5px] leading-relaxed text-muted-foreground">
+            Your portal is ready. A quick walkthrough so you know where everything lives.
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-3">
             <Button
               onClick={onStart}
-              className="h-10 w-full max-w-[200px] gap-2 rounded-xl bg-primary text-sm font-medium text-primary-foreground shadow-[0_4px_12px_hsl(var(--primary)/0.25)] transition-all duration-150 hover:opacity-90"
+              className="group h-11 w-full max-w-[220px] gap-1.5 rounded-xl bg-primary text-[13px] font-medium text-primary-foreground shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.45)] transition-all duration-200 hover:shadow-[0_8px_28px_-4px_hsl(var(--primary)/0.55)] hover:brightness-110"
             >
               Show me around
-              <ArrowRight className="size-3.5" />
+              <span className="transition-transform duration-200 group-hover:translate-x-0.5">
+                →
+              </span>
             </Button>
 
             <button
               type="button"
               onClick={onDismiss}
-              className="min-h-[44px] cursor-pointer text-xs text-muted-foreground/60 transition-colors duration-150 hover:text-primary/70 focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary/30"
+              className="min-h-[44px] cursor-pointer text-[12px] text-muted-foreground/55 transition-colors duration-150 hover:text-foreground/80 focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary/30"
             >
               I&apos;ll explore later
             </button>
@@ -381,7 +447,7 @@ function WelcomeModal({
 }
 
 /* ------------------------------------------------------------------ */
-/* Tooltip Card                                                        */
+/* Tooltip Card — progress bar, refined glass                          */
 /* ------------------------------------------------------------------ */
 
 function TooltipCard({
@@ -427,9 +493,11 @@ function TooltipCard({
   const isFirst = currentIndex === 0;
   const isLast = currentIndex === totalSteps - 1;
 
-  const staggerDelay = reducedMotion ? 0 : 30;
-  const entryDuration = reducedMotion ? '0ms' : '200ms';
-  const easing = 'cubic-bezier(0.25, 1, 0.5, 1)'; // ease-out-quart
+  const staggerDelay = reducedMotion ? 0 : 40;
+  const entryDuration = reducedMotion ? '0ms' : '260ms';
+  const easing = 'cubic-bezier(0.19, 1, 0.22, 1)';
+
+  const progressPct = ((currentIndex + 1) / totalSteps) * 100;
 
   return (
     <div
@@ -439,15 +507,27 @@ function TooltipCard({
       aria-labelledby={headingId}
       aria-live="polite"
       className={cn(
-        'z-[71] rounded-xl border border-primary/[0.12] bg-background/95 p-[clamp(1rem,3vw,1.5rem)] shadow-2xl shadow-primary/[0.08] backdrop-blur-lg dark:border-primary/[0.16] dark:bg-background/90',
-        visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-1 opacity-0',
-        !reducedMotion && 'ease-out-quart transition-[opacity,transform] duration-200'
+        'z-[71] overflow-hidden rounded-[18px] p-[clamp(1.1rem,3vw,1.6rem)]',
+        'bg-background/92 border border-primary/[0.18] backdrop-blur-2xl',
+        'shadow-[0_32px_80px_-12px_hsl(var(--primary)/0.22),0_0_0_1px_hsl(var(--primary)/0.04)]',
+        'dark:border-primary/[0.22] dark:bg-background/85',
+        visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-1.5 opacity-0',
+        !reducedMotion && 'duration-[260ms] transition-[opacity,transform]'
       )}
-      style={tooltipStyle}
+      style={{
+        ...tooltipStyle,
+        transitionTimingFunction: easing,
+      }}
     >
-      {/* Eyebrow */}
-      <p
-        className="text-[10px] font-medium uppercase tracking-wider text-primary"
+      {/* Top accent line */}
+      <div
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"
+        aria-hidden="true"
+      />
+
+      {/* Header row: step counter + skip */}
+      <div
+        className="flex items-center justify-between"
         style={{
           transitionDelay: `${staggerDelay * 0}ms`,
           transitionDuration: entryDuration,
@@ -457,13 +537,24 @@ function TooltipCard({
           transform: visible ? 'translateY(0)' : 'translateY(4px)',
         }}
       >
-        Step {currentIndex + 1} of {totalSteps}
-      </p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/85">
+          {String(currentIndex + 1).padStart(2, '0')}
+          <span className="mx-1.5 text-muted-foreground/40">/</span>
+          <span className="text-muted-foreground/60">{String(totalSteps).padStart(2, '0')}</span>
+        </p>
+        <button
+          type="button"
+          onClick={onSkip}
+          className="cursor-pointer text-[11px] text-muted-foreground/55 transition-colors duration-150 hover:text-foreground/80 focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary/30"
+        >
+          Skip tour
+        </button>
+      </div>
 
       {/* Heading */}
       <h3
         id={headingId}
-        className="mt-1.5 text-lg font-semibold tracking-tight text-foreground sm:text-xl"
+        className="mt-3 text-[19px] font-semibold leading-tight tracking-tight text-foreground sm:text-[21px]"
         style={{
           transitionDelay: `${staggerDelay * 1}ms`,
           transitionDuration: entryDuration,
@@ -478,7 +569,7 @@ function TooltipCard({
 
       {/* Description */}
       <p
-        className="mt-1.5 text-sm leading-relaxed text-muted-foreground"
+        className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground"
         style={{
           transitionDelay: `${staggerDelay * 2}ms`,
           transitionDuration: entryDuration,
@@ -491,9 +582,9 @@ function TooltipCard({
         {step.body}
       </p>
 
-      {/* Progress dots */}
+      {/* Progress bar */}
       <div
-        className="mt-4 flex items-center gap-1.5"
+        className="bg-muted-foreground/12 mt-5 h-[3px] w-full overflow-hidden rounded-full"
         style={{
           transitionDelay: `${staggerDelay * 3}ms`,
           transitionDuration: entryDuration,
@@ -504,20 +595,18 @@ function TooltipCard({
         }}
         aria-hidden="true"
       >
-        {Array.from({ length: totalSteps }).map((_, i) => (
-          <span
-            key={i}
-            className={cn(
-              'block h-1.5 w-1.5 rounded-full transition-colors duration-200',
-              i === currentIndex ? 'bg-primary' : 'bg-muted-foreground/20'
-            )}
-          />
-        ))}
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary shadow-[0_0_12px_hsl(var(--primary)/0.6)]"
+          style={{
+            width: `${progressPct}%`,
+            transition: 'width 380ms cubic-bezier(0.19, 1, 0.22, 1)',
+          }}
+        />
       </div>
 
-      {/* Footer: Back + Skip | Next/Got it */}
+      {/* Footer */}
       <div
-        className="mt-4 flex items-center justify-between gap-3"
+        className="mt-5 flex items-center justify-between gap-3"
         style={{
           transitionDelay: `${staggerDelay * 4}ms`,
           transitionDuration: entryDuration,
@@ -527,36 +616,33 @@ function TooltipCard({
           transform: visible ? 'translateY(0)' : 'translateY(4px)',
         }}
       >
-        <div className="flex items-center gap-3">
-          {!isFirst && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="flex min-h-[44px] cursor-pointer items-center gap-1 text-xs text-muted-foreground transition-colors duration-150 hover:text-primary/70 focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary/30"
-            >
-              <ChevronLeft className="size-3" />
-              Back
-            </button>
-          )}
+        {!isFirst ? (
           <button
             type="button"
-            onClick={onSkip}
-            className="min-h-[44px] cursor-pointer text-xs text-muted-foreground/60 transition-colors duration-150 hover:text-primary/70 focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary/30"
+            onClick={onBack}
+            className="group flex min-h-[40px] cursor-pointer items-center gap-1 text-[12px] font-medium text-muted-foreground/75 transition-colors duration-150 hover:text-foreground focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-primary/30"
           >
-            Skip
+            <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
+              ←
+            </span>
+            Back
           </button>
-        </div>
+        ) : (
+          <span aria-hidden="true" />
+        )}
 
         <Button
           onClick={onNext}
-          className="h-9 min-w-[44px] gap-1.5 rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground shadow-[0_4px_12px_hsl(var(--primary)/0.25)] transition-all duration-150 hover:opacity-90"
+          className="group h-9 min-w-[110px] gap-1.5 rounded-xl bg-primary px-5 text-[12.5px] font-medium text-primary-foreground shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.45)] transition-all duration-200 hover:shadow-[0_8px_28px_-4px_hsl(var(--primary)/0.55)] hover:brightness-110"
         >
           {isLast ? (
             'Got it'
           ) : (
             <>
               Next
-              <ArrowRight className="size-3" />
+              <span className="transition-transform duration-200 group-hover:translate-x-0.5">
+                →
+              </span>
             </>
           )}
         </Button>
@@ -607,12 +693,10 @@ export function PortalWelcomeTour({
   const welcomeHeadingId = useId();
   const reduced = useRef(false);
 
-  // Filter steps by enabledApps
   const activeSteps = enabledApps
     ? TOUR_STEPS.filter((s) => enabledApps.includes(s.appKey))
     : TOUR_STEPS;
 
-  // Further filter by DOM availability on mount
   const [resolvedSteps, setResolvedSteps] = useState<TourStepDef[]>([]);
 
   useEffect(() => {
@@ -620,7 +704,6 @@ export function PortalWelcomeTour({
     reduced.current = prefersReducedMotion();
   }, []);
 
-  // Check localStorage on mount
   useEffect(() => {
     if (!mounted || !enabled) return;
     const seen = localStorage.getItem(TOUR_STORAGE_KEY);
@@ -630,16 +713,13 @@ export function PortalWelcomeTour({
     }
   }, [mounted, enabled]);
 
-  // Resolve which steps have visible DOM targets
   useEffect(() => {
     if (phase !== 'tour') return;
 
-    // Small delay to let the DOM settle after welcome modal dismissed
     const timer = setTimeout(() => {
       const available = activeSteps.filter((step) => getElement(step) !== null);
       setResolvedSteps(available);
       if (available.length === 0) {
-        // No targets found — dismiss gracefully
         localStorage.setItem(TOUR_STORAGE_KEY, 'true');
         setPhase('done');
       }
@@ -647,7 +727,6 @@ export function PortalWelcomeTour({
     return () => clearTimeout(timer);
   }, [phase, activeSteps]);
 
-  // Position spotlight whenever the current step changes
   useLayoutEffect(() => {
     if (phase !== 'tour' || resolvedSteps.length === 0) return;
 
@@ -657,28 +736,23 @@ export function PortalWelcomeTour({
     const el = getElement(step);
     if (!el) return;
 
-    // Scroll into view if needed
     el.scrollIntoView({ behavior: reduced.current ? 'auto' : 'smooth', block: 'center' });
 
-    // Update rect after scroll settles
     const updateRect = () => {
       const rect = el.getBoundingClientRect();
       setSpotRect(rectToSpotlight(rect));
     };
 
-    // Slight delay to let scroll finish
     const scrollDelay = reduced.current ? 0 : 100;
     const timer = setTimeout(() => {
       updateRect();
-      // Show tooltip after spotlight lands
-      const tooltipDelay = reduced.current ? 0 : 200;
+      const tooltipDelay = reduced.current ? 0 : 220;
       setTimeout(() => setTooltipVisible(true), tooltipDelay);
     }, scrollDelay);
 
     return () => clearTimeout(timer);
   }, [phase, currentIndex, resolvedSteps]);
 
-  // Track target rect on scroll/resize
   useEffect(() => {
     if (phase !== 'tour' || resolvedSteps.length === 0) return;
 
@@ -706,7 +780,6 @@ export function PortalWelcomeTour({
     };
   }, [phase, currentIndex, resolvedSteps]);
 
-  // Keyboard handler
   useEffect(() => {
     if (phase === 'hidden' || phase === 'done') return;
 
@@ -735,8 +808,6 @@ export function PortalWelcomeTour({
     return () => document.removeEventListener('keydown', handleKeyDown);
   });
 
-  /* ------ Actions ------ */
-
   const dismiss = useCallback(() => {
     if (phase === 'welcome') {
       setWelcomeExiting(true);
@@ -753,7 +824,7 @@ export function PortalWelcomeTour({
         setPhase('done');
         localStorage.setItem(TOUR_STORAGE_KEY, 'true');
       },
-      reduced.current ? 0 : 160
+      reduced.current ? 0 : 180
     );
   }, [phase]);
 
@@ -765,7 +836,7 @@ export function PortalWelcomeTour({
         setCurrentIndex(0);
         setWelcomeExiting(false);
       },
-      reduced.current ? 0 : 200
+      reduced.current ? 0 : 220
     );
   }, []);
 
@@ -777,13 +848,12 @@ export function PortalWelcomeTour({
       return;
     }
 
-    // Hide tooltip, advance, let layout effect show new one
     setTooltipVisible(false);
     setTimeout(
       () => {
         setCurrentIndex((i) => i + 1);
       },
-      reduced.current ? 0 : 160
+      reduced.current ? 0 : 180
     );
   }, [currentIndex, resolvedSteps.length, dismiss]);
 
@@ -795,11 +865,9 @@ export function PortalWelcomeTour({
       () => {
         setCurrentIndex((i) => i - 1);
       },
-      reduced.current ? 0 : 160
+      reduced.current ? 0 : 180
     );
   }, [currentIndex]);
-
-  /* ------ Render ------ */
 
   if (phase === 'hidden' || phase === 'done' || !mounted) return null;
 
@@ -837,7 +905,6 @@ export function PortalWelcomeTour({
         </>
       )}
 
-      {/* Keyframe definitions */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -847,6 +914,10 @@ export function PortalWelcomeTour({
           from { opacity: 0; transform: scale(0.96); }
           to { opacity: 1; transform: scale(1); }
         }
+        @keyframes spotlightPulse {
+          0%, 100% { opacity: 0.55; }
+          50% { opacity: 0.85; }
+        }
         @media (prefers-reduced-motion: reduce) {
           @keyframes fadeIn {
             from { opacity: 1; }
@@ -855,6 +926,10 @@ export function PortalWelcomeTour({
           @keyframes zoomFadeIn {
             from { opacity: 1; transform: scale(1); }
             to { opacity: 1; transform: scale(1); }
+          }
+          @keyframes spotlightPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 0.7; }
           }
         }
       `}</style>

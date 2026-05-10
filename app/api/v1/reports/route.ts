@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/server';
 import { authenticateRequest, hasScope, LEGACY_DEPRECATION_HEADERS } from '@/lib/api-auth';
+import { apiRateLimiter } from '@/lib/rate-limit';
 
 /**
  * POST /api/v1/reports
@@ -408,6 +409,17 @@ export async function POST(request: NextRequest) {
       error: 'INSUFFICIENT_SCOPE',
       message: 'Token must include reports:write scope',
     });
+  }
+
+  const rateLimitId = auth.method === 'per_user_token' ? auth.profileId : 'v1-reports-legacy';
+  const rateLimitResult = await apiRateLimiter(`v1:reports:${rateLimitId ?? 'unknown'}`);
+  if (!rateLimitResult.success) {
+    const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
+    return errorResponse(
+      429,
+      { error: 'RATE_LIMITED', message: 'Rate limit exceeded', retryAfter },
+      { 'Retry-After': retryAfter.toString() }
+    );
   }
 
   const deprecationHeaders =

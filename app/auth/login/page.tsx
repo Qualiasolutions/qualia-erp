@@ -20,7 +20,7 @@ export default function Page() {
         <header className="w-full border-b border-border/10 px-6 py-5 lg:hidden">
           <div className="flex items-center gap-3">
             <Image src="/logo.webp" alt="Qualia" width={32} height={32} className="rounded-lg" />
-            <span className="text-sm font-semibold uppercase tracking-[0.15em] text-foreground">
+            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
               Qualia Suite
             </span>
           </div>
@@ -34,27 +34,22 @@ export default function Page() {
               <h2 className="text-3xl font-semibold tracking-tight text-foreground">
                 Welcome back
               </h2>
-              <p className="mt-2 text-muted-foreground">Sign in to your workspace</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Sign in to continue to Qualia Suite.
+              </p>
             </div>
 
             <LoginForm />
 
-            {/* Divider */}
-            <div className="my-8 flex items-center gap-4">
-              <div className="h-px flex-1 bg-border/30" />
-              <span className="text-xs uppercase tracking-wider text-muted-foreground/30">or</span>
-              <div className="h-px flex-1 bg-border/30" />
-            </div>
-
             {/* Contact Link */}
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground/50">
-                Not a client yet?{' '}
+            <div className="mt-10 text-center">
+              <p className="text-sm text-muted-foreground/60">
+                Need an account?{' '}
                 <a
                   href="https://qualiasolutions.net"
                   className="text-primary transition-colors hover:text-qualia-700 dark:hover:text-qualia-300"
                 >
-                  Get started
+                  Talk to us
                 </a>
               </p>
             </div>

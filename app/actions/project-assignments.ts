@@ -476,6 +476,35 @@ export async function removeAssignment(assignmentId: string): Promise<ActionResu
     return { success: false, error: error.message };
   }
 
+  // Cancel the unassigned employee's open tasks on this project so it stops
+  // showing up in their inbox and in overdue_task daily-brief items. The
+  // intent of unassignment is "this person is off the project" — any work
+  // they had open here is no longer their responsibility. Done/Canceled
+  // tasks are left alone so history is preserved.
+  const admin = createAdminClient();
+  const { data: cancelledTasks } = await admin
+    .from('tasks')
+    .update({
+      status: 'Canceled',
+      show_in_inbox: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('project_id', assignment.project_id)
+    .eq('assignee_id', assignment.employee_id)
+    .neq('status', 'Done')
+    .neq('status', 'Canceled')
+    .select('id');
+
+  const cancelledIds = (cancelledTasks ?? []).map((t) => t.id);
+  if (cancelledIds.length > 0) {
+    await admin
+      .from('daily_brief_items')
+      .delete()
+      .eq('owner_id', assignment.employee_id)
+      .eq('source_type', 'overdue_task')
+      .in('source_id', cancelledIds);
+  }
+
   // Create activity log
   await createActivity(
     supabase,
@@ -487,6 +516,10 @@ export async function removeAssignment(assignmentId: string): Promise<ActionResu
     },
     { action: 'employee_removed' }
   );
+
+  revalidatePath('/');
+  revalidatePath('/tasks');
+  revalidatePath(`/projects/${assignment.project_id}`);
 
   return { success: true };
 }

@@ -127,79 +127,68 @@ export function PortalActivitySkeleton() {
  */
 export function PortalDashboardSkeleton() {
   return (
-    <div className="space-y-8 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
-      {/* Greeting skeleton */}
-      <div>
-        <Skeleton className="h-3 w-36 bg-muted/50" />
-        <Skeleton className="mt-3 h-8 w-64 bg-muted/50" />
+    <div className="flex flex-col">
+      {/* Greeting skeleton — mirrors the new hub header */}
+      <div className="px-[clamp(1.5rem,4vw,2.5rem)] pb-8 pt-12 md:pt-14">
+        <Skeleton className="h-3 w-32 bg-muted/50" />
+        <Skeleton className="mt-3 h-9 w-72 bg-muted/50" />
+        <Skeleton className="mt-3 h-3 w-96 max-w-full bg-muted/40" />
       </div>
 
-      {/* Stat cards — 4-col grid matching admin, falls back to 2x2 on mobile */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="relative overflow-hidden rounded-xl border border-border/60 bg-card"
-          >
-            {/* Left accent shimmer */}
-            <div className="absolute left-0 top-0 h-full w-[3px] bg-muted/40" />
-            <div className="flex items-center justify-between px-5 py-5 pl-6">
-              <div>
-                <Skeleton className="h-3 w-16 bg-muted/50" />
-                <Skeleton className="mt-2 h-7 w-10 bg-muted/50" />
-              </div>
-              <Skeleton className="h-5 w-5 rounded bg-muted/30" />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Inbox widget skeleton */}
-      <div className="rounded-xl border border-border/60 bg-card">
-        <div className="flex items-center justify-between border-b border-border/40 px-5 py-4">
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-4 w-4 rounded bg-muted/50" />
-            <Skeleton className="h-4 w-16 bg-muted/50" />
-          </div>
-          <Skeleton className="h-4 w-20 bg-muted/50" />
-        </div>
-        <div className="divide-y divide-border/30">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-center gap-3 px-5 py-3">
-              <Skeleton className="h-4 w-4 shrink-0 rounded-full bg-muted/40" />
-              <div className="flex-1 space-y-1.5">
-                <Skeleton className="h-3.5 w-3/4 bg-muted/50" />
-                <Skeleton className="h-3 w-1/3 bg-muted/40" />
-              </div>
-              <Skeleton className="h-5 w-14 shrink-0 rounded-md bg-muted/40" />
+      {/* Stat strip — flat divider-driven, mirrors PulseMetric */}
+      <div className="border-y border-border/70 bg-card/40">
+        <div className="grid grid-cols-2 divide-x divide-border/70 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="px-[clamp(1.25rem,3vw,2rem)] py-5">
+              <Skeleton className="h-2.5 w-20 bg-muted/50" />
+              <Skeleton className="mt-2.5 h-7 w-12 bg-muted/50" />
             </div>
           ))}
         </div>
       </div>
 
-      {/* Content grid skeleton (workspace cards / project list) */}
-      <div>
-        <div className="mb-4 flex items-center justify-between">
-          <Skeleton className="h-3 w-24 bg-muted/50" />
-          <Skeleton className="h-8 w-48 rounded-lg bg-muted/40" />
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-xl border border-border/60 bg-card p-5">
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-10 w-10 shrink-0 rounded-lg bg-muted/50" />
-                <div className="flex-1 space-y-1.5">
-                  <Skeleton className="h-4 w-32 bg-muted/50" />
-                  <Skeleton className="h-3 w-20 bg-muted/40" />
+      {/* Body grid — engagements + sidebar */}
+      <div className="px-[clamp(1.5rem,4vw,2.5rem)] pb-16 pt-10">
+        <div className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-[2fr_1fr]">
+          {/* Engagements */}
+          <div>
+            <Skeleton className="h-3 w-24 bg-muted/50" />
+            <Skeleton className="mt-2 h-5 w-40 bg-muted/50" />
+            <div className="mt-6 space-y-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="rounded-2xl border border-border/60 bg-card/40 p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-3 w-28 bg-muted/50" />
+                      <Skeleton className="h-4 w-48 bg-muted/50" />
+                      <Skeleton className="h-3 w-32 bg-muted/40" />
+                    </div>
+                    <Skeleton className="h-7 w-12 bg-muted/40" />
+                  </div>
+                  <Skeleton className="mt-4 h-1 w-full bg-muted/30" />
                 </div>
-                <Skeleton className="h-5 w-5 rounded bg-muted/30" />
-              </div>
-              <div className="mt-4 space-y-2">
-                <Skeleton className="h-3 w-full bg-muted/40" />
-                <Skeleton className="h-3 w-4/5 bg-muted/40" />
+              ))}
+            </div>
+          </div>
+
+          {/* Sidebar — invoices + thread */}
+          <div className="space-y-8">
+            <div>
+              <Skeleton className="h-3 w-24 bg-muted/50" />
+              <div className="mt-3 rounded-2xl border border-border bg-card/60 p-4">
+                <Skeleton className="h-4 w-20 bg-muted/50" />
+                <Skeleton className="mt-1 h-3 w-28 bg-muted/40" />
               </div>
             </div>
-          ))}
+            <div>
+              <Skeleton className="h-3 w-24 bg-muted/50" />
+              <div className="mt-3 rounded-2xl border border-border bg-card/60 p-5">
+                <Skeleton className="h-3 w-full bg-muted/40" />
+                <Skeleton className="mt-2 h-3 w-3/4 bg-muted/40" />
+                <Skeleton className="mt-4 h-10 w-full rounded-xl bg-muted/40" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -211,39 +200,38 @@ export function PortalDashboardSkeleton() {
  */
 export function PortalBillingSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Skeleton className="h-7 w-24 bg-muted/50" />
-        <Skeleton className="h-4 w-64 bg-muted/50" />
+    <div className="space-y-8 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(2rem,4vw,3rem)] pt-16 md:pt-[clamp(2.5rem,4vw,3.5rem)]">
+      <div>
+        <Skeleton className="h-3 w-24 bg-muted/50" />
+        <Skeleton className="mt-3 h-7 w-32 bg-muted/50" />
+        <Skeleton className="mt-2 h-3 w-72 max-w-full bg-muted/40" />
       </div>
 
-      {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      {/* Summary tiles — divider-driven */}
+      <div className="grid grid-cols-3 divide-x divide-border/70 overflow-hidden rounded-2xl border border-border bg-card">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-3 w-20 bg-muted/50" />
-              <Skeleton className="h-4 w-4 rounded bg-muted/50" />
-            </div>
+          <div key={i} className="px-[clamp(1rem,3vw,2rem)] py-5">
+            <Skeleton className="h-2.5 w-20 bg-muted/50" />
             <Skeleton className="mt-2 h-7 w-24 bg-muted/50" />
+            <Skeleton className="mt-2 h-2.5 w-12 bg-muted/40" />
           </div>
         ))}
       </div>
 
       {/* Invoice table */}
-      <div className="overflow-hidden rounded-xl border border-border">
-        <div className="bg-muted/30 px-5 py-3">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="border-b border-border bg-muted/20 px-5 py-3">
           <Skeleton className="h-3 w-full bg-muted/50" />
         </div>
         {[1, 2, 3].map((i) => (
-          <div key={i} className="border-b border-border/50 px-5 py-4">
+          <div key={i} className="border-b border-border/40 px-5 py-4 last:border-0">
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1 space-y-2">
                 <div className="flex items-center gap-2">
                   <Skeleton className="h-4 w-24 bg-muted/50" />
                   <Skeleton className="h-5 w-16 rounded-lg bg-muted/50" />
                 </div>
-                <Skeleton className="h-3 w-48 bg-muted/50" />
+                <Skeleton className="h-3 w-48 bg-muted/40" />
               </div>
               <Skeleton className="h-5 w-20 bg-muted/50" />
             </div>

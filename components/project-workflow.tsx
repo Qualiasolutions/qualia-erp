@@ -45,6 +45,7 @@ import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PhaseComments } from '@/components/phase-comments';
 import { PhaseItemsList } from '@/components/phase-items-list';
+import { ProjectBriefForm } from '@/components/portal/briefs';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -952,6 +953,19 @@ export function ProjectWorkflow({
   // ─── Empty State ──────────────────────────────────────────────────────────
 
   if (phases.length === 0) {
+    if (userRole === 'client') {
+      return (
+        <div
+          className={cn(
+            'flex h-full items-center justify-center overflow-y-auto px-4 py-10',
+            className
+          )}
+        >
+          <ProjectBriefForm projectId={projectId} projectName={projectName} />
+        </div>
+      );
+    }
+
     return (
       <div className={cn('flex flex-col items-center justify-center gap-6 px-6', className)}>
         <div className="text-center">

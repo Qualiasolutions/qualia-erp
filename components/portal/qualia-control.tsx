@@ -1,8 +1,7 @@
 'use client';
 
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Activity, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
 
@@ -17,7 +16,6 @@ import type {
 
 import { ControlTeam } from './control-team';
 import { ControlFinance } from './control-finance';
-import { ControlReports } from './control-reports';
 import { ControlSystem } from './control-system';
 import { CommandCenter } from './control-command-center';
 
@@ -35,19 +33,38 @@ export interface QualiaControlData {
 interface QualiaControlProps {
   initialTab: ControlTab;
   data: QualiaControlData;
-  /** When false, the Finance tab is hidden in the UI. Server still enforces. */
+  /** When false, the Finance section is hidden. Server still enforces. */
   canViewFinance?: boolean;
 }
 
-const ALL_TABS: Array<{ id: ControlTab; label: string; desc: string }> = [
-  { id: 'overview', label: 'Dashboard', desc: 'Today, project risk, and this week' },
-  { id: 'team', label: 'Team', desc: 'People, capacity, roles' },
-  { id: 'finance', label: 'Finance', desc: 'Invoices, MRR, expenses' },
-  { id: 'reports', label: 'Reports', desc: 'Team performance · weekly lens' },
-  { id: 'system', label: 'System', desc: 'Integrations, audit, workspace' },
-];
-
-const STORAGE_KEY = 'qualia.control.tab';
+// Heading per section so each sidebar destination lands with its own title
+// instead of the old monolithic 'Dashboard' + tab-row pattern. Reports has its
+// own dedicated route at /admin/reports so it isn't included here.
+const SECTION_META: Record<
+  Exclude<ControlTab, 'reports'>,
+  { eyebrow: string; title: string; desc: string }
+> = {
+  overview: {
+    eyebrow: 'Admin console',
+    title: 'Dashboard',
+    desc: 'Today, project risk, and this week.',
+  },
+  team: {
+    eyebrow: 'Admin console',
+    title: 'Team',
+    desc: 'People, capacity, roles.',
+  },
+  finance: {
+    eyebrow: 'Admin console',
+    title: 'Finance',
+    desc: 'Invoices, MRR, expenses.',
+  },
+  system: {
+    eyebrow: 'Admin console',
+    title: 'System',
+    desc: 'Integrations, audit, workspace.',
+  },
+};
 
 /* ======================================================================
    Placeholder used by Task 1 scaffolding; replaced by Tasks 2-5
@@ -241,132 +258,34 @@ function PlanningHealth({ data }: { data: OverviewPayload['planningHealth'] }) {
    ====================================================================== */
 
 export function QualiaControl({ initialTab, data, canViewFinance = false }: QualiaControlProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [tab, setTab] = useState<ControlTab>(initialTab);
+  // Each sidebar destination lands directly on a focused section. No tab
+  // navigation — clicking 'Team' in the sidebar previously rendered a header
+  // titled 'Dashboard' with a row of tabs to switch elsewhere, which felt
+  // like a bug ("why are there options to go somewhere else inside Team?").
+  // Reports has its own dedicated route at /admin/reports.
+  const tab: Exclude<ControlTab, 'reports'> = initialTab === 'reports' ? 'overview' : initialTab;
+  const meta = SECTION_META[tab];
 
-  // Filter out tabs the current user can't see. The Finance tab is owner-only.
-  const TABS = useMemo(
-    () => ALL_TABS.filter((t) => t.id !== 'finance' || canViewFinance),
-    [canViewFinance]
-  );
-
-  // On mount, honor localStorage if URL didn't specify.
-  useEffect(() => {
-    const urlTab = searchParams.get('tab');
-    if (urlTab) return;
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored && stored !== tab && TABS.some((t) => t.id === stored)) {
-        setTab(stored as ControlTab);
-        router.replace(`?tab=${stored}`, { scroll: false });
-      }
-    } catch {
-      /* ignore storage failures */
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const changeTab = useCallback(
-    (next: ControlTab) => {
-      setTab(next);
-      try {
-        localStorage.setItem(STORAGE_KEY, next);
-      } catch {
-        /* ignore */
-      }
-      router.replace(`?tab=${next}`, { scroll: false });
-    },
-    [router]
-  );
-
-  const activeTab = TABS.find((t) => t.id === tab) ?? TABS[0];
-
-  /* Arrow-key handler for roving tabindex (WAI-ARIA Tabs pattern) */
-  const handleTabKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLButtonElement>) => {
-      const currentIndex = TABS.findIndex((t) => t.id === tab);
-      let nextIndex: number | null = null;
-
-      if (e.key === 'ArrowRight') {
-        nextIndex = (currentIndex + 1) % TABS.length;
-      } else if (e.key === 'ArrowLeft') {
-        nextIndex = (currentIndex - 1 + TABS.length) % TABS.length;
-      } else if (e.key === 'Home') {
-        nextIndex = 0;
-      } else if (e.key === 'End') {
-        nextIndex = TABS.length - 1;
-      }
-
-      if (nextIndex !== null) {
-        e.preventDefault();
-        const nextTab = TABS[nextIndex];
-        changeTab(nextTab.id);
-        document.getElementById(`tab-${nextTab.id}`)?.focus();
-      }
-    },
-    [tab, changeTab, TABS]
-  );
+  if (tab === 'finance' && !canViewFinance) {
+    return (
+      <div className="flex flex-col">
+        <SectionHeader meta={SECTION_META.overview} />
+        <div className="w-full p-6 lg:p-8">
+          <p className="text-sm text-muted-foreground">
+            Finance access is restricted. Contact the workspace owner.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col">
-      <header className="border-b border-border bg-muted/30 px-6 pt-8 lg:px-8">
-        <div>
-          <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            Admin console
-          </div>
-          <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight">
-                Dashboard
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">{activeTab.desc}</p>
-            </div>
-          </div>
-          <nav
-            role="tablist"
-            aria-label="Dashboard tabs"
-            className="mt-6 flex items-center gap-6 overflow-x-auto"
-          >
-            {TABS.map((t) => {
-              const active = t.id === tab;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  id={`tab-${t.id}`}
-                  aria-selected={active}
-                  aria-controls={`tabpanel-${t.id}`}
-                  tabIndex={active ? 0 : -1}
-                  onClick={() => changeTab(t.id)}
-                  onKeyDown={handleTabKeyDown}
-                  className={cn(
-                    'relative whitespace-nowrap border-b-2 pb-3 pt-1 text-sm font-medium transition-colors duration-150',
-                    'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2',
-                    active
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {t.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </header>
-
-      <div
-        role="tabpanel"
-        id={`tabpanel-${tab}`}
-        aria-labelledby={`tab-${tab}`}
-        className="w-full p-6 lg:p-8"
-      >
+      <SectionHeader meta={meta} />
+      <div className="w-full p-6 lg:p-8">
         {tab === 'overview' && <ControlOverview data={data.overview} />}
         {tab === 'team' && <ControlTeam data={data.team} />}
-        {tab === 'finance' && canViewFinance && <ControlFinance data={data.finance} />}
-        {tab === 'reports' && <ControlReports />}
+        {tab === 'finance' && <ControlFinance data={data.finance} />}
         {tab === 'system' && (
           <ControlSystem
             data={data.system}
@@ -380,5 +299,20 @@ export function QualiaControl({ initialTab, data, canViewFinance = false }: Qual
         )}
       </div>
     </div>
+  );
+}
+
+function SectionHeader({ meta }: { meta: { eyebrow: string; title: string; desc: string } }) {
+  return (
+    <header className="border-b border-border bg-muted/20 px-6 pb-6 pt-10 lg:px-8 lg:pt-12">
+      <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+        <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
+        <span>{meta.eyebrow}</span>
+      </div>
+      <h1 className="mt-3 text-[clamp(1.5rem,1.1rem+1.5vw,2.125rem)] font-semibold leading-tight tracking-tight text-foreground">
+        {meta.title}
+      </h1>
+      <p className="mt-1.5 max-w-[560px] text-sm text-muted-foreground">{meta.desc}</p>
+    </header>
   );
 }
