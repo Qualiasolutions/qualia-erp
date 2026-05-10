@@ -231,15 +231,15 @@ export function QualiaTasksView({
   const cleanupCount = cleanupTasks.length;
 
   const weekDoneCount = useMemo(() => {
-    const now = new Date();
-    const sevenAgo = new Date(now.getTime() - 7 * 86_400_000);
-    return [...inboxTasks, ...todaysTasks].filter(
-      (t, i, arr) =>
-        arr.findIndex((x) => x.id === t.id) === i &&
-        t.status === 'Done' &&
-        t.completed_at &&
-        new Date(t.completed_at) >= sevenAgo
-    ).length;
+    const sevenAgo = new Date(Date.now() - 7 * 86_400_000);
+    const seen = new Set<string>();
+    let count = 0;
+    for (const t of [...inboxTasks, ...todaysTasks]) {
+      if (seen.has(t.id)) continue;
+      seen.add(t.id);
+      if (t.status === 'Done' && t.completed_at && new Date(t.completed_at) >= sevenAgo) count++;
+    }
+    return count;
   }, [inboxTasks, todaysTasks]);
 
   // Real toggle — sets optimistic override, fires server action, clears

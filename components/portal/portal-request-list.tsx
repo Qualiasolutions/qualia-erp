@@ -457,14 +457,24 @@ export function PortalRequestList({ requests, currentUserId, userRole }: PortalR
     });
   }, []);
 
-  // Fetch comment counts for all requests on mount
+  // Fetch comment counts for all requests. The parent re-renders pass a fresh
+  // `requests` array reference each cycle, so depend on a stable join of IDs
+  // instead — only re-fire when the actual ID set changes.
+  const requestIdsKey = useMemo(
+    () =>
+      requests
+        .map((r) => r.id)
+        .sort()
+        .join(','),
+    [requests]
+  );
   useEffect(() => {
-    const ids = requests.map((r) => r.id);
-    if (ids.length === 0) return;
+    if (!requestIdsKey) return;
+    const ids = requestIdsKey.split(',');
     getRequestCommentCounts(ids).then((counts) => {
       setCommentCounts(counts);
     });
-  }, [requests]);
+  }, [requestIdsKey]);
 
   const filtered = useMemo(() => {
     let result = [...requests];

@@ -73,7 +73,7 @@ export function PortalBillingSummary({ invoices }: PortalBillingSummaryProps) {
   ];
 
   return (
-    <div className="grid grid-cols-3 divide-x divide-border/70 overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="grid grid-cols-1 divide-y divide-border/70 overflow-hidden rounded-2xl border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
       {tiles.map((tile) => (
         <div key={tile.label} className="px-[clamp(1rem,3vw,2rem)] py-5">
           <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">

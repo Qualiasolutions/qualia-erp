@@ -144,7 +144,8 @@ export async function getClients(workspaceId?: string | null, leadStatus?: LeadS
             assigned:profiles!clients_assigned_to_fkey (id, full_name, email)
         `
     )
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(500);
 
   if (wsId) {
     query = query.eq('workspace_id', wsId);

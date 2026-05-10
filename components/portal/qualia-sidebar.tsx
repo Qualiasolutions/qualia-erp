@@ -184,7 +184,6 @@ const ROLE_ORDER: Record<Role, string[]> = {
   admin: [
     'admin-dashboard',
     'projects',
-    'tasks',
     'schedule',
     'clients',
     'team',
@@ -193,7 +192,7 @@ const ROLE_ORDER: Record<Role, string[]> = {
     'knowledge',
     'settings',
   ],
-  employee: ['employee-dashboard', 'projects', 'tasks', 'schedule', 'knowledge', 'settings'],
+  employee: ['employee-dashboard', 'projects', 'schedule', 'knowledge', 'settings'],
   client: ['client-dashboard', 'projects', 'requests', 'messages', 'client-billing', 'settings'],
 };
 
@@ -457,8 +456,14 @@ function IdentityStrip({
               aria-hidden
             >
               {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoUrl} alt="" className="h-full w-full object-cover" />
+                <Image
+                  src={logoUrl}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="h-full w-full object-cover"
+                  unoptimized
+                />
               ) : (
                 displayName.charAt(0).toUpperCase()
               )}

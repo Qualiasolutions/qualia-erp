@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Plus, Search, Users, X, Phone, Globe, LayoutGrid, List, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -333,6 +334,7 @@ function ClientsTable({
   sortDir: SortDir;
   onSort: (f: SortField) => void;
 }) {
+  const router = useRouter();
   return (
     <div className="h-full overflow-x-auto overflow-y-auto">
       <table className="w-full min-w-[640px]">
@@ -395,9 +397,16 @@ function ClientsTable({
             return (
               <tr
                 key={c.id}
-                className="group cursor-pointer transition-colors hover:bg-muted/30"
-                onClick={() => {
-                  window.location.assign(`/clients/${c.id}`);
+                tabIndex={0}
+                role="link"
+                aria-label={`Open ${c.display_name ?? 'client'}`}
+                className="group cursor-pointer transition-colors hover:bg-muted/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                onClick={() => router.push(`/clients/${c.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    router.push(`/clients/${c.id}`);
+                  }
                 }}
               >
                 <td className="px-6 py-4 text-sm tabular-nums text-muted-foreground">{idx + 1}</td>
@@ -408,7 +417,9 @@ function ClientsTable({
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Avatar className="h-9 w-9">
-                      {c.logo_url ? <AvatarImage src={c.logo_url} alt="" /> : null}
+                      {c.logo_url ? (
+                        <AvatarImage src={c.logo_url} alt={c.display_name ?? 'Client logo'} />
+                      ) : null}
                       <AvatarFallback
                         className={cn('text-xs font-semibold text-white', clientColor(c.id))}
                       >
@@ -494,7 +505,9 @@ function ClientsGrid({ clients }: { clients: Client[] }) {
           >
             <div className="mb-3 flex items-start justify-between gap-2">
               <Avatar className="h-10 w-10">
-                {c.logo_url ? <AvatarImage src={c.logo_url} alt="" /> : null}
+                {c.logo_url ? (
+                  <AvatarImage src={c.logo_url} alt={c.display_name ?? 'Client logo'} />
+                ) : null}
                 <AvatarFallback
                   className={cn('text-xs font-semibold text-white', clientColor(c.id))}
                 >

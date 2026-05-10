@@ -268,7 +268,11 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
               </DialogHeader>
             </div>
 
-            <form onSubmit={handleSubmit} className="max-h-[70vh] overflow-y-auto px-6 py-5">
+            <form
+              id="portal-request-form"
+              onSubmit={handleSubmit}
+              className="max-h-[70vh] overflow-y-auto px-6 py-5"
+            >
               <div className="space-y-6">
                 {/* Category chips */}
                 <div className="space-y-2.5">
@@ -484,7 +488,7 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
                 </Button>
                 <Button
                   type="submit"
-                  onClick={handleSubmit}
+                  form="portal-request-form"
                   disabled={loading || !title.trim()}
                   className="cursor-pointer gap-1.5 rounded-xl bg-primary text-primary-foreground"
                 >

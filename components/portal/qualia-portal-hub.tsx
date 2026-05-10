@@ -226,7 +226,7 @@ function PulseMetric({
       <div
         className={cn(
           'mt-2 text-[26px] font-semibold tabular-nums leading-none tracking-tight',
-          emphasized ? 'text-foreground' : 'text-foreground'
+          emphasized ? 'text-amber-600 dark:text-amber-400' : 'text-foreground'
         )}
       >
         {value}
