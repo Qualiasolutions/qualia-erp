@@ -4,7 +4,7 @@ import { ProjectBriefShell } from './project-brief-shell';
 import type { BriefModulesStep } from './brief-types';
 
 const MODULES: BriefModulesStep = {
-  title: 'Which networking modules do you need?',
+  title: 'Which Hivora modules do you need?',
   hint: 'Pick everything for v1 — we’ll prioritise the rest after.',
   defaults: ['QR profile generation', 'Profile editor'],
   options: [
@@ -35,7 +35,7 @@ export function NetworkingBrief({
     <ProjectBriefShell
       projectId={projectId}
       projectName={projectName}
-      formTitle="Networking platform"
+      formTitle="Hivora"
       modulesStep={MODULES}
       className={className}
     />

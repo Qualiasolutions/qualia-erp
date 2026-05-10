@@ -13,9 +13,9 @@ interface ProjectBriefFormProps {
 
 function resolveBriefVariant(name: string): 'networking' | 'expo' | 'kartatic' | 'generic' {
   const n = name.toLowerCase();
-  if (n.includes('kartatic') || n.includes('kartatik')) return 'kartatic';
+  if (n.includes('kartatek') || n.includes('kartatic') || n.includes('kartatik')) return 'kartatic';
   if (n.includes('cyprus expo') || n.includes('aicyprus') || n.includes('ai cyprus')) return 'expo';
-  if (n.includes('networking')) return 'networking';
+  if (n.includes('hivora') || n.includes('networking')) return 'networking';
   return 'generic';
 }
 

@@ -4,7 +4,7 @@ import { ProjectBriefShell } from './project-brief-shell';
 import type { BriefModulesStep } from './brief-types';
 
 const MODULES: BriefModulesStep = {
-  title: 'Which Kartatic updates do you need?',
+  title: 'Which Kartatek updates do you need?',
   hint: 'The current demo plus what we add for v1.',
   defaults: ['Referral program', 'Ticketing system'],
   options: [
@@ -34,7 +34,7 @@ export function KartaticBrief({
     <ProjectBriefShell
       projectId={projectId}
       projectName={projectName}
-      formTitle="Kartatic"
+      formTitle="Kartatek"
       modulesStep={MODULES}
       className={className}
     />
