@@ -45,7 +45,7 @@ import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PhaseComments } from '@/components/phase-comments';
 import { PhaseItemsList } from '@/components/phase-items-list';
-import { ClientProjectBriefForm } from '@/components/portal/client-project-brief-form';
+import { ProjectBriefForm } from '@/components/portal/briefs';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -961,7 +961,7 @@ export function ProjectWorkflow({
             className
           )}
         >
-          <ClientProjectBriefForm projectId={projectId} projectName={projectName} />
+          <ProjectBriefForm projectId={projectId} projectName={projectName} />
         </div>
       );
     }

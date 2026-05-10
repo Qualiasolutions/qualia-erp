@@ -5,345 +5,247 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { createFeatureRequest } from '@/app/actions/client-requests';
+import { uploadProjectFile } from '@/app/actions/project-files';
 import { cn } from '@/lib/utils';
+import {
+  AUDIENCE_OPTIONS,
+  BUDGET_OPTIONS,
+  type BriefFields,
+  type BriefModulesStep,
+  type ChipOption,
+  GEOGRAPHY_OPTIONS,
+  GOAL_OPTIONS,
+  INITIAL_FIELDS,
+  INTEGRATION_OPTIONS,
+  TIMELINE_OPTIONS,
+} from './brief-types';
 
-interface ClientProjectBriefFormProps {
+const MAX_FILES = 8;
+const MAX_FILE_SIZE_MB = 50;
+
+interface ProjectBriefShellProps {
   projectId: string;
   projectName: string;
+  formTitle: string;
+  modulesStep: BriefModulesStep;
   className?: string;
 }
 
-interface BriefFields {
-  type: string;
-  typeNote: string;
-  goals: string[];
-  goalsNote: string;
-  audience: string[];
-  audienceNote: string;
-  geography: string[];
-  geographyNote: string;
-  integrations: string[];
-  integrationsNote: string;
-  references: string;
-  timeline: string;
-  timelineNote: string;
-  budget: string;
-  budgetNote: string;
-  ownership: string;
-  ownershipNote: string;
-  notes: string;
-}
-
-const INITIAL: BriefFields = {
-  type: '',
-  typeNote: '',
-  goals: [],
-  goalsNote: '',
-  audience: [],
-  audienceNote: '',
-  geography: [],
-  geographyNote: '',
-  integrations: [],
-  integrationsNote: '',
-  references: '',
-  timeline: '',
-  timelineNote: '',
-  budget: '',
-  budgetNote: '',
-  ownership: '',
-  ownershipNote: '',
-  notes: '',
-};
-
-const TYPE_OPTIONS = [
-  { value: 'Booking / ticketing platform', label: 'Booking / ticketing' },
-  { value: 'Marketplace / multi-vendor', label: 'Marketplace' },
-  { value: 'Custom SaaS / dashboard', label: 'Custom SaaS' },
-  { value: 'E-commerce store', label: 'E-commerce' },
-  { value: 'Mobile app (React Native)', label: 'Mobile app' },
-  { value: 'Internal admin tool', label: 'Admin tool' },
-  { value: 'Other', label: 'Other' },
-];
-
-const GOAL_OPTIONS = [
-  { value: 'Sell tickets / drive event signups', label: 'Sell tickets / events' },
-  { value: 'Launch a new revenue stream', label: 'New revenue stream' },
-  { value: 'Showcase a service / generate leads', label: 'Generate leads' },
-  { value: 'Replace a manual / spreadsheet process', label: 'Replace manual process' },
-  { value: 'Demo for partners / investors', label: 'Partner / investor demo' },
-  { value: 'White-label & resell to clients', label: 'White-label & resell' },
-];
-
-const AUDIENCE_OPTIONS = [
-  { value: 'Event-goers / ticket buyers', label: 'Event-goers' },
-  { value: 'Vendors managing their own page', label: 'Vendors' },
-  { value: 'Internal admin team', label: 'Admin team' },
-  { value: 'End customers buying products', label: 'End customers' },
-  { value: 'Referral / affiliate users', label: 'Affiliates' },
-];
-
-const GEOGRAPHY_OPTIONS = [
-  { value: 'Cyprus', label: 'Cyprus' },
-  { value: 'UAE', label: 'UAE' },
-  { value: 'Jordan', label: 'Jordan' },
-  { value: 'Italy', label: 'Italy' },
-  { value: 'USA', label: 'USA' },
-  { value: 'Multi-region', label: 'Multi-region' },
-];
-
-const INTEGRATION_OPTIONS = [
-  { value: 'JCC payment gateway', label: 'JCC' },
-  { value: 'Revolut payment links', label: 'Revolut' },
-  { value: 'Stripe', label: 'Stripe' },
-  { value: 'Email (Resend / SendGrid)', label: 'Email' },
-  { value: 'SMS / WhatsApp', label: 'SMS / WhatsApp' },
-  { value: 'Google Calendar', label: 'Calendar' },
-  { value: 'Referral / affiliate program', label: 'Referrals' },
-  { value: 'Ticketing engine', label: 'Ticketing engine' },
-  { value: 'Analytics (GA / Posthog)', label: 'Analytics' },
-  { value: 'WordPress / CMS', label: 'CMS' },
-];
-
-const TIMELINE_OPTIONS = [
-  { value: 'Now', label: 'Now' },
-  { value: 'In the next month', label: 'In the next month' },
-  { value: 'In 2 months', label: 'In 2 months' },
-  { value: 'LATER', label: 'Later' },
-];
-
-const BUDGET_OPTIONS = [
-  { value: 'Under €5k', label: 'Under €5k' },
-  { value: '€5k–€10k', label: '€5k–€10k' },
-  { value: '€10k–€20k', label: '€10k–€20k' },
-  { value: '€20k+', label: '€20k+' },
-];
-
-const OWNERSHIP_OPTIONS = [
-  { value: 'Full handover (code + hosting + docs to me)', label: 'Full handover' },
-  { value: 'Qualia-managed (you host + support)', label: 'Qualia-managed' },
-  { value: 'Hybrid (Qualia hosts year 1, then hand over)', label: 'Hybrid' },
-];
-
-type StepKind = 'chips' | 'multi-chips' | 'textarea';
+type StepKind = 'multi-chips' | 'textarea' | 'chips' | 'files';
 
 interface Step {
-  key: keyof BriefFields;
+  key: keyof BriefFields | 'files';
   noteKey?: keyof BriefFields;
   eyebrow: string;
+  shortLabel: string;
   title: string;
   hint?: string;
   kind: StepKind;
-  options?: { value: string; label: string }[];
+  options?: ChipOption[];
   placeholder?: string;
   notePlaceholder?: string;
   optional?: boolean;
 }
 
-const STEPS: Step[] = [
-  {
-    key: 'type',
-    noteKey: 'typeNote',
-    eyebrow: 'Step 1',
-    title: 'What kind of platform are we building?',
-    hint: 'Pick the closest match — we can refine later.',
-    kind: 'chips',
-    options: TYPE_OPTIONS,
-    notePlaceholder: 'A specific platform name or scope detail? (optional)',
-  },
-  {
-    key: 'goals',
-    noteKey: 'goalsNote',
-    eyebrow: 'Step 2',
-    title: 'What is this project supposed to do?',
-    hint: 'Pick everything that fits — pick more than one.',
-    kind: 'multi-chips',
-    options: GOAL_OPTIONS,
-    notePlaceholder: 'Add the #1 outcome in your words (optional)',
-  },
-  {
-    key: 'audience',
-    noteKey: 'audienceNote',
-    eyebrow: 'Step 3',
-    title: 'Who is the end user?',
-    hint: 'Pick everyone who will actually use it.',
-    kind: 'multi-chips',
-    options: AUDIENCE_OPTIONS,
-    notePlaceholder: 'Describe them in a sentence (optional)',
-    optional: true,
-  },
-  {
-    key: 'geography',
-    noteKey: 'geographyNote',
-    eyebrow: 'Step 4',
-    title: 'Where will it operate?',
-    hint: 'Pick every market the platform serves.',
-    kind: 'multi-chips',
-    options: GEOGRAPHY_OPTIONS,
-    notePlaceholder: 'Specific cities or rollout order? (optional)',
-    optional: true,
-  },
-  {
-    key: 'integrations',
-    noteKey: 'integrationsNote',
-    eyebrow: 'Step 5',
-    title: 'Must-have integrations?',
-    hint: 'Pick everything you need wired up at launch.',
-    kind: 'multi-chips',
-    options: INTEGRATION_OPTIONS,
-    notePlaceholder: 'Other tools or APIs to integrate? (optional)',
-    optional: true,
-  },
-  {
-    key: 'references',
-    eyebrow: 'Step 6',
-    title: 'Reference platforms you love?',
-    hint: 'Links, app names, screenshots — anything that nails the vibe.',
-    kind: 'textarea',
-    placeholder: 'https://… or "the way Linear handles X"',
-    optional: true,
-  },
-  {
-    key: 'timeline',
-    noteKey: 'timelineNote',
-    eyebrow: 'Step 7',
-    title: 'When do you want it launched?',
-    kind: 'chips',
-    options: TIMELINE_OPTIONS,
-    notePlaceholder: 'A specific event or deadline? (optional)',
-  },
-  {
-    key: 'budget',
-    noteKey: 'budgetNote',
-    eyebrow: 'Step 8',
-    title: 'Budget range?',
-    hint: 'Helps us scope the right shape of build.',
-    kind: 'chips',
-    options: BUDGET_OPTIONS,
-    notePlaceholder: 'Any context on the budget? (optional)',
-  },
-  {
-    key: 'ownership',
-    noteKey: 'ownershipNote',
-    eyebrow: 'Step 9',
-    title: 'Ownership preference?',
-    hint: 'How should the project be handed over after launch?',
-    kind: 'chips',
-    options: OWNERSHIP_OPTIONS,
-    notePlaceholder: 'Anything specific about handover or hosting? (optional)',
-  },
-  {
-    key: 'notes',
-    eyebrow: 'Step 10',
-    title: 'Anything else we should know?',
-    hint: 'Constraints, must-haves, things to avoid.',
-    kind: 'textarea',
-    placeholder: 'Optional — leave blank if nothing comes to mind.',
-    optional: true,
-  },
-];
+function buildSteps(modulesStep: BriefModulesStep): Step[] {
+  return [
+    {
+      key: 'goals',
+      noteKey: 'goalsNote',
+      eyebrow: 'Step 1',
+      shortLabel: 'Goals',
+      title: 'What is this project supposed to do?',
+      hint: 'Pick everything that fits.',
+      kind: 'multi-chips',
+      options: GOAL_OPTIONS,
+      notePlaceholder: 'Add the #1 outcome in your words (optional)',
+    },
+    {
+      key: 'audience',
+      noteKey: 'audienceNote',
+      eyebrow: 'Step 2',
+      shortLabel: 'Audience',
+      title: 'Who is the end user?',
+      hint: 'Pick everyone who will actually use it.',
+      kind: 'multi-chips',
+      options: AUDIENCE_OPTIONS,
+      notePlaceholder: 'Describe them in a sentence (optional)',
+      optional: true,
+    },
+    {
+      key: 'modules',
+      noteKey: 'modulesNote',
+      eyebrow: 'Step 3',
+      shortLabel: 'Modules',
+      title: modulesStep.title,
+      hint: modulesStep.hint,
+      kind: 'multi-chips',
+      options: modulesStep.options,
+      notePlaceholder: 'Other modules we should build? (optional)',
+    },
+    {
+      key: 'geography',
+      noteKey: 'geographyNote',
+      eyebrow: 'Step 4',
+      shortLabel: 'Geography',
+      title: 'Where will it operate?',
+      hint: 'Pick every market the platform serves.',
+      kind: 'multi-chips',
+      options: GEOGRAPHY_OPTIONS,
+      notePlaceholder: 'Specific cities or rollout order? (optional)',
+      optional: true,
+    },
+    {
+      key: 'integrations',
+      noteKey: 'integrationsNote',
+      eyebrow: 'Step 5',
+      shortLabel: 'Integrations',
+      title: 'Must-have integrations?',
+      hint: 'Pick everything you need wired up at launch.',
+      kind: 'multi-chips',
+      options: INTEGRATION_OPTIONS,
+      notePlaceholder: 'Other tools or APIs to integrate? (optional)',
+      optional: true,
+    },
+    {
+      key: 'references',
+      eyebrow: 'Step 6',
+      shortLabel: 'Refs',
+      title: 'Reference platforms you love?',
+      hint: 'Links, app names, screenshots — anything that nails the vibe.',
+      kind: 'textarea',
+      placeholder: 'https://… or "the way Linear handles X"',
+      optional: true,
+    },
+    {
+      key: 'timeline',
+      noteKey: 'timelineNote',
+      eyebrow: 'Step 7',
+      shortLabel: 'Timeline',
+      title: 'When do you want it launched?',
+      kind: 'chips',
+      options: TIMELINE_OPTIONS,
+      notePlaceholder: 'A specific event or deadline? (optional)',
+    },
+    {
+      key: 'budget',
+      noteKey: 'budgetNote',
+      eyebrow: 'Step 8',
+      shortLabel: 'Budget',
+      title: 'Budget range?',
+      hint: 'Helps us scope the right shape of build.',
+      kind: 'chips',
+      options: BUDGET_OPTIONS,
+      notePlaceholder: 'Any context on the budget? (optional)',
+    },
+    {
+      key: 'files',
+      eyebrow: 'Step 9',
+      shortLabel: 'Files',
+      title: 'Upload anything we should see',
+      hint: 'Logo, brief PDF, screenshots, references — up to 8 files, 50MB each.',
+      kind: 'files',
+      optional: true,
+    },
+    {
+      key: 'notes',
+      eyebrow: 'Step 10',
+      shortLabel: 'Notes',
+      title: 'Anything else we should know?',
+      hint: 'Constraints, must-haves, things to avoid.',
+      kind: 'textarea',
+      placeholder: 'Optional — leave blank if nothing comes to mind.',
+      optional: true,
+    },
+  ];
+}
 
-const STEP_LABELS = [
-  'Type',
-  'Goal',
-  'Audience',
-  'Geography',
-  'Integrations',
-  'Refs',
-  'Timeline',
-  'Budget',
-  'Ownership',
-  'Notes',
-];
-
-function buildDescription(f: BriefFields): string {
+function buildDescription(
+  fields: BriefFields,
+  uploadedFiles: { name: string; size: number }[]
+): string {
   const sections: string[] = [];
-  if (f.type) {
+
+  const pushChips = (label: string, values: string[], note: string) => {
+    if (values.length === 0 && !note.trim()) return;
+    const body = values.length > 0 ? values.join(', ') : '(see note)';
+    sections.push(`**${label}**\n${body}${note.trim() ? `\n_${note.trim()}_` : ''}`);
+  };
+
+  const pushChip = (label: string, value: string, note: string) => {
+    if (!value && !note.trim()) return;
     sections.push(
-      `**Project type**\n${f.type}${f.typeNote.trim() ? `\n_${f.typeNote.trim()}_` : ''}`
+      `**${label}**\n${value || '(see note)'}${note.trim() ? `\n_${note.trim()}_` : ''}`
     );
+  };
+
+  pushChips('Goals', fields.goals, fields.goalsNote);
+  pushChips('Audience', fields.audience, fields.audienceNote);
+  pushChips('Modules', fields.modules, fields.modulesNote);
+  pushChips('Geography', fields.geography, fields.geographyNote);
+  pushChips('Integrations', fields.integrations, fields.integrationsNote);
+  if (fields.references.trim()) sections.push(`**References**\n${fields.references.trim()}`);
+  pushChip('Timeline', fields.timeline, fields.timelineNote);
+  pushChip('Budget', fields.budget, fields.budgetNote);
+  if (uploadedFiles.length > 0) {
+    const list = uploadedFiles
+      .map((f) => `- ${f.name} (${(f.size / 1024).toFixed(0)} KB)`)
+      .join('\n');
+    sections.push(`**Attached files**\n${list}`);
   }
-  if (f.goals.length > 0) {
-    sections.push(
-      `**Goals**\n${f.goals.join(', ')}${f.goalsNote.trim() ? `\n_${f.goalsNote.trim()}_` : ''}`
-    );
-  }
-  if (f.audience.length > 0 || f.audienceNote.trim()) {
-    const audience = f.audience.length > 0 ? f.audience.join(', ') : '(see note)';
-    sections.push(
-      `**Target audience**\n${audience}${
-        f.audienceNote.trim() ? `\n_${f.audienceNote.trim()}_` : ''
-      }`
-    );
-  }
-  if (f.geography.length > 0 || f.geographyNote.trim()) {
-    const geography = f.geography.length > 0 ? f.geography.join(', ') : '(see note)';
-    sections.push(
-      `**Geography**\n${geography}${f.geographyNote.trim() ? `\n_${f.geographyNote.trim()}_` : ''}`
-    );
-  }
-  if (f.integrations.length > 0 || f.integrationsNote.trim()) {
-    const integrations = f.integrations.length > 0 ? f.integrations.join(', ') : '(see note)';
-    sections.push(
-      `**Must-have integrations**\n${integrations}${
-        f.integrationsNote.trim() ? `\n_${f.integrationsNote.trim()}_` : ''
-      }`
-    );
-  }
-  if (f.references.trim()) sections.push(`**References / inspiration**\n${f.references.trim()}`);
-  if (f.timeline) {
-    sections.push(
-      `**Timeline**\n${f.timeline}${f.timelineNote.trim() ? `\n_${f.timelineNote.trim()}_` : ''}`
-    );
-  }
-  if (f.budget) {
-    sections.push(
-      `**Budget**\n${f.budget}${f.budgetNote.trim() ? `\n_${f.budgetNote.trim()}_` : ''}`
-    );
-  }
-  if (f.ownership) {
-    sections.push(
-      `**Ownership preference**\n${f.ownership}${
-        f.ownershipNote.trim() ? `\n_${f.ownershipNote.trim()}_` : ''
-      }`
-    );
-  }
-  if (f.notes.trim()) sections.push(`**Anything else**\n${f.notes.trim()}`);
+  if (fields.notes.trim()) sections.push(`**Anything else**\n${fields.notes.trim()}`);
+
   return sections.join('\n\n');
 }
 
-export function ClientProjectBriefForm({
+export function ProjectBriefShell({
   projectId,
   projectName,
+  formTitle,
+  modulesStep,
   className,
-}: ClientProjectBriefFormProps) {
+}: ProjectBriefShellProps) {
+  const STEPS = buildSteps(modulesStep);
+
   const [stepIndex, setStepIndex] = useState(0);
-  const [fields, setFields] = useState<BriefFields>(INITIAL);
+  const [fields, setFields] = useState<BriefFields>({
+    ...INITIAL_FIELDS,
+    modules: modulesStep.defaults ?? [],
+  });
+  const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const step = STEPS[stepIndex];
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === STEPS.length - 1;
-  const value = fields[step.key];
+
+  const value = step.key === 'files' ? null : fields[step.key as keyof BriefFields];
   const noteValue =
     step.noteKey && typeof fields[step.noteKey] === 'string'
       ? (fields[step.noteKey] as string)
       : '';
+
   const hasPrimary =
     step.kind === 'multi-chips'
       ? Array.isArray(value) && value.length > 0
-      : typeof value === 'string' && value.trim().length > 0;
+      : step.kind === 'files'
+        ? files.length > 0
+        : typeof value === 'string' && value.trim().length > 0;
+
   const canAdvance = step.optional || hasPrimary || noteValue.trim().length > 0;
+
   const hasContent =
-    fields.type ||
     fields.goals.length > 0 ||
+    fields.modules.length > 0 ||
     fields.audience.length > 0 ||
     fields.geography.length > 0 ||
     fields.integrations.length > 0 ||
+    files.length > 0 ||
     [
-      fields.typeNote,
       fields.goalsNote,
       fields.audienceNote,
+      fields.modulesNote,
       fields.geographyNote,
       fields.integrationsNote,
       fields.references,
@@ -351,8 +253,6 @@ export function ClientProjectBriefForm({
       fields.timelineNote,
       fields.budget,
       fields.budgetNote,
-      fields.ownership,
-      fields.ownershipNote,
       fields.notes,
     ].some((v) => v.trim().length > 0);
 
@@ -368,6 +268,28 @@ export function ClientProjectBriefForm({
       const next = exists ? current.filter((v) => v !== optionValue) : [...current, optionValue];
       return { ...prev, [key]: next } as BriefFields;
     });
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = Array.from(e.target.files ?? []);
+    if (picked.length === 0) return;
+    const tooBig = picked.find((f) => f.size > MAX_FILE_SIZE_MB * 1024 * 1024);
+    if (tooBig) {
+      toast.error(`"${tooBig.name}" exceeds ${MAX_FILE_SIZE_MB}MB`);
+      return;
+    }
+    setFiles((prev) => {
+      const merged = [...prev, ...picked].slice(0, MAX_FILES);
+      if (prev.length + picked.length > MAX_FILES) {
+        toast.warning(`Max ${MAX_FILES} files — extra files ignored`);
+      }
+      return merged;
+    });
+    e.target.value = '';
+  }
+
+  function removeFile(index: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
   function goNext() {
@@ -401,19 +323,37 @@ export function ClientProjectBriefForm({
     }
 
     setSubmitting(true);
-    const description = buildDescription(fields);
+
+    const uploaded: { name: string; size: number }[] = [];
+    for (const file of files) {
+      const fd = new FormData();
+      fd.set('file', file);
+      fd.set('project_id', projectId);
+      fd.set('description', `Project brief attachment — ${projectName}`);
+      fd.set('is_client_visible', 'true');
+      const res = await uploadProjectFile(fd);
+      if (res.success) {
+        uploaded.push({ name: file.name, size: file.size });
+      } else {
+        toast.error(`Could not upload ${file.name}: ${res.error}`);
+      }
+    }
+
+    const description = buildDescription(fields, uploaded);
     const result = await createFeatureRequest({
       project_id: projectId,
       title: `Project brief — ${projectName}`,
       description,
       priority: 'medium',
     });
+
     setSubmitting(false);
 
     if (result.success) {
       toast.success('Brief sent — we’ll review and get back to you');
       setSubmitted(true);
-      setFields(INITIAL);
+      setFields({ ...INITIAL_FIELDS, modules: modulesStep.defaults ?? [] });
+      setFiles([]);
       setStepIndex(0);
     } else {
       toast.error(result.error || 'Failed to send brief');
@@ -474,11 +414,10 @@ export function ClientProjectBriefForm({
             {step.eyebrow} of {STEPS.length}
           </p>
           <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/65">
-            {STEP_LABELS[stepIndex]}
+            {formTitle} · {step.shortLabel}
           </p>
         </div>
 
-        {/* Progress bar */}
         <div className="bg-muted-foreground/12 mt-3 h-[3px] w-full overflow-hidden rounded-full">
           <div
             className="duration-[420ms] ease-[cubic-bezier(0.19,1,0.22,1)] h-full rounded-full bg-gradient-to-r from-primary/70 to-primary shadow-[0_0_12px_hsl(var(--primary)/0.6)] transition-[width]"
@@ -507,7 +446,7 @@ export function ClientProjectBriefForm({
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => update(step.key, opt.value as BriefFields[typeof step.key])}
+                  onClick={() => update(step.key as keyof BriefFields, opt.value as never)}
                   className={cn(
                     'group relative flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13.5px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     selected
@@ -543,7 +482,7 @@ export function ClientProjectBriefForm({
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => toggleMulti(step.key, opt.value)}
+                  onClick={() => toggleMulti(step.key as keyof BriefFields, opt.value)}
                   className={cn(
                     'group relative flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13.5px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     selected
@@ -574,14 +513,58 @@ export function ClientProjectBriefForm({
         {step.kind === 'textarea' && (
           <Textarea
             value={typeof value === 'string' ? value : ''}
-            onChange={(e) => update(step.key, e.target.value as BriefFields[typeof step.key])}
+            onChange={(e) => update(step.key as keyof BriefFields, e.target.value as never)}
             placeholder={step.placeholder}
             className="min-h-[140px] resize-none rounded-xl text-[14px] leading-relaxed"
             autoFocus
           />
         )}
 
-        {/* Optional extra-text under chip-style steps */}
+        {step.kind === 'files' && (
+          <div className="space-y-3">
+            <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-card/30 transition-colors hover:border-primary/50 hover:bg-primary/[0.03]">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                className="h-7 w-7 text-muted-foreground"
+              >
+                <path d="M12 4v16m-8-8h16" strokeLinecap="round" />
+              </svg>
+              <span className="text-[13px] font-medium text-muted-foreground">
+                Click to add files <span className="text-muted-foreground/60">(or drop)</span>
+              </span>
+              <input type="file" multiple onChange={handleFileSelect} className="hidden" />
+            </label>
+
+            {files.length > 0 && (
+              <ul className="space-y-1.5">
+                {files.map((f, i) => (
+                  <li
+                    key={`${f.name}-${i}`}
+                    className="flex items-center justify-between rounded-lg border border-border bg-card/40 px-3 py-2 text-[13px]"
+                  >
+                    <span className="truncate text-foreground">{f.name}</span>
+                    <div className="flex items-center gap-3 pl-3">
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {(f.size / 1024).toFixed(0)} KB
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        className="cursor-pointer text-[11px] text-muted-foreground/70 hover:text-destructive"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         {(step.kind === 'chips' || step.kind === 'multi-chips') && step.noteKey && (
           <Textarea
             value={noteValue}
