@@ -71,11 +71,33 @@ export {
   type ReportFlag,
 } from './reports-perf';
 
-export type ControlTab = 'overview' | 'team' | 'finance' | 'reports' | 'system';
+export { loadClientsTab, type ClientsPayload } from './clients';
+export { loadBillingTab, type BillingPayload, type BillingInvoice } from './billing';
+export { loadIntegrationsTab, type IntegrationsPayload, type IntegrationRow } from './integrations';
+
+export type ControlTab =
+  | 'overview'
+  | 'team'
+  | 'finance'
+  | 'reports'
+  | 'system'
+  | 'clients'
+  | 'billing'
+  | 'integrations';
+
+const VALID_TABS = new Set<ControlTab>([
+  'team',
+  'finance',
+  'reports',
+  'system',
+  'clients',
+  'billing',
+  'integrations',
+]);
 
 export function resolveControlTab(value: string | undefined): ControlTab {
-  if (value === 'team' || value === 'finance' || value === 'reports' || value === 'system') {
-    return value;
+  if (value && VALID_TABS.has(value as ControlTab)) {
+    return value as ControlTab;
   }
   return 'overview';
 }

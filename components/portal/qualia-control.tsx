@@ -12,12 +12,22 @@ import type {
   TeamPayload,
   FinancePayload,
   SystemPayload,
+  ClientsPayload,
+  BillingPayload,
+  IntegrationsPayload,
 } from '@/app/actions/admin-control';
 
 import { ControlTeam } from './control-team';
 import { ControlFinance } from './control-finance';
 import { ControlSystem } from './control-system';
 import { CommandCenter } from './control-command-center';
+import { AdminReportsClient } from '@/app/(portal)/admin/reports/reports-client';
+import { QualiaClientsView } from '@/components/portal/qualia-clients-view';
+import { ClientAccessDriftBanner } from '@/components/clients/client-access-drift-banner';
+import { PortalInvoiceList } from '@/components/portal/portal-invoice-list';
+import { PortalInvoiceFormDialog } from '@/components/portal/portal-invoice-form-dialog';
+import { PortalBillingSummary } from '@/components/portal/portal-billing-summary';
+import { IntegrationsClient } from '@/app/(portal)/settings/integrations/integrations-client';
 
 /* ======================================================================
    Types
@@ -28,6 +38,10 @@ export interface QualiaControlData {
   team?: TeamPayload;
   finance?: FinancePayload;
   system?: SystemPayload;
+  clients?: ClientsPayload;
+  billing?: BillingPayload;
+  integrations?: IntegrationsPayload;
+  reports?: boolean;
 }
 
 interface QualiaControlProps {
@@ -38,12 +52,8 @@ interface QualiaControlProps {
 }
 
 // Heading per section so each sidebar destination lands with its own title
-// instead of the old monolithic 'Dashboard' + tab-row pattern. Reports has its
-// own dedicated route at /admin/reports so it isn't included here.
-const SECTION_META: Record<
-  Exclude<ControlTab, 'reports'>,
-  { eyebrow: string; title: string; desc: string }
-> = {
+// instead of the old monolithic 'Dashboard' + tab-row pattern.
+const SECTION_META: Record<ControlTab, { eyebrow: string; title: string; desc: string }> = {
   overview: {
     eyebrow: 'Admin console',
     title: 'Dashboard',
@@ -63,6 +73,26 @@ const SECTION_META: Record<
     eyebrow: 'Admin console',
     title: 'System',
     desc: 'Integrations, audit, workspace.',
+  },
+  reports: {
+    eyebrow: 'Admin console',
+    title: 'Reports',
+    desc: 'Hours, framework reports, and AI prompts.',
+  },
+  clients: {
+    eyebrow: 'Admin console',
+    title: 'Clients',
+    desc: 'Client relationships, status, and portal access.',
+  },
+  billing: {
+    eyebrow: 'Admin console',
+    title: 'Billing',
+    desc: 'Invoices, payments, and the running ledger.',
+  },
+  integrations: {
+    eyebrow: 'Admin console',
+    title: 'Integrations',
+    desc: 'GitHub, Vercel, and Zoho workspace connections.',
   },
 };
 
@@ -258,12 +288,7 @@ function PlanningHealth({ data }: { data: OverviewPayload['planningHealth'] }) {
    ====================================================================== */
 
 export function QualiaControl({ initialTab, data, canViewFinance = false }: QualiaControlProps) {
-  // Each sidebar destination lands directly on a focused section. No tab
-  // navigation — clicking 'Team' in the sidebar previously rendered a header
-  // titled 'Dashboard' with a row of tabs to switch elsewhere, which felt
-  // like a bug ("why are there options to go somewhere else inside Team?").
-  // Reports has its own dedicated route at /admin/reports.
-  const tab: Exclude<ControlTab, 'reports'> = initialTab === 'reports' ? 'overview' : initialTab;
+  const tab = initialTab;
   const meta = SECTION_META[tab];
 
   if (tab === 'finance' && !canViewFinance) {
@@ -277,6 +302,11 @@ export function QualiaControl({ initialTab, data, canViewFinance = false }: Qual
         </div>
       </div>
     );
+  }
+
+  // Reports renders its own header + sub-tabs — skip the shared SectionHeader.
+  if (tab === 'reports') {
+    return <AdminReportsClient />;
   }
 
   return (
@@ -297,6 +327,89 @@ export function QualiaControl({ initialTab, data, canViewFinance = false }: Qual
             }
           />
         )}
+        {tab === 'clients' && <ControlClients data={data.clients} />}
+        {tab === 'billing' && <ControlBilling data={data.billing} />}
+        {tab === 'integrations' && <ControlIntegrations data={data.integrations} />}
+      </div>
+    </div>
+  );
+}
+
+/* ======================================================================
+   Clients tab
+   ====================================================================== */
+
+function ControlClients({ data }: { data: ClientsPayload | undefined }) {
+  if (!data) return <ControlTabPlaceholder label="Clients" />;
+
+  return (
+    <div className="-mx-6 -mt-6 flex flex-col gap-0 lg:-mx-8 lg:-mt-8">
+      {data.driftAuthorized && data.driftRows.length > 0 && (
+        <div className="px-6 pt-6 lg:px-8">
+          <ClientAccessDriftBanner rows={data.driftRows} />
+        </div>
+      )}
+      <QualiaClientsView clients={data.clients} />
+    </div>
+  );
+}
+
+/* ======================================================================
+   Billing tab
+   ====================================================================== */
+
+function ControlBilling({ data }: { data: BillingPayload | undefined }) {
+  if (!data) return <ControlTabPlaceholder label="Billing" />;
+
+  return (
+    <div className="flex flex-col gap-6">
+      {data.invoiceLoadError && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {data.invoiceLoadError}
+        </div>
+      )}
+
+      {data.invoices.length > 0 && <PortalBillingSummary invoices={data.invoices} />}
+
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold tracking-tight text-foreground">Invoices</h3>
+        <PortalInvoiceFormDialog clients={data.clientList} />
+      </div>
+
+      <PortalInvoiceList invoices={data.invoices} />
+    </div>
+  );
+}
+
+/* ======================================================================
+   Integrations tab
+   ====================================================================== */
+
+function ControlIntegrations({ data }: { data: IntegrationsPayload | undefined }) {
+  if (!data || !data.workspaceId) return <ControlTabPlaceholder label="Integrations" />;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <IntegrationsClient workspaceId={data.workspaceId} initialIntegrations={data.integrations} />
+
+      <div className="rounded-xl border border-border bg-muted/30 p-5">
+        <h3 className="text-sm font-medium text-foreground">How it works</h3>
+        <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+          <li>
+            <strong>GitHub:</strong> Creates a new repository from your template when a project is
+            created
+          </li>
+          <li>
+            <strong>Vercel:</strong> Creates a project linked to the GitHub repo with auto-deploy
+          </li>
+          <li>
+            <strong>Zoho:</strong> Creates invoices and manages client contacts
+          </li>
+        </ul>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Provisioning happens automatically when you create a project. SEO and Ads projects
+          don&apos;t require external resources.
+        </p>
       </div>
     </div>
   );

@@ -9,12 +9,18 @@ import {
   loadTeamTab,
   loadFinanceTab,
   loadSystemTab,
+  loadClientsTab,
+  loadBillingTab,
+  loadIntegrationsTab,
   resolveControlTab,
   type ControlTab,
   type OverviewPayload,
   type TeamPayload,
   type FinancePayload,
   type SystemPayload,
+  type ClientsPayload,
+  type BillingPayload,
+  type IntegrationsPayload,
 } from '@/app/actions/admin-control';
 import { QualiaControl, type QualiaControlData } from '@/components/portal/qualia-control';
 
@@ -31,7 +37,7 @@ function ControlSkeleton() {
           <div className="h-3 w-28 animate-pulse rounded bg-muted" />
           <div className="mt-2 h-9 w-44 animate-pulse rounded bg-muted" />
           <div className="mt-6 flex gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="h-4 w-16 animate-pulse rounded bg-muted" />
             ))}
           </div>
@@ -81,6 +87,25 @@ async function ControlLoader({ tab }: { tab: ControlTab }) {
       data.system = system;
       break;
     }
+    case 'reports': {
+      data.reports = true;
+      break;
+    }
+    case 'clients': {
+      const clients: ClientsPayload = await loadClientsTab();
+      data.clients = clients;
+      break;
+    }
+    case 'billing': {
+      const billing: BillingPayload = await loadBillingTab();
+      data.billing = billing;
+      break;
+    }
+    case 'integrations': {
+      const integrations: IntegrationsPayload = await loadIntegrationsTab();
+      data.integrations = integrations;
+      break;
+    }
   }
 
   return <QualiaControl initialTab={tab} data={data} canViewFinance={canViewFinance} />;
@@ -92,7 +117,6 @@ interface PageProps {
 
 export default async function AdminControlPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  if (params.tab === 'clients') redirect('/clients');
   const tab = resolveControlTab(params.tab);
 
   return (
