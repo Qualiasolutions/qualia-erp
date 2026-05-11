@@ -16,9 +16,19 @@ import {
   Image as ImageIcon,
   Trash2,
   XCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { RequestCommentThread } from './request-comment-thread';
 import { getRequestCommentCounts } from '@/app/actions/request-comments';
@@ -27,6 +37,7 @@ import {
   deleteRequestAttachment,
   cancelFeatureRequest,
   deleteFeatureRequest,
+  markFeatureRequestDone,
 } from '@/app/actions/client-requests';
 import { toast } from 'sonner';
 
@@ -247,11 +258,12 @@ const RequestRow = memo(function RequestRow({
   onToggle,
 }: RequestRowProps) {
   const router = useRouter();
-  const [action, setAction] = useState<'cancel' | 'delete' | null>(null);
-  const [busy, setBusy] = useState<'cancel' | 'delete' | null>(null);
+  const [action, setAction] = useState<'cancel' | 'delete' | 'mark-done' | null>(null);
+  const [busy, setBusy] = useState<'cancel' | 'delete' | 'mark-done' | null>(null);
   const [removed, setRemoved] = useState(false);
   const [localStatus, setLocalStatus] = useState(request.status);
   const [localAdminResponse, setLocalAdminResponse] = useState(request.admin_response);
+  const [doneNote, setDoneNote] = useState('');
 
   const effectiveRequest = {
     ...request,
@@ -263,6 +275,22 @@ const RequestRow = memo(function RequestRow({
     (userRole === 'admin' || userRole === 'client') &&
     ['pending', 'in_review'].includes(localStatus);
   const canCancel = (userRole === 'admin' || userRole === 'client') && !isClosed;
+  const canMarkDone = userRole === 'admin' && !isClosed;
+
+  const handleMarkDone = async () => {
+    setBusy('mark-done');
+    const res = await markFeatureRequestDone(request.id, doneNote.trim() || undefined);
+    setBusy(null);
+    if (!res.success) {
+      toast.error(res.error || 'Failed to mark request as done');
+      return;
+    }
+    setLocalStatus('completed');
+    setDoneNote('');
+    setAction(null);
+    toast.success('Request marked as done — client notified');
+    router.refresh();
+  };
 
   const handleCancelRequest = async () => {
     setBusy('cancel');
@@ -345,8 +373,21 @@ const RequestRow = memo(function RequestRow({
                 ))}
               </ul>
             )}
-            {(canCancel || canDelete) && (
+            {(canCancel || canDelete || canMarkDone) && (
               <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                {canMarkDone && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 cursor-pointer gap-1.5 px-2 text-xs text-primary hover:bg-primary/10 hover:text-primary"
+                    disabled={busy !== null}
+                    onClick={() => setAction('mark-done')}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Mark as done
+                  </Button>
+                )}
                 {canCancel && (
                   <Button
                     type="button"
@@ -438,6 +479,55 @@ const RequestRow = memo(function RequestRow({
         variant="destructive"
         onConfirm={handleDeleteRequest}
       />
+      <Dialog
+        open={action === 'mark-done'}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAction(null);
+            setDoneNote('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark request as done?</DialogTitle>
+            <DialogDescription>
+              This will close the request and notify the client by email.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <label htmlFor={`done-note-${request.id}`} className="text-sm text-muted-foreground">
+              What did you do? (included in the client email)
+            </label>
+            <Textarea
+              id={`done-note-${request.id}`}
+              placeholder="Optional note for the client..."
+              value={doneNote}
+              onChange={(e) => setDoneNote(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAction(null);
+                setDoneNote('');
+              }}
+              disabled={busy === 'mark-done'}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleMarkDone}
+              disabled={busy === 'mark-done'}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {busy === 'mark-done' ? 'Saving...' : 'Confirm'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 });

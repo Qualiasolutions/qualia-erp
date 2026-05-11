@@ -3,9 +3,10 @@
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import { type ActionResult, isUserAdmin } from './shared';
+import { normalizeFKResponse } from '@/lib/server-utils';
 import { notifyAdminsAndAssignedEmployees } from '@/lib/notifications';
-import { notifyAdminAndAssignedOfClientActivity } from '@/lib/email';
-import { getEmployeeProjectIds } from '@/lib/auth/is-staff-on-project';
+import { notifyAdminAndAssignedOfClientActivity, sendRequestCompletedEmail } from '@/lib/email';
+import { getEmployeeProjectIds, isStaffOnProject } from '@/lib/auth/is-staff-on-project';
 import { FeatureRequestCreateSchema, UpdateFeatureRequestSchema } from '@/lib/validation';
 import { assertNotImpersonating } from '@/lib/portal-utils';
 
@@ -634,6 +635,127 @@ export async function deleteRequestAttachment(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete attachment',
+    };
+  }
+}
+
+/**
+ * Mark a feature request as done (admin or assigned employee).
+ * Posts a system comment, updates status to 'completed', and sends a
+ * notification email to the client. The email is fire-and-log — its
+ * failure does NOT roll back the status change.
+ */
+export async function markFeatureRequestDone(
+  requestId: string,
+  doneNote?: string
+): Promise<ActionResult> {
+  try {
+    const imp = await assertNotImpersonating();
+    if (!imp.ok) return { success: false, error: imp.error };
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    // Authorization: admin always allowed; employee only if assigned to the request's project
+    const isAdmin = await isUserAdmin(user.id);
+    if (!isAdmin) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.role !== 'employee') {
+        return { success: false, error: 'Not authorized' };
+      }
+
+      // Employee must be assigned to the request's project
+      const { data: req } = await supabase
+        .from('client_feature_requests')
+        .select('project_id')
+        .eq('id', requestId)
+        .single();
+
+      if (!req?.project_id) {
+        return { success: false, error: 'Not authorized' };
+      }
+
+      const staffOnProject = await isStaffOnProject(user.id, req.project_id);
+      if (!staffOnProject) {
+        return { success: false, error: 'Not authorized' };
+      }
+    }
+
+    // Fetch request with client profile for the email
+    const { data: request, error: fetchError } = await supabase
+      .from('client_feature_requests')
+      .select('id, title, status, project_id, client_id')
+      .eq('id', requestId)
+      .single();
+
+    if (fetchError || !request) {
+      return { success: false, error: 'Request not found' };
+    }
+
+    if (['completed', 'declined'].includes(request.status)) {
+      return { success: false, error: 'Request is already closed' };
+    }
+
+    // Fetch client email + name
+    const { data: clientProfile } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', request.client_id)
+      .single();
+
+    // Update status to completed
+    const { error: updateError } = await supabase
+      .from('client_feature_requests')
+      .update({ status: 'completed', updated_at: new Date().toISOString() })
+      .eq('id', requestId);
+
+    if (updateError) throw updateError;
+
+    // Get current user's name for the system comment
+    const { data: staffProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    const staffName = staffProfile?.full_name || 'Staff';
+    const commentBody = `Marked done by ${staffName}${doneNote?.trim() ? ' — ' + doneNote.trim() : ''}`;
+
+    // Post system comment
+    await supabase.from('request_comments').insert({
+      request_id: requestId,
+      author_id: user.id,
+      content: commentBody,
+    });
+
+    // Send email notification — fire-and-log
+    if (clientProfile?.email) {
+      try {
+        await sendRequestCompletedEmail({
+          clientEmail: clientProfile.email,
+          clientName: clientProfile.full_name,
+          requestTitle: request.title,
+          doneNote: doneNote?.trim() || undefined,
+        });
+      } catch (emailErr) {
+        console.error('[markFeatureRequestDone] Email failed (non-blocking):', emailErr);
+      }
+    }
+
+    return { success: true, data: { id: requestId, status: 'completed' } };
+  } catch (error) {
+    console.error('[markFeatureRequestDone] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to mark request as done',
     };
   }
 }

@@ -2586,3 +2586,72 @@ export async function sendMorningEmail(
     return { success: false, error: String(error) };
   }
 }
+
+// ============================================================================
+// Request Completed Notification (client-facing)
+// ============================================================================
+
+/**
+ * Notify a client that their feature request has been marked as done.
+ * Fire-and-log — callers should not hard-fail if this returns success:false.
+ */
+export async function sendRequestCompletedEmail(params: {
+  clientEmail: string;
+  clientName: string | null;
+  requestTitle: string;
+  doneNote?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const { clientEmail, clientName, requestTitle, doneNote } = params;
+  const greeting = clientName?.trim() ? clientName.split(/\s+/)[0] : 'there';
+  const requestsUrl = `${APP_URL}/requests`;
+  const subject = 'Your request is done — Qualia';
+
+  const noteHtml = doneNote?.trim()
+    ? `<div style="background-color:#e6f7f8;border-left:4px solid #00A4AC;padding:16px;margin:0 0 24px;border-radius:0 4px 4px 0;">
+            <p style="margin:0 0 4px;color:#55606b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Notes from the team</p>
+            <p style="margin:0;color:#2a343d;font-size:15px;line-height:1.6;">${escapeHtml(doneNote.trim())}</p>
+          </div>`
+    : '';
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background-color:#f5f5f5;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:40px 20px;">
+    <tr><td align="center">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+        <tr><td style="background:#00A4AC;padding:28px 32px;">
+          <div style="color:#ffffff;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;">Qualia Solutions</div>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <h1 style="margin:0 0 8px;font-size:20px;font-weight:600;color:#0f1a1d;">Hi ${escapeHtml(greeting)},</h1>
+          <p style="margin:0 0 20px;color:#2a343d;font-size:15px;line-height:1.6;">
+            Your request <strong>“${escapeHtml(requestTitle)}”</strong> has been marked as done by the Qualia team.
+          </p>
+          ${noteHtml}
+          <a href="${requestsUrl}" style="display:inline-block;background:#00A4AC;color:#ffffff;padding:11px 20px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">View your requests →</a>
+          <p style="margin:28px 0 0;color:#7a848c;font-size:12px;line-height:1.5;">
+            — Qualia Solutions
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+  const noteText = doneNote?.trim() ? `\nNotes from the team: ${doneNote.trim()}\n` : '';
+  const text = [
+    `Hi ${greeting},`,
+    '',
+    `Your request "${requestTitle}" has been marked as done by the Qualia team.`,
+    noteText,
+    `View your requests: ${requestsUrl}`,
+    '',
+    '---',
+    'Qualia Solutions',
+  ]
+    .filter((l) => l !== null)
+    .join('\n');
+
+  return sendInternalEmail({ to: clientEmail, subject, html, text });
+}
