@@ -44,10 +44,18 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect all routes except /auth/*, /api/*, and the public landing at /
   const pathname = request.nextUrl.pathname;
-  const isPublicRoute =
-    pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/api');
+
+  // Root path: redirect at the edge based on auth state. Eliminates the
+  // render-then-redirect flash users were hitting on portal.qualiasolutions.net.
+  if (pathname === '/') {
+    const url = request.nextUrl.clone();
+    url.pathname = user ? '/dashboard' : '/auth/login';
+    return NextResponse.redirect(url);
+  }
+
+  // Protect all routes except /auth/* and /api/*
+  const isPublicRoute = pathname.startsWith('/auth') || pathname.startsWith('/api');
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
@@ -115,8 +123,9 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Authenticated users hitting auth pages or the public landing → dashboard
-    if (pathname === '/' || pathname === '/auth/login' || pathname === '/auth/signup') {
+    // Authenticated users hitting auth pages → dashboard.
+    // (`/` is already handled at the top of this function.)
+    if (pathname === '/auth/login' || pathname === '/auth/signup') {
       const url = request.nextUrl.clone();
       url.pathname = '/dashboard';
       return NextResponse.redirect(url);
