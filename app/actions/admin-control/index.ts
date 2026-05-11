@@ -71,29 +71,9 @@ export {
   type ReportFlag,
 } from './reports-perf';
 
-export { loadClientsTab, type ClientsPayload } from './clients';
-export { loadBillingTab, type BillingPayload, type BillingInvoice } from './billing';
-export { loadIntegrationsTab, type IntegrationsPayload, type IntegrationRow } from './integrations';
+export type ControlTab = 'overview' | 'team' | 'finance' | 'system';
 
-export type ControlTab =
-  | 'overview'
-  | 'team'
-  | 'finance'
-  | 'reports'
-  | 'system'
-  | 'clients'
-  | 'billing'
-  | 'integrations';
-
-const VALID_TABS = new Set<ControlTab>([
-  'team',
-  'finance',
-  'reports',
-  'system',
-  'clients',
-  'billing',
-  'integrations',
-]);
+const VALID_TABS = new Set<ControlTab>(['team', 'finance', 'system']);
 
 export function resolveControlTab(value: string | undefined): ControlTab {
   if (value && VALID_TABS.has(value as ControlTab)) {

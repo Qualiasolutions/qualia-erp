@@ -9,19 +9,14 @@ import {
   loadTeamTab,
   loadFinanceTab,
   loadSystemTab,
-  loadClientsTab,
-  loadBillingTab,
-  loadIntegrationsTab,
   resolveControlTab,
   type ControlTab,
   type OverviewPayload,
   type TeamPayload,
   type FinancePayload,
   type SystemPayload,
-  type ClientsPayload,
-  type BillingPayload,
-  type IntegrationsPayload,
 } from '@/app/actions/admin-control';
+import { getBillableClients } from '@/app/actions/invoice-generation';
 import { QualiaControl, type QualiaControlData } from '@/components/portal/qualia-control';
 
 export const metadata: Metadata = {
@@ -37,7 +32,7 @@ function ControlSkeleton() {
           <div className="h-3 w-28 animate-pulse rounded bg-muted" />
           <div className="mt-2 h-9 w-44 animate-pulse rounded bg-muted" />
           <div className="mt-6 flex gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
+            {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="h-4 w-16 animate-pulse rounded bg-muted" />
             ))}
           </div>
@@ -68,8 +63,12 @@ async function ControlLoader({ tab }: { tab: ControlTab }) {
   const data: QualiaControlData = {};
   switch (tab) {
     case 'overview': {
-      const overview: OverviewPayload = await loadOverviewTab();
+      const [overview, billableClients] = await Promise.all([
+        loadOverviewTab(),
+        getBillableClients(),
+      ]);
       data.overview = overview;
+      data.billableClients = billableClients;
       break;
     }
     case 'team': {
@@ -85,25 +84,6 @@ async function ControlLoader({ tab }: { tab: ControlTab }) {
     case 'system': {
       const system: SystemPayload = await loadSystemTab();
       data.system = system;
-      break;
-    }
-    case 'reports': {
-      data.reports = true;
-      break;
-    }
-    case 'clients': {
-      const clients: ClientsPayload = await loadClientsTab();
-      data.clients = clients;
-      break;
-    }
-    case 'billing': {
-      const billing: BillingPayload = await loadBillingTab();
-      data.billing = billing;
-      break;
-    }
-    case 'integrations': {
-      const integrations: IntegrationsPayload = await loadIntegrationsTab();
-      data.integrations = integrations;
       break;
     }
   }

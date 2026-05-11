@@ -2,32 +2,21 @@
 
 import { memo } from 'react';
 import Link from 'next/link';
-import { formatDistanceToNowStrict } from 'date-fns';
 import { Activity, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
 import type {
   ControlTab,
   OverviewPayload,
   TeamPayload,
   FinancePayload,
   SystemPayload,
-  ClientsPayload,
-  BillingPayload,
-  IntegrationsPayload,
 } from '@/app/actions/admin-control';
+import type { BillableClient } from '@/app/actions/invoice-generation';
 
 import { ControlTeam } from './control-team';
 import { ControlFinance } from './control-finance';
 import { ControlSystem } from './control-system';
-import { CommandCenter } from './control-command-center';
-import { AdminReportsClient } from '@/app/(portal)/admin/reports/reports-client';
-import { QualiaClientsView } from '@/components/portal/qualia-clients-view';
-import { ClientAccessDriftBanner } from '@/components/clients/client-access-drift-banner';
-import { PortalInvoiceList } from '@/components/portal/portal-invoice-list';
-import { PortalInvoiceFormDialog } from '@/components/portal/portal-invoice-form-dialog';
-import { PortalBillingSummary } from '@/components/portal/portal-billing-summary';
-import { IntegrationsClient } from '@/app/(portal)/settings/integrations/integrations-client';
+import { ControlOverviewTab } from './control-overview';
 
 /* ======================================================================
    Types
@@ -38,10 +27,7 @@ export interface QualiaControlData {
   team?: TeamPayload;
   finance?: FinancePayload;
   system?: SystemPayload;
-  clients?: ClientsPayload;
-  billing?: BillingPayload;
-  integrations?: IntegrationsPayload;
-  reports?: boolean;
+  billableClients?: BillableClient[];
 }
 
 interface QualiaControlProps {
@@ -57,7 +43,7 @@ const SECTION_META: Record<ControlTab, { eyebrow: string; title: string; desc: s
   overview: {
     eyebrow: 'Admin console',
     title: 'Dashboard',
-    desc: 'Today, project risk, and this week.',
+    desc: 'What needs your attention right now.',
   },
   team: {
     eyebrow: 'Admin console',
@@ -73,26 +59,6 @@ const SECTION_META: Record<ControlTab, { eyebrow: string; title: string; desc: s
     eyebrow: 'Admin console',
     title: 'System',
     desc: 'Integrations, audit, workspace.',
-  },
-  reports: {
-    eyebrow: 'Admin console',
-    title: 'Reports',
-    desc: 'Hours, framework reports, and AI prompts.',
-  },
-  clients: {
-    eyebrow: 'Admin console',
-    title: 'Clients',
-    desc: 'Client relationships, status, and portal access.',
-  },
-  billing: {
-    eyebrow: 'Admin console',
-    title: 'Billing',
-    desc: 'Invoices, payments, and the running ledger.',
-  },
-  integrations: {
-    eyebrow: 'Admin console',
-    title: 'Integrations',
-    desc: 'GitHub, Vercel, and Zoho workspace connections.',
   },
 };
 
@@ -114,108 +80,61 @@ export function ControlTabPlaceholder({ label }: { label: string }) {
 
 const ControlOverview = memo(function ControlOverview({
   data,
+  billableClients,
 }: {
   data: OverviewPayload | undefined;
+  billableClients?: BillableClient[];
 }) {
   if (!data) return <ControlTabPlaceholder label="Dashboard" />;
 
+  return <ControlOverviewTab data={data} billableClients={billableClients ?? []} />;
+});
+
+/* ======================================================================
+   QualiaControl — shell
+   ====================================================================== */
+
+export function QualiaControl({ initialTab, data, canViewFinance = false }: QualiaControlProps) {
+  const tab = initialTab;
+  const meta = SECTION_META[tab];
+
+  if (tab === 'finance' && !canViewFinance) {
+    return (
+      <div className="flex flex-col">
+        <SectionHeader meta={SECTION_META.overview} />
+        <div className="w-full p-6 lg:p-8">
+          <p className="text-sm text-muted-foreground">
+            Finance access is restricted. Contact the workspace owner.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Daily overview for the main admin dashboard. */}
-      <CommandCenter data={data.commandCenter} />
-
-      {/* Planning health — orphan deadlines / missing dates */}
-      <PlanningHealth data={data.planningHealth} />
-
-      {/* Pulse: this week + recent completions (secondary) */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border border-border bg-card p-5">
-          <header className="mb-3 flex items-baseline justify-between">
-            <h3 className="text-sm font-semibold tracking-tight">This week</h3>
-            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-              Last 7 days
-            </span>
-          </header>
-          <dl className="flex flex-col gap-2">
-            {data.week.map((w) => (
-              <div
-                key={w.label}
-                className="flex items-center justify-between border-b border-dashed border-border pb-2 last:border-b-0 last:pb-0"
-              >
-                <dt className="text-xs text-muted-foreground">{w.label}</dt>
-                <dd
-                  className={cn(
-                    'font-mono text-sm font-semibold tabular-nums',
-                    w.kind === 'ok' && 'text-emerald-600 dark:text-emerald-400',
-                    w.kind === 'accent' && 'text-primary',
-                    w.kind === 'warn' && 'text-amber-600 dark:text-amber-400',
-                    w.kind === 'neutral' && 'text-foreground'
-                  )}
-                >
-                  {w.value}
-                </dd>
+    <div className="flex flex-col">
+      <SectionHeader meta={meta} />
+      <div className="w-full p-6 lg:p-8">
+        {tab === 'overview' && (
+          <ControlOverview data={data.overview} billableClients={data.billableClients} />
+        )}
+        {tab === 'team' && <ControlTeam data={data.team} />}
+        {tab === 'finance' && <ControlFinance data={data.finance} />}
+        {tab === 'system' && (
+          <ControlSystem
+            data={data.system}
+            emptyFallback={
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Activity className="size-3.5" aria-hidden />
+                System check idle.
               </div>
-            ))}
-          </dl>
-        </section>
-
-        <section className="rounded-xl border border-border bg-card p-5">
-          <header className="mb-3 flex items-baseline justify-between">
-            <h3 className="text-sm font-semibold tracking-tight">Latest work updates</h3>
-            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-              Live
-            </span>
-          </header>
-          {data.activity.length === 0 ? (
-            <p className="py-4 text-center text-xs italic text-muted-foreground">
-              No work updates yet.
-            </p>
-          ) : (
-            <ul className="flex flex-col">
-              {data.activity.slice(0, 6).map((a) => (
-                <li
-                  key={a.id}
-                  className="flex items-center gap-3 border-b border-dashed border-border py-2 last:border-b-0"
-                >
-                  <span
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground"
-                    aria-hidden
-                  >
-                    {(a.actor_name ?? '??')
-                      .split(/\s+/)
-                      .map((p) => p.charAt(0).toUpperCase())
-                      .slice(0, 2)
-                      .join('')}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs">
-                      <span className="font-semibold text-foreground">
-                        {a.actor_name ?? 'Someone'}
-                      </span>{' '}
-                      <span className="text-muted-foreground">
-                        {a.action_type.replace(/_/g, ' ')}
-                      </span>
-                      {a.target_name ? (
-                        <>
-                          {' '}
-                          <span className="text-foreground">{a.target_name}</span>
-                        </>
-                      ) : null}
-                    </p>
-                  </div>
-                  <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                    {formatDistanceToNowStrict(new Date(a.created_at), { addSuffix: false })}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+            }
+          />
+        )}
       </div>
     </div>
   );
-});
+}
 
 function PlanningHealth({ data }: { data: OverviewPayload['planningHealth'] }) {
   const rows = data.rows.filter((row) => row.count > 0);
@@ -283,138 +202,6 @@ function PlanningHealth({ data }: { data: OverviewPayload['planningHealth'] }) {
   );
 }
 
-/* ======================================================================
-   QualiaControl — shell
-   ====================================================================== */
-
-export function QualiaControl({ initialTab, data, canViewFinance = false }: QualiaControlProps) {
-  const tab = initialTab;
-  const meta = SECTION_META[tab];
-
-  if (tab === 'finance' && !canViewFinance) {
-    return (
-      <div className="flex flex-col">
-        <SectionHeader meta={SECTION_META.overview} />
-        <div className="w-full p-6 lg:p-8">
-          <p className="text-sm text-muted-foreground">
-            Finance access is restricted. Contact the workspace owner.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Reports renders its own header + sub-tabs — skip the shared SectionHeader.
-  if (tab === 'reports') {
-    return <AdminReportsClient />;
-  }
-
-  return (
-    <div className="flex flex-col">
-      <SectionHeader meta={meta} />
-      <div className="w-full p-6 lg:p-8">
-        {tab === 'overview' && <ControlOverview data={data.overview} />}
-        {tab === 'team' && <ControlTeam data={data.team} />}
-        {tab === 'finance' && <ControlFinance data={data.finance} />}
-        {tab === 'system' && (
-          <ControlSystem
-            data={data.system}
-            emptyFallback={
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Activity className="size-3.5" aria-hidden />
-                System check idle.
-              </div>
-            }
-          />
-        )}
-        {tab === 'clients' && <ControlClients data={data.clients} />}
-        {tab === 'billing' && <ControlBilling data={data.billing} />}
-        {tab === 'integrations' && <ControlIntegrations data={data.integrations} />}
-      </div>
-    </div>
-  );
-}
-
-/* ======================================================================
-   Clients tab
-   ====================================================================== */
-
-function ControlClients({ data }: { data: ClientsPayload | undefined }) {
-  if (!data) return <ControlTabPlaceholder label="Clients" />;
-
-  return (
-    <div className="-mx-6 -mt-6 flex flex-col gap-0 lg:-mx-8 lg:-mt-8">
-      {data.driftAuthorized && data.driftRows.length > 0 && (
-        <div className="px-6 pt-6 lg:px-8">
-          <ClientAccessDriftBanner rows={data.driftRows} />
-        </div>
-      )}
-      <QualiaClientsView clients={data.clients} />
-    </div>
-  );
-}
-
-/* ======================================================================
-   Billing tab
-   ====================================================================== */
-
-function ControlBilling({ data }: { data: BillingPayload | undefined }) {
-  if (!data) return <ControlTabPlaceholder label="Billing" />;
-
-  return (
-    <div className="flex flex-col gap-6">
-      {data.invoiceLoadError && (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {data.invoiceLoadError}
-        </div>
-      )}
-
-      {data.invoices.length > 0 && <PortalBillingSummary invoices={data.invoices} />}
-
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold tracking-tight text-foreground">Invoices</h3>
-        <PortalInvoiceFormDialog clients={data.clientList} />
-      </div>
-
-      <PortalInvoiceList invoices={data.invoices} />
-    </div>
-  );
-}
-
-/* ======================================================================
-   Integrations tab
-   ====================================================================== */
-
-function ControlIntegrations({ data }: { data: IntegrationsPayload | undefined }) {
-  if (!data || !data.workspaceId) return <ControlTabPlaceholder label="Integrations" />;
-
-  return (
-    <div className="flex flex-col gap-6">
-      <IntegrationsClient workspaceId={data.workspaceId} initialIntegrations={data.integrations} />
-
-      <div className="rounded-xl border border-border bg-muted/30 p-5">
-        <h3 className="text-sm font-medium text-foreground">How it works</h3>
-        <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-          <li>
-            <strong>GitHub:</strong> Creates a new repository from your template when a project is
-            created
-          </li>
-          <li>
-            <strong>Vercel:</strong> Creates a project linked to the GitHub repo with auto-deploy
-          </li>
-          <li>
-            <strong>Zoho:</strong> Creates invoices and manages client contacts
-          </li>
-        </ul>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Provisioning happens automatically when you create a project. SEO and Ads projects
-          don&apos;t require external resources.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function SectionHeader({ meta }: { meta: { eyebrow: string; title: string; desc: string } }) {
   return (
     <header className="border-b border-border bg-muted/20 px-6 pb-6 pt-10 lg:px-8 lg:pt-12">
@@ -429,3 +216,5 @@ function SectionHeader({ meta }: { meta: { eyebrow: string; title: string; desc:
     </header>
   );
 }
+
+export { PlanningHealth };
