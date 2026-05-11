@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useActionState, useEffect, useState } from 'react';
@@ -9,12 +10,39 @@ import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { loginAction } from '@/app/actions/auth';
 
+const REMEMBER_KEY = 'qualia.login.remember';
+const EMAIL_KEY = 'qualia.login.email';
+
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [state, formAction, isPending] = useActionState(loginAction, {
     success: false,
     error: null,
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [remember, setRemember] = useState(false);
+
+  // Hydrate remembered email on mount.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const remembered = window.localStorage.getItem(REMEMBER_KEY) === '1';
+    if (remembered) {
+      setRemember(true);
+      setEmail(window.localStorage.getItem(EMAIL_KEY) ?? '');
+    }
+  }, []);
+
+  // Persist (or clear) the remembered email each time the toggle or value changes.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (remember && email) {
+      window.localStorage.setItem(REMEMBER_KEY, '1');
+      window.localStorage.setItem(EMAIL_KEY, email);
+    } else if (!remember) {
+      window.localStorage.removeItem(REMEMBER_KEY);
+      window.localStorage.removeItem(EMAIL_KEY);
+    }
+  }, [remember, email]);
 
   useEffect(() => {
     if (state.success) {
@@ -41,6 +69,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="h-12 focus-visible:border-primary/50 focus-visible:ring-primary/30"
           />
         </div>
@@ -77,6 +107,21 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="remember"
+            checked={remember}
+            onCheckedChange={(checked) => setRemember(checked === true)}
+            className="data-[state=checked]:border-primary data-[state=checked]:bg-primary"
+          />
+          <Label
+            htmlFor="remember"
+            className="cursor-pointer text-sm font-normal text-muted-foreground"
+          >
+            Remember my email on this device
+          </Label>
         </div>
 
         {state.error && (

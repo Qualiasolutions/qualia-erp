@@ -40,9 +40,17 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Public routes — landing page is open to everyone, auth flows handle their own state.
-  const isPublicRoute =
-    pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/login');
+  // Root path: route immediately based on auth state. Skipping the
+  // `app/page.tsx` server render eliminates the brief error/loading flash
+  // users were seeing on portal.qualiasolutions.net.
+  if (pathname === '/') {
+    const url = request.nextUrl.clone();
+    url.pathname = user ? '/dashboard' : '/auth/login';
+    return NextResponse.redirect(url);
+  }
+
+  // Public routes — auth flows handle their own state.
+  const isPublicRoute = pathname.startsWith('/auth') || pathname.startsWith('/login');
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
