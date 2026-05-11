@@ -548,74 +548,78 @@ const ProjectCardTile = memo(function ProjectCardTile({
   const attention = needsAttention(project);
 
   return (
-    <Link
-      href={`/projects/${project.id}`}
-      className={cn(
-        'group relative flex items-center border border-border bg-card/60',
-        'transition-all duration-200 ease-premium',
-        'hover:border-primary/30 hover:bg-card hover:shadow-[var(--elevation-resting)]',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-        'cursor-pointer',
-        clientView
-          ? 'gap-4 rounded-2xl px-5 py-4 shadow-[0_1px_2px_0_hsl(var(--border)/0.5)]'
-          : 'gap-3 rounded-lg px-3 py-2.5'
-      )}
-    >
-      {/* Admin stage dropdown — absolute, top-right */}
-      {isAdmin && <StageDropdown project={project} />}
+    <div className="group relative">
+      <Link
+        href={`/projects/${project.id}`}
+        className={cn(
+          'relative flex items-center border border-border bg-card/60',
+          'transition-all duration-200 ease-premium',
+          'hover:border-primary/30 hover:bg-card hover:shadow-[var(--elevation-resting)]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+          'cursor-pointer',
+          clientView
+            ? 'gap-4 rounded-2xl px-5 py-4 shadow-[0_1px_2px_0_hsl(var(--border)/0.5)]'
+            : 'gap-3 rounded-lg px-3 py-2.5'
+        )}
+      >
+        {/* Left: circular progress ring with project/client logo inside */}
+        <ProgressRing
+          value={progress}
+          size={clientView ? 56 : 36}
+          strokeWidth={clientView ? 3 : 2.5}
+          strokeClass={progressStroke}
+          logoUrl={project.logo_url}
+          fallbackInitial={(project.name?.charAt(0) ?? '?').toUpperCase()}
+          label={`${project.name} — ${progress}% complete`}
+        />
 
-      {/* Left: circular progress ring with project/client logo inside */}
-      <ProgressRing
-        value={progress}
-        size={clientView ? 56 : 36}
-        strokeWidth={clientView ? 3 : 2.5}
-        strokeClass={progressStroke}
-        logoUrl={project.logo_url}
-        fallbackInitial={(project.name?.charAt(0) ?? '?').toUpperCase()}
-        label={`${project.name} — ${progress}% complete`}
-      />
-
-      {/* Center: name (top) + type label (bottom) */}
-      <div className={cn('flex min-w-0 flex-1 flex-col', clientView ? 'gap-1.5' : 'gap-0.5')}>
-        <div className="flex items-center gap-1.5">
-          <h3
+        {/* Center: name (top) + type label (bottom) */}
+        <div className={cn('flex min-w-0 flex-1 flex-col', clientView ? 'gap-1.5' : 'gap-0.5')}>
+          <div className="flex items-center gap-1.5">
+            <h3
+              className={cn(
+                'truncate font-semibold leading-tight text-foreground',
+                clientView ? 'text-[16px]' : 'text-sm'
+              )}
+            >
+              {project.name}
+            </h3>
+            {attention && (
+              <AlertTriangle
+                className={cn('shrink-0 text-amber-500', clientView ? 'h-4 w-4' : 'h-3 w-3')}
+                aria-label="Needs attention"
+              />
+            )}
+          </div>
+          <span
             className={cn(
-              'truncate font-semibold leading-tight text-foreground',
-              clientView ? 'text-[16px]' : 'text-sm'
+              'font-mono font-semibold uppercase tracking-wider',
+              typeColor,
+              clientView ? 'text-[10.5px]' : 'text-[9px]'
             )}
           >
-            {project.name}
-          </h3>
-          {attention && (
-            <AlertTriangle
-              className={cn('shrink-0 text-amber-500', clientView ? 'h-4 w-4' : 'h-3 w-3')}
-              aria-label="Needs attention"
-            />
-          )}
-        </div>
-        <span
-          className={cn(
-            'font-mono font-semibold uppercase tracking-wider',
-            typeColor,
-            clientView ? 'text-[10.5px]' : 'text-[9px]'
-          )}
-        >
-          {typeLabel}
-        </span>
-        {clientView && (
-          <span className="mt-0.5 font-mono text-[11px] tabular-nums text-muted-foreground/80">
-            {progress}% complete
+            {typeLabel}
           </span>
-        )}
-      </div>
-
-      {/* Right: avatars (admin dropdown overlaps via absolute positioning) */}
-      {avatars.length > 0 && (
-        <div className={cn('shrink-0', clientView ? 'pr-2' : 'pr-6')}>
-          <AvatarStack people={avatars} size={clientView ? 26 : 20} max={3} />
+          {clientView && (
+            <span className="mt-0.5 font-mono text-[11px] tabular-nums text-muted-foreground/80">
+              {progress}% complete
+            </span>
+          )}
         </div>
-      )}
-    </Link>
+
+        {/* Right: avatars (admin dropdown overlaps via absolute positioning on the wrapper) */}
+        {avatars.length > 0 && (
+          <div className={cn('shrink-0', clientView ? 'pr-2' : 'pr-6')}>
+            <AvatarStack people={avatars} size={clientView ? 26 : 20} max={3} />
+          </div>
+        )}
+      </Link>
+
+      {/* Admin stage dropdown — lives outside the <Link> so the trigger
+          button isn't nested inside an <a>, which broke Radix click handling
+          in some browsers and caused the status menu to never open. */}
+      {isAdmin && <StageDropdown project={project} />}
+    </div>
   );
 });
 
@@ -1103,7 +1107,8 @@ function FinishedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
         className={cn(
           'flex items-center gap-2 px-2.5 py-1.5 transition-colors duration-150',
           'hover:bg-primary/5 focus-visible:bg-primary/5',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0'
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0',
+          isAdmin && 'pr-9'
         )}
         title={`${project.name} · ${project.status}`}
       >
@@ -1126,13 +1131,15 @@ function FinishedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
           {project.name}
         </span>
-        {isAdmin ? (
-          <StageDropdown project={project} trigger={<ProjectMenuTrigger project={project} />} />
-        ) : null}
         <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
           {typeLabel}
         </span>
       </Link>
+      {isAdmin && (
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+          <StageDropdown project={project} trigger={<ProjectMenuTrigger project={project} />} />
+        </div>
+      )}
     </li>
   );
 }
@@ -1200,7 +1207,8 @@ function ArchivedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
           'flex items-center gap-2 px-2.5 py-1.5 transition-colors duration-150',
           'text-muted-foreground opacity-80 hover:opacity-100',
           'hover:bg-muted/30 focus-visible:bg-muted/30',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0'
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0',
+          isAdmin && 'pr-9'
         )}
         title={`${project.name} · ${project.status}`}
       >
@@ -1221,13 +1229,15 @@ function ArchivedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
           />
         )}
         <span className="min-w-0 flex-1 truncate text-xs font-medium">{project.name}</span>
-        {isAdmin ? (
-          <StageDropdown project={project} trigger={<ProjectMenuTrigger project={project} />} />
-        ) : null}
         <span className="shrink-0 rounded bg-muted/60 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider">
           {typeLabel}
         </span>
       </Link>
+      {isAdmin && (
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+          <StageDropdown project={project} trigger={<ProjectMenuTrigger project={project} />} />
+        </div>
+      )}
     </li>
   );
 }
