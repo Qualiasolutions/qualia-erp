@@ -5,6 +5,7 @@ import { AICyprusExpoBrief } from './aicyprus-expo-brief';
 import { HostyoBrief } from './hostyo-brief';
 import { KartaticBrief } from './kartatic-brief';
 import { NetworkingBrief } from './networking-brief';
+import { SevenBuddhasBrief } from './seven-buddhas-brief';
 
 interface ProjectBriefFormProps {
   projectId: string;
@@ -14,8 +15,10 @@ interface ProjectBriefFormProps {
 
 function resolveBriefVariant(
   name: string
-): 'networking' | 'expo' | 'kartatic' | 'hostyo' | 'generic' {
+): 'networking' | 'expo' | 'kartatic' | 'hostyo' | 'seven-buddhas' | 'generic' {
   const n = name.toLowerCase();
+  if (n.includes('7budd') || n.includes('7 budd') || n.includes('buddas') || n.includes('buddhas'))
+    return 'seven-buddhas';
   if (n.includes('kartatek') || n.includes('kartatic') || n.includes('kartatik')) return 'kartatic';
   if (n.includes('cyprus expo') || n.includes('aicyprus') || n.includes('ai cyprus')) return 'expo';
   if (n.includes('hivora') || n.includes('networking')) return 'networking';
@@ -41,6 +44,10 @@ export function ProjectBriefForm({ projectId, projectName, className }: ProjectB
       );
     case 'hostyo':
       return <HostyoBrief projectId={projectId} projectName={projectName} className={className} />;
+    case 'seven-buddhas':
+      return (
+        <SevenBuddhasBrief projectId={projectId} projectName={projectName} className={className} />
+      );
     default:
       return (
         <ClientProjectBriefForm
