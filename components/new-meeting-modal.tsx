@@ -623,14 +623,16 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerTrigger asChild>
-          <Button className="group relative overflow-hidden">
-            <span className="relative z-10 flex items-center gap-2">
-              <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
-              <span>New Meeting</span>
-            </span>
-          </Button>
-        </DrawerTrigger>
+        {!isControlled && (
+          <DrawerTrigger asChild>
+            <Button className="group relative overflow-hidden">
+              <span className="relative z-10 flex items-center gap-2">
+                <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+                <span>New Meeting</span>
+              </span>
+            </Button>
+          </DrawerTrigger>
+        )}
         <DrawerContent className="overflow-hidden border-border bg-gradient-to-b from-card to-card/95 p-0 shadow-2xl backdrop-blur-xl">
           <DrawerHeader className="sr-only">
             <DrawerTitle>Quick Schedule</DrawerTitle>
@@ -645,14 +647,16 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
   // Desktop: Dialog
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="group relative overflow-hidden">
-          <span className="relative z-10 flex items-center gap-2">
-            <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
-            <span>New Meeting</span>
-          </span>
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button className="group relative overflow-hidden">
+            <span className="relative z-10 flex items-center gap-2">
+              <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+              <span>New Meeting</span>
+            </span>
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent
         className="overflow-hidden border-border bg-gradient-to-b from-card to-card/95 p-0 shadow-2xl backdrop-blur-xl sm:max-w-[420px]"
         showCloseButton={false}
