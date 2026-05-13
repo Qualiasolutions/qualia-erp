@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { m, AnimatePresence } from '@/lib/lazy-motion';
 import {
   Plus,
@@ -8,8 +8,6 @@ import {
   Clock,
   Users,
   Building2,
-  Video,
-  Link2,
   Check,
   X,
   Sparkles,
@@ -109,7 +107,6 @@ interface NewMeetingModalProps {
 }
 
 export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeetingModalProps = {}) {
-  const linkInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   // Form state - support both controlled and uncontrolled modes
@@ -129,7 +126,6 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [customClientName, setCustomClientName] = useState<string>('');
   const [title, setTitle] = useState('');
-  const [meetingLink, setMeetingLink] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('09:00');
   const [duration, setDuration] = useState<number>(60);
@@ -148,7 +144,6 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
       setSelectedClientId('');
       setCustomClientName('');
       setTitle('');
-      setMeetingLink('');
       setSelectedAttendeeIds([]);
       setError(null);
       setSuccess(false);
@@ -202,10 +197,6 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
       if (customClientName) {
         formData.set('custom_client_name', customClientName);
       }
-    }
-
-    if (meetingLink.trim()) {
-      formData.set('meeting_link', meetingLink.trim());
     }
 
     selectedAttendeeIds.forEach((id) => formData.append('attendee_ids', id));
@@ -505,30 +496,6 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                 </div>
               )}
 
-              {/* Meeting Link */}
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                  <Video className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <input
-                  ref={linkInputRef}
-                  type="url"
-                  placeholder="Paste meeting link (optional)"
-                  value={meetingLink}
-                  onChange={(e) => setMeetingLink(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-border bg-secondary/30 pl-10 pr-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                />
-                {meetingLink && (
-                  <m.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                  >
-                    <Link2 className="h-4 w-4 text-emerald-500" />
-                  </m.div>
-                )}
-              </div>
-
               {/* Summary Card */}
               {selectedDate && (
                 <m.div
@@ -557,12 +524,6 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                         {selectedAttendeeIds.length} attendee
                         {selectedAttendeeIds.length > 1 ? 's' : ''}
                       </span>
-                    </div>
-                  )}
-                  {meetingLink && (
-                    <div className="mt-2 flex items-center gap-1.5 text-sm text-emerald-500">
-                      <Video className="h-3.5 w-3.5" />
-                      <span className="font-medium">Video link attached</span>
                     </div>
                   )}
                 </m.div>
