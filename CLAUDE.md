@@ -30,7 +30,7 @@ npx tsc --noEmit         # Type check (run after multi-file TS changes)
 
 ### Server Actions Pattern
 
-All mutations live in `app/actions/*.ts` (56 domain modules). `app/actions.ts` is a re-export router. Every action returns:
+All mutations live in `app/actions/*.ts` (52 domain modules). `app/actions.ts` is a re-export router. Every action returns:
 
 ```typescript
 type ActionResult = { success: boolean; error?: string; data?: unknown };
@@ -43,7 +43,7 @@ Discover domain files via `ls app/actions/`. Auth helpers (`isUserAdmin`, `canDe
 | File                             | Purpose                                                                         |
 | -------------------------------- | ------------------------------------------------------------------------------- |
 | `lib/validation.ts`              | Zod schemas — use `parseFormData()`                                             |
-| `lib/swr.ts`                     | 37 SWR hooks + 33 cache invalidation fns                                        |
+| `lib/swr.ts`                     | 41 SWR hooks + 36 cache invalidation fns                                        |
 | `lib/server-utils.ts`            | `normalizeFKResponse()` for Supabase FK arrays                                  |
 | `lib/supabase/server.ts`         | Server client — **use for ALL mutations**                                       |
 | `lib/supabase/client.ts`         | Browser client — read-only                                                      |
@@ -59,7 +59,7 @@ Discover domain files via `ls app/actions/`. Auth helpers (`isUserAdmin`, `canDe
 ### Data Flow
 
 1. **Server Components** → direct Supabase via server actions
-2. **Client Components** → SWR hooks (`useInboxTasks`, `useProjects`, …)
+2. **Client Components** → SWR hooks (`useProjects`, `useMessages`, …)
 3. **Mutations** → server action → Zod → DB → `revalidatePath()` → invalidate SWR with `immediate: true`
 
 ### Supabase FK Pattern
@@ -70,16 +70,6 @@ Supabase returns FK joins as arrays. Always normalize:
 import { normalizeFKResponse } from '@/lib/server-utils';
 const project = normalizeFKResponse(data.project);
 ```
-
-### Unified Tasks Page
-
-`/tasks` serves all three roles via server-side mode resolution in `app/(portal)/tasks/page.tsx`:
-
-- **Employees:** `scope=mine` (default) — own assigned/created tasks, `inboxOnly=true`
-- **Admins:** `scope=mine` (default) with Mine/All toggle; `?scope=all` reveals workspace-wide view with bulk assign/done/delete
-- **Clients:** `getClientVisibleTasks` — read-only, `is_client_visible=true` tasks for linked projects
-
-`/inbox` redirects to `/tasks`. `/admin/tasks` redirects to `/tasks?scope=all` (admin) or `/tasks` (non-admin).
 
 ## Database
 
@@ -101,16 +91,16 @@ Enum values live in `types/database.ts` — check there before using string lite
 - `middleware.ts` protects all routes except `/auth/*` and `/api/*`
 - Session via `supabase.auth.getClaims()` (JWT custom claims through `custom_access_token_hook`)
 - **Role-based routing** (three roles):
-  - `client` → blocked from `/schedule`, `/agent`; sees `/tasks` in client mode (read-only, `is_client_visible` only), portal hub, billing, requests, settings
-  - `employee` → all internal routes except `/admin/*`, `/clients`, `/workspace`, `/seo`, `/tasks` shows own assigned tasks (inbox default)
-  - `admin` → everything, `/tasks` default is own tasks; `?scope=all` for workspace-wide view
+  - `client` → blocked from `/schedule`, `/agent`, `/messages`; portal hub, billing, requests, settings; messaging via floating chat widget
+  - `employee` → all internal routes except `/admin/*`, `/clients`, `/workspace`, `/seo`; `/messages` for staff messaging
+  - `admin` → everything including `/messages` for staff messaging
 - **API routes are NOT middleware-protected** — each must implement its own auth check
 
 ## Routes (high level)
 
-- **Internal**: `/`, `/tasks` (unified — inbox default, `?scope=all` for admin workspace view), `/projects`, `/projects/[id]/{roadmap,files}`, `/clients`, `/schedule`, `/team`, `/payments`, `/knowledge`, `/research`, `/seo`, `/status`, `/agent`, `/settings/{integrations,notifications}`
+- **Internal**: `/`, `/projects`, `/projects/[id]/{roadmap,files}`, `/clients`, `/schedule`, `/team`, `/messages`, `/payments`, `/knowledge`, `/research`, `/seo`, `/status`, `/agent`, `/settings/{integrations,notifications}`
 - **Admin-only**: `/admin`, `/admin/{assignments,attendance,migrate}`
-- **Portal**: `/portal`, `/portal/[id]/{features,files,updates}`, `/portal/{billing,requests,settings}`
+- **Portal**: `/portal`, `/portal/[id]/{features,files,updates}`, `/portal/{billing,requests,settings}` — **Client messaging:** floating chat widget (`ClientChatWidget`) mounted in `(portal)/layout.tsx` for `role=client`; no `/messages` route for clients
 - **Auth**: `/auth/{login,signup,reset-password,error}`
 
 API routes: `app/api/{chat,embeddings,tts,health}/` · `app/api/{github,webhooks}/` · `app/api/claude/{project-status,session-feed,session-log}/` · `app/api/cron/*` (8 jobs)
@@ -152,10 +142,10 @@ Always `vercel env pull` to sync locally — never create `.env` manually.
 - Pre-commit: ESLint + Prettier via husky/lint-staged
 - Post-deploy checklist: HTTP 200, auth flow, console errors, API latency <500ms (see `~/.claude/rules/deployment.md`)
 
-## GitHub Integration & Auto-Assignment
+## GitHub Integration
 
 1. **Webhook** (`app/api/github/webhook/route.ts`) — push events → match repo to project via `project_integrations` → sync `.planning/` into `project_phases`
-2. **Auto-assign engine** (`app/actions/auto-assign.ts`) — converts phase items into inbox tasks on assignment. Idempotent via `source_phase_item_id` unique constraint. Key fns: `getActiveMilestone`, `createTasksFromMilestone`, `handleReassignment`, `markMilestoneTasksDone`
+2. **Auto-assign engine** — removed in Phase 27. The previous `app/actions/auto-assign.ts` converted phase items into inbox tasks on assignment; this was deleted along with the tasks system. The GitHub webhook still syncs `.planning/` into project phases, but milestone-to-task conversion no longer occurs.
 3. **Hook point**: `app/actions/project-assignments.ts`
 
 ## Qualia Framework Integration (`/api/v1/reports`)
