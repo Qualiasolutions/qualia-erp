@@ -95,6 +95,8 @@ export const cacheKeys = {
     `phase-comments-${projectId}-${phaseName}`,
   dailyBrief: (forDate?: string) => ['daily-brief', forDate ?? 'today'] as const,
   dailyBriefHistory: 'daily-brief-history',
+  milestonesDue: (projectIds: string) => `milestones-due-${projectIds}`,
+  openRequestsCount: 'open-requests-count',
 } as const;
 
 // ============================================================================
@@ -1970,4 +1972,79 @@ export function invalidateDailyBrief(immediate = true) {
     mutate(cacheKeys.dailyBrief());
     mutate(cacheKeys.dailyBriefHistory);
   }
+}
+
+// ============================================================================
+// MILESTONE & REQUEST HOOKS (Phase 27 — milestone-centric dashboards)
+// ============================================================================
+
+export interface MilestoneDue {
+  id: string;
+  name: string;
+  target_date: string | null;
+  status: string | null;
+  project: { id: string; name: string } | null;
+}
+
+/**
+ * Hook to fetch milestones (project phases) due this week for the given projects.
+ * Polls every 60s when tab is visible.
+ */
+export function useMilestonesDue(projectIds: string[]) {
+  const sortedKey = [...projectIds].sort().join(',');
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    sortedKey ? cacheKeys.milestonesDue(sortedKey) : null,
+    async () => {
+      const { getMilestonesDueThisWeek } = await import('@/app/actions/phases');
+      const result = await getMilestonesDueThisWeek(projectIds);
+      return result.success ? (result.data as MilestoneDue[]) : [];
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    milestones: data ?? [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook to fetch the count of open (non-completed, non-declined) feature requests.
+ * Admin sees all; employee sees assigned-project requests.
+ */
+export function useOpenRequestsCount() {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    cacheKeys.openRequestsCount,
+    async () => {
+      const { getOpenRequestsCount } = await import('@/app/actions/client-requests');
+      const result = await getOpenRequestsCount();
+      return result.success ? (result.data as number) : 0;
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    count: data ?? 0,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
 }
