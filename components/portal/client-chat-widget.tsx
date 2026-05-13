@@ -122,10 +122,8 @@ export function ClientChatWidget({ userId, userName, userRole }: ClientChatWidge
     invalidateMessageChannels(userId, true);
   }, [selectedProjectId, userId]);
 
-  // Suppress unused — selectedChannelId is tracked for markChannelRead calls,
-  // userRole is part of the interface contract
+  // Suppress unused — selectedChannelId is tracked for markChannelRead calls
   void selectedChannelId;
-  void userRole;
 
   return (
     <>
@@ -133,11 +131,11 @@ export function ClientChatWidget({ userId, userName, userRole }: ClientChatWidge
       {isOpen && (
         <div
           className={cn(
-            'fixed z-assistant flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl',
+            'fixed z-assistant flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl shadow-black/10 backdrop-blur-sm',
             // Mobile: near full-screen
             'inset-x-3 bottom-3 top-16',
-            // Desktop: floating panel
-            'sm:inset-auto sm:bottom-20 sm:right-6 sm:h-[520px] sm:w-[360px]',
+            // Desktop: floating panel — slightly bigger, anchored bottom-right
+            'sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[600px] sm:w-[400px]',
             'animate-slide-up'
           )}
         >
@@ -186,7 +184,7 @@ export function ClientChatWidget({ userId, userName, userRole }: ClientChatWidge
                 projectName={selectedProject?.name ?? 'Project'}
                 projectId={selectedProjectId}
                 userId={userId}
-                userRole="client"
+                userRole={userRole}
                 isLoading={messagesLoading}
                 onMessageSent={handleMessageSent}
                 onBack={handleBack}
@@ -201,18 +199,23 @@ export function ClientChatWidget({ userId, userName, userRole }: ClientChatWidge
         type="button"
         onClick={handleToggle}
         className={cn(
-          'fixed bottom-6 right-6 z-assistant',
-          'flex h-12 w-12 items-center justify-center rounded-full',
-          'bg-primary text-primary-foreground shadow-lg',
-          'transition-shadow hover:shadow-xl',
+          'group fixed bottom-6 right-6 z-assistant',
+          'flex h-14 w-14 items-center justify-center rounded-full',
+          'bg-primary text-primary-foreground shadow-lg shadow-primary/25',
+          'ring-1 ring-primary/30 ring-offset-2 ring-offset-background',
+          'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/35',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2'
         )}
         aria-label={isOpen ? 'Close messages' : 'Open messages'}
       >
-        {isOpen ? <X className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
+        {isOpen ? (
+          <X className="h-5 w-5" />
+        ) : (
+          <MessageSquare className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+        )}
         {/* Unread badge */}
         {totalUnread > 0 && !isOpen && (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-background bg-destructive px-1 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-sm">
             {totalUnread > 99 ? '99+' : totalUnread}
           </span>
         )}

@@ -350,10 +350,9 @@ function StageDropdown({
       type="button"
       className={cn(
         'absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md',
-        'bg-card/80 text-muted-foreground opacity-0 backdrop-blur-sm transition-all duration-150',
-        'hover:bg-muted hover:text-foreground',
-        'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-        'group-hover:opacity-100',
+        'bg-card/90 text-muted-foreground backdrop-blur-sm transition-colors duration-150',
+        'hover:bg-primary/15 hover:text-primary',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
         'cursor-pointer',
         isPending && 'pointer-events-none opacity-50'
       )}
@@ -1083,17 +1082,16 @@ function ProjectMenuTrigger({ project }: { project: GalleryProject }) {
         e.preventDefault();
         e.stopPropagation();
       }}
-      title={`Manage "${project.name}"`}
-      aria-label={`Manage ${project.name}`}
+      title={`Move "${project.name}"`}
+      aria-label={`Move ${project.name}`}
       className={cn(
-        'inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-md',
-        'bg-muted/60 text-muted-foreground opacity-0 transition-all duration-150',
-        'hover:bg-primary/15 hover:text-primary focus-visible:opacity-100',
-        'group-hover/projrow:opacity-100',
+        'inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md',
+        'bg-muted/70 text-muted-foreground transition-colors duration-150',
+        'hover:bg-primary/15 hover:text-primary',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
       )}
     >
-      <MoreHorizontal className="h-3 w-3" />
+      <MoreHorizontal className="h-3.5 w-3.5" />
     </button>
   );
 }

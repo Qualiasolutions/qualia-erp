@@ -223,13 +223,11 @@ export default async function PortalLayout({ children }: { children: React.React
         ) : null}
         {/* One-shot announcement for internal users — clients never see it */}
         {effectiveIsInternal && <FrameworkUpdateNotice />}
-        {effectiveRole === 'client' && (
-          <ClientChatWidget
-            userId={effectiveUserId}
-            userName={displayName}
-            userRole={effectiveRole}
-          />
-        )}
+        <ClientChatWidget
+          userId={effectiveUserId}
+          userName={displayName}
+          userRole={effectiveRole}
+        />
       </div>
     </ClockGateProvider>
   );

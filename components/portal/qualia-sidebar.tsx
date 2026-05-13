@@ -7,11 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
-import {
-  useUnreadMessageCount,
-  invalidateActiveSession,
-  invalidateTodaysSessions,
-} from '@/lib/swr';
+import { invalidateActiveSession, invalidateTodaysSessions } from '@/lib/swr';
 import { useClockGate } from '@/components/clock-gate-provider';
 import { ClockInModal } from '@/components/today-dashboard/clock-in-modal';
 import { ClockOutModal } from '@/components/clock-out-modal';
@@ -97,14 +93,6 @@ const PAGES: PageDef[] = [
     appKey: 'schedule',
   },
   {
-    id: 'staff-messages',
-    label: 'Messages',
-    icon: 'agent',
-    href: '/messages',
-    roles: ['admin', 'employee'],
-    appKey: 'messages',
-  },
-  {
     id: 'knowledge',
     label: 'Knowledge',
     icon: 'knowledge',
@@ -125,7 +113,7 @@ const PAGES: PageDef[] = [
     label: 'Requests',
     icon: 'tasks',
     href: '/requests',
-    roles: ['client'],
+    roles: ['admin', 'employee', 'client'],
     appKey: 'requests',
   },
   {
@@ -151,19 +139,12 @@ const ROLE_ORDER: Record<Role, string[]> = {
     'admin-dashboard',
     'projects',
     'schedule',
-    'staff-messages',
+    'requests',
     'knowledge',
     'admin-panel',
     'settings',
   ],
-  employee: [
-    'employee-dashboard',
-    'projects',
-    'schedule',
-    'staff-messages',
-    'knowledge',
-    'settings',
-  ],
+  employee: ['employee-dashboard', 'projects', 'schedule', 'requests', 'knowledge', 'settings'],
   client: ['client-dashboard', 'projects', 'requests', 'client-billing', 'settings'],
 };
 
@@ -554,7 +535,6 @@ function SidebarBody({
   const [tweaksOpen, setTweaksOpen] = useState(false);
   const [viewAsOpen, setViewAsOpen] = useState(false);
 
-  const { total: unread } = useUnreadMessageCount(userId ?? null);
   const { isGated } = useClockGate();
 
   const role = (userRole ?? 'client') as Role;
@@ -631,7 +611,7 @@ function SidebarBody({
               page={p}
               isActive={isActivePage(p)}
               disabled={isGated && !p.id.endsWith('-dashboard')}
-              badge={p.id === 'staff-messages' ? unread : undefined}
+              badge={undefined}
               onClick={onLinkClick}
             />
           ))}
