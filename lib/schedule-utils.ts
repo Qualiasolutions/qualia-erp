@@ -7,8 +7,30 @@
 
 import { useState, useEffect } from 'react';
 import { isToday, parseISO } from 'date-fns';
-import type { Task } from '@/app/actions/inbox';
 import { TimeBlock, TIME_BLOCKS, parseTimeToMinutes, TaskPriority } from './schedule-constants';
+
+// Minimal Task shape for schedule scoring/filtering (tasks system removed)
+interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  due_date: string | null;
+  assignee_id: string | null;
+  scheduled_start_time: string | null;
+  scheduled_end_time: string | null;
+  project: {
+    id: string;
+    name: string;
+    project_type?: string | null;
+  } | null;
+  assignee: {
+    id: string;
+    full_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+}
 
 // === Timezone Constants ===
 export const TIMEZONE_CYPRUS = 'Europe/Nicosia';

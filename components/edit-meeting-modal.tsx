@@ -21,12 +21,7 @@ import {
   addMeetingAttendee,
   removeMeetingAttendee,
 } from '@/app/actions/meetings';
-import {
-  invalidateMeetings,
-  invalidateTodaysSchedule,
-  invalidateScheduledTasks,
-  invalidateDailyFlow,
-} from '@/lib/swr';
+import { invalidateMeetings, invalidateTodaysSchedule, invalidateScheduledTasks } from '@/lib/swr';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useProfiles } from '@/lib/swr';
 
@@ -237,7 +232,6 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
       invalidateMeetings(true);
       invalidateTodaysSchedule(true);
       invalidateScheduledTasks(undefined, true);
-      invalidateDailyFlow(true);
       onOpenChange(false);
     });
   }
@@ -256,7 +250,6 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
         invalidateMeetings(true);
         invalidateTodaysSchedule(true);
         invalidateScheduledTasks(undefined, true);
-        invalidateDailyFlow(true);
         onOpenChange(false);
       } else {
         setError(result.error || 'Failed to delete meeting');

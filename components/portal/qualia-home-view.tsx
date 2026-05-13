@@ -22,8 +22,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
-  useInboxTasks,
-  useInboxPreview,
   useTodaysMeetings,
   useTeamTodaySnapshot,
   useEmployeeAssignments,
@@ -151,10 +149,9 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
 
   const { isGated } = useClockGate();
 
-  const { tasks: inboxTasks } = useInboxTasks();
-  const openTasksCount = (inboxTasks as Array<{ id: string }>).length;
-  const { data: inboxPreview } = useInboxPreview(1);
-  const overdueCount = inboxPreview.overdueCount;
+  /* Tasks system removed (Phase 27, Task 1). Task 4 rewrites this file. */
+  const openTasksCount = 0;
+  const overdueCount = 0;
 
   type InboxTask = {
     id: string;
@@ -165,19 +162,7 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
     project: { id: string; name: string } | null;
   };
 
-  const employeeTasks = useMemo(() => {
-    const sorted = (inboxTasks as InboxTask[]).slice().sort((a, b) => {
-      // In Progress first, then Todo
-      const stRank = (s: string) => (s === 'In Progress' ? 0 : 1);
-      const sd = stRank(a.status) - stRank(b.status);
-      if (sd !== 0) return sd;
-      // Then by due_date ascending (nulls last)
-      const ad = a.due_date ? new Date(a.due_date).getTime() : Number.POSITIVE_INFINITY;
-      const bd = b.due_date ? new Date(b.due_date).getTime() : Number.POSITIVE_INFINITY;
-      return ad - bd;
-    });
-    return sorted.slice(0, 8);
-  }, [inboxTasks]);
+  const employeeTasks: InboxTask[] = [];
 
   const { meetings: todayMeetings } = useTodaysMeetings();
   const meetings = useMemo(

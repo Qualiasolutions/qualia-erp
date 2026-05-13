@@ -6,13 +6,7 @@ import { memo, useMemo } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/ui/empty-state';
-import {
-  useTodaysTasks,
-  useInboxTasks,
-  useEmployeeAssignments,
-  useTodaysMeetings,
-  useTeamTodaySnapshot,
-} from '@/lib/swr';
+import { useEmployeeAssignments, useTodaysMeetings, useTeamTodaySnapshot } from '@/lib/swr';
 import type { TeamMemberToday } from '@/app/actions/team-today';
 import { QIcon } from '@/components/ui/q-icon';
 import { ProgressRing } from '@/components/ui/progress-ring';
@@ -684,8 +678,9 @@ function ProjectsTape({ projects }: { projects: TapeProject[] }) {
    ====================================================================== */
 
 export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTodayProps) {
-  const { tasks: todayTasks, isLoading: tasksLoading } = useTodaysTasks();
-  const { tasks: inboxTasks } = useInboxTasks();
+  /* Tasks system removed (Phase 27, Task 1). Task 4 rewrites this file. */
+  const todayTasks: unknown[] = [];
+  const tasksLoading = false;
   const { data: assignments } = useEmployeeAssignments(role === 'employee' ? userId : undefined);
   const { meetings: todayMeetings } = useTodaysMeetings();
   const { members: teamMembers, isLoading: teamLoading } = useTeamTodaySnapshot();
@@ -722,15 +717,8 @@ export function QualiaToday({ role, displayName, workspaces, userId }: QualiaTod
       }));
   }, [todayTasks]);
 
-  // Open tasks count — inbox + today combined, unique
-  const openTaskIds = useMemo(
-    () =>
-      new Set([
-        ...(inboxTasks as Array<{ id: string }>).map((t) => t.id),
-        ...(todayTasks as Array<{ id: string }>).map((t) => t.id),
-      ]),
-    [inboxTasks, todayTasks]
-  );
+  // Tasks system removed — always zero
+  const openTaskIds = useMemo(() => new Set<string>(), []);
 
   // Projects for admin: from workspaces prop (flattened). For employee: from useProjects.
   const tapeProjects = useMemo<TapeProject[]>(() => {

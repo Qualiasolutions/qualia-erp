@@ -8,7 +8,6 @@ import { createActivity, isUserAdmin, type ActionResult, type ActivityType } fro
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { syncPlanningFromGitHubWithServiceRole } from '@/lib/planning-sync-core';
 import { assertNotImpersonating } from '@/lib/portal-utils';
-import { createTasksFromMilestones } from './auto-assign';
 import { sendProjectAssignmentNotification } from '@/lib/email';
 
 // Debounce window for auto-sync on assign: skip if a phase was synced within this many seconds.
@@ -207,13 +206,6 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
     'assignEmployeeToProject'
   );
 
-  // Create milestone-level inbox tasks for the new assignee (idempotent).
-  try {
-    await createTasksFromMilestones(project_id, employee_id, 'assignment');
-  } catch (err) {
-    console.error('[assignEmployeeToProject] createTasksFromMilestones failed:', err);
-  }
-
   // Fire-and-forget assignment notification email.
   if (employee.email) {
     const projectLead = normalizeFKResponse(project.lead) as { full_name: string | null } | null;
@@ -387,13 +379,6 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
     newProject.github_repo_url,
     'reassignEmployee'
   );
-
-  // Create milestone-level tasks on the new project and notify the assignee.
-  try {
-    await createTasksFromMilestones(new_project_id, currentAssignment.employee_id, 'assignment');
-  } catch (err) {
-    console.error('[reassignEmployee] createTasksFromMilestones failed:', err);
-  }
 
   const { data: employeeProfile } = await supabase
     .from('profiles')

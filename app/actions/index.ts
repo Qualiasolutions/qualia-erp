@@ -16,9 +16,7 @@
  * - issues.ts: Issue/task management
  * - projects.ts: Project management
  * - auth.ts: Authentication and admin
- * - inbox.ts: Task inbox management
  * - phases.ts: Project roadmap phases
- * - daily-flow.ts: Dashboard data
  * - project-files.ts: Project file storage
  * - health.ts: Health monitoring
  * - logos.ts: Logo upload
@@ -148,23 +146,6 @@ export {
 } from './health';
 export type { HealthMetrics, ProjectHealthData, HealthInsight } from './health';
 
-// ============ INBOX (TASKS) ============
-export type { Task } from './inbox';
-export {
-  getTasks,
-  createTask,
-  updateTask,
-  deleteTask,
-  adminMarkTaskDone,
-  reorderTasks,
-  getProjectTasks,
-  toggleTaskInbox,
-  quickUpdateTask,
-  bulkAssignTasks,
-  bulkMarkDone,
-  bulkDelete,
-} from './inbox';
-
 // ============ PHASES (ROADMAP) ============
 export {
   createProjectPhase,
@@ -187,10 +168,6 @@ export {
 
 // ============ LOGOS ============
 export { uploadProjectLogo, uploadClientLogo, deleteProjectLogo, deleteClientLogo } from './logos';
-
-// ============ DAILY FLOW ============
-export type { DailyFlowData, DailyMeeting, FocusProject, TeamMember } from './daily-flow';
-export { getDailyFlowData } from './daily-flow';
 
 // ============ FINANCIALS ============
 export type { FinancialSummary, FinancialInvoice, FinancialPayment } from './financials';

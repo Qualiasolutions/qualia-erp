@@ -9,7 +9,6 @@ import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import {
   useUnreadMessageCount,
-  useInboxPreview,
   invalidateActiveSession,
   invalidateTodaysSessions,
 } from '@/lib/swr';
@@ -98,12 +97,12 @@ const PAGES: PageDef[] = [
     appKey: 'schedule',
   },
   {
-    id: 'tasks',
-    label: 'Tasks',
-    icon: 'tasks',
-    href: '/tasks',
+    id: 'staff-messages',
+    label: 'Messages',
+    icon: 'agent',
+    href: '/messages',
     roles: ['admin', 'employee'],
-    appKey: 'tasks',
+    appKey: 'messages',
   },
   {
     id: 'knowledge',
@@ -130,14 +129,6 @@ const PAGES: PageDef[] = [
     appKey: 'requests',
   },
   {
-    id: 'messages',
-    label: 'Messages',
-    icon: 'agent',
-    href: '/messages',
-    roles: ['client'],
-    appKey: 'messages',
-  },
-  {
     id: 'client-billing',
     label: 'Billing',
     icon: 'payments',
@@ -160,13 +151,20 @@ const ROLE_ORDER: Record<Role, string[]> = {
     'admin-dashboard',
     'projects',
     'schedule',
-    'tasks',
+    'staff-messages',
     'knowledge',
     'admin-panel',
     'settings',
   ],
-  employee: ['employee-dashboard', 'projects', 'schedule', 'tasks', 'knowledge', 'settings'],
-  client: ['client-dashboard', 'projects', 'requests', 'messages', 'client-billing', 'settings'],
+  employee: [
+    'employee-dashboard',
+    'projects',
+    'schedule',
+    'staff-messages',
+    'knowledge',
+    'settings',
+  ],
+  client: ['client-dashboard', 'projects', 'requests', 'client-billing', 'settings'],
 };
 
 /* ======================================================================
@@ -288,8 +286,6 @@ function ClockPill({ userId }: { userId: string | null }) {
   const [showIn, setShowIn] = useState(false);
   const [showOut, setShowOut] = useState(false);
   const { session, isLoading, workspaceId } = useClockGate();
-  const { data: inboxPreview } = useInboxPreview(1);
-  const overdueCount = inboxPreview.overdueCount;
 
   if (!workspaceId || isLoading) return null;
 
@@ -335,25 +331,10 @@ function ClockPill({ userId }: { userId: string | null }) {
                 ? 'border border-border bg-card text-foreground hover:bg-muted'
                 : 'bg-primary text-primary-foreground hover:bg-primary/90 dark:shadow-[var(--glow-teal-sm)] dark:hover:shadow-[var(--glow-teal-md)]'
             )}
-            aria-label={
-              clockedIn
-                ? 'Clock out'
-                : overdueCount > 0
-                  ? `Clock in — ${overdueCount} overdue work item${overdueCount === 1 ? '' : 's'}`
-                  : 'Clock in'
-            }
+            aria-label={clockedIn ? 'Clock out' : 'Clock in'}
           >
             {clockedIn ? 'Out' : 'In'}
           </button>
-          {!clockedIn && overdueCount > 0 ? (
-            <span
-              className="pointer-events-none absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-background bg-destructive px-1 font-mono text-[9px] font-bold leading-none text-destructive-foreground shadow-[0_0_6px_hsl(0_84%_60%/0.45)]"
-              aria-hidden
-              title={`${overdueCount} overdue work item${overdueCount === 1 ? '' : 's'}`}
-            >
-              {overdueCount > 9 ? '9+' : overdueCount}
-            </span>
-          ) : null}
         </div>
       </div>
 
@@ -650,7 +631,7 @@ function SidebarBody({
               page={p}
               isActive={isActivePage(p)}
               disabled={isGated && !p.id.endsWith('-dashboard')}
-              badge={p.id === 'messages' ? unread : undefined}
+              badge={p.id === 'staff-messages' ? unread : undefined}
               onClick={onLinkClick}
             />
           ))}

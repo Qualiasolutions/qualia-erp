@@ -468,15 +468,10 @@ export async function POST(request: NextRequest) {
       const allCompleted = milestonePhases.every((p) => p.status === 'completed');
       if (!allCompleted) continue;
 
-      // Milestone is fully completed — close out any previously auto-created
-      // tasks for this milestone. Auto-creation of NEW phase tasks is disabled;
-      // employees pick up work through assignments, not phase-derived tasks.
-      const { markMilestoneTasksDone } = await import('@/app/actions/auto-assign');
-      const tasksDone = await markMilestoneTasksDone(projectId, milestoneNum, supabase);
-
+      // Milestone fully completed — tasks system removed, no cascade needed.
       cascadeResults.push({
         milestone: milestoneNum,
-        tasksDone,
+        tasksDone: 0,
         tasksCreated: 0,
         assignees: [],
       });
