@@ -113,6 +113,60 @@ function flattenAttendees(m: MeetingWithRelations): string[] {
   return list;
 }
 
+/**
+ * Assign overlapping events into side-by-side lanes so they don't stack on
+ * top of each other. Returns a map of event-key → { lane, lanes } where
+ * `lane` is the column index (0-based) and `lanes` is the total columns
+ * in that event's overlap cluster.
+ *
+ * Algorithm: sweep events in start-time order. Maintain an `active` set
+ * of overlapping events; when an event ends before the next starts, it
+ * leaves the cluster. Each new event picks the lowest free lane index.
+ * At cluster boundaries we backfill `lanes` for every cluster member.
+ */
+function assignLanes<T extends { id: string; startHour: number; duration: number }>(
+  events: T[]
+): Map<string, { lane: number; lanes: number }> {
+  const result = new Map<string, { lane: number; lanes: number }>();
+  const sorted = [...events].sort((a, b) => a.startHour - b.startHour || b.duration - a.duration);
+
+  let cluster: T[] = [];
+  let clusterMaxLane = 0;
+  let lanesByEvent = new Map<string, number>();
+
+  const finalizeCluster = () => {
+    const total = clusterMaxLane + 1;
+    for (const e of cluster) {
+      result.set(e.id, { lane: lanesByEvent.get(e.id) ?? 0, lanes: total });
+    }
+    cluster = [];
+    clusterMaxLane = 0;
+    lanesByEvent = new Map();
+  };
+
+  for (const event of sorted) {
+    // Drop events that no longer overlap with `event`.
+    const stillActive = cluster.filter((e) => e.startHour + e.duration > event.startHour);
+    if (stillActive.length === 0 && cluster.length > 0) {
+      finalizeCluster();
+    } else {
+      cluster = stillActive;
+    }
+
+    // Find the lowest free lane index among currently-active events.
+    const taken = new Set(cluster.map((e) => lanesByEvent.get(e.id) ?? 0));
+    let lane = 0;
+    while (taken.has(lane)) lane++;
+
+    cluster.push(event);
+    lanesByEvent.set(event.id, lane);
+    if (lane > clusterMaxLane) clusterMaxLane = lane;
+  }
+  if (cluster.length > 0) finalizeCluster();
+
+  return result;
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
    Top-level shell — header + view switcher + dispatch
    ────────────────────────────────────────────────────────────────────────── */
@@ -487,6 +541,7 @@ function WeekGrid({
       const endHour = end.getHours() + end.getMinutes() / 60;
       const duration = Math.max(0.5, endHour - startHour);
       return {
+        id: m.id,
         meeting: m,
         type: classifyMeeting(m),
         dayIndex,
@@ -497,6 +552,16 @@ function WeekGrid({
       };
     });
   }, [meetings, weekStart]);
+
+  // Assign lanes per-day so overlapping events render side-by-side.
+  const lanesByDay = useMemo(() => {
+    const map = new Map<number, Map<string, { lane: number; lanes: number }>>();
+    for (let i = 0; i < 7; i++) {
+      const dayEvents = events.filter((e) => e.dayIndex === i);
+      map.set(i, assignLanes(dayEvents));
+    }
+    return map;
+  }, [events]);
 
   return (
     <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
@@ -564,22 +629,31 @@ function WeekGrid({
               .map((e) => {
                 const top = (e.startHour - hours[0]) * HOUR_PX;
                 const height = e.duration * HOUR_PX;
+                const placement = lanesByDay.get(dayIndex)?.get(e.id) ?? {
+                  lane: 0,
+                  lanes: 1,
+                };
+                const leftPct = (placement.lane / placement.lanes) * 100;
+                const widthPct = (1 / placement.lanes) * 100;
                 return (
                   <button
                     key={e.meeting.id}
                     type="button"
                     onClick={() => onSelect(e.meeting)}
                     className={cn(
-                      'absolute left-0.5 right-0.5 cursor-pointer overflow-hidden rounded-lg border px-2 py-1 text-left transition-all duration-200',
-                      'hover:scale-[1.02] hover:shadow-lg',
+                      'absolute cursor-pointer overflow-hidden rounded-md border px-1.5 py-0.5 text-left shadow-sm transition-shadow duration-150 hover:shadow-md',
                       eventTypeBlock[e.type]
                     )}
                     style={{
                       top: `${Math.max(0, top)}px`,
-                      height: `${Math.max(height - 2, 24)}px`,
+                      height: `${Math.max(height - 2, 22)}px`,
+                      left: `calc(${leftPct}% + 2px)`,
+                      width: `calc(${widthPct}% - 4px)`,
                     }}
                   >
-                    <p className="truncate text-[10px] font-medium">{e.meeting.title}</p>
+                    <p className="truncate text-[10px] font-semibold leading-tight">
+                      {e.meeting.title}
+                    </p>
                     {height > 30 && (
                       <div className="mt-0.5 flex items-center gap-1">
                         <span className="text-[9px] font-medium opacity-70">
@@ -625,6 +699,7 @@ function DayGrid({
         const endHour = end.getHours() + end.getMinutes() / 60;
         const duration = Math.max(0.5, endHour - startHour);
         return {
+          id: m.id,
           meeting: m,
           type: classifyMeeting(m),
           startHour,
@@ -635,52 +710,103 @@ function DayGrid({
       });
   }, [meetings, day]);
 
+  const lanes = useMemo(() => assignLanes(events), [events]);
+
+  // Current-time indicator (only when viewing today).
+  const [nowOffset, setNowOffset] = useState<number | null>(null);
+  useEffect(() => {
+    if (!isToday) {
+      setNowOffset(null);
+      return;
+    }
+    const compute = () => {
+      const now = new Date();
+      const h = now.getHours() + now.getMinutes() / 60;
+      if (h < hours[0] || h > hours[hours.length - 1] + 1) {
+        setNowOffset(null);
+      } else {
+        setNowOffset((h - hours[0]) * HOUR_PX);
+      }
+    };
+    compute();
+    const id = window.setInterval(compute, 60_000);
+    return () => window.clearInterval(id);
+  }, [isToday]);
+
   return (
     <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
       <div
         className="grid flex-shrink-0 border-b border-border"
-        style={{ gridTemplateColumns: '50px 1fr' }}
+        style={{ gridTemplateColumns: '56px 1fr' }}
       >
         <div className="p-3" />
-        <div className={cn('px-3 py-2 text-center', isToday && 'bg-primary/5')}>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {format(day, 'EEE').toUpperCase()}
-          </p>
-          <p
-            className={cn(
-              'mt-0.5 text-base font-semibold',
-              isToday &&
-                'mx-auto flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm text-primary-foreground'
-            )}
-          >
-            {format(day, 'd')}
-          </p>
+        <div
+          className={cn('flex items-baseline gap-2 px-4 py-2.5', isToday && 'bg-primary/[0.04]')}
+        >
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            {format(day, 'EEEE')}
+          </span>
+          <span className="font-mono text-[10px] text-muted-foreground/70">
+            · {events.length} {events.length === 1 ? 'meeting' : 'meetings'}
+          </span>
         </div>
       </div>
 
       <div
         className="grid min-h-0 flex-1 overflow-y-auto"
-        style={{ gridTemplateColumns: '50px 1fr' }}
+        style={{ gridTemplateColumns: '56px 1fr' }}
       >
-        <div className="divide-y divide-border/30">
-          {hours.map((h) => (
-            <div key={h} className="h-12 pr-2 pt-0.5 text-right">
-              <span className="font-mono text-[9px] text-muted-foreground/60">
-                {h.toString().padStart(2, '0')}:00
-              </span>
+        <div className="relative">
+          {hours.map((h, i) => (
+            <div
+              key={h}
+              className="absolute right-2 font-mono text-[10px] tabular-nums text-muted-foreground/70"
+              style={{ top: `${i * HOUR_PX - 6}px` }}
+            >
+              {h.toString().padStart(2, '0')}:00
             </div>
           ))}
         </div>
 
         <div
-          className={cn(
-            'relative divide-y divide-border/20 border-l border-border',
-            isToday && 'bg-primary/5'
-          )}
+          className={cn('relative border-l border-border', isToday && 'bg-primary/[0.025]')}
+          style={{ height: `${hours.length * HOUR_PX}px` }}
         >
-          {hours.map((h) => (
-            <div key={h} className="h-12" />
+          {/* Hour gridlines */}
+          {hours.map((_, i) => (
+            <div
+              key={`h-${i}`}
+              className="pointer-events-none absolute inset-x-0 border-t border-border/60"
+              style={{ top: `${i * HOUR_PX}px` }}
+            />
           ))}
+          {/* Half-hour dotted dividers */}
+          {hours.map((_, i) => (
+            <div
+              key={`hh-${i}`}
+              className="pointer-events-none absolute inset-x-0 border-t border-dashed border-border/30"
+              style={{ top: `${i * HOUR_PX + HOUR_PX / 2}px` }}
+            />
+          ))}
+          {/* Bottom edge */}
+          <div
+            className="pointer-events-none absolute inset-x-0 border-t border-border/60"
+            style={{ top: `${hours.length * HOUR_PX}px` }}
+          />
+
+          {/* Current-time indicator */}
+          {nowOffset !== null && (
+            <div
+              className="pointer-events-none absolute inset-x-0 z-10"
+              style={{ top: `${nowOffset}px` }}
+              aria-hidden="true"
+            >
+              <div className="relative">
+                <span className="absolute -left-1 -top-1 inline-block h-2 w-2 rounded-full bg-red-500 shadow-[0_0_6px_hsl(0_84%_60%/0.55)]" />
+                <div className="border-t-[1.5px] border-red-500/80" />
+              </div>
+            </div>
+          )}
 
           {events.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center">
@@ -693,28 +819,56 @@ function DayGrid({
           {events.map((e) => {
             const top = (e.startHour - hours[0]) * HOUR_PX;
             const height = e.duration * HOUR_PX;
+            const placement = lanes.get(e.id) ?? { lane: 0, lanes: 1 };
+            const gap = 4; // px between adjacent lanes
+            const leftPct = (placement.lane / placement.lanes) * 100;
+            const widthPct = (1 / placement.lanes) * 100;
+            const tall = height >= 44;
+            const veryTall = height >= 72;
             return (
               <button
                 key={e.meeting.id}
                 type="button"
                 onClick={() => onSelect(e.meeting)}
                 className={cn(
-                  'absolute left-2 right-2 cursor-pointer overflow-hidden rounded-lg border px-3 py-2 text-left transition-all duration-200',
-                  'hover:scale-[1.01] hover:shadow-lg',
+                  'group absolute cursor-pointer overflow-hidden rounded-md border text-left shadow-sm transition-all duration-150',
+                  'hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   eventTypeBlock[e.type]
                 )}
                 style={{
                   top: `${Math.max(0, top)}px`,
-                  height: `${Math.max(height - 4, 32)}px`,
+                  height: `${Math.max(height - 2, 22)}px`,
+                  left: `calc(${leftPct}% + 6px)`,
+                  width: `calc(${widthPct}% - ${gap + (placement.lane === placement.lanes - 1 ? 12 : 8)}px)`,
                 }}
               >
-                <p className="truncate text-sm font-semibold">{e.meeting.title}</p>
-                <div className="mt-1 flex items-center gap-2 text-[11px] opacity-80">
-                  <span>
-                    {e.startLabel}–{e.endLabel}
-                  </span>
-                  <span className="opacity-60">·</span>
-                  <span>{meetingInitials(e.meeting)}</span>
+                <div className={cn('px-2.5 py-1', tall ? 'py-1.5' : 'py-1')}>
+                  <p
+                    className={cn(
+                      'truncate font-semibold leading-tight',
+                      tall ? 'text-[13px]' : 'text-[12px]'
+                    )}
+                  >
+                    {e.meeting.title}
+                  </p>
+                  {tall && (
+                    <div className="mt-1 flex items-center gap-1.5 text-[10.5px] tabular-nums opacity-80">
+                      <Clock className="h-3 w-3" aria-hidden />
+                      <span>
+                        {e.startLabel}–{e.endLabel}
+                      </span>
+                      <span className="opacity-50">·</span>
+                      <span className="font-mono">{meetingInitials(e.meeting)}</span>
+                    </div>
+                  )}
+                  {veryTall && flattenAttendees(e.meeting).length > 0 && (
+                    <p className="mt-1 truncate text-[10.5px] opacity-70">
+                      {flattenAttendees(e.meeting).slice(0, 3).join(', ')}
+                      {flattenAttendees(e.meeting).length > 3
+                        ? ` +${flattenAttendees(e.meeting).length - 3}`
+                        : ''}
+                    </p>
+                  )}
                 </div>
               </button>
             );
