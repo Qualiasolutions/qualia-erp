@@ -98,37 +98,12 @@ const PAGES: PageDef[] = [
     appKey: 'schedule',
   },
   {
-    id: 'clients',
-    label: 'Clients',
-    icon: 'clients',
-    href: '/clients',
-    roles: ['admin'],
-    appKey: 'clients',
-  },
-  {
-    id: 'team',
-    label: 'Team',
-    icon: 'team',
-    href: '/admin?tab=team',
-    roles: ['admin'],
-    appKey: 'control',
-    matchQuery: { key: 'tab', value: 'team' },
-  },
-  {
-    id: 'reports',
-    label: 'Reports',
-    icon: 'activity',
-    href: '/admin/reports',
-    roles: ['admin'],
-    appKey: 'reports',
-  },
-  {
-    id: 'admin-billing',
-    label: 'Billing',
-    icon: 'payments',
-    href: '/billing',
-    roles: ['admin'],
-    appKey: 'billing',
+    id: 'tasks',
+    label: 'Tasks',
+    icon: 'tasks',
+    href: '/tasks',
+    roles: ['admin', 'employee'],
+    appKey: 'tasks',
   },
   {
     id: 'knowledge',
@@ -137,6 +112,14 @@ const PAGES: PageDef[] = [
     href: '/knowledge',
     roles: ['admin', 'employee'],
     appKey: 'knowledge',
+  },
+  {
+    id: 'admin-panel',
+    label: 'Admin Panel',
+    icon: 'admin',
+    href: '/admin',
+    roles: ['admin'],
+    appKey: 'control',
   },
   {
     id: 'requests',
@@ -177,14 +160,12 @@ const ROLE_ORDER: Record<Role, string[]> = {
     'admin-dashboard',
     'projects',
     'schedule',
-    'clients',
-    'team',
-    'reports',
-    'admin-billing',
+    'tasks',
     'knowledge',
+    'admin-panel',
     'settings',
   ],
-  employee: ['employee-dashboard', 'projects', 'schedule', 'knowledge', 'settings'],
+  employee: ['employee-dashboard', 'projects', 'schedule', 'tasks', 'knowledge', 'settings'],
   client: ['client-dashboard', 'projects', 'requests', 'messages', 'client-billing', 'settings'],
 };
 
@@ -617,12 +598,7 @@ function SidebarBody({
     }
 
     if (p.exact) {
-      if (pathname !== basePath) return false;
-      if (basePath === '/admin') {
-        const tab = searchParams.get('tab');
-        return !tab || tab === 'overview';
-      }
-      return true;
+      return pathname === basePath;
     }
 
     return pathname === basePath || pathname.startsWith(`${basePath}/`);
