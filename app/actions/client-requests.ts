@@ -3,7 +3,6 @@
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import { type ActionResult, isUserAdmin } from './shared';
-import { normalizeFKResponse } from '@/lib/server-utils';
 import { notifyAdminsAndAssignedEmployees } from '@/lib/notifications';
 import { notifyAdminAndAssignedOfClientActivity, sendRequestCompletedEmail } from '@/lib/email';
 import { getEmployeeProjectIds, isStaffOnProject } from '@/lib/auth/is-staff-on-project';

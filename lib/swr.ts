@@ -1392,17 +1392,19 @@ export function usePortalDashboard(clientId: string | null) {
       // importing it into this client-side SWR hook leaks server code into the
       // browser bundle. The server-side initial render DOES use the cached
       // wrappers; SWR client-side revalidation uses the server actions.
-      const { getClientDashboardData, getClientDashboardProjects } =
+      const { getClientDashboardData, getClientDashboardProjects, getClientUpcomingMeetings } =
         await import('@/app/actions/client-portal/projects');
 
-      const [statsResult, projectsResult] = await Promise.all([
+      const [statsResult, projectsResult, meetingsResult] = await Promise.all([
         getClientDashboardData(clientId),
         getClientDashboardProjects(clientId),
+        getClientUpcomingMeetings(clientId),
       ]);
 
       return {
         stats: statsResult.success ? statsResult.data : null,
         projects: projectsResult.success ? projectsResult.data : [],
+        upcomingMeetings: meetingsResult.success ? meetingsResult.data : [],
       };
     },
     {
@@ -1412,7 +1414,7 @@ export function usePortalDashboard(clientId: string | null) {
   );
 
   return {
-    data: data || { stats: null, projects: [] },
+    data: data || { stats: null, projects: [], upcomingMeetings: [] },
     stats: data?.stats || null,
     projects: data?.projects || [],
     isLoading,

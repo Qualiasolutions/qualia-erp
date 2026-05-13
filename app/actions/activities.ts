@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 
 import { getCurrentWorkspaceId } from './workspace';
-import { isUserAdmin, type ActionResult, type ActivityType } from './shared';
+import { type ActivityType } from './shared';
 
 // ============ ACTIVITY TYPES ============
 

@@ -11,7 +11,6 @@ import {
   loadSystemTab,
   resolveControlTab,
   type ControlTab,
-  type OverviewPayload,
   type TeamPayload,
   type FinancePayload,
   type SystemPayload,

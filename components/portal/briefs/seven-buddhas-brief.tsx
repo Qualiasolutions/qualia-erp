@@ -12,24 +12,22 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
-type MultiKey = 'knowledge' | 'channels' | 'languages' | 'handoffTriggers';
+type MultiKey = 'demoGoals' | 'channels' | 'languages' | 'handoffTriggers' | 'integrations';
 
 interface FormState {
   contactName: string;
-  email: string;
-  phone: string;
-  role: string;
-  resourceModel: string;
-  calendarSystem: string;
-  cancellationPolicy: string;
-  depositFlow: string;
-  knowledge: string[];
+  contactEmail: string;
+  contactPhone: string;
+  demoGoals: string[];
+  bookingDetails: string;
+  integrations: string[];
   channels: string[];
   languages: string[];
   handoffTriggers: string[];
-  gdprDisclosure: string;
-  ndaPreference: string;
-  demoCall: string;
+  voiceTone: string;
+  timeline: string;
+  budget: string;
+  successCriteria: string;
   notes: string;
 }
 
@@ -38,22 +36,27 @@ interface ChipOption {
   label: string;
 }
 
-const KNOWLEDGE_OPTIONS: ChipOption[] = [
-  {
-    value: 'Massage menu, treatment durations, and prices from 7buddhas.com',
-    label: 'Menu + prices',
-  },
-  { value: 'Thai, oil, pregnancy, couples, and specialty massage FAQs', label: 'Treatment FAQs' },
-  { value: 'Opening hours, location, parking, and arrival instructions', label: 'Visitor info' },
-  { value: 'Gift vouchers, packages, and payment questions', label: 'Vouchers + payments' },
-  { value: 'Medical safety boundaries and when to escalate', label: 'Safety boundaries' },
+const DEMO_GOAL_OPTIONS: ChipOption[] = [
+  { value: 'Book a new massage appointment from start to finish', label: 'Book appointments' },
+  { value: 'Answer treatment and price questions clearly', label: 'Answer questions' },
+  { value: 'Handle changes, cancellations, and rescheduling', label: 'Changes / cancel' },
+  { value: 'Send deposit or payment links after booking', label: 'Payment links' },
+  { value: 'Notify the owner for sensitive or complex requests', label: 'Owner handoff' },
+];
+
+const INTEGRATION_OPTIONS: ChipOption[] = [
+  { value: 'Google Calendar availability', label: 'Google Calendar' },
+  { value: 'WhatsApp messages', label: 'WhatsApp' },
+  { value: 'Email inquiries', label: 'Email' },
+  { value: 'SMS reminders or payment links', label: 'SMS' },
+  { value: 'Website treatment and price content', label: 'Website content' },
 ];
 
 const CHANNEL_OPTIONS: ChipOption[] = [
-  { value: 'Inbound voice calls', label: 'Voice calls' },
-  { value: 'WhatsApp inquiries and booking confirmations', label: 'WhatsApp' },
-  { value: 'Email inquiries', label: 'Email' },
-  { value: 'SMS or Viber payment and reminder links', label: 'SMS / Viber' },
+  { value: 'Phone calls', label: 'Phone calls' },
+  { value: 'WhatsApp', label: 'WhatsApp' },
+  { value: 'Email', label: 'Email' },
+  { value: 'SMS', label: 'SMS' },
 ];
 
 const LANGUAGE_OPTIONS: ChipOption[] = [
@@ -66,54 +69,41 @@ const LANGUAGE_OPTIONS: ChipOption[] = [
 ];
 
 const HANDOFF_OPTIONS: ChipOption[] = [
-  { value: 'Medical, injury, pregnancy, or contraindication questions', label: 'Medical' },
-  { value: 'Complex room or therapist scheduling conflicts', label: 'Scheduling conflict' },
-  { value: 'Refund, deposit, or voucher dispute', label: 'Payment issue' },
+  { value: 'Medical or pregnancy questions', label: 'Medical questions' },
+  { value: 'Difficult room or therapist scheduling issue', label: 'Scheduling issue' },
+  { value: 'Payment, deposit, or refund issue', label: 'Payment issue' },
   { value: 'Complaint or unhappy customer', label: 'Complaint' },
-  { value: 'Caller asks directly for Ernestos', label: 'Asks for owner' },
+  { value: 'Caller asks for the owner', label: 'Asks for owner' },
 ];
 
-const NDA_OPTIONS: ChipOption[] = [
-  {
-    value: 'Qualia confidentiality confirmation is enough for now',
-    label: 'Confirmation is enough',
-  },
-  { value: 'Send Qualia NDA before technical access', label: 'Send Qualia NDA' },
-  { value: '7 Buddhas will provide its own NDA', label: 'Client NDA' },
+const TIMELINE_OPTIONS: ChipOption[] = [
+  { value: 'Start in May 2026', label: 'May 2026' },
+  { value: 'Start in June 2026', label: 'June 2026' },
+  { value: 'Start in Q4 2026', label: 'Q4 2026' },
+];
+
+const BUDGET_OPTIONS: ChipOption[] = [
+  { value: '€7,500 and under', label: '€7.5k and under' },
+  { value: '€7,500 – €15,000', label: '€7.5k – €15k' },
+  { value: '€15,000 – €25,000', label: '€15k – €25k' },
+  { value: '€25,000 – €50,000', label: '€25k – €50k' },
+  { value: '€50,000+', label: '€50k+' },
 ];
 
 const INITIAL_STATE: FormState = {
-  contactName: 'Ernestos Potempa',
-  email: 'ernst.potempa@gmail.com',
-  phone: '',
-  role: 'Owner / Manager',
-  resourceModel:
-    '9 therapists, 4 double treatment rooms, 8 tables total. The AI must check real-time Google Calendar availability and never exceed room/table capacity.',
-  calendarSystem: 'Google Calendar',
-  cancellationPolicy: '24-hour notice rule for cancellations and rescheduling.',
-  depositFlow:
-    'After booking, send a payment link by WhatsApp or SMS to secure the appointment and reduce no-shows.',
-  knowledge: [
-    'Massage menu, treatment durations, and prices from 7buddhas.com',
-    'Thai, oil, pregnancy, couples, and specialty massage FAQs',
-    'Opening hours, location, parking, and arrival instructions',
-    'Medical safety boundaries and when to escalate',
-  ],
-  channels: [
-    'Inbound voice calls',
-    'WhatsApp inquiries and booking confirmations',
-    'Email inquiries',
-  ],
-  languages: ['English', 'Greek', 'German'],
-  handoffTriggers: [
-    'Medical, injury, pregnancy, or contraindication questions',
-    'Complex room or therapist scheduling conflicts',
-    'Caller asks directly for Ernestos',
-  ],
-  gdprDisclosure:
-    'At the start of each call, disclose that the caller is speaking with an AI assistant, explain recording/data use where applicable, and follow Cyprus/EU GDPR requirements.',
-  ndaPreference: 'Qualia confidentiality confirmation is enough for now',
-  demoCall: 'Friday 15 May 2026, 12:00',
+  contactName: '',
+  contactEmail: '',
+  contactPhone: '',
+  demoGoals: [],
+  bookingDetails: '',
+  integrations: [],
+  channels: [],
+  languages: [],
+  handoffTriggers: [],
+  voiceTone: '',
+  timeline: '',
+  budget: '',
+  successCriteria: '',
   notes: '',
 };
 
@@ -123,19 +113,19 @@ function formatList(values: string[]) {
 
 function buildDescription(state: FormState, confidentialityAccepted: boolean): string {
   return [
-    `**Contact**\nName: ${state.contactName}\nEmail: ${state.email}\nPhone: ${state.phone || 'Not provided'}\nRole: ${state.role}`,
-    `**Resource booking model**\n${state.resourceModel}`,
-    `**Calendar system**\n${state.calendarSystem}`,
-    `**Cancellation and rescheduling policy**\n${state.cancellationPolicy}`,
-    `**Deposit flow**\n${state.depositFlow}`,
-    `**Knowledge the AI should answer from**\n${formatList(state.knowledge)}`,
-    `**Channels for the shared AI brain**\n${formatList(state.channels)}`,
-    `**Voice and message languages**\n${formatList(state.languages)}`,
-    `**Immediate handoff triggers**\n${formatList(state.handoffTriggers)}`,
-    `**GDPR disclosure requirement**\n${state.gdprDisclosure}`,
-    `**Confidentiality / NDA preference**\n${state.ndaPreference}\nConfidentiality acknowledged: ${confidentialityAccepted ? 'Yes' : 'No'}`,
-    `**Planned demo call**\n${state.demoCall}`,
+    `**Contact**\nName: ${state.contactName}\nEmail: ${state.contactEmail}\nPhone / WhatsApp: ${state.contactPhone || 'Not provided'}`,
+    `**What the demo should prove**\n${formatList(state.demoGoals)}`,
+    `**Booking setup we should understand**\n${state.bookingDetails.trim()}`,
+    `**Systems to connect or simulate**\n${formatList(state.integrations)}`,
+    `**Customer channels**\n${formatList(state.channels)}`,
+    `**Languages**\n${formatList(state.languages)}`,
+    `**When the AI should hand off**\n${formatList(state.handoffTriggers)}`,
+    `**Preferred voice style**\n${state.voiceTone.trim() || 'Not provided'}`,
+    `**Timeline**\n${state.timeline}`,
+    `**Budget range**\n${state.budget}`,
+    `**What would make this demo successful**\n${state.successCriteria.trim()}`,
     state.notes.trim() ? `**Additional notes**\n${state.notes.trim()}` : '',
+    `**Confidentiality acknowledged**\n${confidentialityAccepted ? 'Yes' : 'No'}`,
   ]
     .filter(Boolean)
     .join('\n\n');
@@ -197,7 +187,7 @@ export function SevenBuddhasBrief({
   className?: string;
 }) {
   const [state, setState] = useState<FormState>(INITIAL_STATE);
-  const [confidentialityAccepted, setConfidentialityAccepted] = useState(true);
+  const [confidentialityAccepted, setConfidentialityAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -218,6 +208,26 @@ export function SevenBuddhasBrief({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (state.demoGoals.length === 0) {
+      toast.error('Pick what the demo should prove');
+      return;
+    }
+    if (state.channels.length === 0) {
+      toast.error('Pick at least one customer channel');
+      return;
+    }
+    if (state.languages.length === 0) {
+      toast.error('Pick at least one language');
+      return;
+    }
+    if (!state.timeline) {
+      toast.error('Pick a timeline');
+      return;
+    }
+    if (!state.budget) {
+      toast.error('Pick a budget range');
+      return;
+    }
     if (!confidentialityAccepted) {
       toast.error('Confirm confidentiality before sending the brief');
       return;
@@ -254,7 +264,7 @@ export function SevenBuddhasBrief({
         <div>
           <h3 className="text-lg font-semibold tracking-tight text-foreground">Brief received</h3>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            We have the operational details for the 7 Buddhas AI front desk demo.
+            We have what we need to shape the 7 Buddhas AI front desk demo.
           </p>
         </div>
       </div>
@@ -268,16 +278,15 @@ export function SevenBuddhasBrief({
           7 Buddhas Massage Center
         </p>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
-          AI front desk intake
+          AI front desk demo brief
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Confirm the booking rules, website knowledge, handoff protocol, and GDPR requirements so
-          Qualia can prepare the tailored voice-agent demo.
+          A short form to help Qualia prepare the right demo and estimate the full project.
         </p>
       </div>
 
-      <Section title="Contact details" hint="Used only for the project brief and follow-up.">
-        <div className="grid gap-4 sm:grid-cols-2">
+      <Section title="Contact" hint="Who should we speak with about the demo?">
+        <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="contactName">Name</Label>
             <Input
@@ -288,110 +297,72 @@ export function SevenBuddhasBrief({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="contactEmail">Email</Label>
             <Input
-              id="email"
+              id="contactEmail"
               type="email"
-              value={state.email}
-              onChange={(event) => setField('email', event.target.value)}
+              value={state.contactEmail}
+              onChange={(event) => setField('contactEmail', event.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone / WhatsApp</Label>
+            <Label htmlFor="contactPhone">Phone / WhatsApp</Label>
             <Input
-              id="phone"
-              value={state.phone}
-              onChange={(event) => setField('phone', event.target.value)}
-              placeholder="+357..."
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Input
-              id="role"
-              value={state.role}
-              onChange={(event) => setField('role', event.target.value)}
-              required
+              id="contactPhone"
+              value={state.contactPhone}
+              onChange={(event) => setField('contactPhone', event.target.value)}
             />
           </div>
         </div>
       </Section>
 
       <Section
-        title="Booking logic"
-        hint="This is the important part: the agent must understand rooms, tables, therapists, and calendar capacity."
+        title="Demo focus"
+        hint="Pick the parts you want to see working in the first tailored demo."
       >
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="resourceModel">Room, table, and therapist constraints</Label>
-            <Textarea
-              id="resourceModel"
-              value={state.resourceModel}
-              onChange={(event) => setField('resourceModel', event.target.value)}
-              className="min-h-[110px]"
-              required
+        <div className="grid gap-2 sm:grid-cols-3">
+          {DEMO_GOAL_OPTIONS.map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              selected={state.demoGoals.includes(option.value)}
+              onClick={() => toggleMulti('demoGoals', option.value)}
             />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="calendarSystem">Calendar system</Label>
-              <Input
-                id="calendarSystem"
-                value={state.calendarSystem}
-                onChange={(event) => setField('calendarSystem', event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="demoCall">Demo call</Label>
-              <Input
-                id="demoCall"
-                value={state.demoCall}
-                onChange={(event) => setField('demoCall', event.target.value)}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cancellationPolicy">Cancellation and rescheduling rule</Label>
-            <Input
-              id="cancellationPolicy"
-              value={state.cancellationPolicy}
-              onChange={(event) => setField('cancellationPolicy', event.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="depositFlow">Deposit / payment-link flow</Label>
-            <Textarea
-              id="depositFlow"
-              value={state.depositFlow}
-              onChange={(event) => setField('depositFlow', event.target.value)}
-              className="min-h-[88px]"
-            />
-          </div>
+          ))}
         </div>
       </Section>
 
       <Section
-        title="AI brain"
-        hint="Pick what the assistant should handle across calls and messages."
+        title="Booking setup"
+        hint="Tell us the rules the AI must respect when booking appointments."
       >
+        <Textarea
+          value={state.bookingDetails}
+          onChange={(event) => setField('bookingDetails', event.target.value)}
+          placeholder="Rooms, therapists, calendars, treatment lengths, booking gaps, deposits, cancellation rules, or anything the AI must not get wrong."
+          className="min-h-[130px]"
+          required
+        />
+      </Section>
+
+      <Section title="Systems and channels" hint="What should the demo connect to or simulate?">
         <div className="space-y-5">
           <div className="space-y-2">
-            <Label>Website knowledge</Label>
+            <Label>Systems</Label>
             <div className="grid gap-2 sm:grid-cols-3">
-              {KNOWLEDGE_OPTIONS.map((option) => (
+              {INTEGRATION_OPTIONS.map((option) => (
                 <Chip
                   key={option.value}
                   label={option.label}
-                  selected={state.knowledge.includes(option.value)}
-                  onClick={() => toggleMulti('knowledge', option.value)}
+                  selected={state.integrations.includes(option.value)}
+                  onClick={() => toggleMulti('integrations', option.value)}
                 />
               ))}
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Channels</Label>
+            <Label>Customer channels</Label>
             <div className="grid gap-2 sm:grid-cols-4">
               {CHANNEL_OPTIONS.map((option) => (
                 <Chip
@@ -403,6 +374,14 @@ export function SevenBuddhasBrief({
               ))}
             </div>
           </div>
+        </div>
+      </Section>
+
+      <Section
+        title="Languages and handoff"
+        hint="How the AI should speak, and when it should stop."
+      >
+        <div className="space-y-5">
           <div className="space-y-2">
             <Label>Languages</Label>
             <div className="grid gap-2 sm:grid-cols-3">
@@ -416,13 +395,8 @@ export function SevenBuddhasBrief({
               ))}
             </div>
           </div>
-        </div>
-      </Section>
-
-      <Section title="Handoff and compliance" hint="When the AI should stop and notify Ernestos.">
-        <div className="space-y-5">
           <div className="space-y-2">
-            <Label>Immediate handoff triggers</Label>
+            <Label>Owner handoff should happen for</Label>
             <div className="grid gap-2 sm:grid-cols-3">
               {HANDOFF_OPTIONS.map((option) => (
                 <Chip
@@ -435,54 +409,86 @@ export function SevenBuddhasBrief({
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="gdprDisclosure">GDPR disclosure</Label>
+            <Label htmlFor="voiceTone">Preferred assistant tone</Label>
             <Textarea
-              id="gdprDisclosure"
-              value={state.gdprDisclosure}
-              onChange={(event) => setField('gdprDisclosure', event.target.value)}
-              className="min-h-[100px]"
-              required
+              id="voiceTone"
+              value={state.voiceTone}
+              onChange={(event) => setField('voiceTone', event.target.value)}
+              placeholder="For example: calm, warm, professional, direct, luxury spa tone, casual, etc."
+              className="min-h-[90px]"
             />
-          </div>
-          <div className="space-y-2">
-            <Label>NDA preference</Label>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {NDA_OPTIONS.map((option) => (
-                <Chip
-                  key={option.value}
-                  label={option.label}
-                  selected={state.ndaPreference === option.value}
-                  onClick={() => setField('ndaPreference', option.value)}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="flex items-start gap-3 rounded-lg border border-border bg-background p-4">
-            <Checkbox
-              id="confidentiality"
-              checked={confidentialityAccepted}
-              onCheckedChange={(checked) => setConfidentialityAccepted(checked === true)}
-              className="mt-0.5"
-            />
-            <Label
-              htmlFor="confidentiality"
-              className="cursor-pointer text-sm font-normal leading-relaxed text-muted-foreground"
-            >
-              I confirm all shared business, operational, and technical details are confidential
-              between 7 Buddhas and Qualia Solutions.
-            </Label>
           </div>
         </div>
       </Section>
 
-      <Section title="Anything else" hint="Optional details that would help shape the demo.">
+      <Section title="Timeline and budget" hint="These help us scope the right demo and proposal.">
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Label>When are you looking to start?</Label>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {TIMELINE_OPTIONS.map((option) => (
+                <Chip
+                  key={option.value}
+                  label={option.label}
+                  selected={state.timeline === option.value}
+                  onClick={() => setField('timeline', option.value)}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Budget range</Label>
+            <div className="grid gap-2 sm:grid-cols-5">
+              {BUDGET_OPTIONS.map((option) => (
+                <Chip
+                  key={option.value}
+                  label={option.label}
+                  selected={state.budget === option.value}
+                  onClick={() => setField('budget', option.value)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Success criteria" hint="What would make the demo worth moving forward with?">
+        <Textarea
+          value={state.successCriteria}
+          onChange={(event) => setField('successCriteria', event.target.value)}
+          placeholder="What should the AI do well enough for you to say this is worth building?"
+          className="min-h-[110px]"
+          required
+        />
+      </Section>
+
+      <Section
+        title="Anything else"
+        hint="Optional details that would help us build the right demo."
+      >
         <Textarea
           value={state.notes}
           onChange={(event) => setField('notes', event.target.value)}
-          placeholder="Therapist-specific rules, exact payment provider, scripts, tone, or edge cases."
-          className="min-h-[120px]"
+          placeholder="Existing tools, team preferences, examples of difficult customer calls, or details we should avoid."
+          className="min-h-[110px]"
         />
       </Section>
+
+      <div className="flex items-start gap-3 rounded-lg border border-border bg-card p-4">
+        <Checkbox
+          id="confidentiality"
+          checked={confidentialityAccepted}
+          onCheckedChange={(checked) => setConfidentialityAccepted(checked === true)}
+          className="mt-0.5"
+        />
+        <Label
+          htmlFor="confidentiality"
+          className="cursor-pointer text-sm font-normal leading-relaxed text-muted-foreground"
+        >
+          I understand that Qualia Solutions treats the information shared in this brief as
+          confidential.
+        </Label>
+      </div>
 
       <div className="flex justify-end">
         <Button type="submit" disabled={submitting} className="min-h-11 min-w-[150px]">
