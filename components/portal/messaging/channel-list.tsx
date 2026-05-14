@@ -16,12 +16,21 @@ interface ChannelData {
   unreadCount: number;
 }
 
+interface OnlineUser {
+  userId: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+  role: string;
+}
+
 interface ChannelListProps {
   channels: ChannelData[];
   selectedProjectId: string | null;
   onSelectChannel: (projectId: string, channelId: string) => void;
   onNewConversation: () => void;
   isLoading: boolean;
+  /** Staff users — empty array for clients or when no presence data. */
+  onlineUsers?: OnlineUser[];
 }
 
 export function ChannelList({
@@ -30,6 +39,7 @@ export function ChannelList({
   onSelectChannel,
   onNewConversation,
   isLoading,
+  onlineUsers = [],
 }: ChannelListProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -39,7 +49,10 @@ export function ChannelList({
 
   return (
     <div className="flex h-full flex-col bg-[hsl(var(--surface-2))]/30 dark:bg-transparent">
-      {/* Search (header lives in the widget container now) */}
+      {/* Who's online — staff only (clients get an empty array, so nothing renders) */}
+      {onlineUsers.length > 0 && <OnlineStrip users={onlineUsers} />}
+
+      {/* Search (channel-list header lives in the widget container) */}
       <div className="shrink-0 px-3 pb-3 pt-3">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -172,6 +185,63 @@ function ProjectInitial({ name, hasUnread }: { name: string; hasUnread: boolean 
       aria-hidden="true"
     >
       {initial}
+    </div>
+  );
+}
+
+function OnlineStrip({ users }: { users: OnlineUser[] }) {
+  // Show up to 6 avatars; collapse the rest into a "+N" chip
+  const visible = users.slice(0, 6);
+  const overflow = Math.max(0, users.length - 6);
+
+  return (
+    <div className="shrink-0 border-b border-border/40 px-3 pb-2.5 pt-1">
+      <div className="mb-1.5 flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground">
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/70" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        </span>
+        <span>{users.length} online</span>
+      </div>
+      <div className="flex -space-x-1.5">
+        {visible.map((u) => (
+          <OnlineAvatar key={u.userId} user={u} />
+        ))}
+        {overflow > 0 && (
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-muted text-[10px] font-semibold tabular-nums text-muted-foreground"
+            aria-label={`${overflow} more online`}
+            title={`${overflow} more`}
+          >
+            +{overflow}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function OnlineAvatar({ user }: { user: OnlineUser }) {
+  const initial = (user.fullName?.trim()[0] ?? '?').toUpperCase();
+  const label = user.fullName || 'Someone';
+  return (
+    <div
+      className="relative flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary/10 text-[10px] font-semibold uppercase text-primary"
+      title={label}
+      aria-label={`${label} online`}
+    >
+      {user.avatarUrl ? (
+        // Plain img — these come from the realtime presence payload,
+        // workspace-scoped so the URLs are trusted.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={user.avatarUrl} alt="" className="h-full w-full rounded-full object-cover" />
+      ) : (
+        initial
+      )}
+      <span
+        className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-background"
+        aria-hidden
+      />
     </div>
   );
 }
