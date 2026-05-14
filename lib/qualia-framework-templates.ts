@@ -1328,6 +1328,7 @@ export const QUALIA_FRAMEWORK_TEMPLATES: Record<ProjectType, QualiaFrameworkProj
   app: WEB_DESIGN_TEMPLATE, // Reuse Web Design template for apps
   seo: SEO_TEMPLATE,
   ads: ADS_TEMPLATE,
+  internal: WEB_DESIGN_TEMPLATE, // team chat / internal-only projects don't drive the framework; fallback to a sane default if asked
 };
 
 export function getTemplateForType(type: ProjectType): QualiaFrameworkProjectTemplate {

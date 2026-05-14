@@ -34,11 +34,16 @@ import type { ProjectType, DeploymentPlatform } from '@/types/database';
 
 import { StepProvisioning } from './step-provisioning';
 
+// Wizard never offers the `internal` enum value (that's the workspace team-chat
+// marker, backfilled by migration). Narrow the type so the wizard input matches
+// what `createProjectWithRoadmap` accepts.
+export type WizardProjectType = Exclude<ProjectType, 'internal'>;
+
 export interface WizardData {
   name: string;
   description: string;
   is_demo: boolean;
-  project_type: ProjectType | null;
+  project_type: WizardProjectType | null;
   deployment_platform: DeploymentPlatform | null;
   client_id: string;
   custom_client_name: string;
@@ -48,11 +53,11 @@ interface ProjectWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clients: Array<{ id: string; display_name: string | null; business_name?: string | null }>;
-  defaultType?: ProjectType | null;
+  defaultType?: WizardProjectType | null;
 }
 
 const PROJECT_TYPES: Array<{
-  value: ProjectType;
+  value: WizardProjectType;
   label: string;
   icon: React.ReactNode;
   gradient: string;
