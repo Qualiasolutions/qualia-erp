@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, MessageSquare, Plus } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Search, MessageSquare, Plus, Hash } from 'lucide-react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -9,7 +9,13 @@ import { cn } from '@/lib/utils';
 interface ChannelData {
   id: string;
   projectId: string;
-  project: { id: string; name: string; project_type: string; status?: string | null } | null;
+  project: {
+    id: string;
+    name: string;
+    project_type: string;
+    status?: string | null;
+    is_team_channel?: boolean | null;
+  } | null;
   lastMessagePreview?: string | null;
   lastMessageAt?: string | null;
   lastMessageSender?: { id: string; full_name: string | null } | null;
@@ -43,9 +49,19 @@ export function ChannelList({
 }: ChannelListProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredChannels = searchQuery.trim()
-    ? channels.filter((ch) => ch.project?.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : channels;
+  // Team channels are workspace-wide pinned chats — surface them above the
+  // per-project list with a distinct visual so staff find them instantly.
+  const { teamChannels, regularChannels } = useMemo(() => {
+    const filtered = searchQuery.trim()
+      ? channels.filter((ch) => ch.project?.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      : channels;
+    return {
+      teamChannels: filtered.filter((ch) => ch.project?.is_team_channel === true),
+      regularChannels: filtered.filter((ch) => ch.project?.is_team_channel !== true),
+    };
+  }, [channels, searchQuery]);
+
+  const filteredChannels = regularChannels;
 
   return (
     <div className="flex h-full flex-col bg-[hsl(var(--surface-2))]/30 dark:bg-transparent">
@@ -80,7 +96,7 @@ export function ChannelList({
       >
         {isLoading ? (
           <ChannelListSkeleton />
-        ) : filteredChannels.length === 0 ? (
+        ) : teamChannels.length === 0 && filteredChannels.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60">
               <MessageSquare className="h-5 w-5 text-muted-foreground" />
@@ -110,61 +126,147 @@ export function ChannelList({
             )}
           </div>
         ) : (
-          <div className="space-y-0.5">
-            {filteredChannels.map((channel) => {
-              const isActive = channel.projectId === selectedProjectId;
-              const projectName = channel.project?.name || 'Unknown Project';
-              const senderName = channel.lastMessageSender?.full_name || null;
-              const preview = channel.lastMessagePreview || null;
-              const timeAgo = channel.lastMessageAt
-                ? formatRelativeTime(channel.lastMessageAt)
-                : null;
-
-              return (
-                <button
-                  key={channel.id}
-                  role="option"
-                  aria-selected={isActive}
-                  onClick={() => onSelectChannel(channel.projectId, channel.id)}
-                  className={cn(
-                    'flex w-full cursor-pointer items-start gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors duration-150',
-                    isActive ? 'bg-primary/[0.1] text-foreground' : 'hover:bg-card'
-                  )}
-                >
-                  <ProjectInitial name={projectName} hasUnread={channel.unreadCount > 0} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p
+          <div className="space-y-3">
+            {/* Team channels — pinned at top, distinct look */}
+            {teamChannels.length > 0 && (
+              <div>
+                <div className="px-2 pb-1 pt-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
+                  Team
+                </div>
+                <div className="space-y-0.5">
+                  {teamChannels.map((channel) => {
+                    const isActive = channel.projectId === selectedProjectId;
+                    const projectName = channel.project?.name || 'Team Chat';
+                    const senderName = channel.lastMessageSender?.full_name || null;
+                    const preview = channel.lastMessagePreview || null;
+                    const timeAgo = channel.lastMessageAt
+                      ? formatRelativeTime(channel.lastMessageAt)
+                      : null;
+                    return (
+                      <button
+                        key={channel.id}
+                        role="option"
+                        aria-selected={isActive}
+                        onClick={() => onSelectChannel(channel.projectId, channel.id)}
                         className={cn(
-                          'truncate text-[13.5px]',
-                          channel.unreadCount > 0
-                            ? 'font-semibold text-foreground'
-                            : 'font-medium text-foreground'
+                          'flex w-full cursor-pointer items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors duration-150',
+                          'border',
+                          isActive
+                            ? 'border-primary/30 bg-primary/[0.12] text-foreground'
+                            : 'border-primary/15 bg-primary/[0.04] hover:border-primary/30 hover:bg-primary/[0.08]'
                         )}
                       >
-                        {projectName}
-                      </p>
-                      {timeAgo && (
-                        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                          {timeAgo}
-                        </span>
-                      )}
-                    </div>
-                    {preview && (
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {senderName ? `${senderName}: ` : ''}
-                        {preview}
-                      </p>
-                    )}
+                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                          <Hash className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p
+                              className={cn(
+                                'truncate text-[13.5px]',
+                                channel.unreadCount > 0
+                                  ? 'font-semibold text-foreground'
+                                  : 'font-medium text-foreground'
+                              )}
+                            >
+                              {projectName}
+                            </p>
+                            {timeAgo && (
+                              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                                {timeAgo}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {preview ? (
+                              <>
+                                {senderName ? `${senderName}: ` : ''}
+                                {preview}
+                              </>
+                            ) : (
+                              <span className="italic text-muted-foreground/70">
+                                Workspace-wide chat for staff
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        {channel.unreadCount > 0 && (
+                          <span className="mt-0.5 flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold text-primary-foreground">
+                            {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {filteredChannels.length > 0 && (
+              <div>
+                {teamChannels.length > 0 && (
+                  <div className="px-2 pb-1 pt-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
+                    Projects
                   </div>
-                  {channel.unreadCount > 0 && (
-                    <span className="mt-0.5 flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold text-primary-foreground">
-                      {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                )}
+                <div className="space-y-0.5">
+                  {filteredChannels.map((channel) => {
+                    const isActive = channel.projectId === selectedProjectId;
+                    const projectName = channel.project?.name || 'Unknown Project';
+                    const senderName = channel.lastMessageSender?.full_name || null;
+                    const preview = channel.lastMessagePreview || null;
+                    const timeAgo = channel.lastMessageAt
+                      ? formatRelativeTime(channel.lastMessageAt)
+                      : null;
+
+                    return (
+                      <button
+                        key={channel.id}
+                        role="option"
+                        aria-selected={isActive}
+                        onClick={() => onSelectChannel(channel.projectId, channel.id)}
+                        className={cn(
+                          'flex w-full cursor-pointer items-start gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors duration-150',
+                          isActive ? 'bg-primary/[0.1] text-foreground' : 'hover:bg-card'
+                        )}
+                      >
+                        <ProjectInitial name={projectName} hasUnread={channel.unreadCount > 0} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p
+                              className={cn(
+                                'truncate text-[13.5px]',
+                                channel.unreadCount > 0
+                                  ? 'font-semibold text-foreground'
+                                  : 'font-medium text-foreground'
+                              )}
+                            >
+                              {projectName}
+                            </p>
+                            {timeAgo && (
+                              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                                {timeAgo}
+                              </span>
+                            )}
+                          </div>
+                          {preview && (
+                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                              {senderName ? `${senderName}: ` : ''}
+                              {preview}
+                            </p>
+                          )}
+                        </div>
+                        {channel.unreadCount > 0 && (
+                          <span className="mt-0.5 flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold text-primary-foreground">
+                            {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

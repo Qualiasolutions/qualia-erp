@@ -212,7 +212,7 @@ export async function getMessageChannels(userId: string): Promise<ActionResult> 
         last_message_preview,
         last_message_sender_id,
         created_at,
-        project:projects(id, name, project_type, status),
+        project:projects(id, name, project_type, status, is_team_channel),
         last_message_sender:profiles!portal_message_channels_last_message_sender_id_fkey(id, full_name)
       `
       )
@@ -620,6 +620,10 @@ export async function getMessagingProjects(
       .from('projects')
       .select('id, name, project_type, status')
       .eq('workspace_id', wm.workspace_id)
+      // Team channels are pinned at the top of the chat widget — they don't
+      // belong in the "start a new conversation" dialog (one per workspace,
+      // always exists, can't be "created").
+      .eq('is_team_channel', false)
       .not('status', 'in', '(Archived,Canceled)')
       .order('name', { ascending: true });
 
