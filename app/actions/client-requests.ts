@@ -159,9 +159,11 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
         status,
         admin_response,
         attachments,
+        assigned_to,
         created_at,
         updated_at,
-        project:projects(id, name)
+        project:projects(id, name),
+        assignee:profiles!client_feature_requests_assigned_to_fkey(id, full_name, avatar_url)
       `
       )
       .order('created_at', { ascending: false });
@@ -181,10 +183,20 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
     if (error) throw error;
 
     // Normalize FK arrays
-    const normalized = (data || []).map((r) => ({
-      ...r,
-      project: Array.isArray(r.project) ? r.project[0] || null : r.project,
-    }));
+    const normalized = (data || []).map((r) => {
+      const rec = r as typeof r & {
+        assigned_to?: string | null;
+        assignee?:
+          | { id: string; full_name: string | null; avatar_url: string | null }
+          | { id: string; full_name: string | null; avatar_url: string | null }[]
+          | null;
+      };
+      return {
+        ...rec,
+        project: Array.isArray(rec.project) ? rec.project[0] || null : rec.project,
+        assignee: Array.isArray(rec.assignee) ? rec.assignee[0] || null : (rec.assignee ?? null),
+      };
+    });
 
     return { success: true, data: normalized };
   } catch (error) {
@@ -227,6 +239,44 @@ export async function updateFeatureRequest(
 
     const isAdmin = await isUserAdmin(user.id);
 
+    // Employee-assignee path: if a non-admin employee is the assignee on this
+    // request, allow them to update status only (no title/description/response).
+    // RLS UPDATE policy stays admin-only, so this path writes via service role
+    // after enforcing the gate + column whitelist in code.
+    if (!isAdmin && safeUpdates.status !== undefined) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.role === 'employee') {
+        const { data: req } = await supabase
+          .from('client_feature_requests')
+          .select('assigned_to')
+          .eq('id', requestId)
+          .maybeSingle();
+
+        const requestAssignedTo = (req as { assigned_to?: string | null } | null)?.assigned_to;
+        if (requestAssignedTo === user.id) {
+          const adminClient = createAdminClient();
+          const { data, error } = await adminClient
+            .from('client_feature_requests')
+            .update({
+              status: safeUpdates.status,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', requestId)
+            .eq('assigned_to', user.id) // belt-and-braces
+            .select()
+            .single();
+          if (error) throw error;
+          if (!data) return { success: false, error: 'Request not found' };
+          return { success: true, data };
+        }
+      }
+    }
+
     const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
     if (isAdmin) {
@@ -265,6 +315,64 @@ export async function updateFeatureRequest(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update request',
+    };
+  }
+}
+
+/**
+ * Admin-only: assign a feature request to a staff member (or unassign via null).
+ * The assignee field is intentionally NOT exposed via updateFeatureRequest —
+ * clients and even assignees themselves should not be able to reassign.
+ */
+export async function assignFeatureRequest(
+  requestId: string,
+  assigneeId: string | null
+): Promise<ActionResult> {
+  try {
+    const imp = await assertNotImpersonating();
+    if (!imp.ok) return { success: false, error: imp.error };
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    if (!(await isUserAdmin(user.id))) {
+      return { success: false, error: 'Only admins can assign requests' };
+    }
+
+    // If assigning (not unassigning), verify the target is staff
+    if (assigneeId !== null) {
+      const { data: target } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', assigneeId)
+        .single();
+      if (!target || (target.role !== 'admin' && target.role !== 'employee')) {
+        return { success: false, error: 'Assignee must be an admin or employee' };
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('client_feature_requests')
+      .update({
+        assigned_to: assigneeId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', requestId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) return { success: false, error: 'Request not found' };
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('[assignFeatureRequest] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to assign request',
     };
   }
 }
