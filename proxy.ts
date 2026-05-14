@@ -54,8 +54,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Protect all routes except /auth/* and /api/*
-  const isPublicRoute = pathname.startsWith('/auth') || pathname.startsWith('/api');
+  // Protect all routes except /auth/*, /api/*, and /shso (public Elena demo for SHSO/ΟΚΥπΥ).
+  const isPublicRoute =
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/api') ||
+    pathname === '/shso' ||
+    pathname.startsWith('/shso/');
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';

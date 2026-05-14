@@ -1,5 +1,15 @@
 {
   "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/shso",
+      "destination": "https://shso.vercel.app/shso"
+    },
+    {
+      "source": "/shso/:path*",
+      "destination": "https://shso.vercel.app/shso/:path*"
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/morning-email",
