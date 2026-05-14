@@ -361,6 +361,7 @@ const RequestRow = memo(function RequestRow({
                 </span>
               )}
             </div>
+            <StatusTrail status={localStatus} adminResponse={localAdminResponse} />
             {request.attachments && request.attachments.length > 0 && (
               <ul className="mt-3 space-y-1.5">
                 {request.attachments.map((att) => (
@@ -694,6 +695,59 @@ export function PortalRequestList({ requests, currentUserId, userRole }: PortalR
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ─── Status trail (where this request is in the pipeline) ─────────────── */
+
+const PIPELINE_STEPS = ['pending', 'in_review', 'planned', 'in_progress', 'completed'] as const;
+const PIPELINE_LABELS: Record<(typeof PIPELINE_STEPS)[number], string> = {
+  pending: 'Pending',
+  in_review: 'In Review',
+  planned: 'Planned',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+};
+
+function StatusTrail({ status, adminResponse }: { status: string; adminResponse: string | null }) {
+  // Terminal states render a single inline label, not the trail.
+  if (status === 'declined') {
+    const isCancelled = adminResponse === 'Cancelled by client';
+    return (
+      <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" aria-hidden />
+        {isCancelled ? 'Cancelled' : 'Declined'}
+      </p>
+    );
+  }
+
+  const currentIndex = PIPELINE_STEPS.indexOf(status as (typeof PIPELINE_STEPS)[number]);
+  if (currentIndex < 0) return null;
+
+  const currentLabel = PIPELINE_LABELS[PIPELINE_STEPS[currentIndex]];
+
+  return (
+    <div className="mt-3 space-y-1.5">
+      <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+        Step {currentIndex + 1} of {PIPELINE_STEPS.length} · {currentLabel}
+      </p>
+      <ol className="flex items-center gap-1" aria-label="Request pipeline progress">
+        {PIPELINE_STEPS.map((_, i) => {
+          const isPast = i < currentIndex;
+          const isCurrent = i === currentIndex;
+          return (
+            <li
+              key={i}
+              className={cn(
+                'h-1 flex-1 rounded-full transition-colors',
+                isCurrent ? 'bg-primary' : isPast ? 'bg-primary/60' : 'bg-muted-foreground/15'
+              )}
+              aria-hidden
+            />
+          );
+        })}
+      </ol>
     </div>
   );
 }
