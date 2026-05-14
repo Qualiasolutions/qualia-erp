@@ -1,4 +1,4 @@
-import { Globe, Bot, Phone, Sparkles, TrendingUp, Smartphone, Megaphone } from 'lucide-react';
+import { Globe, Bot, Phone, Sparkles, TrendingUp, Smartphone, Megaphone, Hash } from 'lucide-react';
 import type { ProjectType } from '@/types/database';
 
 export interface ProjectTypeStyle {
@@ -66,6 +66,14 @@ export const PROJECT_TYPE_CONFIG: Record<ProjectType, ProjectTypeStyle> = {
     border: 'border-amber-500/20',
     bar: 'bg-amber-500/60',
     label: 'Ads',
+  },
+  internal: {
+    icon: Hash,
+    color: 'text-primary',
+    bg: 'bg-primary/10',
+    border: 'border-primary/20',
+    bar: 'bg-primary/60',
+    label: 'Internal',
   },
 };
 

@@ -64,6 +64,7 @@ export const GITHUB_TEMPLATES: Record<ProjectType, string> = {
   app: 'qualia-website-template', // App projects
   seo: 'qualia-website-template',
   ads: 'qualia-website-template',
+  internal: 'qualia-website-template', // never provisioned — internal-only marker (team chat)
 };
 
 // =====================================================
@@ -137,6 +138,7 @@ export const PROVISIONING_MAP: Record<ProjectType, IntegrationProvider[]> = {
   ai_platform: ['github', 'vercel'], // Same as AI agent
   app: ['github', 'vercel'],
   seo: [],
+  internal: [], // team chat — no provisioning
   ads: [],
 };
 

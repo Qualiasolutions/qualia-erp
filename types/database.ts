@@ -687,6 +687,7 @@ export type Database = {
       client_feature_requests: {
         Row: {
           admin_response: string | null;
+          assigned_to: string | null;
           attachments: Json;
           client_id: string;
           created_at: string | null;
@@ -700,6 +701,7 @@ export type Database = {
         };
         Insert: {
           admin_response?: string | null;
+          assigned_to?: string | null;
           attachments?: Json;
           client_id: string;
           created_at?: string | null;
@@ -713,6 +715,7 @@ export type Database = {
         };
         Update: {
           admin_response?: string | null;
+          assigned_to?: string | null;
           attachments?: Json;
           client_id?: string;
           created_at?: string | null;
@@ -725,6 +728,13 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'client_feature_requests_assigned_to_fkey';
+            columns: ['assigned_to'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'client_feature_requests_project_id_fkey';
             columns: ['project_id'];
@@ -1191,6 +1201,64 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'documents_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      employee_self_assessments: {
+        Row: {
+          created_at: string;
+          id: string;
+          notes: string | null;
+          profile_id: string;
+          responses: Json;
+          submitted_at: string;
+          submitted_by: string | null;
+          updated_at: string;
+          workspace_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          notes?: string | null;
+          profile_id: string;
+          responses?: Json;
+          submitted_at?: string;
+          submitted_by?: string | null;
+          updated_at?: string;
+          workspace_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          notes?: string | null;
+          profile_id?: string;
+          responses?: Json;
+          submitted_at?: string;
+          submitted_by?: string | null;
+          updated_at?: string;
+          workspace_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_self_assessments_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'employee_self_assessments_submitted_by_fkey';
+            columns: ['submitted_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'employee_self_assessments_workspace_id_fkey';
             columns: ['workspace_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -3315,6 +3383,7 @@ export type Database = {
           is_finished: boolean;
           is_live: boolean;
           is_pre_production: boolean;
+          is_team_channel: boolean;
           is_trainee_project: boolean | null;
           lead_id: string | null;
           logo_url: string | null;
@@ -3346,6 +3415,7 @@ export type Database = {
           is_finished?: boolean;
           is_live?: boolean;
           is_pre_production?: boolean;
+          is_team_channel?: boolean;
           is_trainee_project?: boolean | null;
           lead_id?: string | null;
           logo_url?: string | null;
@@ -3377,6 +3447,7 @@ export type Database = {
           is_finished?: boolean;
           is_live?: boolean;
           is_pre_production?: boolean;
+          is_team_channel?: boolean;
           is_trainee_project?: boolean | null;
           lead_id?: string | null;
           logo_url?: string | null;
@@ -4002,6 +4073,42 @@ export type Database = {
           },
         ];
       };
+      task_attachments_backup_2026_05_08: {
+        Row: {
+          created_at: string | null;
+          file_name: string | null;
+          file_size: number | null;
+          id: string | null;
+          mime_type: string | null;
+          storage_path: string | null;
+          task_id: string | null;
+          uploader_id: string | null;
+          workspace_id: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          file_name?: string | null;
+          file_size?: number | null;
+          id?: string | null;
+          mime_type?: string | null;
+          storage_path?: string | null;
+          task_id?: string | null;
+          uploader_id?: string | null;
+          workspace_id?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          file_name?: string | null;
+          file_size?: number | null;
+          id?: string | null;
+          mime_type?: string | null;
+          storage_path?: string | null;
+          task_id?: string | null;
+          uploader_id?: string | null;
+          workspace_id?: string | null;
+        };
+        Relationships: [];
+      };
       task_time_logs: {
         Row: {
           created_at: string;
@@ -4069,6 +4176,45 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      task_time_logs_backup_2026_05_08: {
+        Row: {
+          created_at: string | null;
+          duration_minutes: number | null;
+          ended_at: string | null;
+          id: string | null;
+          notes: string | null;
+          profile_id: string | null;
+          project_id: string | null;
+          started_at: string | null;
+          task_id: string | null;
+          workspace_id: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          duration_minutes?: number | null;
+          ended_at?: string | null;
+          id?: string | null;
+          notes?: string | null;
+          profile_id?: string | null;
+          project_id?: string | null;
+          started_at?: string | null;
+          task_id?: string | null;
+          workspace_id?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          duration_minutes?: number | null;
+          ended_at?: string | null;
+          id?: string | null;
+          notes?: string | null;
+          profile_id?: string | null;
+          project_id?: string | null;
+          started_at?: string | null;
+          task_id?: string | null;
+          workspace_id?: string | null;
+        };
+        Relationships: [];
       };
       tasks: {
         Row: {
@@ -4224,6 +4370,111 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      tasks_backup_2026_05_08: {
+        Row: {
+          assignee_id: string | null;
+          auto_assign_trigger: string | null;
+          completed_at: string | null;
+          created_at: string | null;
+          creator_id: string | null;
+          description: string | null;
+          difficulty: string | null;
+          due_date: string | null;
+          estimated_minutes_trainee: number | null;
+          id: string | null;
+          is_client_visible: boolean | null;
+          item_type: Database['public']['Enums']['task_item_type'] | null;
+          learning_objective: string | null;
+          milestone: string | null;
+          phase_id: string | null;
+          phase_name: string | null;
+          priority: Database['public']['Enums']['task_priority'] | null;
+          project_id: string | null;
+          requires_attachment: string | null;
+          scheduled_end_time: string | null;
+          scheduled_start_time: string | null;
+          show_in_inbox: boolean | null;
+          sort_order: number | null;
+          source_milestone_key: string | null;
+          source_phase_id: string | null;
+          source_phase_item_id: string | null;
+          status: Database['public']['Enums']['task_status'] | null;
+          submission_text: string | null;
+          submitted_at: string | null;
+          title: string | null;
+          updated_at: string | null;
+          workspace_id: string | null;
+        };
+        Insert: {
+          assignee_id?: string | null;
+          auto_assign_trigger?: string | null;
+          completed_at?: string | null;
+          created_at?: string | null;
+          creator_id?: string | null;
+          description?: string | null;
+          difficulty?: string | null;
+          due_date?: string | null;
+          estimated_minutes_trainee?: number | null;
+          id?: string | null;
+          is_client_visible?: boolean | null;
+          item_type?: Database['public']['Enums']['task_item_type'] | null;
+          learning_objective?: string | null;
+          milestone?: string | null;
+          phase_id?: string | null;
+          phase_name?: string | null;
+          priority?: Database['public']['Enums']['task_priority'] | null;
+          project_id?: string | null;
+          requires_attachment?: string | null;
+          scheduled_end_time?: string | null;
+          scheduled_start_time?: string | null;
+          show_in_inbox?: boolean | null;
+          sort_order?: number | null;
+          source_milestone_key?: string | null;
+          source_phase_id?: string | null;
+          source_phase_item_id?: string | null;
+          status?: Database['public']['Enums']['task_status'] | null;
+          submission_text?: string | null;
+          submitted_at?: string | null;
+          title?: string | null;
+          updated_at?: string | null;
+          workspace_id?: string | null;
+        };
+        Update: {
+          assignee_id?: string | null;
+          auto_assign_trigger?: string | null;
+          completed_at?: string | null;
+          created_at?: string | null;
+          creator_id?: string | null;
+          description?: string | null;
+          difficulty?: string | null;
+          due_date?: string | null;
+          estimated_minutes_trainee?: number | null;
+          id?: string | null;
+          is_client_visible?: boolean | null;
+          item_type?: Database['public']['Enums']['task_item_type'] | null;
+          learning_objective?: string | null;
+          milestone?: string | null;
+          phase_id?: string | null;
+          phase_name?: string | null;
+          priority?: Database['public']['Enums']['task_priority'] | null;
+          project_id?: string | null;
+          requires_attachment?: string | null;
+          scheduled_end_time?: string | null;
+          scheduled_start_time?: string | null;
+          show_in_inbox?: boolean | null;
+          sort_order?: number | null;
+          source_milestone_key?: string | null;
+          source_phase_id?: string | null;
+          source_phase_item_id?: string | null;
+          status?: Database['public']['Enums']['task_status'] | null;
+          submission_text?: string | null;
+          submitted_at?: string | null;
+          title?: string | null;
+          updated_at?: string | null;
+          workspace_id?: string | null;
+        };
+        Relationships: [];
       };
       team_members: {
         Row: {
@@ -5060,7 +5311,8 @@ export type Database = {
         | 'ads'
         | 'voice_agent'
         | 'ai_platform'
-        | 'app';
+        | 'app'
+        | 'internal';
       provisioning_status:
         | 'not_started'
         | 'pending'
@@ -5236,7 +5488,16 @@ export const Constants = {
         'other',
       ],
       project_status: ['Demos', 'Active', 'Launched', 'Delayed', 'Archived', 'Canceled', 'Done'],
-      project_type: ['web_design', 'ai_agent', 'seo', 'ads', 'voice_agent', 'ai_platform', 'app'],
+      project_type: [
+        'web_design',
+        'ai_agent',
+        'seo',
+        'ads',
+        'voice_agent',
+        'ai_platform',
+        'app',
+        'internal',
+      ],
       provisioning_status: [
         'not_started',
         'pending',
