@@ -312,6 +312,7 @@ function PhaseRow({
   onEdit,
   onDelete,
   isPending,
+  canMutate,
 }: {
   phase: Phase;
   isLast: boolean;
@@ -319,6 +320,7 @@ function PhaseRow({
   onEdit: () => void;
   onDelete: () => void;
   isPending: boolean;
+  canMutate: boolean;
 }) {
   const config = getPhaseStatusConfig(phase.status);
   const StatusIcon = config.icon;
@@ -408,30 +410,32 @@ function PhaseRow({
 
         {total === 0 && <span className="text-[10px] text-muted-foreground/40">No tasks</span>}
 
-        {/* Hover actions */}
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            aria-label="Edit stage"
-            className="flex h-6 min-h-[44px] w-6 min-w-[44px] items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-          >
-            <Pencil className="h-3 w-3" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            disabled={isPending}
-            aria-label="Delete stage"
-            className="flex h-6 min-h-[44px] w-6 min-w-[44px] items-center justify-center rounded text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
-        </div>
+        {/* Hover actions — staff only */}
+        {canMutate && (
+          <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              aria-label="Edit stage"
+              className="flex h-6 min-h-[44px] w-6 min-w-[44px] items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              disabled={isPending}
+              aria-label="Delete stage"
+              className="flex h-6 min-h-[44px] w-6 min-w-[44px] items-center justify-center rounded text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        )}
 
         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/20 transition-colors group-hover:text-muted-foreground" />
       </button>
@@ -448,6 +452,7 @@ function MilestoneSection({
   onDeletePhase,
   isPending,
   defaultExpanded,
+  canMutate,
 }: {
   milestone: MilestoneGroup;
   onDrillIn: (phaseId: string) => void;
@@ -455,6 +460,7 @@ function MilestoneSection({
   onDeletePhase: (phaseId: string) => void;
   isPending: boolean;
   defaultExpanded: boolean;
+  canMutate: boolean;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
 
@@ -533,6 +539,7 @@ function MilestoneSection({
               onEdit={() => onEditPhase(phase)}
               onDelete={() => onDeletePhase(phase.id)}
               isPending={isPending}
+              canMutate={canMutate}
             />
           ))}
         </div>
@@ -550,6 +557,8 @@ export function ProjectWorkflow({
   userRole,
   className,
 }: ProjectWorkflowProps) {
+  const canMutate = userRole !== 'client';
+
   const [phases, setPhases] = useState<Phase[]>([]);
   const [lastReport, setLastReport] = useState<LastReportMeta | null>(null);
   const [activePhaseId, setActivePhaseId] = useState<string | null>(null);
@@ -1019,46 +1028,47 @@ export function ProjectWorkflow({
               Sync
             </button>
           )}
-          {/* Add phase */}
-          {showNewPhase ? (
-            <div className="flex items-center gap-1.5">
-              <Input
-                ref={newPhaseInputRef}
-                value={newPhaseName}
-                onChange={(e) => setNewPhaseName(e.target.value)}
-                placeholder="Phase name..."
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAddPhase();
-                  if (e.key === 'Escape') {
-                    setShowNewPhase(false);
-                    setNewPhaseName('');
-                  }
+          {/* Add phase — staff only */}
+          {canMutate &&
+            (showNewPhase ? (
+              <div className="flex items-center gap-1.5">
+                <Input
+                  ref={newPhaseInputRef}
+                  value={newPhaseName}
+                  onChange={(e) => setNewPhaseName(e.target.value)}
+                  placeholder="Phase name..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddPhase();
+                    if (e.key === 'Escape') {
+                      setShowNewPhase(false);
+                      setNewPhaseName('');
+                    }
+                  }}
+                  autoFocus
+                  className="h-7 w-40 text-xs"
+                  disabled={isPending}
+                />
+                <Button
+                  size="sm"
+                  onClick={handleAddPhase}
+                  disabled={isPending || !newPhaseName.trim()}
+                  className="h-7 px-2 text-xs"
+                >
+                  Add
+                </Button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setShowNewPhase(true);
+                  setTimeout(() => newPhaseInputRef.current?.focus(), 50);
                 }}
-                autoFocus
-                className="h-7 w-40 text-xs"
-                disabled={isPending}
-              />
-              <Button
-                size="sm"
-                onClick={handleAddPhase}
-                disabled={isPending || !newPhaseName.trim()}
-                className="h-7 px-2 text-xs"
+                className="flex h-7 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
               >
-                Add
-              </Button>
-            </div>
-          ) : (
-            <button
-              onClick={() => {
-                setShowNewPhase(true);
-                setTimeout(() => newPhaseInputRef.current?.focus(), 50);
-              }}
-              className="flex h-7 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-            >
-              <Plus className="h-3 w-3" />
-              Add phase
-            </button>
-          )}
+                <Plus className="h-3 w-3" />
+                Add phase
+              </button>
+            ))}
         </div>
       </div>
 
@@ -1083,6 +1093,7 @@ export function ProjectWorkflow({
                 onDeletePhase={handleDeletePhase}
                 isPending={isPending}
                 defaultExpanded={ms.status === 'in_progress' || milestones.length === 1}
+                canMutate={canMutate}
               />
             ))}
 

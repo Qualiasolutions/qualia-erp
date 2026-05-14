@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
   ArrowRight,
   Check,
@@ -53,52 +52,10 @@ export type QualiaHomeRole = 'admin' | 'employee';
 interface QualiaHomeViewProps {
   role: QualiaHomeRole;
   displayName: string;
-  /** Admin only — used for active-projects count + Next Ship pick. */
+  /** Admin only — used for active-projects count. */
   workspaces?: ClientWorkspace[];
   /** Employee only — drives useEmployeeAssignments for project list. */
   userId?: string;
-}
-
-/** Small circular project/client mark: logo if present, initials otherwise.
- *  Matches the ring treatment used on the /projects pipeline cards so the
- *  visual language stays consistent across the homepage and the pipeline. */
-function ProjectMark({
-  logoUrl,
-  fallback,
-  size = 36,
-  className,
-}: {
-  logoUrl: string | null;
-  fallback: string;
-  size?: number;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        'flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/30 bg-primary/5',
-        className
-      )}
-      style={{ width: size, height: size }}
-      aria-hidden
-    >
-      {logoUrl ? (
-        <Image
-          src={logoUrl}
-          alt=""
-          width={size - 4}
-          height={size - 4}
-          className="rounded-full object-cover"
-          style={{ width: size - 4, height: size - 4 }}
-          unoptimized
-        />
-      ) : (
-        <span className="text-[10px] font-semibold uppercase text-primary">
-          {fallback.slice(0, 2)}
-        </span>
-      )}
-    </div>
-  );
 }
 
 function getGreeting(hour: number): string {
@@ -203,8 +160,6 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
       }));
   }, [role, workspaces, employeeAssignments]);
 
-  const nextShip = activeProjects[0] ?? null;
-
   // Milestones due this week
   const activeProjectIds = useMemo(() => activeProjects.map((p) => p.id), [activeProjects]);
   const { milestones: milestonesDue } = useMilestonesDue(activeProjectIds);
@@ -280,7 +235,6 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
         <AdminMainGrid
           teamMembers={teamMembers}
           activeProjects={activeProjects}
-          nextShip={nextShip}
           meetings={meetings}
           milestonesDue={milestonesDue}
         />
@@ -288,7 +242,6 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
         <EmployeeMainGrid
           assignments={employeeAssignments}
           userId={userId}
-          nextShip={nextShip}
           meetings={meetings}
           isGated={isGated}
           milestonesDue={milestonesDue}
@@ -397,7 +350,6 @@ function MilestonesCard({
 function AdminMainGrid({
   teamMembers,
   activeProjects,
-  nextShip,
   meetings,
   milestonesDue,
 }: {
@@ -409,13 +361,6 @@ function AdminMainGrid({
     logoUrl: string | null;
     href: string;
   }>;
-  nextShip: {
-    id: string;
-    name: string;
-    clientName: string;
-    logoUrl: string | null;
-    href: string;
-  } | null;
   meetings: Array<{ id: string; title: string; start_time: string; end_time: string }>;
   milestonesDue: MilestoneDue[];
 }) {
@@ -431,29 +376,6 @@ function AdminMainGrid({
           title="Milestones This Week"
           emptyText="No milestones due this week."
         />
-
-        {nextShip ? (
-          <Link
-            href={nextShip.href}
-            className="block rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/30"
-          >
-            <p className="mb-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Next Ship
-            </p>
-            <div className="flex items-center gap-4">
-              <ProjectMark
-                logoUrl={nextShip.logoUrl}
-                fallback={nextShip.clientName || nextShip.name}
-                size={56}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{nextShip.name}</p>
-                <p className="text-sm text-muted-foreground">{nextShip.clientName}</p>
-              </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </Link>
-        ) : null}
 
         <ClientPulseCard />
 
@@ -475,20 +397,12 @@ function AdminMainGrid({
 function EmployeeMainGrid({
   assignments,
   userId,
-  nextShip,
   meetings,
   isGated,
   milestonesDue,
 }: {
   assignments: AssignmentFocusItem[];
   userId?: string;
-  nextShip: {
-    id: string;
-    name: string;
-    clientName: string;
-    logoUrl: string | null;
-    href: string;
-  } | null;
   meetings: Array<{ id: string; title: string; start_time: string; end_time: string }>;
   isGated: boolean;
   milestonesDue: MilestoneDue[];
@@ -505,75 +419,12 @@ function EmployeeMainGrid({
         <MilestonesCard milestones={milestonesDue} className="min-h-0 flex-1" />
       </div>
 
-      {/* Right column — Today's Meetings + Client Pulse + Next Ship */}
+      {/* Right column — Today's Meetings + Client Pulse */}
       <div className="flex min-h-0 flex-col gap-6 overflow-y-auto">
         <TodayMeetingsCard meetings={meetings} isGated={isGated} />
         <ClientPulseCard />
-        <NextShipCard nextShip={nextShip} isGated={isGated} />
       </div>
     </div>
-  );
-}
-
-function NextShipCard({
-  nextShip,
-  isGated,
-}: {
-  nextShip: {
-    id: string;
-    name: string;
-    clientName: string;
-    logoUrl: string | null;
-    href: string;
-  } | null;
-  isGated: boolean;
-}) {
-  if (!nextShip) {
-    return (
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <p className="mb-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Next Ship
-        </p>
-        <p className="text-sm text-muted-foreground">No active projects assigned.</p>
-      </div>
-    );
-  }
-  const inner = (
-    <>
-      <p className="mb-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Next Ship
-      </p>
-      <div className="flex items-center gap-4">
-        <ProjectMark
-          logoUrl={nextShip.logoUrl}
-          fallback={nextShip.clientName || nextShip.name}
-          size={56}
-        />
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{nextShip.name}</p>
-          <p className="text-sm text-muted-foreground">{nextShip.clientName}</p>
-        </div>
-        {!isGated ? <ArrowRight className="h-4 w-4 text-muted-foreground" /> : null}
-      </div>
-    </>
-  );
-  if (isGated) {
-    return (
-      <div
-        className="block cursor-default rounded-2xl border border-border bg-card p-6 opacity-60"
-        aria-disabled="true"
-      >
-        {inner}
-      </div>
-    );
-  }
-  return (
-    <Link
-      href={nextShip.href}
-      className="block rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/30"
-    >
-      {inner}
-    </Link>
   );
 }
 
