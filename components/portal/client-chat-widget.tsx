@@ -13,6 +13,8 @@ import { useRealtimeMessages } from '@/lib/hooks/use-realtime-messages';
 import { markChannelRead } from '@/app/actions/portal-messages';
 import { ChannelList } from '@/components/portal/messaging/channel-list';
 import { MessageThread } from '@/components/portal/messaging/message-thread';
+import { NewConversationDialog } from '@/components/portal/messaging/new-conversation-dialog';
+import { usePresence } from '@/components/portal/presence-broadcaster';
 import { cn } from '@/lib/utils';
 
 interface ClientChatWidgetProps {
@@ -25,6 +27,25 @@ export function ClientChatWidget({ userId, userName, userRole }: ClientChatWidge
   const [isOpen, setIsOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
+  const [newConversationOpen, setNewConversationOpen] = useState(false);
+
+  // Workspace presence — drives the "who's online" strip in the channel list.
+  // PresenceProvider lives one level up in the portal layout; outside that tree
+  // (e.g. for users without a workspaceId) usePresence falls back to an empty
+  // array, so the strip simply doesn't render.
+  const presenceEntries = usePresence();
+  const onlineUsers = useMemo(
+    () =>
+      presenceEntries
+        .filter((p) => p.user_id !== userId)
+        .map((p) => ({
+          userId: p.user_id,
+          fullName: p.full_name,
+          avatarUrl: p.avatar_url,
+          role: p.role,
+        })),
+    [presenceEntries, userId]
+  );
 
   // Hydrate open state from sessionStorage after mount to avoid SSR mismatch
   useEffect(() => {
@@ -123,6 +144,18 @@ export function ClientChatWidget({ userId, userName, userRole }: ClientChatWidge
     invalidateMessageChannels(userId, true);
   }, [selectedProjectId, userId]);
 
+  // After NewConversationDialog creates a channel, drop the user straight into it.
+  const handleConversationStarted = useCallback(
+    (projectId: string, channelId: string) => {
+      setSelectedProjectId(projectId);
+      setSelectedChannelId(channelId);
+      // Marking read is harmless on a brand-new empty channel.
+      markChannelRead(channelId).catch(() => {});
+      invalidateMessageChannels(userId, true);
+    },
+    [userId]
+  );
+
   // Suppress unused — selectedChannelId is tracked for markChannelRead calls
   void selectedChannelId;
 
@@ -185,8 +218,9 @@ export function ClientChatWidget({ userId, userName, userRole }: ClientChatWidge
                   channels={normalizedChannels}
                   selectedProjectId={selectedProjectId}
                   onSelectChannel={handleSelectChannel}
-                  onNewConversation={() => {}}
+                  onNewConversation={() => setNewConversationOpen(true)}
                   isLoading={channelsLoading}
+                  onlineUsers={userRole === 'admin' || userRole === 'employee' ? onlineUsers : []}
                 />
               ) : (
                 <MessageThread
@@ -204,6 +238,14 @@ export function ClientChatWidget({ userId, userName, userRole }: ClientChatWidge
           </m.div>
         )}
       </AnimatePresence>
+
+      {/* New conversation dialog (wired to the + button in the channel list header) */}
+      <NewConversationDialog
+        open={newConversationOpen}
+        onClose={() => setNewConversationOpen(false)}
+        userId={userId}
+        onConversationStarted={handleConversationStarted}
+      />
 
       {/* Bubble button */}
       <button

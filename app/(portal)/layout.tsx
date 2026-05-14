@@ -11,7 +11,6 @@ import {
 import { QualiaSidebar } from '@/components/portal/qualia-sidebar';
 import { PageTransition } from '@/components/page-transition';
 import { PresenceProvider } from '@/components/portal/presence-broadcaster';
-import { LivePresenceWidget } from '@/components/portal/live-presence-widget';
 import { ViewAsBanner } from '@/components/portal/view-as-banner';
 import { ClockGateProvider } from '@/components/clock-gate-provider';
 import { FrameworkUpdateNotice } from '@/components/notices/framework-update-notice';
@@ -210,6 +209,8 @@ export default async function PortalLayout({ children }: { children: React.React
             <PageTransition>{children}</PageTransition>
           </main>
         </div>
+        {/* One-shot announcement for internal users — clients never see it */}
+        {effectiveIsInternal && <FrameworkUpdateNotice />}
         {workspaceId ? (
           <PresenceProvider
             workspaceId={workspaceId}
@@ -218,16 +219,19 @@ export default async function PortalLayout({ children }: { children: React.React
             avatarUrl={profile?.avatar_url ?? null}
             role={effectiveRole}
           >
-            {effectiveRole === 'admin' && <LivePresenceWidget selfUserId={effectiveUserId} />}
+            <ClientChatWidget
+              userId={effectiveUserId}
+              userName={displayName}
+              userRole={effectiveRole}
+            />
           </PresenceProvider>
-        ) : null}
-        {/* One-shot announcement for internal users — clients never see it */}
-        {effectiveIsInternal && <FrameworkUpdateNotice />}
-        <ClientChatWidget
-          userId={effectiveUserId}
-          userName={displayName}
-          userRole={effectiveRole}
-        />
+        ) : (
+          <ClientChatWidget
+            userId={effectiveUserId}
+            userName={displayName}
+            userRole={effectiveRole}
+          />
+        )}
       </div>
     </ClockGateProvider>
   );
