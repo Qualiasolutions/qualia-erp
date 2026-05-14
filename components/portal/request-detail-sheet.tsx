@@ -29,6 +29,7 @@ import {
   markFeatureRequestDone,
   cancelFeatureRequest,
   getRequestAttachmentUrl,
+  assignFeatureRequest,
 } from '@/app/actions/client-requests';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +53,14 @@ interface FeatureRequest {
   created_at: string;
   attachments?: RequestAttachmentMeta[] | null;
   project: { id: string; name: string } | null;
+  assigned_to?: string | null;
+  assignee?: { id: string; full_name: string | null; avatar_url: string | null } | null;
+}
+
+interface StaffOption {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
 }
 
 interface RequestDetailSheetProps {
@@ -59,6 +68,7 @@ interface RequestDetailSheetProps {
   userRole: string;
   currentUserId: string;
   onClose: () => void;
+  staffOptions?: StaffOption[];
 }
 
 const PIPELINE: { key: RequestStatus; label: string }[] = [
@@ -74,11 +84,30 @@ export function RequestDetailSheet({
   userRole,
   currentUserId,
   onClose,
+  staffOptions = [],
 }: RequestDetailSheetProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [confirmAction, setConfirmAction] = useState<'cancel' | 'decline' | 'mark-done' | null>(
     null
+  );
+
+  const handleAssignChange = useCallback(
+    (newAssigneeId: string) => {
+      if (!request) return;
+      // Empty string from the <select> means "Unassigned" → write null
+      const assigneeId = newAssigneeId === '' ? null : newAssigneeId;
+      startTransition(async () => {
+        const res = await assignFeatureRequest(request.id, assigneeId);
+        if (!res.success) {
+          toast.error(res.error || 'Failed to assign');
+          return;
+        }
+        toast.success(assigneeId ? 'Request assigned' : 'Request unassigned');
+        router.refresh();
+      });
+    },
+    [request, router]
   );
 
   const isAdmin = userRole === 'admin';
@@ -193,6 +222,40 @@ export function RequestDetailSheet({
                   </span>
                 )}
               </div>
+
+              {/* Assignee — admins can change, employees see read-only */}
+              {isStaff && (
+                <section>
+                  <SectionHeading>Assigned to</SectionHeading>
+                  {isAdmin && staffOptions.length > 0 ? (
+                    <select
+                      value={request.assigned_to ?? ''}
+                      onChange={(e) => handleAssignChange(e.target.value)}
+                      disabled={isPending}
+                      className={cn(
+                        'mt-2 h-9 w-full rounded-lg border border-border bg-card px-3 text-sm',
+                        'focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/30',
+                        'disabled:cursor-not-allowed disabled:opacity-50'
+                      )}
+                      aria-label="Assign request to"
+                    >
+                      <option value="">Unassigned</option>
+                      {staffOptions.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.full_name || 'Unnamed'}
+                          {s.id === currentUserId ? ' (me)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="mt-2 text-sm text-foreground">
+                      {request.assignee?.full_name ?? (
+                        <span className="text-muted-foreground/70">Unassigned</span>
+                      )}
+                    </p>
+                  )}
+                </section>
+              )}
 
               {/* Description */}
               {request.description && (

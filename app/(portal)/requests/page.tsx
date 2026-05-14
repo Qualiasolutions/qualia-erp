@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientFeatureRequests } from '@/app/actions/client-requests';
 import { getRequestCommentCounts } from '@/app/actions/request-comments';
+import { getTeamMembers } from '@/app/actions/admin';
 import { isUserAdmin } from '@/app/actions/shared';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
@@ -87,6 +88,8 @@ export default async function PortalRequestsPage() {
       uploaded_at: string;
     }> | null;
     project: { id: string; name: string } | null;
+    assigned_to: string | null;
+    assignee: { id: string; full_name: string | null; avatar_url: string | null } | null;
   }>;
 
   const projects = projectsData;
@@ -96,6 +99,23 @@ export default async function PortalRequestsPage() {
   // fetches its own counts inline, so this is staff-only.
   const commentCounts =
     isStaff && requests.length > 0 ? await getRequestCommentCounts(requests.map((r) => r.id)) : {};
+
+  // Team members feed the assignee picker (Sheet) + filter (toolbar). Admin-only
+  // server action — employees see assignment via the joined `assignee` field on
+  // each request and don't get the dropdown.
+  let staffOptions: Array<{ id: string; full_name: string | null; avatar_url: string | null }> = [];
+  if (isAdmin) {
+    const teamResult = await getTeamMembers();
+    if (teamResult.success && Array.isArray(teamResult.data)) {
+      staffOptions = (
+        teamResult.data as Array<{
+          id: string;
+          full_name: string | null;
+          avatar_url: string | null;
+        }>
+      ).map((m) => ({ id: m.id, full_name: m.full_name, avatar_url: m.avatar_url }));
+    }
+  }
 
   return (
     <div
@@ -131,6 +151,7 @@ export default async function PortalRequestsPage() {
           commentCounts={commentCounts}
           currentUserId={user.id}
           userRole={isAdmin ? 'admin' : 'employee'}
+          staffOptions={staffOptions}
         />
       ) : (
         <PortalRequestList

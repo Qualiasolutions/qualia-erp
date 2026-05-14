@@ -35,6 +35,14 @@ interface FeatureRequest {
     | { name: string; path: string; size: number; type: string; uploaded_at: string }[]
     | null;
   project: { id: string; name: string } | null;
+  assigned_to?: string | null;
+  assignee?: { id: string; full_name: string | null; avatar_url: string | null } | null;
+}
+
+interface StaffOption {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
 }
 
 interface AdminRequestsBoardProps {
@@ -42,6 +50,7 @@ interface AdminRequestsBoardProps {
   commentCounts?: Record<string, number>;
   currentUserId: string;
   userRole: string;
+  staffOptions?: StaffOption[];
 }
 
 const COLUMNS: { key: RequestStatus; label: string; eyebrow: string }[] = [
@@ -63,11 +72,14 @@ export function AdminRequestsBoard({
   commentCounts = {},
   currentUserId,
   userRole,
+  staffOptions = [],
 }: AdminRequestsBoardProps) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
+  // Assignee filter: null = all, 'mine' = me, 'unassigned' = unassigned, otherwise user id
+  const [assigneeFilter, setAssigneeFilter] = useState<string | null>(null);
   const [showDeclined, setShowDeclined] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [openRequestId, setOpenRequestId] = useState<string | null>(null);
@@ -98,14 +110,32 @@ export function AdminRequestsBoard({
       .filter((r) => {
         if (priorityFilter && r.priority !== priorityFilter) return false;
         if (projectFilter && r.project?.id !== projectFilter) return false;
+        if (assigneeFilter === 'mine' && r.assigned_to !== currentUserId) return false;
+        if (assigneeFilter === 'unassigned' && r.assigned_to) return false;
+        if (
+          assigneeFilter &&
+          assigneeFilter !== 'mine' &&
+          assigneeFilter !== 'unassigned' &&
+          r.assigned_to !== assigneeFilter
+        )
+          return false;
         if (!q) return true;
         return (
           r.title.toLowerCase().includes(q) ||
           (r.description ?? '').toLowerCase().includes(q) ||
-          (r.project?.name ?? '').toLowerCase().includes(q)
+          (r.project?.name ?? '').toLowerCase().includes(q) ||
+          (r.assignee?.full_name ?? '').toLowerCase().includes(q)
         );
       });
-  }, [requests, optimisticStatus, search, priorityFilter, projectFilter]);
+  }, [
+    requests,
+    optimisticStatus,
+    search,
+    priorityFilter,
+    projectFilter,
+    assigneeFilter,
+    currentUserId,
+  ]);
 
   const grouped = useMemo(() => {
     const groups: Record<RequestStatus, FeatureRequest[]> = {
@@ -188,6 +218,9 @@ export function AdminRequestsBoard({
         declinedCount={declinedCount}
         showDeclined={showDeclined}
         onToggleDeclined={() => setShowDeclined((v) => !v)}
+        assignee={assigneeFilter}
+        onAssignee={setAssigneeFilter}
+        staffOptions={staffOptions}
       />
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -252,6 +285,7 @@ export function AdminRequestsBoard({
         userRole={userRole}
         currentUserId={currentUserId}
         onClose={() => setOpenRequestId(null)}
+        staffOptions={staffOptions}
       />
     </div>
   );
@@ -270,6 +304,9 @@ function BoardToolbar({
   declinedCount,
   showDeclined,
   onToggleDeclined,
+  assignee,
+  onAssignee,
+  staffOptions,
 }: {
   search: string;
   onSearch: (v: string) => void;
@@ -281,6 +318,9 @@ function BoardToolbar({
   declinedCount: number;
   showDeclined: boolean;
   onToggleDeclined: () => void;
+  assignee: string | null;
+  onAssignee: (v: string | null) => void;
+  staffOptions: StaffOption[];
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -318,6 +358,40 @@ function BoardToolbar({
             label={p}
           />
         ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1">
+        <FilterChip active={assignee === null} onClick={() => onAssignee(null)} label="All" />
+        <FilterChip
+          active={assignee === 'mine'}
+          onClick={() => onAssignee(assignee === 'mine' ? null : 'mine')}
+          label="Mine"
+        />
+        <FilterChip
+          active={assignee === 'unassigned'}
+          onClick={() => onAssignee(assignee === 'unassigned' ? null : 'unassigned')}
+          label="Unassigned"
+        />
+        {staffOptions.length > 0 && (
+          <select
+            value={assignee && assignee !== 'mine' && assignee !== 'unassigned' ? assignee : ''}
+            onChange={(e) => onAssignee(e.target.value || null)}
+            className={cn(
+              'h-7 rounded-full border px-2.5 text-[11px] font-medium transition-colors',
+              assignee && assignee !== 'mine' && assignee !== 'unassigned'
+                ? 'border-primary/40 bg-primary/[0.08] text-primary'
+                : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground'
+            )}
+            aria-label="Filter by assignee"
+          >
+            <option value="">By staff…</option>
+            {staffOptions.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.full_name || 'Unnamed'}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {projects.length > 1 && (
@@ -534,9 +608,12 @@ const RequestCard = memo(function RequestCard({
             )}
           </div>
           <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-muted-foreground/70">
-            <span className="tabular-nums">
-              {new Date(request.created_at).toLocaleDateString()}
-            </span>
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="tabular-nums">
+                {new Date(request.created_at).toLocaleDateString()}
+              </span>
+              <AssigneeChip assignee={request.assignee} />
+            </div>
             <div className="flex items-center gap-2">
               {attachmentCount > 0 && (
                 <span className="inline-flex items-center gap-0.5">
@@ -557,6 +634,29 @@ const RequestCard = memo(function RequestCard({
     </article>
   );
 });
+
+function AssigneeChip({ assignee }: { assignee: FeatureRequest['assignee'] }) {
+  if (!assignee) {
+    return (
+      <span className="inline-flex h-4 items-center rounded-full border border-dashed border-muted-foreground/30 px-1.5 text-[9px] font-medium uppercase tracking-wider text-muted-foreground/60">
+        unassigned
+      </span>
+    );
+  }
+  const initial = (assignee.full_name?.trim()[0] ?? '?').toUpperCase();
+  const label = assignee.full_name || 'Assigned';
+  return (
+    <span
+      className="inline-flex items-center gap-1 truncate text-muted-foreground"
+      title={`Assigned to ${label}`}
+    >
+      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/15 text-[9px] font-semibold uppercase text-primary">
+        {initial}
+      </span>
+      <span className="truncate">{label}</span>
+    </span>
+  );
+}
 
 function PriorityBadge({ priority }: { priority: string }) {
   const tone =
