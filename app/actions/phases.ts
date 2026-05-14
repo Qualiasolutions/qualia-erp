@@ -10,6 +10,8 @@ import {
 import { type ActionResult, canAccessProject, isUserAdmin } from './shared';
 import { assertNotImpersonating } from '@/lib/portal-utils';
 import type { Database } from '@/types/database';
+import { startOfWeek, endOfWeek } from 'date-fns';
+import { normalizeFKResponse } from '@/lib/server-utils';
 
 type ProjectType = Database['public']['Enums']['project_type'];
 
@@ -740,4 +742,48 @@ export async function getPortalProjectWithPhases(projectId: string): Promise<Act
     success: true,
     data: { project: projectResult.data, phases: phasesWithSortedItems },
   };
+}
+
+/**
+ * Get project phases with target_date falling within the current week
+ * (Monday–Sunday) that are not yet completed. Used by admin/employee dashboards.
+ */
+export async function getMilestonesDueThisWeek(projectIds: string[]): Promise<ActionResult> {
+  if (projectIds.length === 0) {
+    return { success: true, data: [] };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const now = new Date();
+  const monday = startOfWeek(now, { weekStartsOn: 1 }).toISOString().slice(0, 10);
+  const sunday = endOfWeek(now, { weekStartsOn: 1 }).toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from('project_phases')
+    .select('id, name, target_date, status, project:projects!inner(id, name)')
+    .in('project_id', projectIds)
+    .gte('target_date', monday)
+    .lte('target_date', sunday)
+    .neq('status', 'completed')
+    .order('target_date', { ascending: true });
+
+  if (error) {
+    console.error('[getMilestonesDueThisWeek] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  const normalized = (data ?? []).map((row) => ({
+    id: row.id,
+    name: row.name,
+    target_date: row.target_date,
+    status: row.status,
+    project: normalizeFKResponse(row.project),
+  }));
+
+  return { success: true, data: normalized };
 }

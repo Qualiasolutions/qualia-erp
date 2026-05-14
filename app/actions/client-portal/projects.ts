@@ -222,3 +222,149 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
     };
   }
 }
+
+export type ClientUpcomingMeeting = {
+  id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  meeting_link: string | null;
+  projectName: string | null;
+  clientName: string | null;
+};
+
+/**
+ * Get upcoming meetings visible to a portal client.
+ *
+ * Client portal access is auth-profile based (`client_projects.client_id`),
+ * while meetings can be linked through the CRM client, a project, or the
+ * creator. We reconcile those paths here so the dashboard does not miss
+ * scheduled calls.
+ */
+export async function getClientUpcomingMeetings(clientId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    if (user.id !== clientId && !(await isUserAdmin(user.id))) {
+      return { success: false, error: 'Not authorized' };
+    }
+
+    const { data: clientProjectLinks } = await supabase
+      .from('client_projects')
+      .select('project_id, project:projects!inner(client_id)')
+      .eq('client_id', clientId);
+
+    type LinkRow = {
+      project_id: string;
+      project: { client_id: string | null } | { client_id: string | null }[] | null;
+    };
+    const links = (clientProjectLinks || []) as unknown as LinkRow[];
+    const projectIds = Array.from(new Set(links.map((l) => l.project_id).filter(Boolean)));
+    const crmClientIds = Array.from(
+      new Set(
+        links
+          .map((l) => (Array.isArray(l.project) ? l.project[0] : l.project))
+          .map((p) => p?.client_id)
+          .filter((cid): cid is string => !!cid)
+      )
+    );
+
+    const now = new Date().toISOString();
+    const meetingSelect = `
+      id,
+      title,
+      start_time,
+      end_time,
+      meeting_link,
+      project:projects(id, name),
+      client:clients(id, display_name)
+    `;
+
+    const queries = [
+      supabase
+        .from('meetings')
+        .select(meetingSelect)
+        .eq('created_by', clientId)
+        .gte('start_time', now)
+        .order('start_time', { ascending: true })
+        .limit(5),
+    ];
+
+    if (projectIds.length > 0) {
+      queries.push(
+        supabase
+          .from('meetings')
+          .select(meetingSelect)
+          .in('project_id', projectIds)
+          .gte('start_time', now)
+          .order('start_time', { ascending: true })
+          .limit(5)
+      );
+    }
+
+    if (crmClientIds.length > 0) {
+      queries.push(
+        supabase
+          .from('meetings')
+          .select(meetingSelect)
+          .in('client_id', crmClientIds)
+          .gte('start_time', now)
+          .order('start_time', { ascending: true })
+          .limit(5)
+      );
+    }
+
+    const responses = await Promise.all(queries);
+    const firstError = responses.find((response) => response.error)?.error;
+    if (firstError) {
+      console.error('[getClientUpcomingMeetings] Error:', firstError);
+      return { success: false, error: firstError.message };
+    }
+
+    type MeetingRow = {
+      id: string;
+      title: string;
+      start_time: string;
+      end_time: string;
+      meeting_link: string | null;
+      project: { id: string; name: string } | { id: string; name: string }[] | null;
+      client:
+        | { id: string; display_name: string | null }
+        | { id: string; display_name: string | null }[]
+        | null;
+    };
+
+    const byId = new Map<string, ClientUpcomingMeeting>();
+    for (const response of responses) {
+      for (const meeting of (response.data || []) as unknown as MeetingRow[]) {
+        const project = Array.isArray(meeting.project) ? meeting.project[0] : meeting.project;
+        const client = Array.isArray(meeting.client) ? meeting.client[0] : meeting.client;
+        byId.set(meeting.id, {
+          id: meeting.id,
+          title: meeting.title,
+          start_time: meeting.start_time,
+          end_time: meeting.end_time,
+          meeting_link: meeting.meeting_link,
+          projectName: project?.name ?? null,
+          clientName: client?.display_name ?? null,
+        });
+      }
+    }
+
+    const meetings = [...byId.values()]
+      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+      .slice(0, 5);
+
+    return { success: true, data: meetings };
+  } catch (error) {
+    console.error('[getClientUpcomingMeetings] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get upcoming meetings',
+    };
+  }
+}

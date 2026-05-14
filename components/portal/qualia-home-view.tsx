@@ -7,13 +7,13 @@ import {
   ArrowRight,
   Check,
   ExternalLink,
-  Inbox,
   Lock,
   MessageSquare,
   Plus,
   RefreshCw,
   RotateCcw,
   Sparkles,
+  Target,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -22,8 +22,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
-  useInboxTasks,
-  useInboxPreview,
   useTodaysMeetings,
   useTeamTodaySnapshot,
   useEmployeeAssignments,
@@ -31,6 +29,9 @@ import {
   invalidateDailyBrief,
   useNotifications,
   useCurrentWorkspaceId,
+  useMilestonesDue,
+  useOpenRequestsCount,
+  type MilestoneDue,
 } from '@/lib/swr';
 import {
   dismissBriefItem,
@@ -45,7 +46,7 @@ import {
   type AssignmentFocusItem,
 } from '@/components/portal/assignment-focus-card';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
-import { hueFromId, TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constants';
+import { hueFromId } from '@/lib/color-constants';
 
 export type QualiaHomeRole = 'admin' | 'employee';
 
@@ -151,34 +152,6 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
 
   const { isGated } = useClockGate();
 
-  const { tasks: inboxTasks } = useInboxTasks();
-  const openTasksCount = (inboxTasks as Array<{ id: string }>).length;
-  const { data: inboxPreview } = useInboxPreview(1);
-  const overdueCount = inboxPreview.overdueCount;
-
-  type InboxTask = {
-    id: string;
-    title: string;
-    status: string;
-    priority: string | null;
-    due_date: string | null;
-    project: { id: string; name: string } | null;
-  };
-
-  const employeeTasks = useMemo(() => {
-    const sorted = (inboxTasks as InboxTask[]).slice().sort((a, b) => {
-      // In Progress first, then Todo
-      const stRank = (s: string) => (s === 'In Progress' ? 0 : 1);
-      const sd = stRank(a.status) - stRank(b.status);
-      if (sd !== 0) return sd;
-      // Then by due_date ascending (nulls last)
-      const ad = a.due_date ? new Date(a.due_date).getTime() : Number.POSITIVE_INFINITY;
-      const bd = b.due_date ? new Date(b.due_date).getTime() : Number.POSITIVE_INFINITY;
-      return ad - bd;
-    });
-    return sorted.slice(0, 8);
-  }, [inboxTasks]);
-
   const { meetings: todayMeetings } = useTodaysMeetings();
   const meetings = useMemo(
     () =>
@@ -204,7 +177,7 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
     return ((assignments ?? []) as AssignmentFocusItem[]).filter((a) => a.project);
   }, [assignments, role]);
 
-  // Active projects: admin → flatten workspaces; employee → assignments.
+  // Active projects: admin -> flatten workspaces; employee -> assignments.
   const activeProjects = useMemo(() => {
     if (role === 'admin' && workspaces) {
       return workspaces.flatMap((ws) =>
@@ -232,6 +205,14 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
 
   const nextShip = activeProjects[0] ?? null;
 
+  // Milestones due this week
+  const activeProjectIds = useMemo(() => activeProjects.map((p) => p.id), [activeProjects]);
+  const { milestones: milestonesDue } = useMilestonesDue(activeProjectIds);
+  const milestonesDueCount = milestonesDue.length;
+
+  // Open requests count
+  const { count: openRequestsCount } = useOpenRequestsCount();
+
   return (
     <div className="flex h-full flex-col overflow-hidden p-6 lg:p-8">
       {/* Header */}
@@ -249,25 +230,15 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
         </h1>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
           <span>
-            {openTasksCount === 0
-              ? 'No open work. Inbox zero — enjoy the breathing room.'
-              : `${openTasksCount} open work item${openTasksCount === 1 ? '' : 's'} on your list.`}
+            {milestonesDueCount === 0
+              ? 'No milestones due this week.'
+              : `${milestonesDueCount} milestone${milestonesDueCount === 1 ? '' : 's'} due this week.`}
             {activeProjects.length > 0
               ? ` ${activeProjects.length} active ${
                   activeProjects.length === 1 ? 'project' : 'projects'
                 } in flight.`
               : ''}
           </span>
-          {overdueCount > 0 ? (
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/[0.08] px-2 py-0.5 text-xs font-semibold text-destructive"
-              role="status"
-              aria-live="polite"
-            >
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-destructive" aria-hidden />
-              {overdueCount} overdue
-            </span>
-          ) : null}
         </div>
       </div>
 
@@ -275,9 +246,10 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
       <div className="stagger-1 mb-4 grid flex-shrink-0 animate-fade-in grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Open Work
+            Milestones Due
           </p>
-          <p className="text-3xl font-bold tabular-nums">{openTasksCount}</p>
+          <p className="text-3xl font-bold tabular-nums">{milestonesDueCount}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">this week</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -292,9 +264,15 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
         </div>
         <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Today
+            Open Requests
           </p>
-          <p className="text-3xl font-bold tabular-nums">{dateStr}</p>
+          <p className="text-3xl font-bold tabular-nums">
+            {openRequestsCount === 0 ? (
+              <span className="text-base font-normal text-muted-foreground">All clear</span>
+            ) : (
+              openRequestsCount
+            )}
+          </p>
         </div>
       </div>
 
@@ -304,29 +282,124 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
           activeProjects={activeProjects}
           nextShip={nextShip}
           meetings={meetings}
+          milestonesDue={milestonesDue}
         />
       ) : (
         <EmployeeMainGrid
-          tasks={employeeTasks}
-          openTasksCount={openTasksCount}
           assignments={employeeAssignments}
           userId={userId}
           nextShip={nextShip}
           meetings={meetings}
           isGated={isGated}
+          milestonesDue={milestonesDue}
         />
       )}
     </div>
   );
 }
 
-/* ─────────────────────────── Admin layout ─────────────────────────── */
+/* --------- Milestones Card --------- */
+
+function MilestonesCard({
+  milestones,
+  title = 'My Milestones',
+  emptyText = 'No milestones due — coast is clear.',
+  className,
+}: {
+  milestones: MilestoneDue[];
+  title?: string;
+  emptyText?: string;
+  className?: string;
+}) {
+  const todayKey = new Date().toISOString().slice(0, 10);
+  return (
+    <div
+      className={cn(
+        'flex flex-col overflow-hidden rounded-2xl border border-border bg-card',
+        className
+      )}
+    >
+      <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-6 py-4">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Milestones
+          </p>
+          <h2 className="mt-0.5 text-lg font-semibold">{title}</h2>
+        </div>
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/[0.08] text-primary">
+          <Target className="h-4 w-4" />
+        </div>
+      </div>
+      {milestones.length === 0 ? (
+        <div className="px-6 py-10 text-center text-sm text-muted-foreground">{emptyText}</div>
+      ) : (
+        <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
+          {milestones.map((m) => {
+            const isOverdue = m.target_date != null && m.target_date < todayKey;
+            const isDueThisWeek = m.target_date != null && m.target_date >= todayKey;
+            const dueLabel = m.target_date
+              ? new Date(m.target_date + 'T00:00:00').toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'short',
+                })
+              : null;
+            return (
+              <li key={m.id}>
+                <Link
+                  href={m.project ? `/projects/${m.project.id}/roadmap` : '#'}
+                  className="block px-6 py-3.5 transition-colors hover:bg-muted/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={cn(
+                        'h-2 w-2 shrink-0 rounded-full',
+                        isOverdue ? 'bg-destructive' : 'bg-primary'
+                      )}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{m.name}</p>
+                      <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                        {m.project ? (
+                          <span className="truncate font-mono uppercase">{m.project.name}</span>
+                        ) : null}
+                        {m.project && dueLabel ? <span aria-hidden>·</span> : null}
+                        {dueLabel ? (
+                          <span
+                            className={cn(
+                              isOverdue
+                                ? 'font-semibold text-destructive'
+                                : isDueThisWeek
+                                  ? 'font-semibold text-primary'
+                                  : 'text-muted-foreground'
+                            )}
+                          >
+                            {isOverdue ? 'Overdue · ' : ''}
+                            {dueLabel}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/* --------- Admin layout --------- */
 
 function AdminMainGrid({
   teamMembers,
   activeProjects,
   nextShip,
   meetings,
+  milestonesDue,
 }: {
   teamMembers: ReturnType<typeof useTeamTodaySnapshot>['members'];
   activeProjects: Array<{
@@ -344,6 +417,7 @@ function AdminMainGrid({
     href: string;
   } | null;
   meetings: Array<{ id: string; title: string; start_time: string; end_time: string }>;
+  milestonesDue: MilestoneDue[];
 }) {
   return (
     <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto lg:grid-cols-3">
@@ -352,6 +426,12 @@ function AdminMainGrid({
       </div>
 
       <div className="stagger-3 animate-fade-in space-y-6">
+        <MilestonesCard
+          milestones={milestonesDue}
+          title="Milestones This Week"
+          emptyText="No milestones due this week."
+        />
+
         {nextShip ? (
           <Link
             href={nextShip.href}
@@ -390,26 +470,16 @@ function AdminMainGrid({
   );
 }
 
-/* ─────────────────────────── Employee layout (new) ─────────────────────────── */
+/* --------- Employee layout --------- */
 
 function EmployeeMainGrid({
-  tasks,
-  openTasksCount,
   assignments,
   userId,
   nextShip,
   meetings,
   isGated,
+  milestonesDue,
 }: {
-  tasks: Array<{
-    id: string;
-    title: string;
-    status: string;
-    priority: string | null;
-    due_date: string | null;
-    project: { id: string; name: string } | null;
-  }>;
-  openTasksCount: number;
   assignments: AssignmentFocusItem[];
   userId?: string;
   nextShip: {
@@ -421,22 +491,18 @@ function EmployeeMainGrid({
   } | null;
   meetings: Array<{ id: string; title: string; start_time: string; end_time: string }>;
   isGated: boolean;
+  milestonesDue: MilestoneDue[];
 }) {
   return (
     <div className="stagger-2 grid min-h-0 flex-1 animate-fade-in gap-6 overflow-hidden lg:grid-cols-3">
-      <div className="flex min-h-0 flex-col overflow-hidden lg:col-span-2">
+      <div className="flex min-h-0 flex-col gap-6 overflow-hidden lg:col-span-2">
         <AssignmentFocusCard
           assignments={assignments}
           employeeId={userId}
           isGated={isGated}
           compact
         />
-        <TasksCard
-          tasks={tasks}
-          openTasksCount={openTasksCount}
-          isGated={isGated}
-          className="min-h-0 flex-1"
-        />
+        <MilestonesCard milestones={milestonesDue} className="min-h-0 flex-1" />
       </div>
 
       {/* Right column — Today's Meetings + Client Pulse + Next Ship */}
@@ -445,160 +511,6 @@ function EmployeeMainGrid({
         <ClientPulseCard />
         <NextShipCard nextShip={nextShip} isGated={isGated} />
       </div>
-    </div>
-  );
-}
-
-function TasksCard({
-  tasks,
-  openTasksCount,
-  isGated,
-  className,
-}: {
-  tasks: Array<{
-    id: string;
-    title: string;
-    status: string;
-    priority: string | null;
-    due_date: string | null;
-    project: { id: string; name: string } | null;
-  }>;
-  openTasksCount: number;
-  isGated: boolean;
-  className?: string;
-}) {
-  const todayKey = new Date().toLocaleDateString('en-CA');
-  return (
-    <div
-      className={cn(
-        'flex flex-col overflow-hidden rounded-2xl border border-border bg-card',
-        className
-      )}
-    >
-      <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-6 py-4">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Your Active Work
-          </p>
-          <h2 className="mt-0.5 text-lg font-semibold">
-            My work{' '}
-            {openTasksCount > 0 ? (
-              <span className="ml-1 text-sm font-normal text-muted-foreground">
-                · {openTasksCount} open
-              </span>
-            ) : null}
-          </h2>
-        </div>
-        {isGated ? (
-          <span
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
-            aria-label="Clock in to act on work"
-          >
-            <Lock className="h-3 w-3" />
-            Clock in
-          </span>
-        ) : (
-          <Link href="/tasks">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-muted-foreground hover:text-primary"
-            >
-              All Work
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-        )}
-      </div>
-      {tasks.length === 0 ? (
-        <div className="px-6 py-10 text-center text-sm text-muted-foreground">
-          Inbox zero — nothing open.
-        </div>
-      ) : (
-        <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
-          {tasks.map((t) => {
-            const priorityKey = (t.priority ?? 'No Priority') as TaskPriorityKey;
-            const priority =
-              TASK_PRIORITY_COLORS[priorityKey] ?? TASK_PRIORITY_COLORS['No Priority'];
-            const isOverdue = t.due_date && t.due_date < todayKey && t.status !== 'Done';
-            const isDueToday = t.due_date === todayKey;
-            const dueLabel = t.due_date
-              ? new Date(t.due_date + 'T00:00:00').toLocaleDateString('en-GB', {
-                  day: 'numeric',
-                  month: 'short',
-                })
-              : null;
-            const inProgress = t.status === 'In Progress';
-
-            const inner = (
-              <div className="flex items-center gap-3 px-6 py-3.5">
-                <span
-                  className={cn(
-                    'h-2 w-2 shrink-0 rounded-full',
-                    inProgress ? 'bg-blue-500' : 'bg-muted-foreground/40'
-                  )}
-                  aria-hidden
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium">{t.title}</span>
-                  </div>
-                  <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
-                    {t.project?.name ? (
-                      <span className="truncate font-mono uppercase">{t.project.name}</span>
-                    ) : null}
-                    {t.project?.name && (priority.label !== 'None' || dueLabel) ? (
-                      <span aria-hidden>·</span>
-                    ) : null}
-                    {priority.label !== 'None' ? (
-                      <span
-                        className={cn(
-                          'rounded-md border px-1.5 py-0 text-[10px] font-medium',
-                          priority.bg,
-                          priority.border,
-                          priority.text
-                        )}
-                      >
-                        {priority.label}
-                      </span>
-                    ) : null}
-                    {dueLabel ? (
-                      <span
-                        className={cn(
-                          isOverdue
-                            ? 'font-semibold text-red-600 dark:text-red-400'
-                            : isDueToday
-                              ? 'font-semibold text-primary'
-                              : 'text-muted-foreground'
-                        )}
-                      >
-                        {isOverdue ? 'Overdue · ' : isDueToday ? 'Today · ' : ''}
-                        {dueLabel}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-                {!isGated ? (
-                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                ) : null}
-              </div>
-            );
-            return (
-              <li key={t.id}>
-                {isGated ? (
-                  <div className="cursor-default opacity-60" aria-disabled="true">
-                    {inner}
-                  </div>
-                ) : (
-                  <Link href="/tasks" className="block transition-colors hover:bg-muted/30">
-                    {inner}
-                  </Link>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
     </div>
   );
 }
@@ -732,7 +644,7 @@ function TodayMeetingsCard({
   );
 }
 
-/* ─────────────────────────── Client Pulse — recent client activity ─────────────────────────── */
+/* --------- Client Pulse — recent client activity --------- */
 
 interface ClientPulseNotification {
   id: string;
@@ -748,7 +660,7 @@ function pickPulseIcon(action: string | null): typeof Sparkles {
   const a = (action ?? '').toLowerCase();
   if (a.includes('message')) return MessageSquare;
   if (a.includes('feature') || a.includes('request') || a.includes('submitted')) return Sparkles;
-  return Inbox;
+  return Target;
 }
 
 function ClientPulseCard({ className }: { className?: string }) {
@@ -830,7 +742,7 @@ function ClientPulseCard({ className }: { className?: string }) {
   );
 }
 
-/* ─────────────────────────── Who's doing what (sidebar team snapshot) ─────────────────────────── */
+/* --------- Who's doing what (sidebar team snapshot) --------- */
 
 function WhosDoingWhatCard({
   members,
@@ -914,7 +826,7 @@ function WhosDoingWhatCard({
   );
 }
 
-/* ─────────────────────────── Daily Brief ─────────────────────────── */
+/* --------- Daily Brief --------- */
 
 const TAG_TONES: Record<string, string> = {
   OWNER: 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400',

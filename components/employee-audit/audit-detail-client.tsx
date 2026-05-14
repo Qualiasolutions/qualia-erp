@@ -572,18 +572,21 @@ export function AuditExamView({
     return seededShuffle(ids, seed);
   }, [audit.profileId]);
 
-  const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const update = useCallback(
+    <K extends keyof FormState>(key: K, value: FormState[K]) =>
+      setForm((prev) => ({ ...prev, [key]: value })),
+    []
+  );
 
-  const toggleInList = (
-    key: 'frameworkCommandsMastered' | 'soloCapableProjectTypes' | 'weakSpots',
-    item: string
-  ) =>
-    setForm((prev) => {
-      const list = prev[key];
-      const next = list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
-      return { ...prev, [key]: next };
-    });
+  const toggleInList = useCallback(
+    (key: 'frameworkCommandsMastered' | 'soloCapableProjectTypes' | 'weakSpots', item: string) =>
+      setForm((prev) => {
+        const list = prev[key];
+        const next = list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
+        return { ...prev, [key]: next };
+      }),
+    []
+  );
 
   const answered = useMemo(() => answeredCount(form), [form]);
 

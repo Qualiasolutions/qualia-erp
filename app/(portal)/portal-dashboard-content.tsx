@@ -47,6 +47,16 @@ interface ProjectWithPhases {
   nextPhase: { name: string } | null;
 }
 
+interface ClientUpcomingMeeting {
+  id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  meeting_link: string | null;
+  projectName: string | null;
+  clientName: string | null;
+}
+
 export function PortalDashboardContent({
   clientId,
   displayName,
@@ -59,6 +69,7 @@ export function PortalDashboardContent({
 
   const stats = (data.stats as DashboardStats | null) || null;
   const projects = (data.projects as ProjectWithPhases[]) || [];
+  const upcomingMeetings = (data.upcomingMeetings as ClientUpcomingMeeting[]) || [];
 
   const mappedProjects = projects.map((p) => ({
     id: p.id,
@@ -93,6 +104,7 @@ export function PortalDashboardContent({
         displayName={displayName}
         companyName={companyName || undefined}
         enabledApps={enabledApps}
+        upcomingMeetings={upcomingMeetings}
       />
     </>
   );

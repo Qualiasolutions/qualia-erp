@@ -7,12 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
-import {
-  useUnreadMessageCount,
-  useInboxPreview,
-  invalidateActiveSession,
-  invalidateTodaysSessions,
-} from '@/lib/swr';
+import { invalidateActiveSession, invalidateTodaysSessions } from '@/lib/swr';
 import { useClockGate } from '@/components/clock-gate-provider';
 import { ClockInModal } from '@/components/today-dashboard/clock-in-modal';
 import { ClockOutModal } from '@/components/clock-out-modal';
@@ -98,39 +93,6 @@ const PAGES: PageDef[] = [
     appKey: 'schedule',
   },
   {
-    id: 'clients',
-    label: 'Clients',
-    icon: 'clients',
-    href: '/clients',
-    roles: ['admin'],
-    appKey: 'clients',
-  },
-  {
-    id: 'team',
-    label: 'Team',
-    icon: 'team',
-    href: '/admin?tab=team',
-    roles: ['admin'],
-    appKey: 'control',
-    matchQuery: { key: 'tab', value: 'team' },
-  },
-  {
-    id: 'reports',
-    label: 'Reports',
-    icon: 'activity',
-    href: '/admin/reports',
-    roles: ['admin'],
-    appKey: 'reports',
-  },
-  {
-    id: 'admin-billing',
-    label: 'Billing',
-    icon: 'payments',
-    href: '/billing',
-    roles: ['admin'],
-    appKey: 'billing',
-  },
-  {
     id: 'knowledge',
     label: 'Knowledge',
     icon: 'knowledge',
@@ -139,20 +101,20 @@ const PAGES: PageDef[] = [
     appKey: 'knowledge',
   },
   {
+    id: 'admin-panel',
+    label: 'Admin Panel',
+    icon: 'admin',
+    href: '/admin',
+    roles: ['admin'],
+    appKey: 'control',
+  },
+  {
     id: 'requests',
     label: 'Requests',
     icon: 'tasks',
     href: '/requests',
-    roles: ['client'],
+    roles: ['admin', 'employee', 'client'],
     appKey: 'requests',
-  },
-  {
-    id: 'messages',
-    label: 'Messages',
-    icon: 'agent',
-    href: '/messages',
-    roles: ['client'],
-    appKey: 'messages',
   },
   {
     id: 'client-billing',
@@ -177,15 +139,13 @@ const ROLE_ORDER: Record<Role, string[]> = {
     'admin-dashboard',
     'projects',
     'schedule',
-    'clients',
-    'team',
-    'reports',
-    'admin-billing',
+    'requests',
     'knowledge',
+    'admin-panel',
     'settings',
   ],
-  employee: ['employee-dashboard', 'projects', 'schedule', 'knowledge', 'settings'],
-  client: ['client-dashboard', 'projects', 'requests', 'messages', 'client-billing', 'settings'],
+  employee: ['employee-dashboard', 'projects', 'schedule', 'requests', 'knowledge', 'settings'],
+  client: ['client-dashboard', 'projects', 'requests', 'client-billing', 'settings'],
 };
 
 /* ======================================================================
@@ -307,8 +267,6 @@ function ClockPill({ userId }: { userId: string | null }) {
   const [showIn, setShowIn] = useState(false);
   const [showOut, setShowOut] = useState(false);
   const { session, isLoading, workspaceId } = useClockGate();
-  const { data: inboxPreview } = useInboxPreview(1);
-  const overdueCount = inboxPreview.overdueCount;
 
   if (!workspaceId || isLoading) return null;
 
@@ -354,25 +312,10 @@ function ClockPill({ userId }: { userId: string | null }) {
                 ? 'border border-border bg-card text-foreground hover:bg-muted'
                 : 'bg-primary text-primary-foreground hover:bg-primary/90 dark:shadow-[var(--glow-teal-sm)] dark:hover:shadow-[var(--glow-teal-md)]'
             )}
-            aria-label={
-              clockedIn
-                ? 'Clock out'
-                : overdueCount > 0
-                  ? `Clock in — ${overdueCount} overdue work item${overdueCount === 1 ? '' : 's'}`
-                  : 'Clock in'
-            }
+            aria-label={clockedIn ? 'Clock out' : 'Clock in'}
           >
             {clockedIn ? 'Out' : 'In'}
           </button>
-          {!clockedIn && overdueCount > 0 ? (
-            <span
-              className="pointer-events-none absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-background bg-destructive px-1 font-mono text-[9px] font-bold leading-none text-destructive-foreground shadow-[0_0_6px_hsl(0_84%_60%/0.45)]"
-              aria-hidden
-              title={`${overdueCount} overdue work item${overdueCount === 1 ? '' : 's'}`}
-            >
-              {overdueCount > 9 ? '9+' : overdueCount}
-            </span>
-          ) : null}
         </div>
       </div>
 
@@ -592,7 +535,6 @@ function SidebarBody({
   const [tweaksOpen, setTweaksOpen] = useState(false);
   const [viewAsOpen, setViewAsOpen] = useState(false);
 
-  const { total: unread } = useUnreadMessageCount(userId ?? null);
   const { isGated } = useClockGate();
 
   const role = (userRole ?? 'client') as Role;
@@ -617,12 +559,7 @@ function SidebarBody({
     }
 
     if (p.exact) {
-      if (pathname !== basePath) return false;
-      if (basePath === '/admin') {
-        const tab = searchParams.get('tab');
-        return !tab || tab === 'overview';
-      }
-      return true;
+      return pathname === basePath;
     }
 
     return pathname === basePath || pathname.startsWith(`${basePath}/`);
@@ -674,7 +611,7 @@ function SidebarBody({
               page={p}
               isActive={isActivePage(p)}
               disabled={isGated && !p.id.endsWith('-dashboard')}
-              badge={p.id === 'messages' ? unread : undefined}
+              badge={undefined}
               onClick={onLinkClick}
             />
           ))}

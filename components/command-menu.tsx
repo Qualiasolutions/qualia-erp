@@ -169,238 +169,242 @@ export function CommandMenu() {
     setMessages([]);
   };
 
-  if (!open) return null;
+  const meetingModal = (
+    <NewMeetingModalControlled open={showNewMeetingModal} onOpenChange={setShowNewMeetingModal} />
+  );
+
+  if (!open) return meetingModal;
 
   return (
-    <div
-      className="fixed inset-0 z-command flex animate-fade-in items-start justify-center bg-foreground/40 pt-[15vh] backdrop-blur-[12px]"
-      onClick={handleClose}
-    >
+    <>
       <div
-        className="animate-modal-entrance w-full max-w-[560px] overflow-hidden rounded-2xl border border-border bg-card shadow-elevation-4"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-command flex animate-fade-in items-start justify-center bg-foreground/40 pt-[15vh] backdrop-blur-[12px]"
+        onClick={handleClose}
       >
-        {/* Mode indicator */}
-        {mode === 'ai' && (
-          <div className="flex items-center justify-between border-b border-border bg-muted/30 px-3 py-1.5">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Sparkles className="h-3 w-3 text-primary" />
-              <span>AI Assistant</span>
-              {isLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-            </div>
-            <div className="flex items-center gap-1">
-              {messages.length > 0 && (
+        <div
+          className="animate-modal-entrance w-full max-w-[560px] overflow-hidden rounded-2xl border border-border bg-card shadow-elevation-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Mode indicator */}
+          {mode === 'ai' && (
+            <div className="flex items-center justify-between border-b border-border bg-muted/30 px-3 py-1.5">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Sparkles className="h-3 w-3 text-primary" />
+                <span>AI Assistant</span>
+                {isLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+              </div>
+              <div className="flex items-center gap-1">
+                {messages.length > 0 && (
+                  <button
+                    onClick={clearAIChat}
+                    className="rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    Clear
+                  </button>
+                )}
                 <button
-                  onClick={clearAIChat}
+                  onClick={() => setMode('normal')}
                   className="rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
-                  Clear
-                </button>
-              )}
-              <button
-                onClick={() => setMode('normal')}
-                className="rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                Back
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Normal command mode */}
-        {mode === 'normal' && (
-          <Command className="w-full">
-            <div className="flex items-center border-b border-border px-3">
-              <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground/50" />
-              <Command.Input
-                ref={inputRef}
-                value={inputValue}
-                onValueChange={handleInputChange}
-                placeholder="Type a command or search... (ai: for AI)"
-                className="flex h-10 w-full bg-transparent py-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
-              />
-              <kbd className="ml-2 shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
-                esc
-              </kbd>
-            </div>
-            <Command.List className="max-h-[280px] overflow-y-auto p-1.5">
-              <Command.Empty className="py-6 text-center text-[13px] text-muted-foreground">
-                No results found.
-              </Command.Empty>
-
-              {/* AI Quick Access */}
-              <Command.Group
-                heading="ai"
-                className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
-              >
-                <Command.Item
-                  onSelect={switchToAI}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
-                >
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <span>Ask AI...</span>
-                  <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
-                    ⌘J
-                  </kbd>
-                </Command.Item>
-              </Command.Group>
-
-              {/* Navigation */}
-              <Command.Group
-                heading="navigation"
-                className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
-              >
-                <Command.Item
-                  onSelect={() => runCommand(() => router.push('/'))}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                  <span>Dashboard</span>
-                </Command.Item>
-                <Command.Item
-                  onSelect={() => runCommand(() => router.push('/projects'))}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
-                >
-                  <Folder className="h-4 w-4" />
-                  <span>Projects</span>
-                </Command.Item>
-                <Command.Item
-                  onSelect={() => runCommand(() => router.push('/clients'))}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
-                >
-                  <Building2 className="h-4 w-4" />
-                  <span>Clients</span>
-                </Command.Item>
-              </Command.Group>
-
-              {/* Quick Actions */}
-              <Command.Group
-                heading="quick actions"
-                className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
-              >
-                <Command.Item
-                  onSelect={() =>
-                    runCommand(() => {
-                      setShowNewMeetingModal(true);
-                    })
-                  }
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
-                >
-                  <CalendarPlus className="h-4 w-4 text-violet-500" />
-                  <span>New Meeting</span>
-                  <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
-                    m
-                  </kbd>
-                </Command.Item>
-              </Command.Group>
-
-              {/* Actions */}
-              <Command.Group
-                heading="actions"
-                className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
-              >
-                <Command.Item
-                  onSelect={() => runCommand(() => router.push('/projects?new=true'))}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Create Project</span>
-                </Command.Item>
-                <Command.Item
-                  onSelect={() => runCommand(() => router.push('/settings'))}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
-                >
-                  <Settings className="h-4 w-4" />
-                  <span>Settings</span>
-                </Command.Item>
-              </Command.Group>
-            </Command.List>
-          </Command>
-        )}
-
-        {/* AI mode */}
-        {mode === 'ai' && (
-          <div className="flex flex-col">
-            {/* Messages */}
-            <div className="max-h-[300px] overflow-y-auto p-3">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Sparkles className="mb-2 h-6 w-6 text-primary/50" />
-                  <p className="text-[13px] text-muted-foreground">
-                    Ask me anything about your projects, clients, or billing.
-                  </p>
-                  <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-                    {['Show my projects', 'Open clients', 'Open billing'].map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        onClick={() => setInputValue(suggestion)}
-                        className="rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:text-foreground"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {messages.map((message, index) => (
-                    <div
-                      key={index}
-                      className={cn(
-                        'flex gap-2',
-                        message.role === 'user' ? 'justify-end' : 'justify-start'
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          'max-w-[75%] rounded-lg px-2.5 py-1.5 text-[13px]',
-                          message.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-foreground'
-                        )}
-                      >
-                        <p className="whitespace-pre-wrap leading-snug">
-                          {getMessageContent(message)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-              )}
-            </div>
-
-            {/* Input */}
-            <form onSubmit={handleAISubmit} className="border-t border-border p-2">
-              <div className="flex items-center gap-2">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Ask AI..."
-                  disabled={isLoading}
-                  className="flex-1 bg-transparent px-2 py-1.5 text-[13px] text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-50"
-                />
-                <button
-                  type="submit"
-                  disabled={!inputValue.trim() || isLoading}
-                  className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <ArrowUp className="h-3.5 w-3.5" />
-                  )}
+                  Back
                 </button>
               </div>
-            </form>
-          </div>
-        )}
-      </div>
+            </div>
+          )}
 
-      {/* Quick Action Modals */}
-      <NewMeetingModalControlled open={showNewMeetingModal} onOpenChange={setShowNewMeetingModal} />
-    </div>
+          {/* Normal command mode */}
+          {mode === 'normal' && (
+            <Command className="w-full">
+              <div className="flex items-center border-b border-border px-3">
+                <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground/50" />
+                <Command.Input
+                  ref={inputRef}
+                  value={inputValue}
+                  onValueChange={handleInputChange}
+                  placeholder="Type a command or search... (ai: for AI)"
+                  className="flex h-10 w-full bg-transparent py-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
+                />
+                <kbd className="ml-2 shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
+                  esc
+                </kbd>
+              </div>
+              <Command.List className="max-h-[280px] overflow-y-auto p-1.5">
+                <Command.Empty className="py-6 text-center text-[13px] text-muted-foreground">
+                  No results found.
+                </Command.Empty>
+
+                {/* AI Quick Access */}
+                <Command.Group
+                  heading="ai"
+                  className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
+                >
+                  <Command.Item
+                    onSelect={switchToAI}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                  >
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <span>Ask AI...</span>
+                    <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
+                      ⌘J
+                    </kbd>
+                  </Command.Item>
+                </Command.Group>
+
+                {/* Navigation */}
+                <Command.Group
+                  heading="navigation"
+                  className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
+                >
+                  <Command.Item
+                    onSelect={() => runCommand(() => router.push('/'))}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Command.Item>
+                  <Command.Item
+                    onSelect={() => runCommand(() => router.push('/projects'))}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                  >
+                    <Folder className="h-4 w-4" />
+                    <span>Projects</span>
+                  </Command.Item>
+                  <Command.Item
+                    onSelect={() => runCommand(() => router.push('/clients'))}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                  >
+                    <Building2 className="h-4 w-4" />
+                    <span>Clients</span>
+                  </Command.Item>
+                </Command.Group>
+
+                {/* Quick Actions */}
+                <Command.Group
+                  heading="quick actions"
+                  className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
+                >
+                  <Command.Item
+                    onSelect={() =>
+                      runCommand(() => {
+                        setShowNewMeetingModal(true);
+                      })
+                    }
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                  >
+                    <CalendarPlus className="h-4 w-4 text-violet-500" />
+                    <span>New Meeting</span>
+                    <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
+                      m
+                    </kbd>
+                  </Command.Item>
+                </Command.Group>
+
+                {/* Actions */}
+                <Command.Group
+                  heading="actions"
+                  className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
+                >
+                  <Command.Item
+                    onSelect={() => runCommand(() => router.push('/projects?new=true'))}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Create Project</span>
+                  </Command.Item>
+                  <Command.Item
+                    onSelect={() => runCommand(() => router.push('/settings'))}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </Command.Item>
+                </Command.Group>
+              </Command.List>
+            </Command>
+          )}
+
+          {/* AI mode */}
+          {mode === 'ai' && (
+            <div className="flex flex-col">
+              {/* Messages */}
+              <div className="max-h-[300px] overflow-y-auto p-3">
+                {messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <Sparkles className="mb-2 h-6 w-6 text-primary/50" />
+                    <p className="text-[13px] text-muted-foreground">
+                      Ask me anything about your projects, clients, or billing.
+                    </p>
+                    <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+                      {['Show my projects', 'Open clients', 'Open billing'].map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          onClick={() => setInputValue(suggestion)}
+                          className="rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:text-foreground"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {messages.map((message, index) => (
+                      <div
+                        key={index}
+                        className={cn(
+                          'flex gap-2',
+                          message.role === 'user' ? 'justify-end' : 'justify-start'
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            'max-w-[75%] rounded-lg px-2.5 py-1.5 text-[13px]',
+                            message.role === 'user'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-foreground'
+                          )}
+                        >
+                          <p className="whitespace-pre-wrap leading-snug">
+                            {getMessageContent(message)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
+              </div>
+
+              {/* Input */}
+              <form onSubmit={handleAISubmit} className="border-t border-border p-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    placeholder="Ask AI..."
+                    disabled={isLoading}
+                    className="flex-1 bg-transparent px-2 py-1.5 text-[13px] text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!inputValue.trim() || isLoading}
+                    className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+        </div>
+      </div>
+      {meetingModal}
+    </>
   );
 }

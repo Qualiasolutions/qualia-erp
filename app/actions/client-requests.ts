@@ -3,7 +3,6 @@
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import { type ActionResult, isUserAdmin } from './shared';
-import { normalizeFKResponse } from '@/lib/server-utils';
 import { notifyAdminsAndAssignedEmployees } from '@/lib/notifications';
 import { notifyAdminAndAssignedOfClientActivity, sendRequestCompletedEmail } from '@/lib/email';
 import { getEmployeeProjectIds, isStaffOnProject } from '@/lib/auth/is-staff-on-project';
@@ -756,6 +755,54 @@ export async function markFeatureRequestDone(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to mark request as done',
+    };
+  }
+}
+
+/**
+ * Count open (non-completed, non-declined) feature requests visible to the current user.
+ * Admin sees all workspace requests; employee sees requests on assigned projects.
+ */
+export async function getOpenRequestsCount(): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const isAdmin = await isUserAdmin(user.id);
+
+    let query = supabase
+      .from('client_feature_requests')
+      .select('id', { count: 'exact', head: true })
+      .not('status', 'in', '("completed","declined")');
+
+    if (!isAdmin) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.role === 'employee') {
+        const projectIds = await getEmployeeProjectIds(user.id);
+        if (projectIds.length === 0) return { success: true, data: 0 };
+        query = query.in('project_id', projectIds);
+      } else {
+        query = query.eq('client_id', user.id);
+      }
+    }
+
+    const { count, error } = await query;
+    if (error) throw error;
+
+    return { success: true, data: count ?? 0 };
+  } catch (error) {
+    console.error('[getOpenRequestsCount] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to count requests',
     };
   }
 }

@@ -2,7 +2,16 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { startOfWeek, parseISO, isValid, formatISO, addDays } from 'date-fns';
+import {
+  addDays,
+  addWeeks,
+  endOfMonth,
+  formatISO,
+  isValid,
+  parseISO,
+  startOfMonth,
+  startOfWeek,
+} from 'date-fns';
 import { getMeetings } from '@/app/actions';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { QualiaScheduleWeek } from '@/components/portal/qualia-schedule-week';
@@ -12,29 +21,63 @@ export const metadata: Metadata = {
   description: 'Team schedule and calendar',
 };
 
-function resolveWeekStart(weekParam?: string): Date {
-  if (weekParam) {
-    const parsed = parseISO(weekParam);
-    if (isValid(parsed)) return startOfWeek(parsed, { weekStartsOn: 1 });
-  }
-  return startOfWeek(new Date(), { weekStartsOn: 1 });
+type ScheduleView = 'day' | 'week' | 'month';
+
+function resolveView(viewParam?: string): ScheduleView {
+  if (viewParam === 'day' || viewParam === 'week' || viewParam === 'month') return viewParam;
+  return 'week';
 }
 
-async function ScheduleLoader({ weekStartISO, userId }: { weekStartISO: string; userId: string }) {
+function resolveAnchor(anchorParam: string | undefined, view: ScheduleView): Date {
+  const candidate = anchorParam ? parseISO(anchorParam) : null;
+  const base = candidate && isValid(candidate) ? candidate : new Date();
+  if (view === 'day') return base;
+  if (view === 'week') return startOfWeek(base, { weekStartsOn: 1 });
+  return startOfMonth(base);
+}
+
+function rangeForView(anchor: Date, view: ScheduleView): { start: Date; end: Date } {
+  if (view === 'day') {
+    return { start: anchor, end: addDays(anchor, 1) };
+  }
+  if (view === 'week') {
+    return { start: anchor, end: addDays(anchor, 7) };
+  }
+  // Month: cover the full 6-row grid (Monday-anchored).
+  const gridStart = startOfWeek(anchor, { weekStartsOn: 1 });
+  const gridEnd = addWeeks(gridStart, 6);
+  // also ensure the month's natural end is included if it extends past gridEnd (rare)
+  const monthEnd = endOfMonth(anchor);
+  return {
+    start: gridStart,
+    end: gridEnd > monthEnd ? gridEnd : addDays(monthEnd, 1),
+  };
+}
+
+async function ScheduleLoader({
+  anchorISO,
+  view,
+  userId,
+}: {
+  anchorISO: string;
+  view: ScheduleView;
+  userId: string;
+}) {
   await connection();
 
   try {
-    const weekStart = parseISO(weekStartISO);
-    const dateRange = {
-      start: weekStart.toISOString(),
-      end: addDays(weekStart, 7).toISOString(),
-    };
-    const meetings = await getMeetings(undefined, null, dateRange);
+    const anchor = parseISO(anchorISO);
+    const range = rangeForView(anchor, view);
+    const meetings = await getMeetings(undefined, null, {
+      start: range.start.toISOString(),
+      end: range.end.toISOString(),
+    });
 
     return (
       <QualiaScheduleWeek
         initialMeetings={meetings}
-        weekStart={weekStartISO}
+        anchor={anchorISO}
+        view={view}
         currentUserId={userId}
       />
     );
@@ -87,7 +130,7 @@ function ScheduleSkeleton() {
 export default async function PortalSchedulePage({
   searchParams,
 }: {
-  searchParams: Promise<{ week?: string }>;
+  searchParams: Promise<{ week?: string; anchor?: string; view?: string }>;
 }) {
   const user = await getPortalAuthUser();
   if (!user) redirect('/auth/login');
@@ -95,13 +138,15 @@ export default async function PortalSchedulePage({
   if (profile?.role === 'client') redirect('/dashboard');
 
   const params = await searchParams;
-  const weekStart = resolveWeekStart(params.week);
-  const weekStartISO = formatISO(weekStart, { representation: 'date' });
+  const view = resolveView(params.view);
+  // Backwards-compat: old `?week=` links still work as an anchor when view=week.
+  const anchor = resolveAnchor(params.anchor ?? params.week, view);
+  const anchorISO = formatISO(anchor, { representation: 'date' });
 
   return (
     <div className="flex h-full flex-col">
       <Suspense fallback={<ScheduleSkeleton />}>
-        <ScheduleLoader weekStartISO={weekStartISO} userId={user.id} />
+        <ScheduleLoader anchorISO={anchorISO} view={view} userId={user.id} />
       </Suspense>
     </div>
   );

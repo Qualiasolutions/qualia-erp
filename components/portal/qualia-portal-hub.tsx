@@ -1,12 +1,20 @@
 'use client';
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, MessageSquare, FileText } from 'lucide-react';
+import {
+  ArrowRight,
+  CalendarClock,
+  CalendarPlus,
+  MessageSquare,
+  FileText,
+  Video,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { hueFromId, clientAccent } from '@/lib/color-constants';
 import { formatEURCompact } from '@/lib/currency';
+import { NewMeetingModalControlled } from '@/components/new-meeting-modal';
 
 /* ======================================================================
    Types
@@ -31,6 +39,16 @@ interface HubProject {
   currentPhase?: string;
 }
 
+interface HubMeeting {
+  id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  meeting_link: string | null;
+  projectName: string | null;
+  clientName: string | null;
+}
+
 export interface QualiaPortalHubProps {
   stats: HubStats | null;
   projects: HubProject[];
@@ -47,6 +65,7 @@ export interface QualiaPortalHubProps {
   displayName: string;
   companyName?: string;
   enabledApps?: string[];
+  upcomingMeetings?: HubMeeting[];
 }
 
 /* ======================================================================
@@ -85,6 +104,7 @@ export function QualiaPortalHub({
   displayName,
   companyName,
   enabledApps,
+  upcomingMeetings = [],
 }: QualiaPortalHubProps) {
   const hue = useMemo(() => hueFromId(clientId), [clientId]);
   const accentColor = useMemo(() => clientAccent(hue), [hue]);
@@ -187,6 +207,7 @@ export function QualiaPortalHub({
         <div className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-[2fr_1fr]">
           <EngagementsSection projects={projects} accentColor={accentColor} isLoading={isLoading} />
           <aside className="flex flex-col gap-8">
+            <MeetingsSidebar meetings={upcomingMeetings} accentColor={accentColor} />
             <InvoicesSidebar
               unpaidCount={stats?.unpaidInvoiceCount ?? 0}
               unpaidTotal={stats?.unpaidTotal ?? 0}
@@ -377,6 +398,113 @@ const EngagementRow = memo(function EngagementRow({
     </li>
   );
 });
+
+/* ======================================================================
+   MeetingsSidebar
+   ====================================================================== */
+
+function formatMeetingDate(value: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(value));
+}
+
+function MeetingsSidebar({
+  meetings,
+  accentColor,
+}: {
+  meetings: HubMeeting[];
+  accentColor: string;
+}) {
+  const [meetingModalOpen, setMeetingModalOpen] = useState(false);
+
+  return (
+    <section>
+      <div className="mb-3 flex items-center gap-2">
+        <span className="inline-block h-px w-6 bg-border" aria-hidden />
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+          Meetings
+        </span>
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-start gap-3">
+          <div
+            className="flex size-9 shrink-0 items-center justify-center rounded-xl text-white"
+            style={{ background: accentColor }}
+            aria-hidden
+          >
+            <CalendarClock className="size-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold tracking-tight text-foreground">Book a meeting</h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Pick a time for a project call and keep upcoming sessions in one place.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setMeetingModalOpen(true)}
+          className={cn(
+            'mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl',
+            'text-sm font-medium text-white shadow-sm transition-all duration-150',
+            'hover:translate-y-[-1px] hover:shadow-md',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
+          )}
+          style={{ background: accentColor }}
+        >
+          <CalendarPlus className="size-4" aria-hidden />
+          Book a meeting
+        </button>
+
+        <div className="mt-5 border-t border-border pt-4">
+          <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+            Upcoming
+          </div>
+          {meetings.length > 0 ? (
+            <ul className="space-y-3">
+              {meetings.map((meeting) => (
+                <li key={meeting.id} className="rounded-xl bg-muted/35 p-3">
+                  <div className="text-sm font-medium leading-snug text-foreground">
+                    {meeting.title}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {formatMeetingDate(meeting.start_time)}
+                  </div>
+                  {meeting.projectName ? (
+                    <div className="mt-1 truncate text-xs text-muted-foreground">
+                      {meeting.projectName}
+                    </div>
+                  ) : null}
+                  {meeting.meeting_link ? (
+                    <a
+                      href={meeting.meeting_link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      <Video className="size-3" aria-hidden />
+                      Join call
+                    </a>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              No upcoming meetings yet.
+            </p>
+          )}
+        </div>
+      </div>
+      <NewMeetingModalControlled open={meetingModalOpen} onOpenChange={setMeetingModalOpen} />
+    </section>
+  );
+}
 
 /* ======================================================================
    InvoicesSidebar

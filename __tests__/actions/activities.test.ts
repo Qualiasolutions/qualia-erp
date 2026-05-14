@@ -28,7 +28,6 @@ jest.mock('@/lib/supabase/server', () => ({
 
 // ---- Imports ----
 import { getRecentActivities } from '@/app/actions/activities';
-import { isUserAdmin } from '@/app/actions/shared';
 
 // ---- Helpers ----
 

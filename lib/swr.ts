@@ -1,6 +1,6 @@
 'use client';
 
-import useSWR, { SWRConfiguration, mutate, type KeyedMutator } from 'swr';
+import useSWR, { SWRConfiguration, mutate } from 'swr';
 // PH-H4: Direct module imports instead of barrel re-export to reduce bundle size
 import { getTeams } from '@/app/actions/teams';
 import { getProjects } from '@/app/actions/projects';
@@ -8,13 +8,6 @@ import { getProfiles } from '@/app/actions/auth';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { getMeetings } from '@/app/actions/meetings';
 import { getNotifications, getUnreadNotificationCount } from '@/app/actions/notifications';
-import {
-  getTasks,
-  getProjectTasks,
-  getScheduledTasks,
-  getInboxPreview,
-  type InboxPreviewResponse,
-} from '@/app/actions/inbox';
 import { getProjectPhases } from '@/app/actions/phases';
 import { getConversations, getMessages } from '@/app/actions/ai-conversations';
 import {
@@ -22,7 +15,6 @@ import {
   getEmployeeAssignments,
   getAssignmentHistory,
 } from '@/app/actions/project-assignments';
-import { getTaskAttachments } from '@/app/actions/task-attachments';
 import { getDailyBrief } from '@/app/actions/daily-brief';
 
 import type { TeamMemberStatus } from '@/app/actions/work-sessions';
@@ -37,7 +29,6 @@ const REFRESH_INTERVAL_SLOW = 90_000; // 90s — semi-static data (profiles, tea
 const REFRESH_INTERVAL_FAST = 2_000; // 2s — provisioning status during setup
 const REFRESH_INTERVAL_SESSIONS = 30_000; // 30s — work sessions, messaging
 const DEDUP_INTERVAL_DEFAULT = 60_000; // 60s — standard dedup
-const DEDUP_INTERVAL_TASKS = 20_000; // 20s — tasks need fresher data
 const DEDUP_INTERVAL_SLOW = 45_000; // 45s — semi-static data dedup
 
 // Type for meetings with all relations
@@ -61,9 +52,6 @@ export const cacheKeys = {
   projectStats: 'project-stats',
   profiles: 'profiles',
   workspaceId: 'workspace-id',
-  inboxTasks: 'inbox-tasks',
-  inboxPreview: (limit: number) => ['inbox-preview', limit] as const,
-  projectTasks: (projectId: string) => `project-tasks-${projectId}`,
   todaysTasks: 'todays-tasks',
   todaysMeetings: 'todays-meetings',
   projectPhases: (projectId: string) => `project-phases-${projectId}`,
@@ -93,8 +81,6 @@ export const cacheKeys = {
     `sessions-admin-${workspaceId}-${profileId || 'all'}-${date || 'all'}`,
   ownerUpdates: (workspaceId: string, unreadOnly?: boolean) =>
     `owner-updates-${workspaceId}-${unreadOnly ? 'unread' : 'all'}`,
-  teamDashboard: (workspaceId: string) => `team-dashboard-${workspaceId}`,
-  taskAttachments: (taskId: string) => `task-attachments-${taskId}`,
   teamStatus: (wsId: string) => ['team-status', wsId] as const,
   plannedLogout: (wsId: string) => ['planned-logout', wsId] as const,
   messageChannels: (userId: string) => `message-channels-${userId}`,
@@ -109,21 +95,13 @@ export const cacheKeys = {
     `phase-comments-${projectId}-${phaseName}`,
   dailyBrief: (forDate?: string) => ['daily-brief', forDate ?? 'today'] as const,
   dailyBriefHistory: 'daily-brief-history',
+  milestonesDue: (projectIds: string) => `milestones-due-${projectIds}`,
+  openRequestsCount: 'open-requests-count',
 } as const;
 
 // ============================================================================
 // RETURN TYPE INTERFACES (for critical hooks)
 // ============================================================================
-
-/** Return type for useInboxTasks hook */
-export interface UseInboxTasksReturn {
-  tasks: Awaited<ReturnType<typeof getTasks>>;
-  isLoading: boolean;
-  isValidating: boolean;
-  isError: boolean;
-  error: Error | undefined;
-  revalidate: () => Promise<Awaited<ReturnType<typeof getTasks>> | undefined>;
-}
 
 /** Return type for useProjects hook */
 export interface UseProjectsReturn {
@@ -133,27 +111,6 @@ export interface UseProjectsReturn {
   isError: boolean;
   error: Error | undefined;
   revalidate: () => Promise<Awaited<ReturnType<typeof getProjects>> | undefined>;
-}
-
-/** Return type for useDailyFlow hook */
-export interface UseDailyFlowReturn {
-  data: Awaited<ReturnType<typeof import('@/app/actions/daily-flow').getDailyFlowData>> | null;
-  meetings: Awaited<
-    ReturnType<typeof import('@/app/actions/daily-flow').getDailyFlowData>
-  >['meetings'];
-  tasks: Awaited<ReturnType<typeof import('@/app/actions/daily-flow').getDailyFlowData>>['tasks'];
-  focusProject: Awaited<
-    ReturnType<typeof import('@/app/actions/daily-flow').getDailyFlowData>
-  >['focusProject'];
-  teamMembers: Awaited<
-    ReturnType<typeof import('@/app/actions/daily-flow').getDailyFlowData>
-  >['teamMembers'];
-  currentUserId: string | null;
-  isLoading: boolean;
-  isValidating: boolean;
-  isError: boolean;
-  error: Error | undefined;
-  revalidate: () => Promise<unknown>;
 }
 
 /** Return type for useActiveSession hook */
@@ -210,7 +167,7 @@ const onErrorRetry = (
 const autoRefreshConfig: SWRConfiguration = {
   ...swrConfig,
   refreshInterval: () => (isDocumentVisible() ? REFRESH_INTERVAL_DEFAULT : 0), // 60s refresh when visible, stop when hidden
-  dedupingInterval: DEDUP_INTERVAL_TASKS, // 20s dedup for tasks (was 15s)
+  dedupingInterval: DEDUP_INTERVAL_DEFAULT, // 60s dedup
   onErrorRetry, // Use exponential backoff
 };
 
@@ -327,13 +284,9 @@ export function invalidateAllCaches() {
  * Invalidate specific cache
  */
 export function invalidateCache(
-  key: 'teams' | 'projects' | 'projectStats' | 'profiles' | 'workspaceId' | 'inboxTasks'
+  key: 'teams' | 'projects' | 'projectStats' | 'profiles' | 'workspaceId'
 ) {
-  if (key === 'inboxTasks') {
-    mutate(cacheKeys.inboxTasks);
-  } else {
-    mutate(cacheKeys[key]);
-  }
+  mutate(cacheKeys[key]);
 }
 
 /**
@@ -423,83 +376,6 @@ export function invalidateProjectStats(immediate = true) {
 }
 
 /**
- * Hook to fetch inbox tasks with auto-refresh
- * Only fetches tasks where show_in_inbox = true
- */
-export function useInboxTasks(): UseInboxTasksReturn {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    cacheKeys.inboxTasks,
-    () => getTasks(null, { inboxOnly: true, status: ['Todo', 'In Progress'] }),
-    autoRefreshConfig
-  );
-
-  return {
-    tasks: data || [],
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-export type UseInboxPreviewReturn = {
-  data: InboxPreviewResponse;
-  isLoading: boolean;
-  isValidating: boolean;
-  isError: boolean;
-  error: unknown;
-  revalidate: KeyedMutator<InboxPreviewResponse>;
-};
-
-/**
- * H11 (OPTIMIZE.md): lightweight inbox preview hook for the dashboard widget.
- * Only fetches ~20 rows with a tiny projection + two head-only COUNT queries,
- * instead of the full inbox (hundreds of rows × 4 joins) that `useInboxTasks`
- * returns. ~95% bandwidth savings on the home route.
- */
-export function useInboxPreview(limit = 5): UseInboxPreviewReturn {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(cacheKeys.inboxPreview(limit), () => getInboxPreview(limit), autoRefreshConfig);
-
-  return {
-    data: data || { tasks: [], overdueCount: 0, totalOpen: 0 },
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-/**
- * Invalidate the inbox preview SWR cache. Pairs with `invalidateInboxTasks`
- * when mutations (complete, delete, hide) affect both the preview and the
- * full view.
- */
-export function invalidateInboxPreview(immediate = true) {
-  // Use a key-predicate wildcard so every limit variant is invalidated.
-  if (immediate) {
-    mutate((key) => Array.isArray(key) && key[0] === 'inbox-preview', undefined, {
-      revalidate: true,
-    });
-  } else {
-    mutate((key) => Array.isArray(key) && key[0] === 'inbox-preview');
-  }
-}
-
-/**
  * Hook to fetch custom project phases
  */
 export function useProjectPhases(projectId: string | null) {
@@ -533,61 +409,6 @@ export function invalidateProjectPhases(projectId: string) {
 }
 
 /**
- * Hook to fetch project tasks with auto-refresh
- * Returns all tasks for a specific project (regardless of show_in_inbox)
- */
-export function useProjectTasks(projectId: string | null) {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    projectId ? cacheKeys.projectTasks(projectId) : null,
-    () => (projectId ? getProjectTasks(projectId) : Promise.resolve([])),
-    autoRefreshConfig
-  );
-
-  return {
-    tasks: data || [],
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-/**
- * Invalidate project tasks cache
- * @param immediate - If true, forces immediate refetch (fixes 8-10s stale data issue)
- */
-export function invalidateProjectTasks(projectId: string, immediate = true) {
-  if (immediate) {
-    // Force immediate refetch by passing undefined data and revalidate option
-    mutate(cacheKeys.projectTasks(projectId), undefined, { revalidate: true });
-  } else {
-    mutate(cacheKeys.projectTasks(projectId));
-  }
-}
-
-/**
- * Invalidate inbox tasks cache
- * @param immediate - If true, forces immediate refetch (fixes 8-10s stale data issue)
- */
-export function invalidateInboxTasks(immediate = true) {
-  const today = new Date().toISOString().split('T')[0];
-  if (immediate) {
-    mutate(cacheKeys.inboxTasks, undefined, { revalidate: true });
-    mutate(cacheKeys.scheduledTasks(today), undefined, { revalidate: true });
-  } else {
-    mutate(cacheKeys.inboxTasks);
-    mutate(cacheKeys.scheduledTasks(today));
-  }
-}
-
-/**
  * Invalidate scheduled tasks cache for a specific date
  */
 export function invalidateScheduledTasks(date?: string, immediate = true) {
@@ -597,66 +418,6 @@ export function invalidateScheduledTasks(date?: string, immediate = true) {
   } else {
     mutate(cacheKeys.scheduledTasks(d));
   }
-}
-
-/**
- * Hook to fetch all scheduled tasks (tasks with scheduled_start_time/end_time)
- * Used by schedule page to show tasks alongside meetings
- */
-export function useScheduledTasks(initialData?: Awaited<ReturnType<typeof getScheduledTasks>>) {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    cacheKeys.scheduledTasks(new Date().toISOString().split('T')[0]),
-    () => getScheduledTasks(),
-    {
-      ...autoRefreshConfig,
-      fallbackData: initialData,
-    }
-  );
-
-  return {
-    tasks: data || [],
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-/**
- * Hook to fetch today's tasks for the team schedule
- * Filters active tasks (Todo, In Progress) due today or overdue
- */
-export function useTodaysTasks() {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    cacheKeys.todaysTasks,
-    async () => {
-      const { getTodaysTasks } = await import('@/app/actions/inbox');
-      return getTodaysTasks();
-    },
-    autoRefreshConfig
-  );
-
-  return {
-    tasks: data || [],
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
 }
 
 /**
@@ -732,52 +493,6 @@ export function invalidateTodaysSchedule(immediate = true) {
 }
 
 /**
- * Hook for Daily Flow page data (legacy - will be replaced by useTimelineDashboard)
- * Combines meetings, tasks, and focus project with auto-refresh
- */
-export function useDailyFlow(): UseDailyFlowReturn {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    'daily-flow',
-    async () => {
-      const { getDailyFlowData } = await import('@/app/actions/daily-flow');
-      return getDailyFlowData();
-    },
-    autoRefreshConfig
-  );
-
-  return {
-    data: data || null,
-    meetings: data?.meetings || [],
-    tasks: data?.tasks || [],
-    focusProject: data?.focusProject || null,
-    teamMembers: data?.teamMembers || [],
-    currentUserId: data?.currentUserId || null,
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-/**
- * Invalidate daily flow cache
- */
-export function invalidateDailyFlow(immediate = true) {
-  if (immediate) {
-    mutate('daily-flow', undefined, { revalidate: true });
-  } else {
-    mutate('daily-flow');
-  }
-}
-
-/**
  * Hook to fetch all meetings with caching and auto-refresh
  * Used by schedule page for real-time updates
  */
@@ -810,11 +525,9 @@ export function invalidateMeetings(immediate = true) {
   if (immediate) {
     mutate(cacheKeys.meetings, undefined, { revalidate: true });
     mutate(cacheKeys.todaysMeetings, undefined, { revalidate: true });
-    mutate('daily-flow', undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.meetings);
     mutate(cacheKeys.todaysMeetings);
-    mutate('daily-flow');
   }
 }
 
@@ -1392,17 +1105,19 @@ export function usePortalDashboard(clientId: string | null) {
       // importing it into this client-side SWR hook leaks server code into the
       // browser bundle. The server-side initial render DOES use the cached
       // wrappers; SWR client-side revalidation uses the server actions.
-      const { getClientDashboardData, getClientDashboardProjects } =
+      const { getClientDashboardData, getClientDashboardProjects, getClientUpcomingMeetings } =
         await import('@/app/actions/client-portal/projects');
 
-      const [statsResult, projectsResult] = await Promise.all([
+      const [statsResult, projectsResult, meetingsResult] = await Promise.all([
         getClientDashboardData(clientId),
         getClientDashboardProjects(clientId),
+        getClientUpcomingMeetings(clientId),
       ]);
 
       return {
         stats: statsResult.success ? statsResult.data : null,
         projects: projectsResult.success ? projectsResult.data : [],
+        upcomingMeetings: meetingsResult.success ? meetingsResult.data : [],
       };
     },
     {
@@ -1412,7 +1127,7 @@ export function usePortalDashboard(clientId: string | null) {
   );
 
   return {
-    data: data || { stats: null, projects: [] },
+    data: data || { stats: null, projects: [], upcomingMeetings: [] },
     stats: data?.stats || null,
     projects: data?.projects || [],
     isLoading,
@@ -1565,49 +1280,6 @@ export function invalidateOwnerUpdates(workspaceId: string, immediate = true) {
 // ============================================================================
 // TEAM DASHBOARD HOOKS
 // ============================================================================
-
-/**
- * Hook to fetch team task dashboard data.
- * Admins see all team members with their active tasks.
- * Employees see only their own tasks.
- */
-export function useTeamTaskDashboard(workspaceId: string | null) {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    workspaceId ? cacheKeys.teamDashboard(workspaceId) : null,
-    async () => {
-      if (!workspaceId) return [];
-      const { getTeamTaskDashboard } = await import('@/app/actions/team-dashboard');
-      return getTeamTaskDashboard(workspaceId);
-    },
-    autoRefreshConfig
-  );
-
-  return {
-    members: data || [],
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-/**
- * Invalidate team dashboard cache
- */
-export function invalidateTeamDashboard(workspaceId: string, immediate = true) {
-  if (immediate) {
-    mutate(cacheKeys.teamDashboard(workspaceId), undefined, { revalidate: true });
-  } else {
-    mutate(cacheKeys.teamDashboard(workspaceId));
-  }
-}
 
 // ============================================================================
 // WORK SESSION HOOKS
@@ -1800,40 +1472,6 @@ export function useTeamStatus(workspaceId: string | null) {
     error,
     revalidate,
   };
-}
-
-// ============ TASK ATTACHMENTS ============
-
-/**
- * Hook to fetch attachments for a task
- */
-export function useTaskAttachments(taskId: string | null) {
-  const {
-    data,
-    error,
-    isLoading,
-    mutate: revalidate,
-  } = useSWR(
-    taskId ? cacheKeys.taskAttachments(taskId) : null,
-    () => (taskId ? getTaskAttachments(taskId) : []),
-    swrConfig
-  );
-
-  return {
-    attachments: data || [],
-    isLoading,
-    isError: !!error,
-    revalidate,
-  };
-}
-
-/**
- * Invalidate task attachments cache
- */
-export function invalidateTaskAttachments(taskId: string, immediate = true) {
-  const key = cacheKeys.taskAttachments(taskId);
-  if (immediate) mutate(key, undefined, { revalidate: true });
-  else mutate(key);
 }
 
 // ============ PLANNED LOGOUT TIME ============
@@ -2334,4 +1972,79 @@ export function invalidateDailyBrief(immediate = true) {
     mutate(cacheKeys.dailyBrief());
     mutate(cacheKeys.dailyBriefHistory);
   }
+}
+
+// ============================================================================
+// MILESTONE & REQUEST HOOKS (Phase 27 — milestone-centric dashboards)
+// ============================================================================
+
+export interface MilestoneDue {
+  id: string;
+  name: string;
+  target_date: string | null;
+  status: string | null;
+  project: { id: string; name: string } | null;
+}
+
+/**
+ * Hook to fetch milestones (project phases) due this week for the given projects.
+ * Polls every 60s when tab is visible.
+ */
+export function useMilestonesDue(projectIds: string[]) {
+  const sortedKey = [...projectIds].sort().join(',');
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    sortedKey ? cacheKeys.milestonesDue(sortedKey) : null,
+    async () => {
+      const { getMilestonesDueThisWeek } = await import('@/app/actions/phases');
+      const result = await getMilestonesDueThisWeek(projectIds);
+      return result.success ? (result.data as MilestoneDue[]) : [];
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    milestones: data ?? [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook to fetch the count of open (non-completed, non-declined) feature requests.
+ * Admin sees all; employee sees assigned-project requests.
+ */
+export function useOpenRequestsCount() {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    cacheKeys.openRequestsCount,
+    async () => {
+      const { getOpenRequestsCount } = await import('@/app/actions/client-requests');
+      const result = await getOpenRequestsCount();
+      return result.success ? (result.data as number) : 0;
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    count: data ?? 0,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
 }

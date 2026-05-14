@@ -27,7 +27,7 @@ import { checkIntegrationsConfigured } from '@/app/actions/integrations';
 import type { IntegrationSelections } from '@/lib/integrations/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useWorkspace } from '@/components/workspace-provider';
-import { invalidateProjectStats, invalidateDailyFlow } from '@/lib/swr';
+import { invalidateProjectStats } from '@/lib/swr';
 import { toast } from 'sonner';
 import { SelectWithOther } from '@/components/ui/select-with-other';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
@@ -231,7 +231,6 @@ export function ProjectWizard({
 
       if (result.success) {
         invalidateProjectStats(true);
-        invalidateDailyFlow(true);
 
         const projectData = result.data as { id: string } | undefined;
 
