@@ -126,7 +126,12 @@ export default async function PortalRequestsPage() {
       </header>
 
       {isStaff ? (
-        <AdminRequestsBoard requests={requests} commentCounts={commentCounts} />
+        <AdminRequestsBoard
+          requests={requests}
+          commentCounts={commentCounts}
+          currentUserId={user.id}
+          userRole={isAdmin ? 'admin' : 'employee'}
+        />
       ) : (
         <PortalRequestList
           requests={requests}

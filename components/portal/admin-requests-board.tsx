@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { updateFeatureRequest } from '@/app/actions/client-requests';
+import { RequestDetailSheet } from './request-detail-sheet';
 
 type RequestStatus = 'pending' | 'in_review' | 'planned' | 'in_progress' | 'completed' | 'declined';
 
@@ -39,6 +40,8 @@ interface FeatureRequest {
 interface AdminRequestsBoardProps {
   requests: FeatureRequest[];
   commentCounts?: Record<string, number>;
+  currentUserId: string;
+  userRole: string;
 }
 
 const COLUMNS: { key: RequestStatus; label: string; eyebrow: string }[] = [
@@ -55,13 +58,19 @@ function isCancelled(req: FeatureRequest): boolean {
   return req.status === 'declined' && req.admin_response === 'Cancelled by client';
 }
 
-export function AdminRequestsBoard({ requests, commentCounts = {} }: AdminRequestsBoardProps) {
+export function AdminRequestsBoard({
+  requests,
+  commentCounts = {},
+  currentUserId,
+  userRole,
+}: AdminRequestsBoardProps) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
   const [showDeclined, setShowDeclined] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [openRequestId, setOpenRequestId] = useState<string | null>(null);
 
   // Optimistic status overrides so the card lands in the dropped column before the
   // server round-trip completes. Rolled back if the action fails.
@@ -158,6 +167,14 @@ export function AdminRequestsBoard({ requests, commentCounts = {} }: AdminReques
     ? (visibleRequests.find((r) => r.id === activeDragId) ?? null)
     : null;
 
+  const openRequest = openRequestId
+    ? (visibleRequests.find((r) => r.id === openRequestId) ?? null)
+    : null;
+
+  const handleCardClick = useCallback((id: string) => {
+    setOpenRequestId(id);
+  }, []);
+
   return (
     <div className="flex h-full flex-col gap-4">
       <BoardToolbar
@@ -188,6 +205,7 @@ export function AdminRequestsBoard({ requests, commentCounts = {} }: AdminReques
               count={grouped[col.key].length}
               requests={grouped[col.key]}
               commentCounts={commentCounts}
+              onCardClick={handleCardClick}
             />
           ))}
         </div>
@@ -200,12 +218,18 @@ export function AdminRequestsBoard({ requests, commentCounts = {} }: AdminReques
             </div>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {grouped.declined.map((r) => (
-                <RequestCard
+                <button
                   key={r.id}
-                  request={r}
-                  commentCount={commentCounts[r.id] ?? 0}
-                  draggable={false}
-                />
+                  type="button"
+                  onClick={() => handleCardClick(r.id)}
+                  className="rounded-xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  <RequestCard
+                    request={r}
+                    commentCount={commentCounts[r.id] ?? 0}
+                    draggable={false}
+                  />
+                </button>
               ))}
             </div>
           </div>
@@ -222,6 +246,13 @@ export function AdminRequestsBoard({ requests, commentCounts = {} }: AdminReques
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <RequestDetailSheet
+        request={openRequest}
+        userRole={userRole}
+        currentUserId={currentUserId}
+        onClose={() => setOpenRequestId(null)}
+      />
     </div>
   );
 }
@@ -360,6 +391,7 @@ function KanbanColumn({
   count,
   requests,
   commentCounts,
+  onCardClick,
 }: {
   status: RequestStatus;
   label: string;
@@ -367,6 +399,7 @@ function KanbanColumn({
   count: number;
   requests: FeatureRequest[];
   commentCounts: Record<string, number>;
+  onCardClick: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   return (
@@ -404,7 +437,12 @@ function KanbanColumn({
           </div>
         ) : (
           requests.map((r) => (
-            <DraggableCard key={r.id} request={r} commentCount={commentCounts[r.id] ?? 0} />
+            <DraggableCard
+              key={r.id}
+              request={r}
+              commentCount={commentCounts[r.id] ?? 0}
+              onClick={() => onCardClick(r.id)}
+            />
           ))
         )}
       </div>
@@ -417,18 +455,31 @@ function KanbanColumn({
 function DraggableCard({
   request,
   commentCount,
+  onClick,
 }: {
   request: FeatureRequest;
   commentCount: number;
+  onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: request.id });
+  // PointerSensor activates after 6px movement, so a stationary click passes
+  // through here without triggering drag. Mouse-up without movement → onClick.
   return (
     <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
       className={cn(
-        'rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+        'cursor-pointer rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         isDragging && 'opacity-30'
       )}
     >
