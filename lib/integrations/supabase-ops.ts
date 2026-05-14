@@ -171,6 +171,11 @@ export async function getRLSPolicies(
   try {
     const client = createProjectClient(creds);
 
+    // Whitelist table name to prevent SQL injection — must be a valid SQL identifier
+    if (tableName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+      return { success: false, error: 'Invalid table name: must be a valid SQL identifier' };
+    }
+
     // Query pg_policies view
     let query = `
       SELECT schemaname, tablename as table_name, policyname as policy_name,
