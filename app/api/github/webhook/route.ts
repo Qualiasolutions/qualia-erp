@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { createHmac, timingSafeEqual } from 'crypto';
 
+export const maxDuration = 60;
+
 /**
  * POST /api/github/webhook
  *
@@ -349,18 +351,42 @@ export async function POST(request: NextRequest) {
 
     const existingPhaseMap = new Map((existingPhases || []).map((p) => [p.name.toLowerCase(), p]));
 
+    // ── Collect updates and inserts in a single pass, then batch DB calls ──
+    // Group existing-phase status changes by identical payload (typically 1-2
+    // distinct statuses: 'completed' and 'in_progress') so we can issue one
+    // .update().in('id', ids) per group instead of one query per phase.
+    const updatesByPayload = new Map<string, { payload: Record<string, unknown>; ids: string[] }>();
+    const newPhases: {
+      project_id: string;
+      workspace_id: string;
+      name: string;
+      sort_order: number;
+      status: string;
+      is_locked: boolean;
+      completed_at: string | null;
+    }[] = [];
+    const newPhaseUpdateRefs: {
+      key: string;
+      update: PhaseUpdate;
+      sortOrder: number;
+      status: string;
+    }[] = [];
+
+    const maxSortOrder = existingPhases?.length
+      ? Math.max(...existingPhases.map((p) => p.sort_order || 0))
+      : 0;
+
     for (const update of phaseUpdates) {
       const existingKey = update.phaseName.toLowerCase();
       const existing = existingPhaseMap.get(existingKey);
 
       if (existing) {
-        // Phase exists — update status based on what files changed
+        // Phase exists — determine new status based on what files changed
         let newStatus = existing.status;
 
         if (update.hasVerification) {
           newStatus = 'completed';
         } else if (update.hasNewSummary) {
-          // Summary = execution done for those plans
           newStatus = 'in_progress';
         } else if (update.hasNewPlan) {
           newStatus = 'in_progress';
@@ -372,46 +398,62 @@ export async function POST(request: NextRequest) {
             updateData.completed_at = new Date().toISOString();
           }
 
-          await supabase.from('project_phases').update(updateData).eq('id', existing.id);
+          // Group by serialized payload so identical updates are batched
+          const payloadKey = JSON.stringify(updateData);
+          if (!updatesByPayload.has(payloadKey)) {
+            updatesByPayload.set(payloadKey, { payload: updateData, ids: [] });
+          }
+          updatesByPayload.get(payloadKey)!.ids.push(existing.id);
 
           results.push({ phase: update.phaseName, action: `status → ${newStatus}` });
         } else {
           results.push({ phase: update.phaseName, action: 'no status change' });
         }
       } else {
-        // Phase doesn't exist — create it
-        const maxSortOrder = existingPhases?.length
-          ? Math.max(...existingPhases.map((p) => p.sort_order || 0))
-          : 0;
-
+        // Phase doesn't exist — collect for batch insert
         let status = 'not_started';
         if (update.hasVerification) status = 'completed';
         else if (update.hasNewSummary) status = 'in_progress';
         else if (update.hasNewPlan) status = 'in_progress';
 
-        const { data: newPhase } = await supabase
-          .from('project_phases')
-          .insert({
-            project_id: projectId,
-            workspace_id: project.workspace_id,
-            name: update.phaseName,
-            sort_order: maxSortOrder + update.phaseNumber,
-            status,
-            is_locked: false,
-            completed_at: status === 'completed' ? new Date().toISOString() : null,
-          })
-          .select('id')
-          .single();
+        const sortOrder = maxSortOrder + update.phaseNumber;
+
+        newPhases.push({
+          project_id: projectId,
+          workspace_id: project.workspace_id,
+          name: update.phaseName,
+          sort_order: sortOrder,
+          status,
+          is_locked: false,
+          completed_at: status === 'completed' ? new Date().toISOString() : null,
+        });
+        newPhaseUpdateRefs.push({ key: existingKey, update, sortOrder, status });
 
         results.push({ phase: update.phaseName, action: `created (${status})` });
+      }
+    }
 
-        // Also add to the map for subsequent iterations
-        if (newPhase) {
-          existingPhaseMap.set(existingKey, {
-            id: newPhase.id,
-            name: update.phaseName,
-            sort_order: maxSortOrder + update.phaseNumber,
-            status,
+    // Batch update: one query per distinct status payload (typically 1-2)
+    for (const { payload, ids } of updatesByPayload.values()) {
+      await supabase.from('project_phases').update(payload).in('id', ids);
+    }
+
+    // Batch insert: single query for all new phases
+    if (newPhases.length > 0) {
+      const { data: insertedPhases } = await supabase
+        .from('project_phases')
+        .insert(newPhases)
+        .select('id');
+
+      // Populate existingPhaseMap with newly inserted phases for milestone lookup
+      if (insertedPhases) {
+        for (let i = 0; i < insertedPhases.length; i++) {
+          const ref = newPhaseUpdateRefs[i];
+          existingPhaseMap.set(ref.key, {
+            id: insertedPhases[i].id,
+            name: ref.update.phaseName,
+            sort_order: ref.sortOrder,
+            status: ref.status,
           });
         }
       }
@@ -427,47 +469,69 @@ export async function POST(request: NextRequest) {
 
     // Collect milestone_numbers of phases that just became completed
     const newlyCompletedMilestones = new Set<number>();
+
+    // Gather IDs of phases that just completed (have verification files)
+    const completedPhaseIds: string[] = [];
     for (const update of phaseUpdates) {
       if (!update.hasVerification) continue;
-      // Find this phase in the map to get its milestone_number
       const phaseRecord = existingPhaseMap.get(update.phaseName.toLowerCase());
-      if (!phaseRecord) continue;
+      if (phaseRecord) completedPhaseIds.push(phaseRecord.id);
+    }
 
-      // Fetch milestone_number for this phase (not in the original select)
-      const { data: phaseWithMilestone } = await supabase
+    // Single batched query to fetch milestone_numbers for all completed phases
+    if (completedPhaseIds.length > 0) {
+      const { data: phasesWithMilestones } = await supabase
         .from('project_phases')
         .select('milestone_number')
-        .eq('id', phaseRecord.id)
-        .single();
+        .in('id', completedPhaseIds);
 
-      if (phaseWithMilestone?.milestone_number != null) {
-        newlyCompletedMilestones.add(phaseWithMilestone.milestone_number);
+      if (phasesWithMilestones) {
+        for (const p of phasesWithMilestones) {
+          if (p.milestone_number != null) {
+            newlyCompletedMilestones.add(p.milestone_number);
+          }
+        }
       }
     }
 
-    // For each candidate milestone, check if ALL its phases are now completed
-    for (const milestoneNum of newlyCompletedMilestones) {
-      const { data: milestonePhases } = await supabase
+    // For each candidate milestone, check if ALL its phases are now completed.
+    // Single batched query for all candidate milestones instead of one per milestone.
+    if (newlyCompletedMilestones.size > 0) {
+      const milestoneNums = [...newlyCompletedMilestones];
+
+      const { data: allMilestonePhases } = await supabase
         .from('project_phases')
-        .select('id, status')
+        .select('milestone_number, status')
         .eq('project_id', projectId)
-        .eq('milestone_number', milestoneNum)
+        .in('milestone_number', milestoneNums)
         // Exclude the milestone rollup row — its status is derived from these
         // phases, so including it can mask a drift between rollup and children.
         .neq('phase_type', 'milestone');
 
-      if (!milestonePhases || milestonePhases.length === 0) continue;
+      if (allMilestonePhases && allMilestonePhases.length > 0) {
+        // Group by milestone_number and check completion per group
+        const phasesByMilestone = new Map<number, { status: string }[]>();
+        for (const p of allMilestonePhases) {
+          if (p.milestone_number == null) continue;
+          if (!phasesByMilestone.has(p.milestone_number)) {
+            phasesByMilestone.set(p.milestone_number, []);
+          }
+          phasesByMilestone.get(p.milestone_number)!.push(p);
+        }
 
-      const allCompleted = milestonePhases.every((p) => p.status === 'completed');
-      if (!allCompleted) continue;
+        for (const [milestoneNum, phases] of phasesByMilestone) {
+          const allCompleted = phases.every((p) => p.status === 'completed');
+          if (!allCompleted) continue;
 
-      // Milestone fully completed — tasks system removed, no cascade needed.
-      cascadeResults.push({
-        milestone: milestoneNum,
-        tasksDone: 0,
-        tasksCreated: 0,
-        assignees: [],
-      });
+          // Milestone fully completed — tasks system removed, no cascade needed.
+          cascadeResults.push({
+            milestone: milestoneNum,
+            tasksDone: 0,
+            tasksCreated: 0,
+            assignees: [],
+          });
+        }
+      }
     }
 
     // ── Log activity (internal) ──────────────────────────────────────────
