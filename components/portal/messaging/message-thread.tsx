@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { ArrowLeft, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { parseISO, format, isToday, isYesterday } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -31,6 +31,7 @@ interface MessageThreadProps {
   userRole: string;
   isLoading: boolean;
   onMessageSent: () => void;
+  /** Kept for API compat — the parent widget owns the back affordance now. */
   onBack?: () => void;
 }
 
@@ -42,7 +43,6 @@ export function MessageThread({
   userRole,
   isLoading,
   onMessageSent,
-  onBack,
 }: MessageThreadProps) {
   const scrollEndRef = useRef<HTMLDivElement>(null);
   const prevMessageCountRef = useRef(0);
@@ -61,28 +61,7 @@ export function MessageThread({
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <div className="flex h-full flex-1 flex-col bg-background">
-      {/* Thread header */}
-      <header className="flex shrink-0 items-center gap-3 border-b border-border px-5 py-4">
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl text-muted-foreground transition-colors duration-150 hover:bg-muted/60 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 md:hidden"
-            aria-label="Back to channels"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-        )}
-        <div className="min-w-0">
-          <div className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
-            Project thread
-          </div>
-          <h2 className="mt-0.5 truncate text-[15px] font-semibold tracking-tight text-foreground">
-            {projectName}
-          </h2>
-        </div>
-      </header>
-
+    <div className="flex h-full flex-1 flex-col bg-transparent">
       {/* Messages area */}
       {isLoading ? (
         <div className="flex-1 p-4">

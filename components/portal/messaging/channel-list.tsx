@@ -38,32 +38,9 @@ export function ChannelList({
     : channels;
 
   return (
-    <div className="flex h-full flex-col bg-[hsl(var(--surface-2))]/40 dark:bg-card">
-      {/* Header */}
-      <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-5">
-        <div>
-          <div className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
-            Channels
-          </div>
-          <h2 className="mt-1 text-base font-semibold tracking-tight text-foreground">Messages</h2>
-        </div>
-        <button
-          type="button"
-          onClick={onNewConversation}
-          className={cn(
-            'flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card',
-            'text-foreground transition-colors duration-150',
-            'hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary',
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
-          )}
-          aria-label="Start a new conversation"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Search */}
-      <div className="shrink-0 px-3 pb-3 pt-1">
+    <div className="flex h-full flex-col bg-[hsl(var(--surface-2))]/30 dark:bg-transparent">
+      {/* Search (header lives in the widget container now) */}
+      <div className="shrink-0 px-3 pb-3 pt-3">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -137,10 +114,11 @@ export function ChannelList({
                   aria-selected={isActive}
                   onClick={() => onSelectChannel(channel.projectId, channel.id)}
                   className={cn(
-                    'flex w-full cursor-pointer items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-150',
+                    'flex w-full cursor-pointer items-start gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors duration-150',
                     isActive ? 'bg-primary/[0.1] text-foreground' : 'hover:bg-card'
                   )}
                 >
+                  <ProjectInitial name={projectName} hasUnread={channel.unreadCount > 0} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <p
@@ -177,6 +155,23 @@ export function ChannelList({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ProjectInitial({ name, hasUnread }: { name: string; hasUnread: boolean }) {
+  const initial = (name.trim()[0] ?? '?').toUpperCase();
+  return (
+    <div
+      className={cn(
+        'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-mono text-[11px] font-semibold uppercase tracking-tight transition-colors',
+        hasUnread
+          ? 'bg-primary/15 text-primary ring-1 ring-primary/20'
+          : 'bg-muted/50 text-muted-foreground'
+      )}
+      aria-hidden="true"
+    >
+      {initial}
     </div>
   );
 }

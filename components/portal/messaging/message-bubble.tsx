@@ -25,14 +25,20 @@ export function MessageBubble({
   timestamp,
 }: MessageBubbleProps) {
   const formattedTime = formatTime(timestamp);
+  const initials = getInitials(senderName);
 
   // Internal note styling
   if (isInternal) {
     return (
-      <div className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}>
+      <div className={cn('flex gap-2', isOwn ? 'justify-end' : 'justify-start')}>
+        {!isOwn && (
+          <div className="w-7 shrink-0">{showSender && <InitialsAvatar initials={initials} />}</div>
+        )}
         <div className="max-w-[75%] sm:max-w-[65%]">
           {showSender && (
-            <p className="mb-1 px-1 text-xs font-medium text-foreground">
+            <p
+              className={cn('mb-1 px-1 text-xs font-medium text-foreground', isOwn && 'text-right')}
+            >
               {senderName}
               <span className="ml-1.5 font-mono text-[10px] font-normal uppercase tracking-[0.06em] text-muted-foreground">
                 {formatRoleLabel(senderRole)}
@@ -59,7 +65,10 @@ export function MessageBubble({
   }
 
   return (
-    <div className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}>
+    <div className={cn('flex gap-2', isOwn ? 'justify-end' : 'justify-start')}>
+      {!isOwn && (
+        <div className="w-7 shrink-0">{showSender && <InitialsAvatar initials={initials} />}</div>
+      )}
       <div className="max-w-[75%] sm:max-w-[65%]">
         {showSender && (
           <p className={cn('mb-1 px-1 text-xs font-medium text-foreground', isOwn && 'text-right')}>
@@ -92,6 +101,24 @@ export function MessageBubble({
       </div>
     </div>
   );
+}
+
+function InitialsAvatar({ initials }: { initials: string }) {
+  return (
+    <div
+      className="flex h-7 w-7 items-center justify-center rounded-full border border-primary/20 bg-primary/[0.08] font-mono text-[10px] font-semibold uppercase tracking-tight text-primary"
+      aria-hidden="true"
+    >
+      {initials}
+    </div>
+  );
+}
+
+function getInitials(name: string): string {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 /**
