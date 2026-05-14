@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/server';
 import { createHmac, timingSafeEqual } from 'crypto';
 
 /**
@@ -171,14 +171,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ── DB setup ──────────────────────────────────────────────────────────
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env[`${'SUPABASE'}_SERVICE_ROLE_KEY`];
-
-    if (!supabaseUrl || !serviceRoleKey) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const supabase = createAdminClient();
 
     // ── Match repo to ERP project ────────────────────────────────────────
     // Match on the *exact* repo full_name (case-insensitive) rather than a

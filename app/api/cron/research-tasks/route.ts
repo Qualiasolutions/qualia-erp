@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { unstable_rethrow } from 'next/navigation';
 import { safeCompare } from '@/lib/auth-utils';
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/server';
 
 export const maxDuration = 60;
 
@@ -29,13 +29,6 @@ const RESEARCH_TOPICS = [
   'Cloudflare Workers and edge computing: latest capabilities',
 ];
 
-function getSupabaseClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env[`${'SUPABASE'}_SERVICE_ROLE_KEY`]!
-  );
-}
-
 interface Employee {
   id: string;
   full_name: string;
@@ -56,7 +49,7 @@ export async function GET(request: Request) {
 
     console.log('[cron/research-tasks] Starting daily research task creation...');
 
-    const supabase = getSupabaseClient();
+    const supabase = createAdminClient();
     const now = new Date();
     const today = now.toLocaleDateString('en-CA', { timeZone: 'Europe/Nicosia' });
     const dayOfWeek = new Date(today + 'T12:00:00+03:00').getDay(); // 0=Sun, 6=Sat

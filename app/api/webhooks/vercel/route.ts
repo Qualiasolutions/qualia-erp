@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
-
-// Create Supabase client lazily to avoid build-time errors
-function getSupabaseClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env[`${'SUPABASE'}_SERVICE_ROLE_KEY`]!
-  );
-}
 
 interface VercelDeploymentPayload {
   id: string;
@@ -82,7 +74,7 @@ export async function POST(request: NextRequest) {
     const status = statusMap[payload.type] || 'building';
 
     // Find our project by Vercel project ID (parameterized to prevent filter injection)
-    const supabase = getSupabaseClient();
+    const supabase = createAdminClient();
 
     // First try exact match on vercel_project_id
     let { data: ourProject } = await supabase
