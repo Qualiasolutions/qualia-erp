@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { MessageSquare, X, ChevronLeft } from 'lucide-react';
+import { AnimatePresence, m } from 'motion/react';
 import {
   useMessageChannels,
   useChannelMessages,
@@ -128,71 +129,81 @@ export function ClientChatWidget({ userId, userName, userRole }: ClientChatWidge
   return (
     <>
       {/* Panel */}
-      {isOpen && (
-        <div
-          className={cn(
-            'fixed z-assistant flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl shadow-black/10 backdrop-blur-sm',
-            // Mobile: near full-screen
-            'inset-x-3 bottom-3 top-16',
-            // Desktop: floating panel — slightly bigger, anchored bottom-right
-            'sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[600px] sm:w-[400px]',
-            'animate-slide-up'
-          )}
-        >
-          {/* Panel header */}
-          <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-            <div className="flex items-center gap-2">
-              {selectedProjectId && (
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="flex items-center gap-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                  aria-label="Back to channels"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                  Back
-                </button>
-              )}
-              {!selectedProjectId && <h3 className="text-sm font-semibold">Messages</h3>}
-              {selectedProjectId && selectedProject && (
-                <h3 className="truncate text-sm font-semibold">{selectedProject.name}</h3>
+      <AnimatePresence>
+        {isOpen && (
+          <m.div
+            key="chat-panel"
+            initial={{ opacity: 0, y: 16, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.97 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className={cn(
+              'fixed z-assistant flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/85 shadow-elevation-4 ring-1 ring-primary/10 backdrop-blur-xl',
+              // Mobile: near full-screen
+              'inset-x-3 bottom-3 top-16',
+              // Desktop: floating panel — slightly bigger, anchored bottom-right
+              'sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[600px] sm:w-[400px]'
+            )}
+            style={{ transformOrigin: 'bottom right' }}
+          >
+            {/* Panel header — single, replaces the duplicate header in MessageThread */}
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border/60 bg-gradient-to-b from-card/60 to-transparent px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                {selectedProjectId && (
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="-ml-1 flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                    aria-label="Back to channels"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                )}
+                <div className="min-w-0">
+                  <div className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
+                    {selectedProjectId ? 'Project thread' : 'Channels'}
+                  </div>
+                  <h3 className="mt-0.5 truncate text-[14px] font-semibold tracking-tight text-foreground">
+                    {selectedProjectId ? (selectedProject?.name ?? 'Project') : 'Messages'}
+                  </h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggle}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                aria-label="Close messages"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Panel body */}
+            <div className="min-h-0 flex-1 overflow-hidden">
+              {!selectedProjectId ? (
+                <ChannelList
+                  channels={normalizedChannels}
+                  selectedProjectId={selectedProjectId}
+                  onSelectChannel={handleSelectChannel}
+                  onNewConversation={() => {}}
+                  isLoading={channelsLoading}
+                />
+              ) : (
+                <MessageThread
+                  messages={normalizedMessages}
+                  projectName={selectedProject?.name ?? 'Project'}
+                  projectId={selectedProjectId}
+                  userId={userId}
+                  userRole={userRole}
+                  isLoading={messagesLoading}
+                  onMessageSent={handleMessageSent}
+                  onBack={handleBack}
+                />
               )}
             </div>
-            <button
-              type="button"
-              onClick={handleToggle}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
-              aria-label="Close messages"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Panel body */}
-          <div className="min-h-0 flex-1 overflow-hidden">
-            {!selectedProjectId ? (
-              <ChannelList
-                channels={normalizedChannels}
-                selectedProjectId={selectedProjectId}
-                onSelectChannel={handleSelectChannel}
-                onNewConversation={() => {}}
-                isLoading={channelsLoading}
-              />
-            ) : (
-              <MessageThread
-                messages={normalizedMessages}
-                projectName={selectedProject?.name ?? 'Project'}
-                projectId={selectedProjectId}
-                userId={userId}
-                userRole={userRole}
-                isLoading={messagesLoading}
-                onMessageSent={handleMessageSent}
-                onBack={handleBack}
-              />
-            )}
-          </div>
-        </div>
-      )}
+          </m.div>
+        )}
+      </AnimatePresence>
 
       {/* Bubble button */}
       <button
