@@ -18,6 +18,58 @@ type VercelClient = {
   teamId?: string;
 };
 
+/** Raw project object from the Vercel List Projects API (v9). */
+interface VercelRawProject {
+  id: string;
+  name: string;
+  framework?: string | null;
+  updatedAt: number;
+  latestDeployments?: Array<{
+    readyState?: string;
+    state?: string;
+    url?: string;
+  }>;
+}
+
+/** Raw deployment object from the Vercel List Deployments API (v6). */
+interface VercelRawDeployment {
+  uid: string;
+  url: string;
+  readyState?: string;
+  state?: string;
+  target?: string | null;
+  createdAt?: number;
+  created?: number;
+  ready?: number | null;
+  meta?: { githubCommitRef?: string; [k: string]: unknown };
+  source?: string | null;
+}
+
+/** Raw deployment event/log entry from the Vercel Events API (v7). */
+interface VercelRawEvent {
+  created?: number;
+  timestamp?: number;
+  text?: string;
+  payload?: { text?: string };
+  type?: string;
+}
+
+/** Raw domain object from the Vercel Domains API (v9). */
+interface VercelRawDomain {
+  name: string;
+  redirect?: string | null;
+  configured?: boolean;
+  verified?: boolean;
+}
+
+/** Raw env var object from the Vercel Env API (v9). */
+interface VercelRawEnvVar {
+  id: string;
+  key: string;
+  target?: string[];
+  type?: string;
+}
+
 // =====================================================
 // Lazy Initialization
 // =====================================================
@@ -376,8 +428,7 @@ export async function listProjects(workspaceId: string): Promise<
 
     return {
       success: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data: (data.projects || []).map((p: any) => ({
+      data: (data.projects || []).map((p: VercelRawProject) => ({
         id: p.id,
         name: p.name,
         framework: p.framework || null,
@@ -506,8 +557,7 @@ export async function listDeployments(
 
     return {
       success: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data: (data.deployments || []).map((d: any) => ({
+      data: (data.deployments || []).map((d: VercelRawDeployment) => ({
         id: d.uid,
         url: `https://${d.url}`,
         state: d.readyState || d.state,
@@ -614,14 +664,11 @@ export async function getDeploymentLogs(
     const events = await response.json();
 
     // Limit to last 100 entries to avoid massive payloads
-    const logs = (Array.isArray(events) ? events : [])
-      .slice(-100)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((e: any) => ({
-        timestamp: e.created || e.timestamp || Date.now(),
-        text: e.text || e.payload?.text || '',
-        type: e.type || 'log',
-      }));
+    const logs = (Array.isArray(events) ? events : []).slice(-100).map((e: VercelRawEvent) => ({
+      timestamp: e.created || e.timestamp || Date.now(),
+      text: e.text || e.payload?.text || '',
+      type: e.type || 'log',
+    }));
 
     return { success: true, data: logs };
   } catch (error: unknown) {
@@ -798,8 +845,7 @@ export async function listDomains(
 
     return {
       success: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data: (data.domains || []).map((d: any) => ({
+      data: (data.domains || []).map((d: VercelRawDomain) => ({
         name: d.name,
         redirect: d.redirect || null,
         configured: d.configured || false,
@@ -890,8 +936,7 @@ export async function listEnvVars(
     // SECURITY: Return keys ONLY, never values
     return {
       success: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data: (data.envs || []).map((env: any) => ({
+      data: (data.envs || []).map((env: VercelRawEnvVar) => ({
         id: env.id,
         key: env.key,
         target: env.target || [],

@@ -6,13 +6,21 @@
 import { getHours } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 // Time zones for Cyprus and Jordan
 const TIMEZONES = {
   cyprus: 'Europe/Nicosia',
   jordan: 'Asia/Amman',
 };
+
+/** Data payload passed to contextual response generators. */
+export interface ResponseData {
+  name?: string;
+  status?: string;
+  title?: string;
+  date?: string;
+  time?: string;
+  [key: string]: unknown;
+}
 
 // User context for personalization
 export interface UserContext {
@@ -312,47 +320,54 @@ export function getDynamicPhrase(
  */
 export function generateContextualResponse(
   intent: string,
-  data?: any,
+  data?: ResponseData,
   userContext?: UserContext
 ): string {
   const firstName = userContext?.name?.split(' ')[0];
 
+  if (data) {
+    switch (intent) {
+      case 'project_status':
+        return getUniquePhrase([
+          `المشروع "${data.name}" حالياً ${data.status}`,
+          `شوف، "${data.name}" وضعه ${data.status}`,
+          `بالنسبة لـ"${data.name}"، هو ${data.status}`,
+          `"${data.name}" الحالة: ${data.status}`,
+          `عن "${data.name}"، الـ status هو ${data.status}`,
+          `خليني أحكيلك عن "${data.name}" - ${data.status}`,
+          `مشروع "${data.name}" ماشي ${data.status}`,
+        ]);
+
+      case 'task_created':
+        return getUniquePhrase([
+          `ضفت المهمة "${data.title}" على البورد`,
+          `المهمة "${data.title}" انضافت`,
+          `حطيت "${data.title}" بالمهام`,
+          `"${data.title}" صارت على القائمة`,
+          `تم إضافة "${data.title}"`,
+          `"${data.title}" انحطت بالمهام`,
+          `ضفنا "${data.title}" للقائمة`,
+          `"${data.title}" موجودة هلق`,
+          `سجلت "${data.title}" عالبورد`,
+        ]);
+
+      case 'meeting_scheduled':
+        return getUniquePhrase([
+          `حددت الاجتماع يوم ${data.date} الساعة ${data.time}`,
+          `الاجتماع محدد ${data.date} على ${data.time}`,
+          `Meeting يوم ${data.date} الساعة ${data.time}`,
+          `جدولت الـ meeting: ${data.date} - ${data.time}`,
+          `محجوز: ${data.date} الساعة ${data.time}`,
+          `الموعد: ${data.date} على ${data.time}`,
+          `سجلتلك اجتماع ${data.date} الـ ${data.time}`,
+        ]);
+
+      default:
+        break;
+    }
+  }
+
   switch (intent) {
-    case 'project_status':
-      return getUniquePhrase([
-        `المشروع "${data.name}" حالياً ${data.status}`,
-        `شوف، "${data.name}" وضعه ${data.status}`,
-        `بالنسبة لـ"${data.name}"، هو ${data.status}`,
-        `"${data.name}" الحالة: ${data.status}`,
-        `عن "${data.name}"، الـ status هو ${data.status}`,
-        `خليني أحكيلك عن "${data.name}" - ${data.status}`,
-        `مشروع "${data.name}" ماشي ${data.status}`,
-      ]);
-
-    case 'task_created':
-      return getUniquePhrase([
-        `ضفت المهمة "${data.title}" على البورد`,
-        `المهمة "${data.title}" انضافت`,
-        `حطيت "${data.title}" بالمهام`,
-        `"${data.title}" صارت على القائمة`,
-        `تم إضافة "${data.title}"`,
-        `"${data.title}" انحطت بالمهام`,
-        `ضفنا "${data.title}" للقائمة`,
-        `"${data.title}" موجودة هلق`,
-        `سجلت "${data.title}" عالبورد`,
-      ]);
-
-    case 'meeting_scheduled':
-      return getUniquePhrase([
-        `حددت الاجتماع يوم ${data.date} الساعة ${data.time}`,
-        `الاجتماع محدد ${data.date} على ${data.time}`,
-        `Meeting يوم ${data.date} الساعة ${data.time}`,
-        `جدولت الـ meeting: ${data.date} - ${data.time}`,
-        `محجوز: ${data.date} الساعة ${data.time}`,
-        `الموعد: ${data.date} على ${data.time}`,
-        `سجلتلك اجتماع ${data.date} الـ ${data.time}`,
-      ]);
-
     case 'no_results':
       return getUniquePhrase([
         'ما لقيت نتائج، جرب تبحث بطريقة ثانية',
@@ -577,7 +592,7 @@ export function mixTechnicalTerms(text: string): string {
  */
 export function generateIntelligentResponse(
   intent: string,
-  data?: any,
+  data?: ResponseData,
   userContext?: UserContext
 ): string {
   // Generate base response
