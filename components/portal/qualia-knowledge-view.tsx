@@ -168,8 +168,28 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
       // corrupt storage — ignore
     }
     setHydrated(true);
+    // Focus the composer once the layout settles so users can type immediately.
+    requestAnimationFrame(() => inputRef.current?.focus());
   }, [setMessages]);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Slash-key global shortcut to refocus the composer (skip when typing elsewhere).
+  useEffect(() => {
+    function onKey(e: globalThis.KeyboardEvent) {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      inputRef.current?.focus();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Persist on change (after hydration to avoid clobbering)
   useEffect(() => {
@@ -332,7 +352,11 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
             <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">
               Shift+Enter
             </kbd>{' '}
-            for newline
+            for newline ·{' '}
+            <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">
+              /
+            </kbd>{' '}
+            to focus
           </p>
         </form>
       </section>

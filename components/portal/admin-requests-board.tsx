@@ -13,7 +13,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { Inbox, Paperclip, MessageSquare, GripVertical } from 'lucide-react';
+import { Inbox, Paperclip, MessageSquare, GripVertical, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -68,6 +68,8 @@ function toUiStatus(dbStatus: string): RequestStatus | 'archived' {
   return 'pending'; // unknown values fallback
 }
 
+type PriorityFilter = 'all' | 'urgent' | 'high' | 'medium' | 'low';
+
 export function AdminRequestsBoard({
   requests,
   commentCounts = {},
@@ -77,6 +79,8 @@ export function AdminRequestsBoard({
 }: AdminRequestsBoardProps) {
   const router = useRouter();
   const [scope, setScope] = useState<'all' | 'mine'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
+  const [query, setQuery] = useState('');
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [openRequestId, setOpenRequestId] = useState<string | null>(null);
 
@@ -92,16 +96,19 @@ export function AdminRequestsBoard({
   );
 
   const visibleRequests = useMemo(() => {
+    const q = query.trim().toLowerCase();
     return requests.filter((r) => {
-      // Use optimistic status for filtering if present, otherwise derive from DB
       const uiStatus = r.id in optimisticStatus ? optimisticStatus[r.id] : toUiStatus(r.status);
-      // Hide archived requests from the board
       if (uiStatus === 'archived') return false;
-      // Scope filter
       if (scope === 'mine' && r.assigned_to !== currentUserId) return false;
+      if (priorityFilter !== 'all' && r.priority !== priorityFilter) return false;
+      if (q) {
+        const haystack = `${r.title} ${r.description ?? ''} ${r.project?.name ?? ''}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
       return true;
     });
-  }, [requests, optimisticStatus, scope, currentUserId]);
+  }, [requests, optimisticStatus, scope, currentUserId, priorityFilter, query]);
 
   const grouped = useMemo(() => {
     const groups: Record<RequestStatus, FeatureRequest[]> = {
@@ -166,10 +173,25 @@ export function AdminRequestsBoard({
     setOpenRequestId(id);
   }, []);
 
+  const totalVisible = visibleRequests.length;
+  const totalUnfiltered = requests.filter((r) => {
+    const s = r.id in optimisticStatus ? optimisticStatus[r.id] : toUiStatus(r.status);
+    return s !== 'archived';
+  }).length;
+  const hasActiveFilter = priorityFilter !== 'all' || query.trim().length > 0 || scope === 'mine';
+
+  const PRIORITIES: { value: PriorityFilter; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'urgent', label: 'Urgent' },
+    { value: 'high', label: 'High' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'low', label: 'Low' },
+  ];
+
   return (
     <div className="flex h-full flex-col gap-4">
-      {/* All / Mine toggle */}
-      <div className="flex items-center">
+      {/* Toolbar: scope · search · priority · count */}
+      <div className="flex flex-wrap items-center gap-2.5">
         <div className="flex gap-1 rounded-md bg-muted/30 p-1">
           <button
             type="button"
@@ -195,6 +217,70 @@ export function AdminRequestsBoard({
           >
             Mine
           </button>
+        </div>
+
+        <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
+          <Search
+            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60"
+            aria-hidden
+          />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search requests…"
+            aria-label="Search requests"
+            className="h-9 w-full rounded-md border border-border bg-card pl-8 pr-8 text-sm placeholder:text-muted-foreground/70 focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-1" role="group" aria-label="Filter by priority">
+          {PRIORITIES.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => setPriorityFilter(p.value)}
+              aria-pressed={priorityFilter === p.value}
+              className={cn(
+                'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                priorityFilter === p.value
+                  ? 'border-primary/40 bg-primary/10 text-primary'
+                  : 'border-border bg-card text-muted-foreground hover:border-primary/20 hover:text-foreground'
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="ml-auto flex items-center gap-2 font-mono text-[11px] tabular-nums text-muted-foreground">
+          <span>
+            {totalVisible}
+            {hasActiveFilter && totalVisible !== totalUnfiltered ? ` / ${totalUnfiltered}` : ''}
+          </span>
+          {hasActiveFilter && (
+            <button
+              type="button"
+              onClick={() => {
+                setPriorityFilter('all');
+                setQuery('');
+                setScope('all');
+              }}
+              className="cursor-pointer rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              Reset
+            </button>
+          )}
         </div>
       </div>
 

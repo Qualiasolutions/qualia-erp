@@ -165,9 +165,11 @@ async function ProjectListLoader({ missing }: { missing?: MissingProjectFilter }
     is_assigned: isAdmin ? true : userAssignedIds.has(p.id as string),
   }));
 
-  // Employees see EVERY project but only assigned ones are clickable (UI-side gate).
+  // Employees only see projects they're assigned to. Admins see everything.
+  // Server-side filter — defense in depth on top of project_detail page's notFound() guard.
   const activeDeadlineStatuses = new Set(['Active', 'Demos', 'Launched', 'Delayed']);
   const visibleProjects = allProjects.filter((project) => {
+    if (!isAdmin && !project.is_assigned) return false;
     if (missing === 'target_date') {
       return activeDeadlineStatuses.has(project.status) && !project.target_date;
     }
@@ -185,11 +187,7 @@ async function ProjectListLoader({ missing }: { missing?: MissingProjectFilter }
   const building = activeDelayed.filter((p) => !p.is_pre_production).sort(sortByOrder);
   const preProduction = activeDelayed.filter((p) => p.is_pre_production).sort(sortByOrder);
   const live = visibleProjects.filter((p) => p.status === 'Launched').sort(sortByOrder);
-  // Done: show all Done projects normally. In planning-cleanup mode, keep the
-  // filtered project set strict so the cleanup link doesn't show unrelated rows.
-  const done = (missing ? visibleProjects : allProjects)
-    .filter((p) => p.status === 'Done')
-    .sort(sortByOrder);
+  const done = visibleProjects.filter((p) => p.status === 'Done').sort(sortByOrder);
   const archived = visibleProjects
     .filter((p) => ['Archived', 'Canceled'].includes(p.status))
     .sort(sortByOrder);
