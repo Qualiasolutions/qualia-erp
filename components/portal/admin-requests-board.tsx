@@ -286,7 +286,7 @@ export function AdminRequestsBoard({
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div
-          className="-mx-1 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-1 pb-2 sm:snap-none"
+          className="-mx-1 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-1 pb-2 md:grid md:snap-none md:grid-cols-3 md:overflow-visible"
           role="region"
           aria-label="Requests pipeline"
         >
@@ -351,7 +351,7 @@ function KanbanColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        'flex w-[280px] shrink-0 snap-start flex-col rounded-2xl border border-border/70 bg-card/40 p-3 transition-colors sm:w-[300px]',
+        'flex w-[280px] shrink-0 snap-start flex-col rounded-2xl border border-border/70 bg-card/40 p-3 transition-colors sm:w-[300px] md:w-auto md:min-w-0 md:shrink',
         isOver && 'border-primary/40 bg-primary/[0.04]'
       )}
     >
