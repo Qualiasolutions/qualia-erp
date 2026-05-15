@@ -57,7 +57,8 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(self), geolocation=()',
+            // microphone=self for SHSO Elena voice demo; autoplay=self so ElevenLabs TTS can speak without click
+            value: 'camera=(), microphone=(self), geolocation=(), autoplay=(self)',
           },
           {
             key: 'X-DNS-Prefetch-Control',
@@ -75,8 +76,11 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://openrouter.ai https://generativelanguage.googleapis.com https://vercel.live wss://vercel.live https://*.ingest.sentry.io https://api.elevenlabs.io wss://api.elevenlabs.io https://*.elevenlabs.io wss://*.elevenlabs.io",
-              "media-src 'self' blob:",
+              // ElevenLabs ConvAI: apex + api + all subdomains (regional us/eu) + LiveKit WebRTC fallback
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://openrouter.ai https://generativelanguage.googleapis.com https://vercel.live wss://vercel.live https://*.ingest.sentry.io https://elevenlabs.io wss://elevenlabs.io https://api.elevenlabs.io wss://api.elevenlabs.io https://*.elevenlabs.io wss://*.elevenlabs.io https://*.livekit.cloud wss://*.livekit.cloud https://shso.vercel.app wss://shso.vercel.app",
+              // media-src: blob (TTS chunks via MediaSource) + https (CDN audio streams)
+              "media-src 'self' blob: https: data:",
+              // AudioWorklet + ElevenLabs audio decoder workers
               "worker-src 'self' blob:",
               "frame-src 'self' https://vercel.live",
               "frame-ancestors 'none'",
