@@ -213,7 +213,7 @@ export function RequestDetailSheet({
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <PriorityBadge priority={request.priority} />
                 <span className="text-muted-foreground">
-                  Submitted {new Date(request.created_at).toLocaleDateString()}
+                  Submitted {new Date(request.created_at).toLocaleDateString('en-GB')}
                 </span>
                 {attachmentCount > 0 && (
                   <span className="inline-flex items-center gap-1 text-muted-foreground">

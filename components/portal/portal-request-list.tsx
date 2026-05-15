@@ -352,7 +352,7 @@ const RequestRow = memo(function RequestRow({
                 <span className="text-xs text-muted-foreground">{request.project.name}</span>
               )}
               <span className="text-xs text-muted-foreground">
-                {new Date(request.created_at).toLocaleDateString()}
+                {new Date(request.created_at).toLocaleDateString('en-GB')}
               </span>
               {request.attachments && request.attachments.length > 0 && (
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">

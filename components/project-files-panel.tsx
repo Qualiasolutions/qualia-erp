@@ -238,6 +238,7 @@ export function ProjectFilesPanel({
                   onClick={() => handleDownload(file.id, file.original_name)}
                   disabled={downloadingId === file.id}
                   title="Download"
+                  aria-label="Download file"
                 >
                   {downloadingId === file.id ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -253,6 +254,7 @@ export function ProjectFilesPanel({
                     onClick={() => handleDelete(file.id, file.original_name)}
                     disabled={deletingId === file.id}
                     title="Delete"
+                    aria-label="Delete file"
                   >
                     {deletingId === file.id ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />

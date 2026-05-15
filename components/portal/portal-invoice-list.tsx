@@ -107,10 +107,10 @@ const InvoiceRow = React.memo(function InvoiceRow({
           )}
         </div>
         <span className="text-sm tabular-nums text-muted-foreground">
-          {new Date(invoice.issued_date).toLocaleDateString()}
+          {new Date(invoice.issued_date).toLocaleDateString('en-GB')}
         </span>
         <span className="text-sm tabular-nums text-muted-foreground">
-          {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '--'}
+          {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('en-GB') : '--'}
         </span>
         <span className="text-right text-sm font-semibold tabular-nums text-foreground">
           {formatCurrency(invoice.amount, invoice.currency)}
@@ -145,11 +145,13 @@ const InvoiceRow = React.memo(function InvoiceRow({
         )}
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           {invoice.project && <span>{invoice.project.name}</span>}
-          <span>Issued: {new Date(invoice.issued_date).toLocaleDateString()}</span>
-          {invoice.due_date && <span>Due: {new Date(invoice.due_date).toLocaleDateString()}</span>}
+          <span>Issued: {new Date(invoice.issued_date).toLocaleDateString('en-GB')}</span>
+          {invoice.due_date && (
+            <span>Due: {new Date(invoice.due_date).toLocaleDateString('en-GB')}</span>
+          )}
           {invoice.paid_date && (
             <span className="text-emerald-600 dark:text-emerald-400">
-              Paid: {new Date(invoice.paid_date).toLocaleDateString()}
+              Paid: {new Date(invoice.paid_date).toLocaleDateString('en-GB')}
             </span>
           )}
         </div>

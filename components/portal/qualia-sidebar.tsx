@@ -221,7 +221,12 @@ function NavItem({
 
   if (disabled) {
     return (
-      <div className={classes} aria-disabled="true" data-nav-id={page.id}>
+      <div
+        className={classes}
+        aria-disabled="true"
+        data-nav-id={page.id}
+        title="Clock in to access"
+      >
         {inner}
       </div>
     );
@@ -456,7 +461,7 @@ function IdentityStrip({
         <button
           type="button"
           onClick={onOpenTweaks}
-          className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-muted/55 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-muted/55 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           aria-label="Tweaks"
         >
           <QIcon name="settings" size={13} />

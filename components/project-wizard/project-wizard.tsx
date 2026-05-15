@@ -329,6 +329,7 @@ export function ProjectWizard({
               onClick={handleClose}
               disabled={isSubmitting || showProvisioning}
               className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              aria-label="Close wizard"
             >
               <X className="h-4 w-4" />
             </Button>

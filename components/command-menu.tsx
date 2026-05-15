@@ -15,9 +15,14 @@ import {
   ArrowUp,
   Loader2,
   CalendarPlus,
+  MessageSquarePlus,
+  CalendarDays,
+  Receipt,
+  CreditCard,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useAdminContext } from '@/components/admin-provider';
 import { NewMeetingModalControlled } from '@/components/new-meeting-modal';
 
 type CommandMode = 'normal' | 'ai';
@@ -35,6 +40,8 @@ export function CommandMenu() {
   const [inputValue, setInputValue] = React.useState('');
   const [showNewMeetingModal, setShowNewMeetingModal] = React.useState(false);
   const router = useRouter();
+  const { userRole } = useAdminContext();
+  const isClient = userRole === 'client';
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -222,7 +229,7 @@ export function CommandMenu() {
                   value={inputValue}
                   onValueChange={handleInputChange}
                   placeholder="Type a command or search... (ai: for AI)"
-                  className="flex h-10 w-full bg-transparent py-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
+                  className="flex h-10 w-full bg-transparent py-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 />
                 <kbd className="ml-2 shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
                   esc
@@ -269,48 +276,86 @@ export function CommandMenu() {
                     <Folder className="h-4 w-4" />
                     <span>Projects</span>
                   </Command.Item>
+                  {!isClient && (
+                    <Command.Item
+                      onSelect={() => runCommand(() => router.push('/clients'))}
+                      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                    >
+                      <Building2 className="h-4 w-4" />
+                      <span>Clients</span>
+                    </Command.Item>
+                  )}
                   <Command.Item
-                    onSelect={() => runCommand(() => router.push('/clients'))}
+                    onSelect={() => runCommand(() => router.push('/requests'))}
                     className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
                   >
-                    <Building2 className="h-4 w-4" />
-                    <span>Clients</span>
+                    <MessageSquarePlus className="h-4 w-4" />
+                    <span>Requests</span>
                   </Command.Item>
+                  {!isClient && (
+                    <Command.Item
+                      onSelect={() => runCommand(() => router.push('/schedule'))}
+                      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                      <span>Schedule</span>
+                    </Command.Item>
+                  )}
+                  <Command.Item
+                    onSelect={() => runCommand(() => router.push('/billing'))}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                  >
+                    <Receipt className="h-4 w-4" />
+                    <span>Billing</span>
+                  </Command.Item>
+                  {!isClient && (
+                    <Command.Item
+                      onSelect={() => runCommand(() => router.push('/payments'))}
+                      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      <span>Payments</span>
+                    </Command.Item>
+                  )}
                 </Command.Group>
 
-                {/* Quick Actions */}
-                <Command.Group
-                  heading="quick actions"
-                  className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
-                >
-                  <Command.Item
-                    onSelect={() =>
-                      runCommand(() => {
-                        setShowNewMeetingModal(true);
-                      })
-                    }
-                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                {/* Quick Actions — internal only */}
+                {!isClient && (
+                  <Command.Group
+                    heading="quick actions"
+                    className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
                   >
-                    <CalendarPlus className="h-4 w-4 text-violet-500" />
-                    <span>New Meeting</span>
-                    <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
-                      m
-                    </kbd>
-                  </Command.Item>
-                </Command.Group>
+                    <Command.Item
+                      onSelect={() =>
+                        runCommand(() => {
+                          setShowNewMeetingModal(true);
+                        })
+                      }
+                      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                    >
+                      <CalendarPlus className="h-4 w-4 text-violet-500" />
+                      <span>New Meeting</span>
+                      <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
+                        m
+                      </kbd>
+                    </Command.Item>
+                  </Command.Group>
+                )}
 
                 {/* Actions */}
                 <Command.Group
                   heading="actions"
                   className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
                 >
-                  <Command.Item
-                    onSelect={() => runCommand(() => router.push('/projects?new=true'))}
-                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Create Project</span>
-                  </Command.Item>
+                  {!isClient && (
+                    <Command.Item
+                      onSelect={() => runCommand(() => router.push('/projects?new=true'))}
+                      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Create Project</span>
+                    </Command.Item>
+                  )}
                   <Command.Item
                     onSelect={() => runCommand(() => router.push('/settings'))}
                     className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
@@ -338,7 +383,10 @@ export function CommandMenu() {
                       {['Show my projects', 'Open clients', 'Open billing'].map((suggestion) => (
                         <button
                           key={suggestion}
-                          onClick={() => setInputValue(suggestion)}
+                          onClick={() => {
+                            sendMessage({ text: suggestion });
+                            setInputValue('');
+                          }}
                           className="rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:text-foreground"
                         >
                           {suggestion}
@@ -385,7 +433,7 @@ export function CommandMenu() {
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Ask AI..."
                     disabled={isLoading}
-                    className="flex-1 bg-transparent px-2 py-1.5 text-[13px] text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-50"
+                    className="flex-1 bg-transparent px-2 py-1.5 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                   />
                   <button
                     type="submit"

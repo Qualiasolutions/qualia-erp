@@ -185,10 +185,12 @@ export function ApiTokensPanel({ profiles }: { profiles: Profiles[] }) {
                     </td>
                     <td className="py-2 pr-4 font-mono text-xs">{t.token_prefix}…</td>
                     <td className="py-2 pr-4 text-xs">
-                      {new Date(t.expires_at).toLocaleDateString()}
+                      {new Date(t.expires_at).toLocaleDateString('en-GB')}
                     </td>
                     <td className="py-2 pr-4 text-xs">
-                      {t.last_used_at ? new Date(t.last_used_at).toLocaleDateString() : 'never'}
+                      {t.last_used_at
+                        ? new Date(t.last_used_at).toLocaleDateString('en-GB')
+                        : 'never'}
                     </td>
                     <td className="py-2 text-right">
                       {isRevoked ? (

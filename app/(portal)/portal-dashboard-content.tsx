@@ -65,7 +65,7 @@ export function PortalDashboardContent({
   logoUrl,
   showWelcomeTour = true,
 }: PortalDashboardContentProps) {
-  const { data, isLoading, isError } = usePortalDashboard(clientId);
+  const { data, isLoading, isError, revalidate } = usePortalDashboard(clientId);
 
   const stats = (data.stats as DashboardStats | null) || null;
   const projects = (data.projects as ProjectWithPhases[]) || [];
@@ -100,6 +100,7 @@ export function PortalDashboardContent({
         recentActivity={recentActivity}
         isLoading={isLoading}
         isError={isError}
+        onRetry={() => revalidate()}
         clientId={clientId}
         displayName={displayName}
         companyName={companyName || undefined}

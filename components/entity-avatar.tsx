@@ -74,7 +74,7 @@ export function EntityAvatar({
     >
       <Image
         src={src}
-        alt="Logo"
+        alt=""
         fill
         className="object-contain p-0.5"
         onError={() => setImageError(true)}

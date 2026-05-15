@@ -255,7 +255,11 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Something went wrong');
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Could not reach the assistant. Check your connection and try again.'
+        );
       } finally {
         setIsStreaming(false);
       }
@@ -408,13 +412,20 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         console.error('Chat error:', err);
-        setError(err instanceof Error ? err.message : 'Something went wrong');
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'The assistant encountered an error. Please retry your message.'
+        );
         setMessages((prev) => [
           ...prev,
           {
             id: `error-${Date.now()}`,
             role: 'assistant',
-            content: err instanceof Error ? err.message : 'Something went wrong. Please try again.',
+            content:
+              err instanceof Error
+                ? err.message
+                : 'The assistant could not respond. Please try again.',
           },
         ]);
       } finally {
