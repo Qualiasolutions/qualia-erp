@@ -197,7 +197,7 @@ describe('setDefaultWorkspace', () => {
   it('returns success when workspace is set as default', async () => {
     supabase.from
       .mockReturnValueOnce(buildChain({ data: { id: 'member-1' }, error: null }))
-      .mockReturnValue(buildChain({ data: null, error: null }));
+      .mockReturnValue(buildChain({ data: { id: WS_ID }, error: null }));
 
     const result = await setDefaultWorkspace(WS_ID);
     expect(result.success).toBe(true);
@@ -291,7 +291,7 @@ describe('removeWorkspaceMember', () => {
   });
 
   it('returns success on valid member removal', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: PROFILE_ID }, error: null }));
     const result = await removeWorkspaceMember(WS_ID, PROFILE_ID);
     expect(result.success).toBe(true);
   });

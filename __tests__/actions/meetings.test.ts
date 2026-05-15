@@ -264,7 +264,9 @@ describe('deleteMeeting', () => {
   });
 
   it('returns success on valid delete', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(
+      buildChain({ data: { id: '835d99bd-97d5-454b-b86e-b52afb106525' }, error: null })
+    );
     const result = await deleteMeeting('835d99bd-97d5-454b-b86e-b52afb106525');
     expect(result.success).toBe(true);
   });
@@ -354,7 +356,9 @@ describe('removeMeetingAttendee', () => {
   });
 
   it('removes attendee successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(
+      buildChain({ data: { id: '835d99bd-97d5-454b-b86e-b52afb106525' }, error: null })
+    );
     const result = await removeMeetingAttendee('835d99bd-97d5-454b-b86e-b52afb106525', 'profile-1');
     expect(result.success).toBe(true);
   });

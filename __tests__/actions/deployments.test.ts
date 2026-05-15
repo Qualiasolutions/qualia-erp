@@ -186,7 +186,7 @@ describe('linkVercelProject', () => {
   });
 
   it('links Vercel project successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: PROJECT_ID }, error: null }));
     const result = await linkVercelProject(PROJECT_ID, 'prj_abc123');
     expect(result.success).toBe(true);
   });

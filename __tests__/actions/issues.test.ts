@@ -242,7 +242,7 @@ describe('deleteIssue', () => {
   });
 
   it('returns success on valid delete', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: ISSUE_ID }, error: null }));
     const result = await deleteIssue(ISSUE_ID);
     expect(result.success).toBe(true);
   });
@@ -496,7 +496,7 @@ describe('removeIssueAssignee', () => {
   });
 
   it('removes assignee successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: ISSUE_ID }, error: null }));
     const result = await removeIssueAssignee(ISSUE_ID, PROFILE_ID);
     expect(result.success).toBe(true);
   });
@@ -565,7 +565,7 @@ describe('getScheduledIssues', () => {
 
 describe('scheduleIssue', () => {
   it('schedules issue successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: ISSUE_ID }, error: null }));
     const result = await scheduleIssue(ISSUE_ID, '2024-06-01T09:00:00Z', '2024-06-01T10:00:00Z');
     expect(result.success).toBe(true);
   });
@@ -579,7 +579,7 @@ describe('scheduleIssue', () => {
 
 describe('unscheduleIssue', () => {
   it('unschedules issue successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: ISSUE_ID }, error: null }));
     const result = await unscheduleIssue(ISSUE_ID);
     expect(result.success).toBe(true);
   });

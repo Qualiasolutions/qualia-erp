@@ -296,7 +296,7 @@ describe('phase actions', () => {
   describe('updateProjectPhase', () => {
     it('updates phase name', async () => {
       const { updateProjectPhase } = await import('@/app/actions/phases');
-      setupMockClient(null, null);
+      setupMockClient({ id: PHASE_ID }, null);
 
       const result = await updateProjectPhase(PHASE_ID, 'Updated Name', PROJECT_ID);
 

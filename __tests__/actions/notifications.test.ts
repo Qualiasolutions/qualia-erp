@@ -174,7 +174,7 @@ describe('markNotificationAsRead', () => {
   });
 
   it('marks notification as read successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: NOTIF_ID }, error: null }));
     const result = await markNotificationAsRead(NOTIF_ID);
     expect(result.success).toBe(true);
   });
@@ -216,7 +216,7 @@ describe('deleteNotification', () => {
   });
 
   it('deletes notification successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: NOTIF_ID }, error: null }));
     const result = await deleteNotification(NOTIF_ID);
     expect(result.success).toBe(true);
   });

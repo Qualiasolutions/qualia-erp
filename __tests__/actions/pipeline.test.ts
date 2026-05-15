@@ -205,7 +205,7 @@ describe('createPhaseResource', () => {
 
 describe('updatePhaseResource', () => {
   it('updates resource successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: RESOURCE_ID }, error: null }));
     const result = await updatePhaseResource(RESOURCE_ID, { title: 'Updated Title' });
     expect(result.success).toBe(true);
   });
@@ -226,7 +226,7 @@ describe('deletePhaseResource', () => {
   });
 
   it('deletes resource successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: RESOURCE_ID }, error: null }));
     const result = await deletePhaseResource(RESOURCE_ID);
     expect(result.success).toBe(true);
   });
@@ -325,7 +325,7 @@ describe('updateProjectNote', () => {
     // Phase 11: ownership check fetches note.user_id first, then runs the UPDATE.
     supabase.from
       .mockReturnValueOnce(buildChain({ data: { user_id: USER_ID }, error: null }))
-      .mockReturnValue(buildChain({ data: null, error: null }));
+      .mockReturnValue(buildChain({ data: { id: NOTE_ID }, error: null }));
     const result = await updateProjectNote(NOTE_ID, 'Updated content');
     expect(result.success).toBe(true);
   });
@@ -344,7 +344,7 @@ describe('deleteProjectNote', () => {
     // Phase 11: ownership check fetches note.user_id first, then runs the DELETE.
     supabase.from
       .mockReturnValueOnce(buildChain({ data: { user_id: USER_ID }, error: null }))
-      .mockReturnValue(buildChain({ data: null, error: null }));
+      .mockReturnValue(buildChain({ data: { id: NOTE_ID }, error: null }));
     const result = await deleteProjectNote(NOTE_ID);
     expect(result.success).toBe(true);
   });
@@ -420,7 +420,7 @@ describe('updatePhaseStatus', () => {
       .mockReturnValueOnce(
         buildChain({ data: { status: 'not_started', name: 'SETUP' }, error: null })
       )
-      .mockReturnValue(buildChain({ data: null, error: null }));
+      .mockReturnValue(buildChain({ data: { id: PHASE_ID }, error: null }));
 
     const result = await updatePhaseStatus(PHASE_ID, 'in_progress', PROJECT_ID);
     expect(result.success).toBe(true);
@@ -447,7 +447,7 @@ describe('updatePhaseName', () => {
   });
 
   it('updates phase name successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: PHASE_ID }, error: null }));
     const result = await updatePhaseName(PHASE_ID, 'New Phase Name', PROJECT_ID);
     expect(result.success).toBe(true);
   });
@@ -468,7 +468,7 @@ describe('deletePhase', () => {
   });
 
   it('deletes phase and linked tasks/resources successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: PHASE_ID }, error: null }));
     const result = await deletePhase(PHASE_ID, PROJECT_ID);
     expect(result.success).toBe(true);
   });
@@ -628,7 +628,7 @@ describe('updatePhaseStatus (completed notification path)', () => {
       .mockReturnValueOnce(
         buildChain({ data: { status: 'in_progress', name: 'DESIGN' }, error: null })
       )
-      .mockReturnValueOnce(buildChain({ data: null, error: null })) // updatePhaseStatus
+      .mockReturnValueOnce(buildChain({ data: { id: PHASE_ID }, error: null })) // updatePhaseStatus
       .mockReturnValue(buildChain({ data: { full_name: 'Fawzi' }, error: null })); // profile fetch
 
     const result = await updatePhaseStatus(PHASE_ID, 'completed', PROJECT_ID);

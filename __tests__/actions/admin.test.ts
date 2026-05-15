@@ -151,18 +151,18 @@ describe('updateUserRole', () => {
     // @ts-expect-error testing invalid role
     const result = await updateUserRole(TARGET_USER_ID, 'client');
     expect(result.success).toBe(false);
-    expect(result.error).toContain('Invalid role');
+    expect(result.error).toContain('Role must be');
   });
 
   it('rejects the removed manager role', async () => {
     // @ts-expect-error testing removed role
     const result = await updateUserRole(TARGET_USER_ID, 'manager');
     expect(result.success).toBe(false);
-    expect(result.error).toContain('Invalid role');
+    expect(result.error).toContain('Role must be');
   });
 
   it('updates user role successfully', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: TARGET_USER_ID }, error: null }));
     const result = await updateUserRole(TARGET_USER_ID, 'employee');
     expect(result.success).toBe(true);
   });

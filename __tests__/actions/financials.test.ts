@@ -208,7 +208,7 @@ describe('updateExpense', () => {
   });
 
   it('returns success on valid update', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: EXPENSE_UUID }, error: null }));
     const result = await updateExpense({
       id: EXPENSE_UUID,
       amount: 300,
@@ -248,7 +248,7 @@ describe('deleteExpense', () => {
   });
 
   it('returns success on valid delete', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: validUUID }, error: null }));
     const result = await deleteExpense(validUUID);
     expect(result.success).toBe(true);
   });

@@ -55,7 +55,8 @@ import {
 
 // ---- Helpers ----
 
-const ADMIN_USER = { id: 'admin-id', email: 'admin@test.com' };
+const ADMIN_USER = { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', email: 'admin@test.com' };
+const WS_ID = 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 
 function buildChain(resolvedData: { data: unknown; error: unknown } = { data: null, error: null }) {
   const methods = [
@@ -104,14 +105,14 @@ beforeEach(() => {
 describe('getIntegrations', () => {
   it('returns error when not authenticated', async () => {
     mockAuth(null);
-    const result = await getIntegrations('workspace-1');
+    const result = await getIntegrations(WS_ID);
     expect(result.success).toBe(false);
     expect(result.error).toContain('authenticated');
   });
 
   it('returns error when user is not admin', async () => {
     mockNonAdminProfile();
-    const result = await getIntegrations('workspace-1');
+    const result = await getIntegrations(WS_ID);
     expect(result.success).toBe(false);
     expect(result.error).toContain('Admin');
   });
@@ -123,7 +124,7 @@ describe('getIntegrations', () => {
     ];
     supabase.from.mockReturnValue(buildChain({ data: integrationRows, error: null }));
 
-    const result = await getIntegrations('workspace-1');
+    const result = await getIntegrations(WS_ID);
     expect(result.success).toBe(true);
     expect(result.data).toHaveLength(1);
     expect(result.data?.[0].provider).toBe('github');
@@ -132,7 +133,7 @@ describe('getIntegrations', () => {
   it('returns error on DB failure', async () => {
     mockAdminProfile();
     supabase.from.mockReturnValue(buildChain({ data: null, error: { message: 'DB error' } }));
-    const result = await getIntegrations('workspace-1');
+    const result = await getIntegrations(WS_ID);
     expect(result.success).toBe(false);
   });
 });
@@ -140,13 +141,13 @@ describe('getIntegrations', () => {
 describe('saveIntegrationToken', () => {
   it('returns error when not authenticated', async () => {
     mockAuth(null);
-    const result = await saveIntegrationToken('ws-1', 'github', 'token', { org: 'test' });
+    const result = await saveIntegrationToken(WS_ID, 'github', 'token', { org: 'test' });
     expect(result.success).toBe(false);
   });
 
   it('returns error when user is not admin', async () => {
     mockNonAdminProfile();
-    const result = await saveIntegrationToken('ws-1', 'github', 'token', { org: 'test' });
+    const result = await saveIntegrationToken(WS_ID, 'github', 'token', { org: 'test' });
     expect(result.success).toBe(false);
     expect(result.error).toContain('Admin');
   });
@@ -155,7 +156,7 @@ describe('saveIntegrationToken', () => {
     mockAdminProfile();
     supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
 
-    const result = await saveIntegrationToken('ws-1', 'github', 'ghp_token', { org: 'qualia' });
+    const result = await saveIntegrationToken(WS_ID, 'github', 'ghp_token', { org: 'qualia' });
     expect(result.success).toBe(true);
   });
 
@@ -163,7 +164,7 @@ describe('saveIntegrationToken', () => {
     mockAdminProfile();
     supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
 
-    const result = await saveIntegrationToken('ws-1', 'zoho', 'refresh_token', {
+    const result = await saveIntegrationToken(WS_ID, 'zoho', 'refresh_token', {
       clientId: 'cid',
       clientSecret: 'csec',
       refreshToken: 'rtoken',
@@ -175,22 +176,22 @@ describe('saveIntegrationToken', () => {
 describe('removeIntegration', () => {
   it('returns error when not authenticated', async () => {
     mockAuth(null);
-    const result = await removeIntegration('ws-1', 'github');
+    const result = await removeIntegration(WS_ID, 'github');
     expect(result.success).toBe(false);
   });
 
   it('returns error when user is not admin', async () => {
     mockNonAdminProfile();
-    const result = await removeIntegration('ws-1', 'github');
+    const result = await removeIntegration(WS_ID, 'github');
     expect(result.success).toBe(false);
     expect(result.error).toContain('Admin');
   });
 
   it('removes integration successfully for admin', async () => {
     mockAdminProfile();
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: [{ id: 'integration-1' }], error: null }));
 
-    const result = await removeIntegration('ws-1', 'github');
+    const result = await removeIntegration(WS_ID, 'github');
     expect(result.success).toBe(true);
   });
 
@@ -198,7 +199,7 @@ describe('removeIntegration', () => {
     mockAdminProfile();
     supabase.from.mockReturnValue(buildChain({ data: null, error: { message: 'Delete failed' } }));
 
-    const result = await removeIntegration('ws-1', 'github');
+    const result = await removeIntegration(WS_ID, 'github');
     expect(result.success).toBe(false);
   });
 });
@@ -206,13 +207,13 @@ describe('removeIntegration', () => {
 describe('testIntegration', () => {
   it('returns error when not authenticated', async () => {
     mockAuth(null);
-    const result = await testIntegration('ws-1', 'github');
+    const result = await testIntegration(WS_ID, 'github');
     expect(result.success).toBe(false);
   });
 
   it('returns error when user is not admin', async () => {
     mockNonAdminProfile();
-    const result = await testIntegration('ws-1', 'github');
+    const result = await testIntegration(WS_ID, 'github');
     expect(result.success).toBe(false);
   });
 
@@ -220,7 +221,7 @@ describe('testIntegration', () => {
     mockAdminProfile();
     supabase.from.mockReturnValue(buildChain({ data: null, error: { code: 'PGRST116' } }));
 
-    const result = await testIntegration('ws-1', 'github');
+    const result = await testIntegration(WS_ID, 'github');
     expect(result.success).toBe(true);
     expect(result.data?.valid).toBe(false);
     expect(result.data?.error).toContain('not configured');
@@ -236,7 +237,7 @@ describe('testIntegration', () => {
       .mockReturnValueOnce(buildChain({ data: integrationData, error: null }))
       .mockReturnValue(buildChain({ data: null, error: null }));
 
-    const result = await testIntegration('ws-1', 'github');
+    const result = await testIntegration(WS_ID, 'github');
     expect(result.success).toBe(true);
     expect(result.data?.valid).toBe(true);
   });
@@ -246,7 +247,7 @@ describe('checkIntegrationsConfigured', () => {
   it('returns false for both when no integrations', async () => {
     supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
 
-    const result = await checkIntegrationsConfigured('ws-1');
+    const result = await checkIntegrationsConfigured(WS_ID);
     expect(result.success).toBe(true);
     expect(result.data?.github).toBe(false);
     expect(result.data?.vercel).toBe(false);
@@ -259,7 +260,7 @@ describe('checkIntegrationsConfigured', () => {
     ];
     supabase.from.mockReturnValue(buildChain({ data: integrations, error: null }));
 
-    const result = await checkIntegrationsConfigured('ws-1');
+    const result = await checkIntegrationsConfigured(WS_ID);
     expect(result.success).toBe(true);
     expect(result.data?.github).toBe(true);
     expect(result.data?.vercel).toBe(true);
@@ -272,7 +273,7 @@ describe('checkIntegrationsConfigured', () => {
     ];
     supabase.from.mockReturnValue(buildChain({ data: integrations, error: null }));
 
-    const result = await checkIntegrationsConfigured('ws-1');
+    const result = await checkIntegrationsConfigured(WS_ID);
     expect(result.data?.github).toBe(false);
     expect(result.data?.vercel).toBe(false);
   });
@@ -280,7 +281,7 @@ describe('checkIntegrationsConfigured', () => {
   it('returns error on DB failure', async () => {
     supabase.from.mockReturnValue(buildChain({ data: null, error: { message: 'DB error' } }));
 
-    const result = await checkIntegrationsConfigured('ws-1');
+    const result = await checkIntegrationsConfigured(WS_ID);
     expect(result.success).toBe(false);
   });
 });

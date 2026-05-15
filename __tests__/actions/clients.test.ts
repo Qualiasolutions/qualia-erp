@@ -269,7 +269,7 @@ describe('deleteClientRecord', () => {
   });
 
   it('returns success on valid delete', async () => {
-    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+    supabase.from.mockReturnValue(buildChain({ data: { id: 'client-1' }, error: null }));
     const result = await deleteClientRecord('client-1');
     expect(result.success).toBe(true);
   });
@@ -301,7 +301,7 @@ describe('toggleClientStatus', () => {
     // 1st: get current status, 2nd: update status, then logClientActivity calls
     supabase.from
       .mockReturnValueOnce(buildChain({ data: currentClient, error: null }))
-      .mockReturnValue(buildChain({ data: null, error: null }));
+      .mockReturnValue(buildChain({ data: { id: 'client-1' }, error: null }));
 
     const result = await toggleClientStatus('client-1', 'hot');
     expect(result.success).toBe(true);
