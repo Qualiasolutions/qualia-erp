@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
+  Calendar,
   Check,
   ExternalLink,
   Lock,
@@ -13,6 +14,7 @@ import {
   RotateCcw,
   Sparkles,
   Target,
+  Users,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -39,6 +41,7 @@ import {
   regenerateMyDailyBrief,
   type BriefItem,
 } from '@/app/actions/daily-brief';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useClockGate } from '@/components/clock-gate-provider';
 import {
   AssignmentFocusCard,
@@ -94,9 +97,12 @@ function initialsOf(name: string | null | undefined): string {
 export function QualiaHomeView({ role, displayName, workspaces, userId }: QualiaHomeViewProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    setMounted(true);
+    const raf = requestAnimationFrame(() => setMounted(true));
     const id = window.setInterval(() => setMounted((m) => m), 60_000);
-    return () => window.clearInterval(id);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearInterval(id);
+    };
   }, []);
 
   const now = new Date();
@@ -284,7 +290,7 @@ function MilestonesCard({
         </div>
       </div>
       {milestones.length === 0 ? (
-        <div className="px-6 py-10 text-center text-sm text-muted-foreground">{emptyText}</div>
+        <EmptyState icon={Target} title={emptyText} compact minimal className="px-6 py-10" />
       ) : (
         <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
           {milestones.map((m) => {
@@ -468,7 +474,7 @@ function TodayMeetingsCard({
         )}
       </div>
       {meetings.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nothing on the calendar today.</p>
+        <EmptyState icon={Calendar} title="Nothing on the calendar today" compact minimal />
       ) : (
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
           {meetings.map((m) => {
@@ -546,12 +552,14 @@ function ClientPulseCard({ className }: { className?: string }) {
       </div>
 
       {items.length === 0 ? (
-        <div className="px-5 py-8 text-center">
-          <p className="text-sm text-muted-foreground">No client activity yet today.</p>
-          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70">
-            Quiet inbox
-          </p>
-        </div>
+        <EmptyState
+          icon={Sparkles}
+          title="No client activity yet today"
+          description="Quiet inbox"
+          compact
+          minimal
+          className="px-5 py-8"
+        />
       ) : (
         <ul className="divide-y divide-border/60">
           {items.map((item) => {
@@ -622,9 +630,13 @@ function WhosDoingWhatCard({
       </div>
 
       {members.length === 0 ? (
-        <div className="px-5 py-8 text-center text-sm text-muted-foreground">
-          No team activity yet.
-        </div>
+        <EmptyState
+          icon={Users}
+          title="No team activity yet"
+          compact
+          minimal
+          className="px-5 py-8"
+        />
       ) : (
         <div className="divide-y divide-border">
           {members.map((member) => (

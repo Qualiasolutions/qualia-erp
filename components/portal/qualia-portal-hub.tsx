@@ -6,6 +6,7 @@ import {
   ArrowRight,
   CalendarClock,
   CalendarPlus,
+  FolderOpen,
   MessageSquare,
   FileText,
   Video,
@@ -15,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { hueFromId, clientAccent } from '@/lib/color-constants';
 import { formatEURCompact } from '@/lib/currency';
 import { NewMeetingModalControlled } from '@/components/new-meeting-modal';
+import { EmptyState } from '@/components/ui/empty-state';
 
 /* ======================================================================
    Types
@@ -310,11 +312,12 @@ const EngagementsSection = memo(function EngagementsSection({
       <section>
         {heading}
         <h2 className="text-lg font-semibold tracking-tight">Currently building</h2>
-        <div className="mt-6 rounded-2xl border border-dashed border-border bg-card/40 p-10 text-center">
-          <p className="text-sm italic text-muted-foreground">
-            No active projects yet. Your next engagement will appear here.
-          </p>
-        </div>
+        <EmptyState
+          icon={FolderOpen}
+          title="No active projects yet"
+          description="Your next engagement will appear here."
+          className="mt-6"
+        />
       </section>
     );
   }
@@ -503,9 +506,14 @@ function MeetingsSidebar({
               ))}
             </ul>
           ) : (
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              No upcoming meetings yet.
-            </p>
+            <EmptyState
+              icon={CalendarClock}
+              title="No upcoming meetings"
+              description="Book a time above to get started."
+              compact
+              minimal
+              className="py-2"
+            />
           )}
         </div>
       </div>

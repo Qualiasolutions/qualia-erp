@@ -4,10 +4,11 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
-import { Bell, Check, CheckCheck, Loader2, Trash2 } from 'lucide-react';
+import { Bell, BellOff, Check, CheckCheck, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { EmptyState } from '@/components/ui/empty-state';
 import { cn } from '@/lib/utils';
 import {
   useNotifications,
@@ -130,12 +131,14 @@ export function NotificationPanel() {
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center py-8 text-center">
-              <div className="rounded-full bg-muted p-3">
-                <Bell className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <p className="mt-3 text-sm font-medium">No notifications</p>
-              <p className="mt-1 text-xs text-muted-foreground">You&apos;re all caught up!</p>
+            <div className="flex h-full items-center justify-center py-8">
+              <EmptyState
+                icon={BellOff}
+                title="No notifications"
+                description="You're all caught up!"
+                compact
+                minimal
+              />
             </div>
           ) : (
             <div className="divide-y divide-border/50">
