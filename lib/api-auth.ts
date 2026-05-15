@@ -6,26 +6,10 @@ import { createAdminClient } from '@/lib/supabase/server';
  * Per-user token auth for qualia-framework ERP ingest endpoints.
  *
  * Auth: Bearer token matching an active api_tokens row (per-user, qlt_* prefix).
- *
- * The legacy shared-key path was removed 2026-05-15 (sunset date 2026-05-17).
  */
 
 export const TOKEN_PREFIX = 'qlt_';
 export const TOKEN_BYTES = 32;
-
-/**
- * @deprecated Legacy auth path removed 2026-05-15. These constants are retained
- * only for backward compatibility with callers that still reference them.
- * They will be removed in the next cleanup sweep.
- */
-export const LEGACY_SUNSET_DATE = '2026-05-17T00:00:00Z';
-
-export const LEGACY_DEPRECATION_HEADERS = {
-  Deprecation: 'true',
-  Sunset: LEGACY_SUNSET_DATE,
-  Link: '</docs/erp-contract#per-user-tokens>; rel="deprecation"; type="text/html"',
-  Warning: '299 - "Legacy shared key is removed. Use per-user tokens (qlt_*)."',
-} as const;
 
 export type AuthResult =
   | {
@@ -34,13 +18,6 @@ export type AuthResult =
       tokenId: string;
       profileId: string;
       scope: string;
-    }
-  | {
-      ok: true;
-      method: 'legacy_shared_key';
-      tokenId: null;
-      profileId: null;
-      scope: 'reports:write';
     }
   | {
       ok: false;
@@ -75,7 +52,7 @@ export function generateToken(): { plaintext: string; hash: string; prefix: stri
 /**
  * Check whether an authenticated token's scope grants access to a required scope.
  * Scopes are space-separated strings (e.g. "reports:write mcp:read"). The
- * pseudo-scope "*" grants everything. Legacy shared keys are reports:write only.
+ * pseudo-scope "*" grants everything.
  */
 export function hasScope(auth: AuthResult, required: string): boolean {
   if (!auth.ok) return false;

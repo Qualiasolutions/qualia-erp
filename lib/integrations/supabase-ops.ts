@@ -207,36 +207,62 @@ export async function getRLSPolicies(
 }
 
 /**
- * Execute a read-only query on a client project's database (admin only)
- * Only SELECT queries are allowed
+ * Execute a read-only query on a client project's database (admin only).
+ * Only SELECT queries are allowed.
+ *
+ * DEFENSE-IN-DEPTH NOTE: The regex checks below are best-effort guards against
+ * accidental misuse — they are NOT a strong security boundary. The real fix is
+ * to connect via a read-only Postgres role and/or issue
+ * `SET TRANSACTION READ ONLY` before executing. Until that is in place, this
+ * validation layer catches the most common injection/abuse patterns.
  */
 export async function executeReadQuery(
   workspaceId: string,
   projectId: string,
   sql: string
 ): Promise<IntegrationResult<unknown[]>> {
-  // Security: only allow SELECT statements
-  const trimmed = sql.trim().toLowerCase();
-  if (!trimmed.startsWith('select')) {
+  // Reject SQL comments — they can mask keywords from naive scanners
+  if (/--|\/\*|\*\//.test(sql)) {
+    return { success: false, error: 'SQL comments are not allowed' };
+  }
+
+  // Reject multi-statement queries (semicolons outside trailing whitespace)
+  const trimmedSql = sql.trim().replace(/;+$/, '');
+  if (trimmedSql.includes(';')) {
+    return { success: false, error: 'Multi-statement queries are not allowed' };
+  }
+
+  // Must start with SELECT (case-insensitive, after trim)
+  const lower = trimmedSql.toLowerCase();
+  if (!/^select\b/.test(lower)) {
     return {
       success: false,
       error: 'Only SELECT queries are allowed. Use executeMigration for DDL operations.',
     };
   }
 
-  // Block dangerous patterns
-  const dangerous = [
-    'drop ',
-    'delete ',
-    'truncate ',
-    'alter ',
-    'insert ',
-    'update ',
-    'create ',
-    'grant ',
-    'revoke ',
+  // Word-boundary regex blocklist — catches `drop ` but not 'drop' inside a string literal.
+  // Best-effort; the real defense is a read-only Postgres role + SET TRANSACTION READ ONLY.
+  const FORBIDDEN_KEYWORDS = [
+    'drop',
+    'delete',
+    'truncate',
+    'alter',
+    'insert',
+    'update',
+    'create',
+    'grant',
+    'revoke',
+    // Side-effect / privilege-escalation functions
+    'pg_terminate_backend',
+    'pg_cancel_backend',
+    'set_config',
+    // PL/pgSQL blocks
+    'execute',
   ];
-  if (dangerous.some((d) => trimmed.includes(d))) {
+  const wordBoundary = new RegExp(`\\b(${FORBIDDEN_KEYWORDS.join('|')})\\b`, 'i');
+  // 'do $$' is special-cased because '$' isn't a word character
+  if (wordBoundary.test(lower) || /\bdo\s*\$\$/i.test(lower)) {
     return {
       success: false,
       error: 'Query contains forbidden keywords. Only SELECT queries are allowed.',

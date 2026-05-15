@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/server';
-import { authenticateRequest, hasScope, LEGACY_DEPRECATION_HEADERS } from '@/lib/api-auth';
+import { authenticateRequest, hasScope } from '@/lib/api-auth';
 import { apiRateLimiter } from '@/lib/rate-limit';
 
 /**
@@ -9,9 +9,7 @@ import { apiRateLimiter } from '@/lib/rate-limit';
  *
  * Receives structured phase reports from qualia-framework's /qualia-report skill.
  *
- * Auth (dual path, v3.4.2 compat):
- *  1. Bearer token from api_tokens (qlt_*) — preferred, per-user.
- *  2. Legacy CLAUDE_API_KEY — grandfathered with Deprecation + Sunset headers.
+ * Auth: Bearer token from api_tokens (qlt_*) — per-user.
  *
  * Idempotency:
  *  Clients SHOULD send `Idempotency-Key: <uuid>` per report. Replays within
@@ -100,12 +98,6 @@ type Payload = z.infer<typeof payloadSchema>;
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
-type ProfileCandidate = {
-  id: string;
-  full_name: string | null;
-  email: string | null;
-};
-
 type OpenWorkSession = {
   id: string;
   started_at: string;
@@ -127,71 +119,6 @@ function normalizeToken(value: string | null | undefined): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
-}
-
-function scoreSubmittedByProfile(submittedBy: string, profile: ProfileCandidate): number {
-  const submitted = normalizeToken(submittedBy);
-  if (!submitted) return 0;
-
-  const name = normalizeToken(profile.full_name);
-  const emailLocal = normalizeToken(profile.email?.split('@')[0]);
-
-  if (name && submitted === name) return 100;
-  if (emailLocal && submitted === emailLocal) return 95;
-
-  const submittedParts = submitted.split(/\s+/).filter(Boolean);
-  const nameParts = name.split(/\s+/).filter(Boolean);
-
-  if (nameParts.length > 0 && nameParts.every((part) => submittedParts.includes(part))) {
-    return 80;
-  }
-
-  if (
-    submittedParts[0] &&
-    nameParts[0] &&
-    submittedParts[0].length >= 3 &&
-    submittedParts[0] === nameParts[0]
-  ) {
-    return 70;
-  }
-
-  if (emailLocal && submittedParts[0] && submittedParts[0] === emailLocal) {
-    return 65;
-  }
-
-  return 0;
-}
-
-async function resolveSubmittedByProfileId(
-  supabase: AdminClient,
-  submittedBy: string | null | undefined
-): Promise<string | null> {
-  if (!submittedBy?.trim()) return null;
-
-  const { data, error } = await supabase.from('profiles').select('id, full_name, email').limit(500);
-
-  if (error || !data) {
-    console.warn('[api/v1/reports] Could not resolve submitted_by profile:', error?.message);
-    return null;
-  }
-
-  const scored = (data as ProfileCandidate[])
-    .map((profile) => ({
-      id: profile.id,
-      score: scoreSubmittedByProfile(submittedBy, profile),
-    }))
-    .filter((match) => match.score > 0)
-    .sort((a, b) => b.score - a.score);
-
-  if (scored.length === 0) return null;
-  if (scored.length > 1 && scored[0].score === scored[1].score) {
-    console.warn(
-      `[api/v1/reports] Ambiguous submitted_by profile match for "${submittedBy}"; skipping work-session link`
-    );
-    return null;
-  }
-
-  return scored[0].id;
 }
 
 function normalizeProjectName(value: string | null | undefined): string {
@@ -411,8 +338,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const rateLimitId = auth.method === 'per_user_token' ? auth.profileId : 'v1-reports-legacy';
-  const rateLimitResult = await apiRateLimiter(`v1:reports:${rateLimitId ?? 'unknown'}`);
+  const rateLimitResult = await apiRateLimiter(`v1:reports:${auth.profileId ?? 'unknown'}`);
   if (!rateLimitResult.success) {
     const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
     return errorResponse(
@@ -422,20 +348,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const deprecationHeaders =
-    auth.method === 'legacy_shared_key' ? LEGACY_DEPRECATION_HEADERS : undefined;
-
   // Parse Idempotency-Key header (optional, UUID). Invalid format → 400.
   const idempotencyHeader = request.headers.get('idempotency-key');
   let idempotencyKey: string | null = null;
   if (idempotencyHeader) {
     const trimmed = idempotencyHeader.trim();
     if (!UUID_REGEX.test(trimmed)) {
-      return errorResponse(
-        400,
-        { error: 'INVALID_IDEMPOTENCY_KEY', message: 'Idempotency-Key must be a UUID' },
-        deprecationHeaders
-      );
+      return errorResponse(400, {
+        error: 'INVALID_IDEMPOTENCY_KEY',
+        message: 'Idempotency-Key must be a UUID',
+      });
     }
     idempotencyKey = trimmed.toLowerCase();
   }
@@ -444,24 +366,16 @@ export async function POST(request: NextRequest) {
   try {
     rawBody = await request.json();
   } catch {
-    return errorResponse(
-      400,
-      { error: 'INVALID_JSON', message: 'Invalid JSON body' },
-      deprecationHeaders
-    );
+    return errorResponse(400, { error: 'INVALID_JSON', message: 'Invalid JSON body' });
   }
 
   const parsed = payloadSchema.safeParse(rawBody);
   if (!parsed.success) {
-    return errorResponse(
-      422,
-      {
-        error: 'VALIDATION_FAILED',
-        message: 'Payload failed validation',
-        details: parsed.error.flatten(),
-      },
-      deprecationHeaders
-    );
+    return errorResponse(422, {
+      error: 'VALIDATION_FAILED',
+      message: 'Payload failed validation',
+      details: parsed.error.flatten(),
+    });
   }
 
   const body = parsed.data;
@@ -488,7 +402,7 @@ export async function POST(request: NextRequest) {
       const replayId = replayRow?.client_report_id ?? existing.report_id;
       return NextResponse.json(
         { ok: true, report_id: replayId, replayed: true, message: 'Idempotent replay' },
-        { headers: { ...(deprecationHeaders ?? {}), 'Idempotent-Replay': 'true' } }
+        { headers: { 'Idempotent-Replay': 'true' } }
       );
     }
   }
@@ -532,7 +446,7 @@ export async function POST(request: NextRequest) {
     erp_project_id: erpProjectId,
     framework_version: body.framework_version || null,
     idempotency_key: idempotencyKey,
-    token_id: auth.method === 'per_user_token' ? auth.tokenId : null,
+    token_id: auth.tokenId,
     auth_method: auth.method,
   };
 
@@ -561,11 +475,10 @@ export async function POST(request: NextRequest) {
 
   if (insertError || !insertedReport) {
     console.error('[api/v1/reports] Insert error:', insertError);
-    return errorResponse(
-      500,
-      { error: 'INSERT_FAILED', message: insertError?.message ?? 'unknown' },
-      deprecationHeaders
-    );
+    return errorResponse(500, {
+      error: 'INSERT_FAILED',
+      message: insertError?.message ?? 'unknown',
+    });
   }
 
   // Record idempotency key AFTER successful report insert.
@@ -575,7 +488,7 @@ export async function POST(request: NextRequest) {
     await supabase.from('idempotency_keys').insert({
       key: idempotencyKey,
       report_id: insertedReport.id,
-      profile_id: auth.method === 'per_user_token' ? auth.profileId : null,
+      profile_id: auth.profileId,
     });
   }
 
@@ -583,10 +496,7 @@ export async function POST(request: NextRequest) {
   // otherwise fall back to the internal UUID (legacy behavior).
   const responseReportId = body.client_report_id ?? insertedReport.id;
 
-  let profileId = auth.method === 'per_user_token' ? auth.profileId : null;
-  if (!profileId && auth.method === 'legacy_shared_key') {
-    profileId = await resolveSubmittedByProfileId(supabase, body.submitted_by);
-  }
+  const profileId = auth.profileId;
 
   const sessionLink = await linkReportToActiveWorkSession({
     supabase,
@@ -597,16 +507,13 @@ export async function POST(request: NextRequest) {
     erpProjectId,
   });
 
-  return NextResponse.json(
-    {
-      ok: true,
-      report_id: responseReportId,
-      erp_project_id: erpProjectId,
-      erp_project_name: erpProject?.name ?? null,
-      linked_session_id: sessionLink.linked_session_id,
-      link_method: sessionLink.link_method,
-      message: 'Report received',
-    },
-    { headers: deprecationHeaders }
-  );
+  return NextResponse.json({
+    ok: true,
+    report_id: responseReportId,
+    erp_project_id: erpProjectId,
+    erp_project_name: erpProject?.name ?? null,
+    linked_session_id: sessionLink.linked_session_id,
+    link_method: sessionLink.link_method,
+    message: 'Report received',
+  });
 }
