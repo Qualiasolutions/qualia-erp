@@ -73,11 +73,18 @@ interface RequestDetailSheetProps {
 
 const PIPELINE: { key: RequestStatus; label: string }[] = [
   { key: 'pending', label: 'Pending' },
-  { key: 'in_review', label: 'In Review' },
-  { key: 'planned', label: 'Planned' },
   { key: 'in_progress', label: 'In Progress' },
   { key: 'completed', label: 'Completed' },
 ];
+
+/** Map any DB status to one of the 3 UI statuses (or 'archived' for declined). */
+function toUiStatus(dbStatus: string): RequestStatus {
+  if (dbStatus === 'in_review' || dbStatus === 'pending') return 'pending';
+  if (dbStatus === 'planned' || dbStatus === 'in_progress') return 'in_progress';
+  if (dbStatus === 'completed') return 'completed';
+  if (dbStatus === 'declined') return 'declined' as RequestStatus;
+  return 'pending';
+}
 
 export function RequestDetailSheet({
   request,
@@ -154,7 +161,7 @@ export function RequestDetailSheet({
         return;
       }
       setConfirmAction(null);
-      toast.success('Request declined');
+      toast.success('Request archived');
       router.refresh();
       onClose();
     });
@@ -177,7 +184,7 @@ export function RequestDetailSheet({
 
   if (!request) return null;
 
-  const currentStatus = (request.status as RequestStatus) ?? 'pending';
+  const currentStatus = toUiStatus(request.status);
   const isClosed = currentStatus === 'completed' || currentStatus === 'declined';
   const attachmentCount = request.attachments?.length ?? 0;
 
@@ -320,7 +327,7 @@ export function RequestDetailSheet({
                         className="h-8 gap-1.5 px-3 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                       >
                         <XCircle className="h-3.5 w-3.5" />
-                        Decline
+                        Archive
                       </Button>
                     )}
                     {isClient && (
@@ -375,9 +382,9 @@ export function RequestDetailSheet({
       <ConfirmDialog
         open={confirmAction === 'decline'}
         onOpenChange={(open) => !open && setConfirmAction(null)}
-        title="Decline this request?"
-        description="The client will see this request as declined. Add context via a comment first if helpful."
-        confirmLabel="Decline"
+        title="Archive this request?"
+        description="The request will be archived and hidden from the board. Add context via a comment first if helpful."
+        confirmLabel="Archive"
         variant="destructive"
         onConfirm={handleDecline}
       />
@@ -397,17 +404,19 @@ export function RequestDetailSheet({
 
 /* ─── Status pipeline ──────────────────────────────────────────────────── */
 
-function StatusPipeline({ currentStatus }: { currentStatus: RequestStatus }) {
-  if (currentStatus === 'declined') {
+function StatusPipeline({ currentStatus }: { currentStatus: string }) {
+  const mapped = toUiStatus(currentStatus);
+
+  if (mapped === ('declined' as string)) {
     return (
       <div className="flex items-center gap-2 text-xs">
         <span className="h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden />
-        <span className="font-medium text-foreground">Declined</span>
+        <span className="font-medium text-foreground">Archived</span>
       </div>
     );
   }
 
-  const currentIndex = PIPELINE.findIndex((p) => p.key === currentStatus);
+  const currentIndex = PIPELINE.findIndex((p) => p.key === mapped);
 
   return (
     <ol className="flex items-center gap-1.5" aria-label="Request pipeline status">
