@@ -1,0 +1,56 @@
+'use client';
+
+// Cache keys for SWR
+export const cacheKeys = {
+  teams: 'teams',
+  projects: 'projects',
+  projectStats: 'project-stats',
+  profiles: 'profiles',
+  workspaceId: 'workspace-id',
+  todaysTasks: 'todays-tasks',
+  todaysMeetings: 'todays-meetings',
+  projectPhases: (projectId: string) => `project-phases-${projectId}`,
+  meetings: 'all-meetings',
+  notifications: (workspaceId: string) => `notifications-${workspaceId}`,
+  unreadCount: (workspaceId: string) => `unread-count-${workspaceId}`,
+  provisioningStatus: (projectId: string) => `provisioning-${projectId}`,
+  projectDeployments: (projectId: string) => `project-deployments-${projectId}`,
+  projectEnvironments: (projectId: string) => `project-environments-${projectId}`,
+  projectHealth: (projectId: string) => `project-health-${projectId}`,
+  scheduledTasks: (date: string) => `scheduled-tasks-${date}`,
+  aiConversations: 'ai-conversations',
+  aiMessages: (conversationId: string) => `ai-messages-${conversationId}`,
+  aiUserContext: (userId: string) => `ai-user-context-${userId}`,
+  projectAssignments: (projectId: string) => `/api/assignments/project/${projectId}`,
+  employeeAssignments: (employeeId: string) => `/api/assignments/employee/${employeeId}`,
+  allAssignments: '/api/assignments/all',
+  portalProjectWithPhases: (projectId: string) => `portal-project-with-phases-${projectId}`,
+  portalDashboard: (clientId: string) => `portal-dashboard-${clientId}`,
+  clientActionItems: (clientId: string) => ['client-action-items', clientId] as const,
+  todaysCheckins: (workspaceId: string) => `todays-checkins-${workspaceId}`,
+  checkins: (workspaceId: string, profileId?: string, date?: string) =>
+    `checkins-${workspaceId}-${profileId || 'all'}-${date || 'all'}`,
+  activeSession: (workspaceId: string) => `active-session-${workspaceId}`,
+  todaysSessions: (workspaceId: string) => `todays-sessions-${workspaceId}`,
+  sessionsAdmin: (workspaceId: string, profileId?: string, date?: string) =>
+    `sessions-admin-${workspaceId}-${profileId || 'all'}-${date || 'all'}`,
+  ownerUpdates: (workspaceId: string, unreadOnly?: boolean) =>
+    `owner-updates-${workspaceId}-${unreadOnly ? 'unread' : 'all'}`,
+  teamStatus: (wsId: string) => ['team-status', wsId] as const,
+  plannedLogout: (wsId: string) => ['planned-logout', wsId] as const,
+  messageChannels: (userId: string) => `message-channels-${userId}`,
+  channelMessages: (projectId: string) => `channel-messages-${projectId}`,
+  unreadMessageCount: (userId: string) => `unread-message-count-${userId}`,
+  portalAppConfig: (workspaceId: string, clientId?: string) =>
+    `portal-app-config-${workspaceId}-${clientId || 'default'}`,
+  portalBranding: (workspaceId: string) => `portal-branding-${workspaceId}`,
+  portalSettings: (workspaceId: string) => `portal-settings-${workspaceId}`,
+  requestComments: (requestId: string) => `request-comments-${requestId}`,
+  phaseComments: (projectId: string, phaseName: string) =>
+    `phase-comments-${projectId}-${phaseName}`,
+  dailyBrief: (forDate?: string) => ['daily-brief', forDate ?? 'today'] as const,
+  dailyBriefHistory: 'daily-brief-history',
+  milestonesDue: (projectIds: string) => `milestones-due-${projectIds}`,
+  openRequestsCount: 'open-requests-count',
+  myInboxTasks: (userId: string) => `my-inbox-tasks-${userId}`,
+} as const;
