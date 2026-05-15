@@ -71,7 +71,7 @@ const ThemeSwitcher = () => {
 
   if (!mounted) {
     // Reserve identical width so sidebar doesn't shift when JS hydrates.
-    return <div className="size-8 shrink-0" aria-hidden />;
+    return <div className="size-11 shrink-0" aria-hidden />;
   }
 
   const Icon = current === 'dark' ? Sun : Moon;
@@ -86,7 +86,7 @@ const ThemeSwitcher = () => {
         aria-pressed={current === 'dark'}
         title={current === 'dark' ? 'Light mode' : 'Dark mode'}
         className={cn(
-          'flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg',
+          'flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg',
           'text-muted-foreground transition-colors duration-150',
           'hover:bg-muted/55 hover:text-foreground',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',

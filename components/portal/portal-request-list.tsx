@@ -168,12 +168,27 @@ interface PortalRequestListProps {
 const statusTabs = [
   { value: 'all', label: 'All' },
   { value: 'pending', label: 'Pending' },
-  { value: 'in_review', label: 'In Review' },
-  { value: 'planned', label: 'Planned' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'completed', label: 'Completed' },
-  { value: 'declined', label: 'Declined' },
 ];
+
+/** Map any DB status to a simplified UI status key for client display. */
+function toClientUiStatus(dbStatus: string): string {
+  if (dbStatus === 'declined') return 'archived';
+  if (dbStatus === 'in_review' || dbStatus === 'pending') return 'pending';
+  if (dbStatus === 'planned' || dbStatus === 'in_progress') return 'in_progress';
+  if (dbStatus === 'completed') return 'completed';
+  return 'pending';
+}
+
+function getClientStatusLabel(dbStatus: string): string {
+  const mapped = toClientUiStatus(dbStatus);
+  if (mapped === 'archived') return 'Archived';
+  if (mapped === 'pending') return 'Pending';
+  if (mapped === 'in_progress') return 'In Progress';
+  if (mapped === 'completed') return 'Completed';
+  return 'Pending';
+}
 
 const sortOptions = [
   { value: 'newest', label: 'Newest first' },
@@ -198,18 +213,15 @@ const statusOrder: Record<string, number> = {
 };
 
 function getStatusColor(status: string) {
-  switch (status) {
+  const mapped = toClientUiStatus(status);
+  switch (mapped) {
     case 'pending':
       return 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-transparent';
-    case 'in_review':
-      return 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-transparent';
-    case 'planned':
-      return 'bg-primary/10 text-primary border-transparent';
     case 'in_progress':
       return 'bg-primary/10 text-primary border-transparent';
     case 'completed':
       return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-transparent';
-    case 'declined':
+    case 'archived':
       return 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-transparent';
     default:
       return 'bg-muted text-muted-foreground border-transparent';
@@ -220,7 +232,7 @@ function getRequestStatusLabel(request: FeatureRequest) {
   if (request.status === 'declined' && request.admin_response === 'Cancelled by client') {
     return 'Cancelled';
   }
-  return request.status.replace(/_/g, ' ');
+  return getClientStatusLabel(request.status);
 }
 
 function getPriorityColor(priority: string) {
@@ -352,7 +364,7 @@ const RequestRow = memo(function RequestRow({
                 <span className="text-xs text-muted-foreground">{request.project.name}</span>
               )}
               <span className="text-xs text-muted-foreground">
-                {new Date(request.created_at).toLocaleDateString()}
+                {new Date(request.created_at).toLocaleDateString('en-GB')}
               </span>
               {request.attachments && request.attachments.length > 0 && (
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -570,9 +582,12 @@ export function PortalRequestList({ requests, currentUserId, userRole }: PortalR
   const filtered = useMemo(() => {
     let result = [...requests];
 
-    // Filter
+    // Always hide archived (declined) requests from client view
+    result = result.filter((r) => toClientUiStatus(r.status) !== 'archived');
+
+    // Filter by mapped UI status
     if (statusFilter !== 'all') {
-      result = result.filter((r) => r.status === statusFilter);
+      result = result.filter((r) => toClientUiStatus(r.status) === statusFilter);
     }
 
     // Sort
@@ -593,12 +608,17 @@ export function PortalRequestList({ requests, currentUserId, userRole }: PortalR
     return result;
   }, [requests, statusFilter, sortBy]);
 
-  // Count per status for tabs
+  // Count per UI-mapped status for tabs (exclude archived from "all" count)
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: requests.length };
+    let allCount = 0;
+    const counts: Record<string, number> = {};
     for (const r of requests) {
-      counts[r.status] = (counts[r.status] || 0) + 1;
+      const mapped = toClientUiStatus(r.status);
+      if (mapped === 'archived') continue; // skip archived from counts
+      allCount++;
+      counts[mapped] = (counts[mapped] || 0) + 1;
     }
+    counts.all = allCount;
     return counts;
   }, [requests]);
 
@@ -701,11 +721,9 @@ export function PortalRequestList({ requests, currentUserId, userRole }: PortalR
 
 /* ─── Status trail (where this request is in the pipeline) ─────────────── */
 
-const PIPELINE_STEPS = ['pending', 'in_review', 'planned', 'in_progress', 'completed'] as const;
+const PIPELINE_STEPS = ['pending', 'in_progress', 'completed'] as const;
 const PIPELINE_LABELS: Record<(typeof PIPELINE_STEPS)[number], string> = {
   pending: 'Pending',
-  in_review: 'In Review',
-  planned: 'Planned',
   in_progress: 'In Progress',
   completed: 'Completed',
 };
@@ -717,12 +735,14 @@ function StatusTrail({ status, adminResponse }: { status: string; adminResponse:
     return (
       <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
         <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" aria-hidden />
-        {isCancelled ? 'Cancelled' : 'Declined'}
+        {isCancelled ? 'Cancelled' : 'Archived'}
       </p>
     );
   }
 
-  const currentIndex = PIPELINE_STEPS.indexOf(status as (typeof PIPELINE_STEPS)[number]);
+  // Map DB status to the simplified UI status
+  const mapped = toClientUiStatus(status) as (typeof PIPELINE_STEPS)[number];
+  const currentIndex = PIPELINE_STEPS.indexOf(mapped);
   if (currentIndex < 0) return null;
 
   const currentLabel = PIPELINE_LABELS[PIPELINE_STEPS[currentIndex]];

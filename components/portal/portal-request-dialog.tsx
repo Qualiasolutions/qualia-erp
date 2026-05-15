@@ -202,6 +202,7 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
     setLoading(false);
     setUploadStatus('');
     setSubmitted(true);
+    toast.success('Request submitted');
     router.refresh();
   };
 

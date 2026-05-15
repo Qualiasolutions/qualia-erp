@@ -77,7 +77,7 @@ export default function Page({ searchParams }: { searchParams: Promise<{ error: 
               fallback={
                 <>
                   <CardHeader>
-                    <CardTitle className="text-2xl">Loading...</CardTitle>
+                    <CardTitle className="text-2xl">Verifying session...</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">Please wait...</p>

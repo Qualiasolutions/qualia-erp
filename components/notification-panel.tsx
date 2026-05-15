@@ -36,7 +36,7 @@ export function NotificationPanel() {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { workspaceId } = useCurrentWorkspaceId();
-  const { notifications, isLoading } = useNotifications(workspaceId || null);
+  const { notifications, isLoading, isError, revalidate } = useNotifications(workspaceId || null);
   const { count: unreadCount } = useUnreadNotificationCount(workspaceId || null);
 
   const handleMarkAsRead = async (notificationId: string) => {
@@ -118,7 +118,14 @@ export function NotificationPanel() {
         </div>
 
         <ScrollArea className="h-[300px]">
-          {isLoading ? (
+          {isError ? (
+            <div className="px-3 py-2 text-sm text-destructive">
+              Could not load notifications.{' '}
+              <button onClick={() => revalidate()} className="underline">
+                Try again
+              </button>
+            </div>
+          ) : isLoading ? (
             <div className="flex h-full items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
@@ -177,6 +184,7 @@ export function NotificationPanel() {
                           handleMarkAsRead(notification.id);
                         }}
                         disabled={isPending}
+                        aria-label="Mark as read"
                       >
                         <Check className="h-3.5 w-3.5" />
                       </Button>
@@ -190,6 +198,7 @@ export function NotificationPanel() {
                         handleDelete(notification.id);
                       }}
                       disabled={isPending}
+                      aria-label="Dismiss notification"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>

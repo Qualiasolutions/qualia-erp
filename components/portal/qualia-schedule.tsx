@@ -354,7 +354,7 @@ export function QualiaSchedule({
   const weekStart = useMemo(() => parseISO(weekStartISO), [weekStartISO]);
 
   // Live SWR meetings
-  const { meetings } = useMeetings(initialMeetings);
+  const { meetings, isError, revalidate } = useMeetings(initialMeetings);
 
   // Days of the week (Mon-Sun)
   const days = useMemo(() => {
@@ -577,6 +577,16 @@ export function QualiaSchedule({
           </Button>
         </div>
       </header>
+
+      {/* ── Error banner ── */}
+      {isError && (
+        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive">
+          Could not load meetings.{' '}
+          <button onClick={() => revalidate()} className="underline">
+            Try again
+          </button>
+        </div>
+      )}
 
       {/* ── Legend ── */}
       <div className="mb-4 flex flex-wrap gap-4 text-xs">
