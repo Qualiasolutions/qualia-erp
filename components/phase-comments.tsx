@@ -8,7 +8,7 @@ import { createPhaseComment, deletePhaseComment } from '@/app/actions/phase-comm
 import { usePhaseComments, invalidatePhaseComments } from '@/lib/swr';
 import { createClient } from '@/lib/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
-import { toast } from 'sonner';
+import { toastError } from '@/lib/toast-helpers';
 
 // Runtime shape from getPhaseComments (after FK normalization)
 interface Comment {
@@ -84,10 +84,14 @@ export function PhaseComments({
         setText('');
         invalidatePhaseComments(projectId, phaseName);
       } else {
-        toast.error(result.error || 'Failed to save comment');
+        toastError({
+          action: 'save the comment',
+          error: result.error || undefined,
+          onRetry: handleSubmit,
+        });
       }
     } catch {
-      toast.error('Failed to save comment');
+      toastError({ action: 'save the comment', onRetry: handleSubmit });
     } finally {
       setIsSending(false);
     }
@@ -99,10 +103,10 @@ export function PhaseComments({
       if (result.success) {
         invalidatePhaseComments(projectId, phaseName);
       } else {
-        toast.error(result.error || 'Failed to delete comment');
+        toastError({ action: 'delete the comment', error: result.error || undefined });
       }
     } catch {
-      toast.error('Failed to delete comment');
+      toastError({ action: 'delete the comment' });
     }
   }
 

@@ -37,6 +37,7 @@ import {
 import { syncPlanningFromGitHub } from '@/app/actions/github-planning-sync';
 import { invalidateProjectPhases } from '@/lib/swr';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast-helpers';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PhaseComments } from '@/components/phase-comments';
 import { PhaseItemsList } from '@/components/phase-items-list';
@@ -589,7 +590,11 @@ export function ProjectWorkflow({
       setPhases(phasesData as Phase[]);
     } catch (err) {
       console.error('Failed to fetch workflow data:', err);
-      toast.error('Failed to load workflow');
+      toastError({
+        action: 'load the workflow',
+        error: err instanceof Error ? err : undefined,
+        onRetry: fetchData,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -732,10 +737,14 @@ export function ProjectWorkflow({
         await fetchData();
         invalidateProjectPhases(projectId);
       } else {
-        toast.error(result.error || 'Sync failed');
+        toastError({
+          action: 'sync from GitHub',
+          error: result.error || undefined,
+          onRetry: handleSync,
+        });
       }
     } catch {
-      toast.error('Failed to sync from GitHub');
+      toastError({ action: 'sync from GitHub', onRetry: handleSync });
     } finally {
       setIsSyncing(false);
     }
@@ -752,7 +761,7 @@ export function ProjectWorkflow({
         invalidateProjectPhases(projectId);
         toast.success('Phase created');
       } else {
-        toast.error(result.error || 'Failed to create phase');
+        toastError({ action: 'create the phase', error: result.error || undefined });
       }
     });
   };
@@ -769,7 +778,7 @@ export function ProjectWorkflow({
         await fetchData();
         invalidateProjectPhases(projectId);
       } else {
-        toast.error(result.error || 'Failed to update phase');
+        toastError({ action: 'update the phase', error: result.error || undefined });
       }
     });
   };
@@ -788,7 +797,7 @@ export function ProjectWorkflow({
             if (activePhaseId === phaseId) setActivePhaseId(null);
             toast.success('Phase deleted');
           } else {
-            toast.error(result.error || 'Failed to delete phase');
+            toastError({ action: 'delete the phase', error: result.error || undefined });
           }
         });
       },
@@ -803,7 +812,7 @@ export function ProjectWorkflow({
         await fetchData();
         invalidateProjectPhases(projectId);
       } else {
-        toast.error(result.error || 'Failed to load framework');
+        toastError({ action: 'load the framework pipeline', error: result.error || undefined });
       }
     });
   };

@@ -979,23 +979,13 @@ function StageColumn({
         )}
       >
         {projects.length === 0 ? (
-          <div
-            className={cn(
-              'flex flex-1 flex-col items-center justify-center text-center',
-              clientView ? 'py-12' : 'py-8'
-            )}
-          >
-            <CheckCircle2
-              className={cn('mb-2 text-muted-foreground/40', clientView ? 'h-7 w-7' : 'h-5 w-5')}
-              aria-hidden
-              strokeWidth={1.5}
-            />
-            <p
-              className={cn('text-muted-foreground/70', clientView ? 'text-[13px]' : 'text-[11px]')}
-            >
-              No projects
-            </p>
-          </div>
+          <EmptyState
+            icon={CheckCircle2}
+            title="No projects"
+            compact
+            minimal
+            className={cn('flex-1', clientView ? 'py-12' : 'py-8')}
+          />
         ) : (
           projects.map((project) => (
             <ProjectCardTile

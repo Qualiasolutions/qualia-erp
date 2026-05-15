@@ -811,7 +811,6 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
  * Get the current user's planned logout time from their profile.
  * Returns a TIME string (e.g. "16:00:00") or null if not set.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getPlannedLogoutTime(_workspaceId: string): Promise<string | null> {
   const supabase = await createClient();
   const {

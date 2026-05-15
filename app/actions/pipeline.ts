@@ -571,8 +571,7 @@ export async function updatePhaseStatus(
 export async function updatePhaseName(
   phaseId: string,
   name: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  projectId: string
+  _projectId: string
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -593,8 +592,7 @@ export async function updatePhaseName(
   return { success: true };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function deletePhase(phaseId: string, projectId: string): Promise<ActionResult> {
+export async function deletePhase(phaseId: string, _projectId: string): Promise<ActionResult> {
   const supabase = await createClient();
   const {
     data: { user },

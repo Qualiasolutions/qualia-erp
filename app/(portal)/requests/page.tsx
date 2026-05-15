@@ -7,9 +7,23 @@ import { getTeamMembers } from '@/app/actions/admin';
 import { isUserAdmin } from '@/app/actions/shared';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
+import dynamic from 'next/dynamic';
 import { PortalRequestList } from '@/components/portal/portal-request-list';
 import { PortalRequestDialog } from '@/components/portal/portal-request-dialog';
-import { AdminRequestsBoard } from '@/components/portal/admin-requests-board';
+
+const AdminRequestsBoard = dynamic(
+  () =>
+    import('@/components/portal/admin-requests-board').then((m) => ({
+      default: m.AdminRequestsBoard,
+    })),
+  {
+    loading: () => (
+      <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+        Loading board&hellip;
+      </div>
+    ),
+  }
+);
 
 export const metadata: Metadata = { title: 'Requests' };
 

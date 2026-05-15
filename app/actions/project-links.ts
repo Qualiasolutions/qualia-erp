@@ -1,10 +1,28 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 
 import { type ActionResult, isUserAdmin, canAccessProject } from './shared';
 
 export type LinkServiceType = 'github' | 'vercel' | 'figma' | 'notion';
+
+// ============ SCHEMAS ============
+
+const SaveProjectLinkSchema = z.object({
+  projectId: z.string().uuid('Invalid project ID'),
+  serviceType: z.enum(['github', 'vercel', 'figma', 'notion'], {
+    message: 'Invalid service type',
+  }),
+  externalUrl: z.string().url('Invalid URL format').max(2000),
+});
+
+const RemoveProjectLinkSchema = z.object({
+  integrationId: z.string().uuid('Invalid integration ID'),
+  projectId: z.string().uuid('Invalid project ID'),
+});
+
+// ============ TYPES ============
 
 export interface ProjectLink {
   id: string;
@@ -54,6 +72,11 @@ export async function saveProjectLink(
   serviceType: LinkServiceType,
   externalUrl: string
 ): Promise<ActionResult> {
+  const parsed = SaveProjectLinkSchema.safeParse({ projectId, serviceType, externalUrl });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const supabase = await createClient();
 
   const {
@@ -94,6 +117,11 @@ export async function removeProjectLink(
   integrationId: string,
   projectId: string
 ): Promise<ActionResult> {
+  const parsed = RemoveProjectLinkSchema.safeParse({ integrationId, projectId });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const supabase = await createClient();
 
   const {

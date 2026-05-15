@@ -11,7 +11,14 @@ import { SidebarProvider } from '@/components/sidebar-provider';
 import { SWRProvider } from '@/components/swr-provider';
 import { AdminProvider } from '@/components/admin-provider';
 import { AuthProvider } from '@/components/providers/auth-provider';
-import { AIAssistantProvider, AIAssistantWidget } from '@/components/ai-assistant';
+import dynamic from 'next/dynamic';
+import { AIAssistantProvider } from '@/components/ai-assistant';
+
+const AIAssistantWidget = dynamic(() =>
+  import('@/components/ai-assistant').then((m) => ({
+    default: m.AIAssistantWidget,
+  }))
+);
 import { SessionGuard } from '@/components/session-guard';
 import { PlannedLogoutBanner } from '@/components/planned-logout-banner';
 import { AccessibilityAnnouncer } from '@/components/accessibility-announcer';

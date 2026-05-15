@@ -1,9 +1,27 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { decryptToken } from '@/lib/token-encryption';
 
 import { type ActionResult, isUserAdmin } from './shared';
+
+// ============ SCHEMAS ============
+
+const UpsertIntegrationSchema = z.object({
+  projectId: z.string().uuid('Invalid project ID'),
+  serviceType: z.enum(['github', 'vercel'], {
+    message: 'Invalid service type. Must be github or vercel',
+  }),
+  externalUrl: z.string().url('Invalid URL format').max(2000),
+});
+
+const DeleteIntegrationSchema = z.object({
+  integrationId: z.string().uuid('Invalid integration ID'),
+  projectId: z.string().uuid('Invalid project ID'),
+});
+
+// ============ INTERNAL HELPERS ============
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net';
 const WEBHOOK_PATH = '/api/github/webhook';
@@ -13,13 +31,13 @@ const WEBHOOK_PATH = '/api/github/webhook';
  * subsequent pushes to main/master automatically trigger phase sync.
  *
  * Why this exists: every previous integration (e.g. JEC) had to have its
- * webhook installed by hand in repo Settings → Webhooks. People forget.
+ * webhook installed by hand in repo Settings -> Webhooks. People forget.
  * Result: integration row exists but phases never sync. This function makes
  * the whole flow self-serve.
  *
  * Idempotent: lists existing hooks first and skips if our URL is already
  * registered. Failure modes (no token, no secret, no repo access) all log
- * but never throw — the integration row is still considered successfully
+ * but never throw -- the integration row is still considered successfully
  * connected.
  */
 async function ensureGitHubWebhook(
@@ -156,21 +174,9 @@ export async function upsertIntegration(
   serviceType: string,
   externalUrl: string
 ): Promise<ActionResult> {
-  // Validate inputs
-  if (!projectId || !serviceType || !externalUrl) {
-    return { success: false, error: 'Missing required fields' };
-  }
-
-  // Validate service type
-  if (!['github', 'vercel'].includes(serviceType)) {
-    return { success: false, error: 'Invalid service type. Must be github or vercel' };
-  }
-
-  // Validate URL format
-  try {
-    new URL(externalUrl);
-  } catch {
-    return { success: false, error: 'Invalid URL format' };
+  const parsed = UpsertIntegrationSchema.safeParse({ projectId, serviceType, externalUrl });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
   }
 
   const supabase = await createClient();
@@ -218,7 +224,7 @@ export async function upsertIntegration(
   }
 
   // Auto-install the GitHub webhook so future pushes to main/master
-  // trigger phase sync without anyone touching repo Settings → Webhooks.
+  // trigger phase sync without anyone touching repo Settings -> Webhooks.
   // Best-effort: any failure (no token, no permission, repo private etc.)
   // is logged but does not fail the integration upsert.
   if (serviceType === 'github') {
@@ -240,8 +246,9 @@ export async function deleteIntegration(
   integrationId: string,
   projectId: string
 ): Promise<ActionResult> {
-  if (!integrationId || !projectId) {
-    return { success: false, error: 'Missing required fields' };
+  const parsed = DeleteIntegrationSchema.safeParse({ integrationId, projectId });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
   }
 
   const supabase = await createClient();

@@ -1,5 +1,6 @@
 'use server';
 
+import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { cyprusToday, generateDailyBrief, TIMEZONE } from '@/lib/daily-brief-generator';
@@ -7,6 +8,28 @@ import type { Database } from '@/types/database';
 import type { ActionResult } from './shared';
 
 export type BriefItem = Database['public']['Tables']['daily_brief_items']['Row'];
+
+// ============ SCHEMAS ============
+
+const BriefItemIdSchema = z.string().uuid('Invalid brief item ID');
+
+const SnoozeBriefItemSchema = z.object({
+  id: z.string().uuid('Invalid brief item ID'),
+  untilIso: z.string().datetime('Invalid snooze date'),
+});
+
+const CreateManualBriefItemSchema = z.object({
+  body: z.string().min(1, 'Body is required').max(2000, 'Body too long'),
+  lead: z.string().max(200).optional(),
+  tag: z.string().max(50).optional(),
+  forDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format')
+    .optional(),
+  priority: z.number().int().min(0).max(100).optional(),
+});
+
+// ============ INTERNAL HELPERS ============
 
 const SOURCE_HEADINGS: Record<string, string> = {
   meeting_today: 'Today',
@@ -147,6 +170,11 @@ export async function getDailyBriefHistory(daysBack = 14): Promise<BriefItem[]> 
 }
 
 export async function dismissBriefItem(id: string): Promise<ActionResult> {
+  const idParsed = BriefItemIdSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { success: false, error: idParsed.error.issues[0]?.message || 'Invalid ID' };
+  }
+
   const { supabase, userId } = await requireSession();
   const { error } = await supabase
     .from('daily_brief_items')
@@ -160,6 +188,11 @@ export async function dismissBriefItem(id: string): Promise<ActionResult> {
 }
 
 export async function undismissBriefItem(id: string): Promise<ActionResult> {
+  const idParsed = BriefItemIdSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { success: false, error: idParsed.error.issues[0]?.message || 'Invalid ID' };
+  }
+
   const { supabase, userId } = await requireSession();
   const { error } = await supabase
     .from('daily_brief_items')
@@ -173,6 +206,11 @@ export async function undismissBriefItem(id: string): Promise<ActionResult> {
 }
 
 export async function snoozeBriefItem(id: string, untilIso: string): Promise<ActionResult> {
+  const parsed = SnoozeBriefItemSchema.safeParse({ id, untilIso });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const { supabase, userId } = await requireSession();
   const { error } = await supabase
     .from('daily_brief_items')
@@ -192,7 +230,12 @@ export async function createManualBriefItem(input: {
   forDate?: string;
   priority?: number;
 }): Promise<ActionResult> {
-  const trimmedBody = input.body.trim();
+  const parsed = CreateManualBriefItemSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
+  const trimmedBody = parsed.data.body.trim();
   if (!trimmedBody) return { success: false, error: 'Body is required.' };
 
   const { supabase, userId } = await requireSession();
@@ -203,17 +246,17 @@ export async function createManualBriefItem(input: {
     .eq('is_default', true)
     .maybeSingle();
 
-  const date = input.forDate ?? cyprusToday();
+  const date = parsed.data.forDate ?? cyprusToday();
   const { error } = await supabase.from('daily_brief_items').insert({
     owner_id: userId,
     workspace_id: membership?.workspace_id ?? null,
     for_date: date,
     source_type: 'manual',
     source_id: null,
-    tag: input.tag ?? 'ME',
-    lead: input.lead?.trim() || null,
+    tag: parsed.data.tag ?? 'ME',
+    lead: parsed.data.lead?.trim() || null,
     body: trimmedBody.startsWith(' ') ? trimmedBody : ` ${trimmedBody}`,
-    priority: input.priority ?? 50,
+    priority: parsed.data.priority ?? 50,
   });
 
   if (error) return { success: false, error: error.message };

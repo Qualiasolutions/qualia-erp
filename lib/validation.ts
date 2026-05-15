@@ -359,9 +359,12 @@ export const createCommentSchema = z.object({
 // Workspace Schemas
 // =====================
 export const createWorkspaceSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
+  name: z
+    .string({ error: 'Workspace name is required' })
+    .min(1, 'Name is required')
+    .max(100, 'Name must be less than 100 characters'),
   slug: z
-    .string()
+    .string({ error: 'Workspace slug is required' })
     .min(1, 'Slug is required')
     .max(50, 'Slug must be less than 50 characters')
     .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),

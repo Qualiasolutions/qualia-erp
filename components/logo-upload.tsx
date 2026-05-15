@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Camera, Loader2, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { toastError } from '@/lib/toast-helpers';
 import {
   uploadProjectLogo,
   uploadClientLogo,
@@ -78,10 +79,13 @@ export function LogoUpload({
           onLogoChange?.(newUrl);
           router.refresh();
         } else {
-          setError(result.error || 'Failed to upload logo');
+          const msg = result.error || 'Upload returned an error';
+          setError(msg);
+          toastError({ action: 'upload the logo', error: msg });
         }
-      } catch {
+      } catch (err) {
         setError('An unexpected error occurred');
+        toastError({ action: 'upload the logo', error: err instanceof Error ? err : undefined });
       } finally {
         setUploading(false);
         if (fileInputRef.current) {
@@ -113,10 +117,13 @@ export function LogoUpload({
         onLogoChange?.(null);
         router.refresh();
       } else {
-        setError(result.error || 'Failed to remove logo');
+        const msg = result.error || 'Removal returned an error';
+        setError(msg);
+        toastError({ action: 'remove the logo', error: msg });
       }
-    } catch {
+    } catch (err) {
       setError('An unexpected error occurred');
+      toastError({ action: 'remove the logo', error: err instanceof Error ? err : undefined });
     } finally {
       setDeleting(false);
     }

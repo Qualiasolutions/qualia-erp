@@ -13,7 +13,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { Paperclip, MessageSquare, GripVertical } from 'lucide-react';
+import { Inbox, Paperclip, MessageSquare, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -200,7 +200,7 @@ export function AdminRequestsBoard({
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div
-          className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 sm:snap-none"
+          className="-mx-1 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-1 pb-2 sm:snap-none"
           role="region"
           aria-label="Requests pipeline"
         >
@@ -284,15 +284,22 @@ function KanbanColumn({
         </Badge>
       </header>
 
-      <div className="flex min-h-[60px] flex-1 flex-col gap-2">
+      <div className="flex max-h-[calc(100vh-280px)] min-h-[200px] flex-col gap-2 overflow-y-auto">
         {requests.length === 0 ? (
           <div
             className={cn(
-              'flex flex-1 items-center justify-center rounded-xl border border-dashed border-border/60 px-3 py-6 text-center text-[11px] text-muted-foreground/40',
-              isOver && 'border-primary/40 text-primary/60'
+              'flex min-h-[160px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 px-3 pb-4 pt-6 text-center',
+              isOver && 'border-primary/40'
             )}
           >
-            {isOver ? 'Drop here' : 'No requests'}
+            <Inbox
+              className={cn('h-6 w-6 text-muted-foreground/25', isOver && 'text-primary/50')}
+            />
+            <span
+              className={cn('text-[11px] text-muted-foreground/40', isOver && 'text-primary/60')}
+            >
+              {isOver ? 'Drop here' : 'All clear'}
+            </span>
           </div>
         ) : (
           requests.map((r) => (
