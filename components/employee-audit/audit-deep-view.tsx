@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { AnimatePresence, m } from 'motion/react';
+import { AnimatePresence, m } from '@/lib/lazy-motion';
 import { Sparkles, ScanSearch, TrendingUp, TrendingDown, Equal } from 'lucide-react';
 import { toast } from 'sonner';
 

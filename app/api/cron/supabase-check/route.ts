@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { unstable_rethrow } from 'next/navigation';
 import { safeCompare } from '@/lib/auth-utils';
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/server';
 
 export const maxDuration = 60;
 
@@ -13,13 +13,6 @@ export const maxDuration = 60;
  * and report findings to the Qualia WhatsApp group.
  * Scheduled 9:20-10:00 AM Cyprus, weekdays only.
  */
-
-function getSupabaseClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env[`${'SUPABASE'}_SERVICE_ROLE_KEY`]!
-  );
-}
 
 export async function GET(request: Request) {
   try {
@@ -33,7 +26,7 @@ export async function GET(request: Request) {
 
     console.log('[cron/supabase-check] Starting daily Supabase check task creation...');
 
-    const supabase = getSupabaseClient();
+    const supabase = createAdminClient();
     const now = new Date();
     const today = now.toLocaleDateString('en-CA', { timeZone: 'Europe/Nicosia' });
     const dayOfWeek = new Date(today + 'T12:00:00+03:00').getDay();

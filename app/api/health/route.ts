@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { safeCompare } from '@/lib/auth-utils';
 
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -21,9 +22,18 @@ interface HealthStatus {
  * Health Check Endpoint
  * Uses direct REST call to Supabase (no cookie-based auth needed).
  * Safe for cron uptime checks and external monitoring.
+ *
+ * Auth gate: requests without valid CRON_SECRET get a stripped response
+ * (status + timestamp only). Authenticated requests get full diagnostics.
+ * Status codes (200/503) are returned regardless of auth.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   const startTime = Date.now();
+
+  // Auth gate: determine whether to return full diagnostics or stripped response
+  const authHeader = request.headers.get('authorization') ?? '';
+  const cronSecret = process.env.CRON_SECRET ?? '';
+  const isAuthorized = cronSecret.length > 0 && safeCompare(authHeader, `Bearer ${cronSecret}`);
 
   const health: HealthStatus = {
     status: 'healthy',
@@ -82,12 +92,21 @@ export async function GET() {
   }
 
   const statusCode = health.status === 'healthy' ? 200 : 503;
+  const responseHeaders = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate',
+    'X-Response-Time': `${Date.now() - startTime}ms`,
+  };
 
-  return NextResponse.json(health, {
-    status: statusCode,
-    headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
-      'X-Response-Time': `${Date.now() - startTime}ms`,
-    },
-  });
+  if (isAuthorized) {
+    return NextResponse.json(health, {
+      status: statusCode,
+      headers: responseHeaders,
+    });
+  }
+
+  // Unauthenticated: return only status indicator — no infrastructure details
+  return NextResponse.json(
+    { status: health.status, timestamp: health.timestamp },
+    { status: statusCode, headers: responseHeaders }
+  );
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { safeCompare } from '@/lib/auth-utils';
 import { apiRateLimiter } from '@/lib/rate-limit';
@@ -42,14 +42,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env[`${'SUPABASE'}_SERVICE_ROLE_KEY`];
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-  }
-
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const supabase = createAdminClient();
 
   let rawBody: unknown;
   try {

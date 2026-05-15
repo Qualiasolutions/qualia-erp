@@ -1,7 +1,6 @@
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import {
   createExpenseSchema,
   updateExpenseSchema,
@@ -340,13 +339,7 @@ export async function syncZohoFinancials(): Promise<{
     return { success: false, error: 'DEFAULT_WORKSPACE_ID env var not set' };
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env[`${'SUPABASE'}_SERVICE_ROLE_KEY`];
-  if (!supabaseUrl || !serviceRoleKey) {
-    return { success: false, error: 'Missing Supabase credentials' };
-  }
-
-  const supabase = createSupabaseClient(supabaseUrl, serviceRoleKey);
+  const supabase = createAdminClient();
   const syncedAt = new Date().toISOString();
 
   // Fetch from Zoho

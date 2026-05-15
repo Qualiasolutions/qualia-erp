@@ -60,7 +60,7 @@ export async function createFeatureRequest(input: {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) return { success: false, error: error.message || 'Failed to create request' };
 
     // Add activity log entry and notify assigned employees
     try {
@@ -180,7 +180,7 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) return { success: false, error: error.message || 'Failed to get requests' };
 
     // Normalize FK arrays
     const normalized = (data || []).map((r) => {
@@ -270,7 +270,7 @@ export async function updateFeatureRequest(
             .eq('assigned_to', user.id) // belt-and-braces
             .select()
             .single();
-          if (error) throw error;
+          if (error) return { success: false, error: error.message || 'Failed to update request' };
           if (!data) return { success: false, error: 'Request not found' };
           return { success: true, data };
         }
@@ -303,7 +303,7 @@ export async function updateFeatureRequest(
 
     const { data, error } = await query.select().single();
 
-    if (error) throw error;
+    if (error) return { success: false, error: error.message || 'Failed to update request' };
 
     if (!data) {
       return { success: false, error: 'Request not found or access denied' };
@@ -364,7 +364,7 @@ export async function assignFeatureRequest(
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) return { success: false, error: error.message || 'Failed to assign request' };
     if (!data) return { success: false, error: 'Request not found' };
 
     return { success: true, data };
@@ -402,7 +402,7 @@ export async function cancelFeatureRequest(requestId: string): Promise<ActionRes
       .eq('id', requestId)
       .maybeSingle();
 
-    if (readError) throw readError;
+    if (readError) return { success: false, error: readError.message || 'Failed to read request' };
     if (!request) return { success: false, error: 'Request not found' };
     if (!isAdmin && request.client_id !== user.id) {
       return { success: false, error: 'Access denied' };
@@ -422,7 +422,7 @@ export async function cancelFeatureRequest(requestId: string): Promise<ActionRes
       .select('id, title, project_id')
       .single();
 
-    if (error) throw error;
+    if (error) return { success: false, error: error.message || 'Failed to cancel request' };
 
     // Notify admin + assigned employees only when the cancel was initiated
     // by the client themselves (not an admin canceling on their behalf).
@@ -475,7 +475,7 @@ export async function deleteFeatureRequest(requestId: string): Promise<ActionRes
       .eq('id', requestId)
       .maybeSingle();
 
-    if (readError) throw readError;
+    if (readError) return { success: false, error: readError.message || 'Failed to read request' };
     if (!request) return { success: false, error: 'Request not found' };
     if (!isAdmin && request.client_id !== user.id) {
       return { success: false, error: 'Access denied' };
@@ -496,13 +496,17 @@ export async function deleteFeatureRequest(requestId: string): Promise<ActionRes
       .from('request_comments')
       .delete()
       .eq('request_id', requestId);
-    if (commentsError) throw commentsError;
+    if (commentsError)
+      return {
+        success: false,
+        error: commentsError.message || 'Failed to delete request comments',
+      };
 
     const { error } = await adminClient
       .from('client_feature_requests')
       .delete()
       .eq('id', requestId);
-    if (error) throw error;
+    if (error) return { success: false, error: error.message || 'Failed to delete request' };
 
     if (!isAdmin && request.project_id) {
       const { data: clientProfile } = await supabase
@@ -824,7 +828,8 @@ export async function markFeatureRequestDone(
       .update({ status: 'completed', updated_at: new Date().toISOString() })
       .eq('id', requestId);
 
-    if (updateError) throw updateError;
+    if (updateError)
+      return { success: false, error: updateError.message || 'Failed to mark request as done' };
 
     // Get current user's name for the system comment
     const { data: staffProfile } = await supabase
@@ -903,7 +908,7 @@ export async function getOpenRequestsCount(): Promise<ActionResult> {
     }
 
     const { count, error } = await query;
-    if (error) throw error;
+    if (error) return { success: false, error: error.message || 'Failed to count requests' };
 
     return { success: true, data: count ?? 0 };
   } catch (error) {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { unstable_rethrow } from 'next/navigation';
 import { safeCompare } from '@/lib/auth-utils';
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/server';
 
 export const maxDuration = 60;
 
@@ -16,13 +16,6 @@ export const maxDuration = 60;
 
 // Brand rotation order — index by day-of-year % length for deterministic daily rotation
 const BLOG_BRANDS = ['Qualia Solutions', 'Innrvo', 'Underdog-Sales-Academy', 'Urban'] as const;
-
-function getSupabaseClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env[`${'SUPABASE'}_SERVICE_ROLE_KEY`]!
-  );
-}
 
 interface Employee {
   id: string;
@@ -44,7 +37,7 @@ export async function GET(request: Request) {
 
     console.log('[cron/blog-tasks] Starting daily blog task creation...');
 
-    const supabase = getSupabaseClient();
+    const supabase = createAdminClient();
     const now = new Date();
     const today = now.toLocaleDateString('en-CA', { timeZone: 'Europe/Nicosia' });
     const dayOfWeek = new Date(today + 'T12:00:00+03:00').getDay();

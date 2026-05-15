@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/server';
 import { safeCompare } from '@/lib/auth-utils';
 import { extractBearer, hashToken, TOKEN_PREFIX, LEGACY_DEPRECATION_HEADERS } from '@/lib/api-auth';
 import { apiRateLimiter } from '@/lib/rate-limit';
@@ -22,14 +22,7 @@ import { apiRateLimiter } from '@/lib/rate-limit';
  *   - project_name: The project name (for context)
  */
 export async function POST(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env[`${'SUPABASE'}_SERVICE_ROLE_KEY`];
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-  }
-
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const supabase = createAdminClient();
 
   // ── Auth: try Bearer token first, fall back to X-API-Key (legacy) ──────
   const bearer = extractBearer(request.headers.get('authorization'));
