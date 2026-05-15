@@ -49,6 +49,11 @@ import {
 } from '@/components/portal/assignment-focus-card';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
 import { hueFromId } from '@/lib/color-constants';
+import {
+  ProjectSubmitCarousel,
+  type CarouselProject,
+} from '@/components/portal/project-submit-carousel';
+import { EmployeeDailyTasks } from '@/components/portal/employee-daily-tasks';
 
 export type QualiaHomeRole = 'admin' | 'employee';
 
@@ -413,15 +418,35 @@ function EmployeeMainGrid({
   isGated: boolean;
   milestonesDue: MilestoneDue[];
 }) {
+  const carouselProjects = useMemo<CarouselProject[]>(() => {
+    return assignments
+      .filter(
+        (a) =>
+          a.project &&
+          !a.completed_at &&
+          a.project.status === 'Active' &&
+          !a.completion_requested_at
+      )
+      .map((a) => ({
+        id: a.project!.id,
+        name: a.project!.name,
+        description: a.project!.client?.name ?? null,
+        accentColor: null,
+        submitHref: `/projects/${a.project!.id}/roadmap`,
+      }));
+  }, [assignments]);
+
   return (
     <div className="stagger-2 grid min-h-0 flex-1 animate-fade-in gap-6 overflow-hidden lg:grid-cols-3">
-      <div className="flex min-h-0 flex-col gap-6 overflow-hidden lg:col-span-2">
+      <div className="flex min-h-0 flex-col gap-6 overflow-y-auto lg:col-span-2">
+        {carouselProjects.length > 0 && <ProjectSubmitCarousel projects={carouselProjects} />}
         <AssignmentFocusCard
           assignments={assignments}
           employeeId={userId}
           isGated={isGated}
           compact
         />
+        {userId && <EmployeeDailyTasks userId={userId} />}
         <MilestonesCard milestones={milestonesDue} className="min-h-0 flex-1" />
       </div>
 

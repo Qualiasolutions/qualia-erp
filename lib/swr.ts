@@ -97,6 +97,7 @@ export const cacheKeys = {
   dailyBriefHistory: 'daily-brief-history',
   milestonesDue: (projectIds: string) => `milestones-due-${projectIds}`,
   openRequestsCount: 'open-requests-count',
+  myInboxTasks: (userId: string) => `my-inbox-tasks-${userId}`,
 } as const;
 
 // ============================================================================
@@ -2047,4 +2048,52 @@ export function useOpenRequestsCount() {
     error,
     revalidate,
   };
+}
+
+// ============================================================================
+// MY INBOX TASKS (employee dashboard)
+// ============================================================================
+
+export type { InboxTask } from '@/app/actions/inbox-tasks';
+
+/**
+ * Hook to fetch the current employee's inbox tasks (show_in_inbox = true, not Done/Canceled).
+ */
+export function useMyInboxTasks(userId: string | undefined) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    userId ? cacheKeys.myInboxTasks(userId) : null,
+    async () => {
+      if (!userId) return [];
+      const { getMyInboxTasks } = await import('@/app/actions/inbox-tasks');
+      const result = await getMyInboxTasks(userId);
+      return result.success ? (result.data ?? []) : [];
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    tasks: data ?? [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate inbox tasks cache for a specific user.
+ */
+export function invalidateMyInboxTasks(userId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.myInboxTasks(userId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.myInboxTasks(userId));
+  }
 }
