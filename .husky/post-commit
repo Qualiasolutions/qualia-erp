@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+# Detect empty-tree commits (lint-staged stash/restore has dropped staged content
+# twice -- Phase 25 commit 317234f, Phase 28 commit dfbf13d2). Warn loudly so the
+# user can re-stage and amend immediately, rather than discovering days later.
+
+HEAD_TREE=$(git rev-parse HEAD^{tree} 2>/dev/null)
+PARENT_TREE=$(git rev-parse HEAD~1^{tree} 2>/dev/null)
+
+# If HEAD has no parent (first commit), skip.
+if [ -z "$PARENT_TREE" ]; then exit 0; fi
+
+if [ "$HEAD_TREE" = "$PARENT_TREE" ]; then
+  echo ""
+  echo "WARNING: Empty commit detected -- same tree as parent."
+  echo "    This is the lint-staged stash bug. Your changes are likely"
+  echo "    still in the working tree but did not land in the commit."
+  echo ""
+  echo "    Recover:"
+  echo "      git status         # see uncommitted changes"
+  echo "      git add <files>    # re-stage them"
+  echo "      git commit --amend # land them in this commit"
+  echo ""
+fi
+
+exit 0
