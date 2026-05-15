@@ -29,6 +29,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useWorkspace } from '@/components/workspace-provider';
 import { invalidateProjectStats } from '@/lib/swr';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast-helpers';
 import { SelectWithOther } from '@/components/ui/select-with-other';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
 
@@ -251,11 +252,12 @@ export function ProjectWizard({
         }
       } else {
         setError(result.error || 'Failed to create project');
-        toast.error('Failed to create project', { description: result.error });
+        toastError({ action: 'create the project', error: result.error || undefined });
       }
     } catch (err) {
       console.error('Error creating project:', err);
       setError('An unexpected error occurred');
+      toastError({ action: 'create the project', error: err instanceof Error ? err : undefined });
     } finally {
       setIsSubmitting(false);
     }

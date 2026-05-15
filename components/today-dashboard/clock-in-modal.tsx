@@ -24,6 +24,7 @@ import {
   type WorkPreset,
 } from '@/lib/work-presets';
 import { cn } from '@/lib/utils';
+import { toastError } from '@/lib/toast-helpers';
 import { format } from 'date-fns';
 
 interface ClockInModalProps {
@@ -153,7 +154,9 @@ export function ClockInModal({
         );
 
         if (!result.success) {
-          setError(result.error ?? 'Failed to clock in. Please try again.');
+          const msg = result.error ?? 'Clock-in returned an error';
+          setError(msg);
+          toastError({ action: 'clock in', error: msg, onRetry: handleClockIn });
           return;
         }
 
@@ -161,6 +164,7 @@ export function ClockInModal({
         onSuccess();
       } catch {
         setError('An unexpected error occurred. Please try again.');
+        toastError({ action: 'clock in', onRetry: handleClockIn });
       }
     });
   }

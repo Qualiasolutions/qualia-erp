@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toast-helpers';
 
 interface FileListProps {
   files: ProjectFileWithUploader[];
@@ -87,13 +88,19 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
         const { url } = result.data as { url: string; filename: string };
         window.open(url, '_blank');
       } else {
-        toast.error('Download Failed', {
-          description: result.error || 'Failed to generate download URL',
+        toastError({
+          action: 'download the file',
+          error: result.error || undefined,
+          onRetry: () => handleDownload(fileId),
         });
       }
     } catch (error) {
       console.error('Download error:', error);
-      toast.error('Download Failed', { description: 'An unexpected error occurred' });
+      toastError({
+        action: 'download the file',
+        error: error instanceof Error ? error : undefined,
+        onRetry: () => handleDownload(fileId),
+      });
     } finally {
       setDownloadingFileId(null);
     }
@@ -111,11 +118,11 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
         router.refresh();
         onFileDeleted?.();
       } else {
-        toast.error('Delete Failed', { description: result.error || 'Failed to delete file' });
+        toastError({ action: 'delete the file', error: result.error || undefined });
       }
     } catch (error) {
       console.error('Delete error:', error);
-      toast.error('Delete Failed', { description: 'An unexpected error occurred' });
+      toastError({ action: 'delete the file', error: error instanceof Error ? error : undefined });
     } finally {
       setDeletingFileId(null);
       setFileToDelete(null);
