@@ -12,9 +12,29 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
+import dynamic from 'next/dynamic';
 import { getMeetings } from '@/app/actions';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
-import { QualiaScheduleWeek } from '@/components/portal/qualia-schedule-week';
+
+const QualiaScheduleWeek = dynamic(
+  () =>
+    import('@/components/portal/qualia-schedule-week').then((m) => ({
+      default: m.QualiaScheduleWeek,
+    })),
+  {
+    loading: () => (
+      <div className="flex h-full flex-col gap-4 p-6 lg:p-8">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-3 w-40 animate-pulse rounded bg-muted" />
+            <div className="h-7 w-36 animate-pulse rounded bg-muted" />
+          </div>
+        </div>
+        <div className="flex-1 rounded-2xl border border-border bg-card" />
+      </div>
+    ),
+  }
+);
 
 export const metadata: Metadata = {
   title: 'Schedule | Qualia',

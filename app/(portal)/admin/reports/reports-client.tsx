@@ -34,9 +34,36 @@ import {
   type ReportSummary,
   type EmployeeSessionDetail,
 } from '@/app/actions/reports';
+import dynamic from 'next/dynamic';
 import type { DateRange } from 'react-day-picker';
-import { FrameworkReportsTab } from './framework-reports-tab';
-import { AIPromptsTab } from './ai-prompts-tab';
+
+const FrameworkReportsTab = dynamic(
+  () =>
+    import('./framework-reports-tab').then((m) => ({
+      default: m.FrameworkReportsTab,
+    })),
+  {
+    loading: () => (
+      <div className="flex h-40 items-center justify-center">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    ),
+  }
+);
+
+const AIPromptsTab = dynamic(
+  () =>
+    import('./ai-prompts-tab').then((m) => ({
+      default: m.AIPromptsTab,
+    })),
+  {
+    loading: () => (
+      <div className="flex h-40 items-center justify-center">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    ),
+  }
+);
 
 type ReportTab = 'employees' | 'framework' | 'ai-prompts';
 
