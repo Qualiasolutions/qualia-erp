@@ -239,6 +239,24 @@ export async function updateFeatureRequest(
 
     const isAdmin = await isUserAdmin(user.id);
 
+    // Capture pre-update status so we can fire the completion email when the
+    // kanban drag / status dropdown / detail-sheet transitions status to
+    // 'completed'. markFeatureRequestDone() bypasses this path, so the email
+    // there isn't double-sent.
+    let preStatus: string | null = null;
+    let preTitle = '';
+    let preClientId: string | null = null;
+    if (safeUpdates.status === 'completed') {
+      const { data: pre } = await supabase
+        .from('client_feature_requests')
+        .select('status, title, client_id')
+        .eq('id', requestId)
+        .maybeSingle();
+      preStatus = pre?.status ?? null;
+      preTitle = pre?.title ?? '';
+      preClientId = pre?.client_id ?? null;
+    }
+
     // Employee-assignee path: if a non-admin employee is the assignee on this
     // request, allow them to update status only (no title/description/response).
     // RLS UPDATE policy stays admin-only, so this path writes via service role
@@ -272,6 +290,12 @@ export async function updateFeatureRequest(
             .single();
           if (error) return { success: false, error: error.message || 'Failed to update request' };
           if (!data) return { success: false, error: 'Request not found' };
+          await sendCompletionEmailIfTransitioned({
+            newStatus: safeUpdates.status,
+            preStatus,
+            requestTitle: preTitle,
+            clientId: preClientId,
+          });
           return { success: true, data };
         }
       }
@@ -309,6 +333,13 @@ export async function updateFeatureRequest(
       return { success: false, error: 'Request not found or access denied' };
     }
 
+    await sendCompletionEmailIfTransitioned({
+      newStatus: safeUpdates.status,
+      preStatus,
+      requestTitle: preTitle,
+      clientId: preClientId,
+    });
+
     return { success: true, data };
   } catch (error) {
     console.error('[updateFeatureRequest] Error:', error);
@@ -316,6 +347,39 @@ export async function updateFeatureRequest(
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update request',
     };
+  }
+}
+
+/**
+ * Fire-and-log helper. Emails the client when a request transitions to
+ * 'completed' (was not completed before). Failures are swallowed — the
+ * status change has already committed.
+ */
+async function sendCompletionEmailIfTransitioned(args: {
+  newStatus?: string;
+  preStatus: string | null;
+  requestTitle: string;
+  clientId: string | null;
+}): Promise<void> {
+  const { newStatus, preStatus, requestTitle, clientId } = args;
+  if (newStatus !== 'completed') return;
+  if (preStatus === 'completed') return;
+  if (!clientId || !requestTitle) return;
+  try {
+    const supabase = await createClient();
+    const { data: clientProfile } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', clientId)
+      .single();
+    if (!clientProfile?.email) return;
+    await sendRequestCompletedEmail({
+      clientEmail: clientProfile.email,
+      clientName: clientProfile.full_name,
+      requestTitle,
+    });
+  } catch (err) {
+    console.error('[sendCompletionEmailIfTransitioned] failed (non-blocking):', err);
   }
 }
 
