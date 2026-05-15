@@ -31,8 +31,6 @@ export type Activity = {
  */
 export async function getRecentActivities(
   limit: number = 20,
-  // kept for backwards compat — workspaceId is always derived from auth
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _workspaceId?: string | null
 ): Promise<Activity[]> {
   const supabase = await createClient();

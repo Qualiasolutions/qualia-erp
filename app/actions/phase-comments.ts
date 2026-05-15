@@ -177,8 +177,7 @@ export async function getPhaseComments(
  */
 export async function deletePhaseComment(
   commentId: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  projectId: string
+  _projectId: string
 ): Promise<ActionResult> {
   const supabase = await createClient();
 

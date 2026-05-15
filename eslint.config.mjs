@@ -18,12 +18,14 @@ const eslintConfig = [
   ...nextTypescript,
   {
     rules: {
-      'react-hooks/error-boundaries': 'off',
-      'react-hooks/immutability': 'off',
-      'react-hooks/preserve-manual-memoization': 'off',
-      'react-hooks/purity': 'off',
-      'react-hooks/refs': 'off',
-      'react-hooks/set-state-in-effect': 'off',
+      // React Compiler rules: re-enabled as warnings (were 'off').
+      // ~67 violations across hooks/ and components/ need fixing in a follow-up.
+      'react-hooks/error-boundaries': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
     },
   },
 ];
