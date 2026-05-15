@@ -1,16 +1,37 @@
 'use server';
 
+import { z } from 'zod';
 import { cache } from 'react';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { parseFormData, createWorkspaceSchema } from '@/lib/validation';
 
 import type { ActionResult } from './shared';
 import { isUserAdmin } from './shared';
+
+// ============ SCHEMAS ============
+
+const SetDefaultWorkspaceSchema = z.object({
+  workspaceId: z.string().uuid('Invalid workspace ID'),
+});
+
+const AddWorkspaceMemberSchema = z.object({
+  workspaceId: z.string().uuid('Invalid workspace ID'),
+  profileId: z.string().uuid('Invalid profile ID'),
+  role: z
+    .enum(['owner', 'admin', 'member', 'viewer'], { message: 'Invalid role' })
+    .default('member'),
+});
+
+const RemoveWorkspaceMemberSchema = z.object({
+  workspaceId: z.string().uuid('Invalid workspace ID'),
+  profileId: z.string().uuid('Invalid profile ID'),
+});
 
 // ============ WORKSPACE HELPERS ============
 
 /**
  * Request-scoped memoized workspace id lookup. OPTIMIZE.md M17: this is called
- * 52× across 16 action files per render. React.cache() deduplicates within a
+ * 52x across 16 action files per render. React.cache() deduplicates within a
  * single request so parallel actions share one auth+workspace_members roundtrip.
  *
  * The function is parameterless, so every caller in the same request hits the
@@ -112,6 +133,11 @@ export async function getUserWorkspaces() {
  * Set user's default workspace
  */
 export async function setDefaultWorkspace(workspaceId: string): Promise<ActionResult> {
+  const parsed = SetDefaultWorkspaceSchema.safeParse({ workspaceId });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -164,17 +190,12 @@ export async function createWorkspace(formData: FormData): Promise<ActionResult>
     return { success: false, error: 'Only admins can create workspaces' };
   }
 
-  const name = formData.get('name') as string;
-  const slug = formData.get('slug') as string;
-  const description = formData.get('description') as string | null;
-
-  if (!name?.trim()) {
-    return { success: false, error: 'Workspace name is required' };
+  const validated = parseFormData(createWorkspaceSchema, formData);
+  if (!validated.success) {
+    return { success: false, error: validated.error };
   }
 
-  if (!slug?.trim()) {
-    return { success: false, error: 'Workspace slug is required' };
-  }
+  const { name, slug, description } = validated.data;
 
   // 1. Create workspace (uses authenticated client)
   const { data, error } = await supabase
@@ -206,7 +227,7 @@ export async function createWorkspace(formData: FormData): Promise<ActionResult>
 
   const isFirstWorkspace = !existingDefaults || existingDefaults.length === 0;
 
-  // 4. Insert membership — set is_default if this is user's first workspace
+  // 4. Insert membership -- set is_default if this is user's first workspace
   const { error: memberError } = await adminClient.from('workspace_members').insert({
     workspace_id: data.id,
     profile_id: user.id,
@@ -236,6 +257,11 @@ export async function addWorkspaceMember(
   profileId: string,
   role: string = 'member'
 ): Promise<ActionResult> {
+  const parsed = AddWorkspaceMemberSchema.safeParse({ workspaceId, profileId, role });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -245,15 +271,15 @@ export async function addWorkspaceMember(
     return { success: false, error: 'Not authenticated' };
   }
 
-  const admin = await isUserAdmin(user.id);
-  if (!admin) {
+  const isAdmin = await isUserAdmin(user.id);
+  if (!isAdmin) {
     return { success: false, error: 'Only admins can manage workspace members' };
   }
 
   const { error } = await supabase.from('workspace_members').insert({
-    workspace_id: workspaceId,
-    profile_id: profileId,
-    role,
+    workspace_id: parsed.data.workspaceId,
+    profile_id: parsed.data.profileId,
+    role: parsed.data.role,
     is_default: false,
   });
 
@@ -272,6 +298,11 @@ export async function removeWorkspaceMember(
   workspaceId: string,
   profileId: string
 ): Promise<ActionResult> {
+  const parsed = RemoveWorkspaceMemberSchema.safeParse({ workspaceId, profileId });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -281,16 +312,16 @@ export async function removeWorkspaceMember(
     return { success: false, error: 'Not authenticated' };
   }
 
-  const admin = await isUserAdmin(user.id);
-  if (!admin) {
+  const isAdmin = await isUserAdmin(user.id);
+  if (!isAdmin) {
     return { success: false, error: 'Only admins can manage workspace members' };
   }
 
   const { error } = await supabase
     .from('workspace_members')
     .delete()
-    .eq('workspace_id', workspaceId)
-    .eq('profile_id', profileId);
+    .eq('workspace_id', parsed.data.workspaceId)
+    .eq('profile_id', parsed.data.profileId);
 
   if (error) {
     console.error('Error removing workspace member:', error);

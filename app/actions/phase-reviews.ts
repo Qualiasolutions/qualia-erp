@@ -1,5 +1,6 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 
 import type { ActionResult } from './shared';
@@ -10,6 +11,27 @@ import {
   notifyPhaseApproved,
   notifyPhaseChangesRequested,
 } from '@/lib/email';
+
+// ============ SCHEMAS ============
+
+const SubmitPhaseForReviewSchema = z.object({
+  projectId: z.string().uuid('Invalid project ID'),
+  phaseId: z.string().uuid('Invalid phase ID'),
+  phaseName: z.string().min(1, 'Phase name is required').max(200, 'Phase name too long'),
+});
+
+const ApprovePhaseReviewSchema = z.object({
+  reviewId: z.string().uuid('Invalid review ID'),
+  projectId: z.string().uuid('Invalid project ID'),
+});
+
+const RequestPhaseChangesSchema = z.object({
+  reviewId: z.string().uuid('Invalid review ID'),
+  projectId: z.string().uuid('Invalid project ID'),
+  feedback: z.string().min(1, 'Feedback is required').max(5000, 'Feedback too long'),
+});
+
+// ============ TYPES ============
 
 export interface PhaseReviewWithDetails {
   id: string;
@@ -37,6 +59,11 @@ export async function submitPhaseForReview(
   phaseId: string,
   phaseName: string
 ): Promise<ActionResult> {
+  const parsed = SubmitPhaseForReviewSchema.safeParse({ projectId, phaseId, phaseName });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const supabase = await createClient();
 
   const {
@@ -44,7 +71,7 @@ export async function submitPhaseForReview(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  // Upsert — if a previous review was rejected, allow resubmission
+  // Upsert -- if a previous review was rejected, allow resubmission
   const { error } = await supabase.from('phase_reviews').upsert(
     {
       project_id: projectId,
@@ -106,6 +133,11 @@ export async function approvePhaseReview(
   reviewId: string,
   projectId: string
 ): Promise<ActionResult> {
+  const parsed = ApprovePhaseReviewSchema.safeParse({ reviewId, projectId });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const supabase = await createClient();
 
   const {
@@ -191,6 +223,11 @@ export async function requestPhaseChanges(
   projectId: string,
   feedback: string
 ): Promise<ActionResult> {
+  const parsed = RequestPhaseChangesSchema.safeParse({ reviewId, projectId, feedback });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const supabase = await createClient();
 
   const {

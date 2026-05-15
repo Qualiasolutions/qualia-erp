@@ -1,6 +1,20 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+
+// ============ SCHEMAS ============
+
+const CheckEnvironmentHealthSchema = z.object({
+  environmentId: z.string().uuid('Invalid environment ID'),
+});
+
+const LinkVercelProjectSchema = z.object({
+  projectId: z.string().uuid('Invalid project ID'),
+  vercelProjectId: z.string().min(1, 'Vercel project ID is required').max(200),
+});
+
+// ============ TYPES ============
 
 export interface Deployment {
   id: string;
@@ -134,6 +148,11 @@ export async function getDeploymentStats(projectId: string) {
  * Manually trigger a health check for an environment
  */
 export async function checkEnvironmentHealth(environmentId: string) {
+  const parsed = CheckEnvironmentHealthSchema.safeParse({ environmentId });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -192,6 +211,11 @@ export async function checkEnvironmentHealth(environmentId: string) {
  * Link a Vercel project to our project
  */
 export async function linkVercelProject(projectId: string, vercelProjectId: string) {
+  const parsed = LinkVercelProjectSchema.safeParse({ projectId, vercelProjectId });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

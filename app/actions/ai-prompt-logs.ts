@@ -1,8 +1,22 @@
 'use server';
 
+import { z } from 'zod';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { isUserAdmin } from './shared';
 import { getCurrentWorkspaceId } from './workspace';
+
+// ============ SCHEMAS ============
+
+const GetAIPromptConversationsSchema = z.object({
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+  profileId: z.string().uuid('Invalid profile ID').optional(),
+  limit: z.number().int().min(1).max(500).optional(),
+});
+
+const ConversationDetailSchema = z.object({
+  conversationId: z.string().uuid('Invalid conversation ID'),
+});
 
 export interface AIPromptConversation {
   id: string;
@@ -53,11 +67,14 @@ export async function getAIPromptConversations(opts: {
   profileId?: string;
   limit?: number;
 }): Promise<AIPromptConversation[]> {
+  const parsed = GetAIPromptConversationsSchema.safeParse(opts);
+  if (!parsed.success) return [];
+
   const ctx = await requireAdmin();
   if (!ctx) return [];
 
   const admin = createAdminClient();
-  const limit = Math.min(opts.limit ?? 200, 500);
+  const limit = Math.min(parsed.data.limit ?? 200, 500);
 
   let query = admin
     .from('ai_conversations')
@@ -66,9 +83,9 @@ export async function getAIPromptConversations(opts: {
     .order('updated_at', { ascending: false })
     .limit(limit);
 
-  if (opts.from) query = query.gte('updated_at', opts.from);
-  if (opts.to) query = query.lte('updated_at', opts.to);
-  if (opts.profileId) query = query.eq('user_id', opts.profileId);
+  if (parsed.data.from) query = query.gte('updated_at', parsed.data.from);
+  if (parsed.data.to) query = query.lte('updated_at', parsed.data.to);
+  if (parsed.data.profileId) query = query.eq('user_id', parsed.data.profileId);
 
   const { data: conversations, error } = await query;
   if (error || !conversations || conversations.length === 0) return [];
@@ -138,6 +155,9 @@ export async function getAIPromptConversations(opts: {
 export async function getAIPromptConversationDetail(
   conversationId: string
 ): Promise<AIPromptConversationDetail | null> {
+  const parsed = ConversationDetailSchema.safeParse({ conversationId });
+  if (!parsed.success) return null;
+
   const ctx = await requireAdmin();
   if (!ctx) return null;
 

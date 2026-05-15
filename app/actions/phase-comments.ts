@@ -1,5 +1,6 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 
 import type { ActionResult } from './shared';
@@ -12,6 +13,25 @@ import {
 } from '@/lib/email';
 import { canAccessProject } from '@/lib/portal-utils';
 
+// ============ SCHEMAS ============
+
+const CreatePhaseCommentSchema = z.object({
+  projectId: z.string().uuid('Invalid project ID'),
+  phaseName: z.string().min(1, 'Phase name is required').max(200, 'Phase name too long'),
+  commentText: z
+    .string()
+    .min(1, 'Comment text is required')
+    .max(2000, 'Comment text must not exceed 2000 characters'),
+  isInternal: z.boolean().optional(),
+});
+
+const DeletePhaseCommentSchema = z.object({
+  commentId: z.string().uuid('Invalid comment ID'),
+  projectId: z.string().uuid('Invalid project ID'),
+});
+
+// ============ TYPES ============
+
 interface CreatePhaseCommentInput {
   projectId: string;
   phaseName: string;
@@ -23,6 +43,11 @@ interface CreatePhaseCommentInput {
  * Create a new phase comment
  */
 export async function createPhaseComment(data: CreatePhaseCommentInput): Promise<ActionResult> {
+  const parsed = CreatePhaseCommentSchema.safeParse(data);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const supabase = await createClient();
 
   const {
@@ -30,23 +55,10 @@ export async function createPhaseComment(data: CreatePhaseCommentInput): Promise
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  const { projectId, phaseName, commentText, isInternal } = data;
+  const { projectId, phaseName, commentText, isInternal } = parsed.data;
 
   if (!(await canAccessProject(user.id, projectId))) {
     return { success: false, error: 'Project not found or access denied' };
-  }
-
-  // Validation
-  if (!commentText || commentText.trim().length === 0) {
-    return { success: false, error: 'Comment text is required' };
-  }
-
-  if (commentText.length > 2000) {
-    return { success: false, error: 'Comment text must not exceed 2000 characters' };
-  }
-
-  if (!phaseName || phaseName.trim().length === 0) {
-    return { success: false, error: 'Phase name is required' };
   }
 
   // Get user profile to check role
@@ -179,6 +191,11 @@ export async function deletePhaseComment(
   commentId: string,
   _projectId: string
 ): Promise<ActionResult> {
+  const parsed = DeletePhaseCommentSchema.safeParse({ commentId, projectId: _projectId });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
   const supabase = await createClient();
 
   const {

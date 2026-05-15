@@ -1,13 +1,42 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { getInvitationByToken, markInvitationAccepted } from './client-invitations';
+
+// ============ SCHEMAS ============
+
+const coerceNullToEmpty = z.preprocess((v) => (v === null ? '' : v), z.string());
+
+const LoginSchema = z.object({
+  email: coerceNullToEmpty.pipe(z.string().min(1, 'Email/username is required').max(320)),
+  password: coerceNullToEmpty.pipe(z.string().min(1, 'Password is required').max(256)),
+});
+
+const PersistOnboardingSchema = z.object({
+  version: z.number().int().min(0, 'Invalid version'),
+});
+
+const SignupWithInvitationSchema = z.object({
+  email: coerceNullToEmpty.pipe(z.string().email('Invalid email address').max(320)),
+  password: coerceNullToEmpty.pipe(
+    z
+      .string()
+      .min(1, 'Password is required')
+      .min(8, 'Password must be at least 8 characters')
+      .max(256)
+  ),
+  fullName: coerceNullToEmpty.pipe(z.string().min(1, 'Full name is required').max(200)),
+  invitationToken: coerceNullToEmpty.pipe(
+    z.string().min(1, 'Invitation token is required').max(500)
+  ),
+});
 
 // ============ AUTHENTICATION ACTIONS ============
 
 /**
  * Resolve a username (no `@`) to the auth email behind it.
- * Uses the admin client because profiles → auth.users lookup requires
+ * Uses the admin client because profiles -> auth.users lookup requires
  * server admin key (anon can't read auth.users). Returns null on no match.
  * Safe to surface a generic "invalid credentials" to the user on null.
  */
@@ -45,14 +74,20 @@ export async function loginAction(
   _prevState: { success: boolean; error: string | null },
   formData: FormData
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = await createClient();
-
-  const identifier = formData.get('email') as string;
-  const password = formData.get('password') as string;
-
-  if (!identifier || !password) {
-    return { success: false, error: 'Email/username and password are required' };
+  const parsed = LoginSchema.safeParse({
+    email: formData.get('email'),
+    password: formData.get('password'),
+  });
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || 'Validation failed',
+    };
   }
+
+  const supabase = await createClient();
+  const identifier = parsed.data.email;
+  const password = parsed.data.password;
 
   try {
     const email = await resolveLoginIdentifier(identifier);
@@ -89,8 +124,12 @@ export async function loginAction(
 export async function persistInternalOnboardingState(
   version: number
 ): Promise<{ success: boolean; error?: string }> {
-  if (!Number.isInteger(version) || version < 0) {
-    return { success: false, error: 'Invalid version' };
+  const parsed = PersistOnboardingSchema.safeParse({ version });
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || 'Invalid version',
+    };
   }
 
   const supabase = await createClient();
@@ -164,16 +203,21 @@ export async function signupWithInvitationAction(
   formData: FormData
 ): Promise<{ success: boolean; error: string | null; projectId?: string }> {
   try {
-    // Extract form fields
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const fullName = formData.get('fullName') as string;
-    const invitationToken = formData.get('invitationToken') as string;
-
-    // Validate required fields
-    if (!email || !password || !fullName || !invitationToken) {
-      return { success: false, error: 'All fields are required' };
+    // Extract and validate form fields
+    const parsed = SignupWithInvitationSchema.safeParse({
+      email: formData.get('email'),
+      password: formData.get('password'),
+      fullName: formData.get('fullName'),
+      invitationToken: formData.get('invitationToken'),
+    });
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: parsed.error.issues[0]?.message || 'Validation failed',
+      };
     }
+
+    const { email, password, fullName, invitationToken } = parsed.data;
 
     // Validate invitation token and get details
     const invitationResult = await getInvitationByToken(invitationToken);
