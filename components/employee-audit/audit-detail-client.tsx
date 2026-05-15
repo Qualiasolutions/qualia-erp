@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
-import { AnimatePresence, m } from 'motion/react';
+import { AnimatePresence, m } from '@/lib/lazy-motion';
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Save, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 

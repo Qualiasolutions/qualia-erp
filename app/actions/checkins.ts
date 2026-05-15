@@ -148,7 +148,7 @@ export async function createDailyCheckin(
     console.error('[createCheckin] Failed to notify admins:', err)
   );
 
-  revalidatePath('/');
+  revalidatePath('/admin');
 
   return { success: true, data };
 }

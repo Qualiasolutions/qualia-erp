@@ -1,34 +1,30 @@
 import crypto from 'crypto';
 import type { NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
-import { safeCompare } from '@/lib/auth-utils';
 
 /**
- * Dual-auth for qualia-framework ERP ingest endpoints.
+ * Per-user token auth for qualia-framework ERP ingest endpoints.
  *
- * Priority:
- *  1. Bearer token matching an active api_tokens row (per-user, qlt_* prefix).
- *  2. Legacy shared CLAUDE_API_KEY env (grandfathered — emits deprecation headers).
+ * Auth: Bearer token matching an active api_tokens row (per-user, qlt_* prefix).
  *
- * Legacy path is revoked in v3.6 (feature/erp-v3.6-cleanup). Until then, any
- * response from an endpoint that accepted the legacy key MUST merge
- * LEGACY_DEPRECATION_HEADERS into its response.
+ * The legacy shared-key path was removed 2026-05-15 (sunset date 2026-05-17).
  */
 
 export const TOKEN_PREFIX = 'qlt_';
 export const TOKEN_BYTES = 32;
 
-/** RFC 8594 Sunset + RFC 9745 Deprecation. 30-day grandfather window. */
+/**
+ * @deprecated Legacy auth path removed 2026-05-15. These constants are retained
+ * only for backward compatibility with callers that still reference them.
+ * They will be removed in the next cleanup sweep.
+ */
 export const LEGACY_SUNSET_DATE = '2026-05-17T00:00:00Z';
 
 export const LEGACY_DEPRECATION_HEADERS = {
   Deprecation: 'true',
   Sunset: LEGACY_SUNSET_DATE,
   Link: '</docs/erp-contract#per-user-tokens>; rel="deprecation"; type="text/html"',
-  Warning:
-    '299 - "CLAUDE_API_KEY is deprecated. Migrate to per-user tokens before ' +
-    LEGACY_SUNSET_DATE +
-    '."',
+  Warning: '299 - "Legacy shared key is removed. Use per-user tokens (qlt_*)."',
 } as const;
 
 export type AuthResult =
@@ -136,18 +132,6 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
       tokenId: token.id,
       profileId: token.profile_id,
       scope: token.scope,
-    };
-  }
-
-  // Legacy shared-key path (grandfathered until LEGACY_SUNSET_DATE).
-  const legacyKey = process.env.CLAUDE_API_KEY;
-  if (legacyKey && safeCompare(bearer, legacyKey)) {
-    return {
-      ok: true,
-      method: 'legacy_shared_key',
-      tokenId: null,
-      profileId: null,
-      scope: 'reports:write',
     };
   }
 

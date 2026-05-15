@@ -122,6 +122,8 @@ const nextConfig: NextConfig = {
       '@tanstack/react-virtual',
       'zod',
       '@sentry/nextjs',
+      '@phosphor-icons/react',
+      'react-day-picker',
     ],
   },
 

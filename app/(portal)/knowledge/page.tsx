@@ -6,6 +6,7 @@ import { getKnowledgeGuides } from '@/app/actions/knowledge';
 import { type Guide } from '@/lib/guides-data';
 
 export const metadata = { title: 'Knowledge Base' };
+export const revalidate = 60;
 
 export default async function PortalKnowledgePage() {
   const supabase = await createClient();

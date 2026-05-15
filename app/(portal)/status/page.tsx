@@ -5,6 +5,7 @@ import { getMonitors, getOverallStatus, type Monitor } from '@/lib/uptime';
 import { StatusDashboard, type ProjectInfo } from '@/components/status/status-dashboard';
 
 export const metadata = { title: 'System Status' };
+export const revalidate = 60;
 
 // Monitor names to hide from the status page
 const HIDDEN_MONITORS = ['faris', 'melon', 'qualia-erp', 'qualia erp'];

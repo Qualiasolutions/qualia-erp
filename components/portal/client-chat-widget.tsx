@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { MessageSquare, X, ChevronLeft } from 'lucide-react';
-import { AnimatePresence, m } from 'motion/react';
+import { AnimatePresence, m } from '@/lib/lazy-motion';
 import {
   useMessageChannels,
   useChannelMessages,
