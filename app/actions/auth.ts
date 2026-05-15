@@ -141,18 +141,21 @@ export async function persistInternalOnboardingState(
     return { success: false, error: 'Not authenticated' };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .update({
       internal_onboarding_version: version,
       internal_onboarding_completed_at: new Date().toISOString(),
     })
-    .eq('id', user.id);
+    .eq('id', user.id)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[persistInternalOnboardingState]', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

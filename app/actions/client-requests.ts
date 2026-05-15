@@ -492,21 +492,26 @@ export async function deleteFeatureRequest(requestId: string): Promise<ActionRes
       await adminClient.storage.from('project-files').remove(storagePaths);
     }
 
-    const { error: commentsError } = await adminClient
+    const { data: deletedComments, error: commentsError } = await adminClient
       .from('request_comments')
       .delete()
-      .eq('request_id', requestId);
+      .eq('request_id', requestId)
+      .select('id');
     if (commentsError)
       return {
         success: false,
         error: commentsError.message || 'Failed to delete request comments',
       };
+    // deletedComments may be empty if there were no comments — that's OK
 
-    const { error } = await adminClient
+    const { data: deletedRequest, error } = await adminClient
       .from('client_feature_requests')
       .delete()
-      .eq('id', requestId);
+      .eq('id', requestId)
+      .select()
+      .single();
     if (error) return { success: false, error: error.message || 'Failed to delete request' };
+    if (!deletedRequest) return { success: false, error: 'Not found or permission denied' };
 
     if (!isAdmin && request.project_id) {
       const { data: clientProfile } = await supabase
@@ -652,12 +657,14 @@ export async function uploadRequestAttachment(formData: FormData): Promise<Actio
     };
 
     const updated = [...auth.request.attachments, newAttachment];
-    const { error: updateError } = await supabase
+    const { data: updatedRow, error: updateError } = await supabase
       .from('client_feature_requests')
       .update({ attachments: updated })
-      .eq('id', requestId);
+      .eq('id', requestId)
+      .select('id')
+      .single();
 
-    if (updateError) {
+    if (updateError || !updatedRow) {
       await supabase.storage.from('project-files').remove([storagePath]);
       return { success: false, error: 'Failed to save attachment record' };
     }
@@ -733,12 +740,15 @@ export async function deleteRequestAttachment(
     await supabase.storage.from('project-files').remove([attachmentPath]);
 
     const remaining = auth.request.attachments.filter((a) => a.path !== attachmentPath);
-    const { error } = await supabase
+    const { data: updatedRow, error } = await supabase
       .from('client_feature_requests')
       .update({ attachments: remaining })
-      .eq('id', requestId);
+      .eq('id', requestId)
+      .select('id')
+      .single();
 
     if (error) return { success: false, error: 'Failed to update request' };
+    if (!updatedRow) return { success: false, error: 'Not found or permission denied' };
 
     return { success: true };
   } catch (error) {
@@ -823,13 +833,16 @@ export async function markFeatureRequestDone(
       .single();
 
     // Update status to completed
-    const { error: updateError } = await supabase
+    const { data: updatedRequest, error: updateError } = await supabase
       .from('client_feature_requests')
       .update({ status: 'completed', updated_at: new Date().toISOString() })
-      .eq('id', requestId);
+      .eq('id', requestId)
+      .select('id')
+      .single();
 
     if (updateError)
       return { success: false, error: updateError.message || 'Failed to mark request as done' };
+    if (!updatedRequest) return { success: false, error: 'Not found or permission denied' };
 
     // Get current user's name for the system comment
     const { data: staffProfile } = await supabase

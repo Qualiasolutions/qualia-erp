@@ -219,12 +219,18 @@ export async function deleteTeam(teamId: string): Promise<ActionResult> {
     return { success: false, error: 'Only admins can delete teams' };
   }
 
-  const { error } = await supabase.from('teams').delete().eq('id', teamId);
+  const { data, error } = await supabase
+    .from('teams')
+    .delete()
+    .eq('id', teamId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Error deleting team:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

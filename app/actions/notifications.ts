@@ -1,8 +1,31 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { validateData } from '@/lib/validation';
 
 import type { ActionResult } from './shared';
+
+// ============ ZOD SCHEMAS ============
+
+const createNotificationSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  workspaceId: z.string().uuid('Invalid workspace ID'),
+  type: z.enum([
+    'task_assigned',
+    'task_completed',
+    'task_updated',
+    'comment_added',
+    'mention',
+    'system',
+  ] as const),
+  title: z.string().min(1, 'Title is required').max(500),
+  message: z.string().max(5000).optional(),
+  link: z.string().max(1000).optional(),
+});
+
+const notificationIdSchema = z.string().uuid('Invalid notification ID');
+const workspaceIdSchema = z.string().uuid('Invalid workspace ID');
 
 // ============ NOTIFICATION TYPES ============
 
@@ -28,6 +51,16 @@ export async function createNotification(
   link?: string,
   metadata?: Record<string, unknown>
 ): Promise<ActionResult> {
+  const parsed = validateData(createNotificationSchema, {
+    userId,
+    workspaceId,
+    type,
+    title,
+    message,
+    link,
+  });
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
 
   // Auth check — only authenticated users can create notifications
@@ -37,12 +70,12 @@ export async function createNotification(
   if (!user) return { success: false, error: 'Not authenticated' };
 
   const { error } = await supabase.from('notifications').insert({
-    user_id: userId,
-    workspace_id: workspaceId,
-    type,
-    title,
-    message: message || null,
-    link: link || null,
+    user_id: parsed.data.userId,
+    workspace_id: parsed.data.workspaceId,
+    type: parsed.data.type,
+    title: parsed.data.title,
+    message: parsed.data.message || null,
+    link: parsed.data.link || null,
     metadata: metadata || {},
   });
 
@@ -113,6 +146,9 @@ export async function getUnreadNotificationCount(workspaceId: string): Promise<n
  * Mark a notification as read
  */
 export async function markNotificationAsRead(notificationId: string): Promise<ActionResult> {
+  const parsed = validateData(notificationIdSchema, notificationId);
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -122,15 +158,20 @@ export async function markNotificationAsRead(notificationId: string): Promise<Ac
     return { success: false, error: 'Not authenticated' };
   }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('notifications')
     .update({ is_read: true, read_at: new Date().toISOString() })
-    .eq('id', notificationId)
-    .eq('user_id', user.id);
+    .eq('id', parsed.data)
+    .eq('user_id', user.id)
+    .select()
+    .single();
 
   if (error) {
     console.error('Error marking notification as read:', error);
     return { success: false, error: error.message };
+  }
+  if (!updated) {
+    return { success: false, error: 'Notification not found or access denied' };
   }
 
   return { success: true };
@@ -140,6 +181,9 @@ export async function markNotificationAsRead(notificationId: string): Promise<Ac
  * Mark all notifications as read for current user
  */
 export async function markAllNotificationsAsRead(workspaceId: string): Promise<ActionResult> {
+  const parsed = validateData(workspaceIdSchema, workspaceId);
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -149,12 +193,14 @@ export async function markAllNotificationsAsRead(workspaceId: string): Promise<A
     return { success: false, error: 'Not authenticated' };
   }
 
+  // Multi-row update — .select() to detect silent RLS (0 rows is OK if none unread)
   const { error } = await supabase
     .from('notifications')
     .update({ is_read: true, read_at: new Date().toISOString() })
-    .eq('workspace_id', workspaceId)
+    .eq('workspace_id', parsed.data)
     .eq('user_id', user.id)
-    .eq('is_read', false);
+    .eq('is_read', false)
+    .select();
 
   if (error) {
     console.error('Error marking all notifications as read:', error);
@@ -168,6 +214,9 @@ export async function markAllNotificationsAsRead(workspaceId: string): Promise<A
  * Delete a notification
  */
 export async function deleteNotification(notificationId: string): Promise<ActionResult> {
+  const parsed = validateData(notificationIdSchema, notificationId);
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -177,15 +226,20 @@ export async function deleteNotification(notificationId: string): Promise<Action
     return { success: false, error: 'Not authenticated' };
   }
 
-  const { error } = await supabase
+  const { data: deleted, error } = await supabase
     .from('notifications')
     .delete()
-    .eq('id', notificationId)
-    .eq('user_id', user.id);
+    .eq('id', parsed.data)
+    .eq('user_id', user.id)
+    .select()
+    .single();
 
   if (error) {
     console.error('Error deleting notification:', error);
     return { success: false, error: error.message };
+  }
+  if (!deleted) {
+    return { success: false, error: 'Notification not found or access denied' };
   }
 
   return { success: true };

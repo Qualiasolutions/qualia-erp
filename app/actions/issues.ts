@@ -267,12 +267,13 @@ export async function deleteIssue(id: string): Promise<ActionResult> {
     return { success: false, error: 'You do not have permission to delete this issue' };
   }
 
-  const { error } = await supabase.from('issues').delete().eq('id', id);
+  const { data, error } = await supabase.from('issues').delete().eq('id', id).select('id').single();
 
   if (error) {
     console.error('Error deleting issue:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -527,16 +528,19 @@ export async function removeIssueAssignee(
     return { success: false, error: 'Not authenticated' };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('issue_assignees')
     .delete()
     .eq('issue_id', issueId)
-    .eq('profile_id', profileId);
+    .eq('profile_id', profileId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Error removing issue assignee:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -646,18 +650,21 @@ export async function scheduleIssue(
 ): Promise<ActionResult> {
   const supabase = await createClient();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('issues')
     .update({
       scheduled_start_time: startTime,
       scheduled_end_time: endTime,
     })
-    .eq('id', issueId);
+    .eq('id', issueId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Error scheduling issue:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -668,18 +675,21 @@ export async function scheduleIssue(
 export async function unscheduleIssue(issueId: string): Promise<ActionResult> {
   const supabase = await createClient();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('issues')
     .update({
       scheduled_start_time: null,
       scheduled_end_time: null,
     })
-    .eq('id', issueId);
+    .eq('id', issueId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Error unscheduling issue:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

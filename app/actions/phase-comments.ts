@@ -223,12 +223,18 @@ export async function deletePhaseComment(
   }
 
   // Delete comment
-  const { error } = await supabase.from('phase_comments').delete().eq('id', commentId);
+  const { data, error } = await supabase
+    .from('phase_comments')
+    .delete()
+    .eq('id', commentId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[deletePhaseComment] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

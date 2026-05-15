@@ -188,12 +188,18 @@ export async function deleteConversation(id: string): Promise<ActionResult> {
     return { success: false, error: 'Conversation not found or unauthorized' };
   }
 
-  const { error } = await supabase.from('ai_conversations').delete().eq('id', id);
+  const { data, error } = await supabase
+    .from('ai_conversations')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single();
 
   if (error) {
     console.error('[deleteConversation] Error deleting conversation:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -251,12 +257,14 @@ export async function saveMessage(
   }
 
   // Update conversation's updated_at timestamp
-  const { error: updateError } = await supabase
+  const { data: updatedConv, error: updateError } = await supabase
     .from('ai_conversations')
     .update({ updated_at: new Date().toISOString() })
-    .eq('id', conversationId);
+    .eq('id', conversationId)
+    .select('id')
+    .single();
 
-  if (updateError) {
+  if (updateError || !updatedConv) {
     console.error('[saveMessage] Error updating conversation timestamp:', updateError);
     // Don't fail - message was saved successfully
   }
@@ -335,15 +343,18 @@ export async function updateConversationTitle(id: string, title: string): Promis
     return { success: false, error: 'Conversation not found or unauthorized' };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('ai_conversations')
     .update({ title: trimmedTitle })
-    .eq('id', id);
+    .eq('id', id)
+    .select()
+    .single();
 
   if (error) {
     console.error('[updateConversationTitle] Error updating title:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
-  return { success: true };
+  return { success: true, data };
 }

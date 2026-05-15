@@ -44,11 +44,14 @@ export async function updateUIDensity(density: UIDensity): Promise<ActionResult>
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from('profiles')
       .update({ ui_density: density })
-      .eq('id', user.id);
+      .eq('id', user.id)
+      .select()
+      .single();
     if (error) throw error;
+    if (!updated) return { success: false, error: 'Profile update blocked by RLS' };
 
     return { success: true, data: { density } };
   } catch (error) {

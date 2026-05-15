@@ -163,11 +163,16 @@ export async function setDefaultWorkspace(workspaceId: string): Promise<ActionRe
   await supabase.from('workspace_members').update({ is_default: false }).eq('profile_id', user.id);
 
   // Set selected workspace as default
-  await supabase
+  const { data: updatedMembership, error: setError } = await supabase
     .from('workspace_members')
     .update({ is_default: true })
     .eq('workspace_id', workspaceId)
-    .eq('profile_id', user.id);
+    .eq('profile_id', user.id)
+    .select('id')
+    .single();
+
+  if (setError) return { success: false, error: setError.message };
+  if (!updatedMembership) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -317,16 +322,19 @@ export async function removeWorkspaceMember(
     return { success: false, error: 'Only admins can manage workspace members' };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('workspace_members')
     .delete()
     .eq('workspace_id', parsed.data.workspaceId)
-    .eq('profile_id', parsed.data.profileId);
+    .eq('profile_id', parsed.data.profileId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Error removing workspace member:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

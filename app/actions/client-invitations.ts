@@ -1,7 +1,13 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { validateData } from '@/lib/validation';
 import { type ActionResult } from './shared';
+
+// ============ ZOD SCHEMAS ============
+
+const invitationTokenSchema = z.string().min(10, 'Invalid token');
 
 /**
  * Get invitation details by token for signup flow.
@@ -21,6 +27,9 @@ export async function getInvitationByToken(token: string): Promise<{
   error?: string;
 }> {
   try {
+    const parsed = validateData(invitationTokenSchema, token);
+    if (!parsed.success) return { error: parsed.error };
+
     const supabase = await createClient();
 
     // Query invitation with project details
@@ -102,28 +111,30 @@ export async function getInvitationByToken(token: string): Promise<{
  */
 export async function markInvitationOpened(token: string): Promise<ActionResult> {
   try {
-    if (!token || token.length < 10) {
-      return { success: false, error: 'Invalid token' };
-    }
+    const parsed = validateData(invitationTokenSchema, token);
+    if (!parsed.success) return { success: false, error: parsed.error };
 
     const adminClient = createAdminClient();
 
     // Only update if status is 'sent' or 'resent' (don't overwrite 'accepted')
-    const { error } = await adminClient
+    // Admin client bypasses RLS — multi-row update is intentional (match by token + status filter).
+    const { data: updated, error } = await adminClient
       .from('client_invitations')
       .update({
         status: 'opened',
         opened_at: new Date().toISOString(),
       })
-      .eq('invitation_token', token)
-      .in('status', ['sent', 'resent']);
+      .eq('invitation_token', parsed.data)
+      .in('status', ['sent', 'resent'])
+      .select();
 
     if (error) {
       console.error('[markInvitationOpened] Update error:', error);
       return { success: false, error: error.message };
     }
 
-    return { success: true };
+    // No rows updated is expected if already opened/accepted — not an error.
+    return { success: true, data: { rowsUpdated: updated?.length ?? 0 } };
   } catch (error) {
     console.error('[markInvitationOpened] Unexpected error:', error);
     return {
@@ -141,24 +152,31 @@ export async function markInvitationOpened(token: string): Promise<ActionResult>
  */
 export async function markInvitationAccepted(token: string): Promise<ActionResult> {
   try {
-    if (!token || token.length < 10) {
-      return { success: false, error: 'Invalid token' };
-    }
+    const parsed = validateData(invitationTokenSchema, token);
+    if (!parsed.success) return { success: false, error: parsed.error };
 
     const adminClient = createAdminClient();
 
-    const { error } = await adminClient
+    const { data: updated, error } = await adminClient
       .from('client_invitations')
       .update({
         status: 'accepted',
         account_created_at: new Date().toISOString(),
       })
-      .eq('invitation_token', token)
-      .in('status', ['opened', 'sent', 'resent']);
+      .eq('invitation_token', parsed.data)
+      .in('status', ['opened', 'sent', 'resent'])
+      .select();
 
     if (error) {
       console.error('[markInvitationAccepted] Update error:', error);
       return { success: false, error: error.message };
+    }
+
+    if (!updated || updated.length === 0) {
+      return {
+        success: false,
+        error: 'Invitation not found or already accepted',
+      };
     }
 
     return { success: true };

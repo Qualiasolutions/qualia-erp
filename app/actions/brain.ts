@@ -1,8 +1,17 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { validateData } from '@/lib/validation';
 import { isUserAdmin } from '@/app/actions/shared';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
+
+// ============ ZOD SCHEMAS ============
+
+const brainQuerySchema = z
+  .string()
+  .min(2, 'Query must be at least 2 characters')
+  .max(500, 'Query too long');
 
 /**
  * Qualia Brain — keyword search across the operational corpus.
@@ -51,10 +60,9 @@ function snippetAround(haystack: string | null, needle: string): string {
 }
 
 export async function searchBrain(query: string): Promise<BrainSearchResult> {
-  const trimmed = query.trim();
-  if (trimmed.length < 2) {
-    return { ok: false, error: 'Query must be at least 2 characters.' };
-  }
+  const parsed = validateData(brainQuerySchema, query?.trim());
+  if (!parsed.success) return { ok: false, error: parsed.error };
+  const trimmed = parsed.data;
 
   const supabase = await createClient();
   const {

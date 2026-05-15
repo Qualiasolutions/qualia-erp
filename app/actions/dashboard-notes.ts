@@ -91,12 +91,15 @@ export async function updateDashboardNote(noteId: string, content: string): Prom
     return { success: false, error: 'You can only edit your own notes' };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('dashboard_notes')
     .update({ content: content.trim(), updated_at: new Date().toISOString() })
-    .eq('id', noteId);
+    .eq('id', noteId)
+    .select('id')
+    .single();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -124,9 +127,15 @@ export async function deleteDashboardNote(noteId: string): Promise<ActionResult>
     return { success: false, error: 'You can only delete your own notes' };
   }
 
-  const { error } = await supabase.from('dashboard_notes').delete().eq('id', noteId);
+  const { data, error } = await supabase
+    .from('dashboard_notes')
+    .delete()
+    .eq('id', noteId)
+    .select('id')
+    .single();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -145,9 +154,15 @@ export async function togglePinNote(noteId: string, pinned: boolean): Promise<Ac
     return { success: false, error: 'Only admins and managers can pin notes' };
   }
 
-  const { error } = await supabase.from('dashboard_notes').update({ pinned }).eq('id', noteId);
+  const { data, error } = await supabase
+    .from('dashboard_notes')
+    .update({ pinned })
+    .eq('id', noteId)
+    .select('id')
+    .single();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

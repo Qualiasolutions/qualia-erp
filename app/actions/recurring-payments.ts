@@ -173,16 +173,19 @@ export async function updateRecurringPayment(
     if (updates[key] === '') updates[key] = null;
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('recurring_payments')
     .update(updates)
     .eq('id', id)
-    .eq('workspace_id', workspaceId);
+    .eq('workspace_id', workspaceId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[updateRecurringPayment]', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   revalidatePath('/admin');
   return { success: true };
@@ -197,16 +200,19 @@ export async function deleteRecurringPayment(id: string): Promise<ActionResult> 
     return { success: false, error: 'Invalid id' };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('recurring_payments')
     .delete()
     .eq('id', id)
-    .eq('workspace_id', workspaceId);
+    .eq('workspace_id', workspaceId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[deleteRecurringPayment]', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   revalidatePath('/admin');
   return { success: true };

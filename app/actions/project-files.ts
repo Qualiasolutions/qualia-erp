@@ -519,12 +519,18 @@ export async function deleteProjectFile(fileId: string): Promise<ActionResult> {
   }
 
   // Delete database record
-  const { error: dbError } = await supabase.from('project_files').delete().eq('id', fileId);
+  const { data: deletedFile, error: dbError } = await supabase
+    .from('project_files')
+    .delete()
+    .eq('id', fileId)
+    .select('id')
+    .single();
 
   if (dbError) {
     console.error('[deleteProjectFile] DB error:', dbError);
     return { success: false, error: 'Failed to delete file record' };
   }
+  if (!deletedFile) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

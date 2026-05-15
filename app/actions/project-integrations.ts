@@ -205,8 +205,12 @@ export async function upsertIntegration(
     const result = await supabase
       .from('project_integrations')
       .update({ external_url: externalUrl })
-      .eq('id', existing.id);
+      .eq('id', existing.id)
+      .select('id')
+      .single();
     error = result.error;
+    if (!result.error && !result.data)
+      return { success: false, error: 'Not found or permission denied' };
   } else {
     // Insert new integration
     const result = await supabase.from('project_integrations').insert({
@@ -262,12 +266,18 @@ export async function deleteIntegration(
   const isPriv = await isUserAdmin(user.id);
   if (!isPriv) return { success: false, error: 'Not authorized' };
 
-  const { error } = await supabase.from('project_integrations').delete().eq('id', integrationId);
+  const { data, error } = await supabase
+    .from('project_integrations')
+    .delete()
+    .eq('id', integrationId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Failed to delete integration:', error);
     return { success: false, error: 'Failed to delete integration' };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

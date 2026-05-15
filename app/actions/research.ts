@@ -273,12 +273,18 @@ export async function updateResearchEntry(input: UpdateResearchInput): Promise<A
     }
 
     const { id, ...updates } = input;
-    const { error } = await supabase.from('research_entries').update(updates).eq('id', id);
+    const { data: updatedEntry, error } = await supabase
+      .from('research_entries')
+      .update(updates)
+      .eq('id', id)
+      .select('id')
+      .single();
 
     if (error) {
       console.error('[updateResearchEntry] Error:', error);
       return { success: false, error: error.message };
     }
+    if (!updatedEntry) return { success: false, error: 'Not found or permission denied' };
 
     return { success: true };
   } catch (err) {
@@ -316,12 +322,18 @@ export async function deleteResearchEntry(id: string): Promise<ActionResult> {
       return { success: false, error: 'Not authorized to delete this entry' };
     }
 
-    const { error } = await supabase.from('research_entries').delete().eq('id', id);
+    const { data: deletedEntry, error } = await supabase
+      .from('research_entries')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .single();
 
     if (error) {
       console.error('[deleteResearchEntry] Error:', error);
       return { success: false, error: error.message };
     }
+    if (!deletedEntry) return { success: false, error: 'Not found or permission denied' };
 
     return { success: true };
   } catch (err) {

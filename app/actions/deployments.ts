@@ -180,28 +180,36 @@ export async function checkEnvironmentHealth(environmentId: string) {
     const healthStatus = response.ok ? 'healthy' : 'degraded';
 
     // Update the environment
-    const { error: updateError } = await supabase
+    const { data: updatedEnv, error: updateError } = await supabase
       .from('project_environments')
       .update({
         health_status: healthStatus,
         last_checked_at: new Date().toISOString(),
       })
-      .eq('id', environmentId);
+      .eq('id', environmentId)
+      .select('id')
+      .single();
 
-    if (updateError) {
+    if (updateError || !updatedEnv) {
       console.error('[checkEnvironmentHealth] Update error:', updateError);
     }
 
     return { success: true, status: healthStatus };
   } catch {
     // URL didn't respond
-    await supabase
+    const { error: downError } = await supabase
       .from('project_environments')
       .update({
         health_status: 'down',
         last_checked_at: new Date().toISOString(),
       })
-      .eq('id', environmentId);
+      .eq('id', environmentId)
+      .select('id')
+      .single();
+
+    if (downError) {
+      console.error('[checkEnvironmentHealth] Down-update error:', downError);
+    }
 
     return { success: true, status: 'down' };
   }
@@ -222,15 +230,18 @@ export async function linkVercelProject(projectId: string, vercelProjectId: stri
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('projects')
     .update({ vercel_project_id: vercelProjectId })
-    .eq('id', projectId);
+    .eq('id', projectId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[linkVercelProject] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

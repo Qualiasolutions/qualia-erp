@@ -250,12 +250,18 @@ export async function updateProjectPhase(phaseId: string, name: string, projectI
   const isPriv = await isUserAdmin(user.id);
   if (!isPriv) return { success: false, error: 'Not authorized' };
 
-  const { error } = await supabase.from('project_phases').update({ name }).eq('id', phaseId);
+  const { data, error } = await supabase
+    .from('project_phases')
+    .update({ name })
+    .eq('id', phaseId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[updateProjectPhase] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -286,18 +292,21 @@ export async function completePhase(phaseId: string) {
   }
 
   // Mark the phase as complete
-  const { error: updateError } = await supabase
+  const { data: completedPhase, error: updateError } = await supabase
     .from('project_phases')
     .update({
       status: 'completed',
       completed_at: new Date().toISOString(),
     })
-    .eq('id', phaseId);
+    .eq('id', phaseId)
+    .select('id')
+    .single();
 
   if (updateError) {
     console.error('[completePhase] Error updating phase:', updateError);
     return { success: false, error: updateError.message };
   }
+  if (!completedPhase) return { success: false, error: 'Not found or permission denied' };
 
   // Notify clients of phase completion (fire-and-forget, preference-aware)
   if (phase.name) {
@@ -398,15 +407,18 @@ export async function unlockPhase(phaseId: string) {
     return { success: false, error: 'Phase not found' };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('project_phases')
     .update({ is_locked: false })
-    .eq('id', phaseId);
+    .eq('id', phaseId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[unlockPhase] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -658,14 +670,17 @@ export async function updatePhaseStatusByName(
     updateData.completed_at = new Date().toISOString();
   }
 
-  const { error: updateError } = await supabase
+  const { data: updatedPhase, error: updateError } = await supabase
     .from('project_phases')
     .update(updateData)
-    .eq('id', phase.id);
+    .eq('id', phase.id)
+    .select('id')
+    .single();
 
   if (updateError) {
     return { success: false, error: updateError.message };
   }
+  if (!updatedPhase) return { success: false, error: 'Not found or permission denied' };
 
   // If completed, auto-unlock next phase and mark it in_progress
   if (status === 'completed') {

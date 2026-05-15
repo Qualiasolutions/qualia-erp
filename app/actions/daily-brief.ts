@@ -176,13 +176,16 @@ export async function dismissBriefItem(id: string): Promise<ActionResult> {
   }
 
   const { supabase, userId } = await requireSession();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('daily_brief_items')
     .update({ dismissed_at: new Date().toISOString(), dismissed_by: userId })
     .eq('id', id)
-    .eq('owner_id', userId);
+    .eq('owner_id', userId)
+    .select('id')
+    .single();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Not found or permission denied' };
   revalidatePath('/');
   return { success: true };
 }
@@ -194,13 +197,16 @@ export async function undismissBriefItem(id: string): Promise<ActionResult> {
   }
 
   const { supabase, userId } = await requireSession();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('daily_brief_items')
     .update({ dismissed_at: null, dismissed_by: null })
     .eq('id', id)
-    .eq('owner_id', userId);
+    .eq('owner_id', userId)
+    .select('id')
+    .single();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Not found or permission denied' };
   revalidatePath('/');
   return { success: true };
 }
@@ -212,13 +218,16 @@ export async function snoozeBriefItem(id: string, untilIso: string): Promise<Act
   }
 
   const { supabase, userId } = await requireSession();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('daily_brief_items')
     .update({ snoozed_until: untilIso })
     .eq('id', id)
-    .eq('owner_id', userId);
+    .eq('owner_id', userId)
+    .select('id')
+    .single();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Not found or permission denied' };
   revalidatePath('/');
   return { success: true };
 }

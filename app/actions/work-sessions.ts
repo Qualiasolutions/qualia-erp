@@ -1,10 +1,51 @@
 'use server';
 
+import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
+import { validateData } from '@/lib/validation';
 
 import { isUserAdmin } from './shared';
 import type { ActionResult } from './shared';
+
+// ============ ZOD SCHEMAS ============
+
+const clockInSchema = z.object({
+  workspaceId: z.string().uuid('Invalid workspace ID'),
+  projectIds: z
+    .array(z.string().uuid('Invalid project ID'))
+    .min(1, 'At least one project required'),
+  clockInNote: z.string().max(2000).optional(),
+  plannedDurationMinutes: z.number().int().positive().max(1440).optional(),
+  clockInReason: z.string().max(500).optional(),
+  clockInActivities: z.array(z.string().max(64)).max(10).optional(),
+});
+
+const clockOutSchema = z.object({
+  workspaceId: z.string().uuid('Invalid workspace ID'),
+  sessionId: z.string().uuid('Invalid session ID'),
+  summary: z.string().min(1, 'Summary is required').max(5000),
+  reportUrl: z.string().url().max(2000).optional(),
+});
+
+const autoClockOutSchema = z.object({
+  workspaceId: z.string().uuid('Invalid workspace ID'),
+  sessionId: z.string().uuid('Invalid session ID'),
+  reason: z.string().min(1).max(2000),
+});
+
+const adminOverrideSchema = z.object({
+  workspaceId: z.string().uuid('Invalid workspace ID'),
+  sessionId: z.string().uuid('Invalid session ID'),
+  reason: z.string().min(1, 'Override reason is required').max(2000),
+});
+
+const workspaceIdSchema = z.string().uuid('Invalid workspace ID');
+const sessionIdSchema = z.string().uuid('Invalid session ID');
+const plannedLogoutTimeSchema = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/, 'Invalid time format. Use HH:MM')
+  .nullable();
 
 // ============ TYPES ============
 
@@ -67,6 +108,16 @@ export async function clockIn(
   clockInReason?: string,
   clockInActivities?: string[]
 ): Promise<ActionResult> {
+  const parsed = validateData(clockInSchema, {
+    workspaceId,
+    projectIds,
+    clockInNote,
+    plannedDurationMinutes,
+    clockInReason,
+    clockInActivities,
+  });
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -76,22 +127,8 @@ export async function clockIn(
     return { success: false, error: 'Not authenticated' };
   }
 
-  // At least one project is required — "Other" sessions were retired in the
-  // 2026-05-05 multi-project change. If no work fits an existing project,
-  // ask an admin to create one.
-  const cleanedProjectIds = Array.from(
-    new Set(
-      (Array.isArray(projectIds) ? projectIds : [])
-        .map((id) => (typeof id === 'string' ? id.trim() : ''))
-        .filter(Boolean)
-    )
-  );
-  if (cleanedProjectIds.length === 0) {
-    return {
-      success: false,
-      error: 'Pick at least one project — every session must be linked to project work.',
-    };
-  }
+  // Deduplicate validated project IDs
+  const cleanedProjectIds = Array.from(new Set(parsed.data.projectIds));
 
   // Date-agnostic: previously used UTC midnight as the stale boundary, which
   // misfired for users whose evening shifts crossed 00:00 UTC.
@@ -99,7 +136,7 @@ export async function clockIn(
     .from('work_sessions')
     .select('id, started_at')
     .eq('profile_id', user.id)
-    .eq('workspace_id', workspaceId)
+    .eq('workspace_id', parsed.data.workspaceId)
     .is('ended_at', null);
 
   const now = Date.now();
@@ -118,7 +155,8 @@ export async function clockIn(
           .from('work_sessions')
           .update({ ended_at: cappedEnd, summary: '[Auto-closed: forgot to clock out]' })
           .eq('id', s.id)
-          .eq('profile_id', user.id);
+          .eq('profile_id', user.id)
+          .select();
       })
     );
   }
@@ -127,11 +165,11 @@ export async function clockIn(
     return { success: false, error: 'You already have an active session. Clock out first.' };
   }
 
-  if (!clockInNote?.trim()) {
+  if (!parsed.data.clockInNote?.trim()) {
     return { success: false, error: 'Tell the team what you plan to work on this session.' };
   }
 
-  if (!plannedDurationMinutes) {
+  if (!parsed.data.plannedDurationMinutes) {
     return { success: false, error: 'Please select how long you plan to work.' };
   }
 
@@ -140,21 +178,17 @@ export async function clockIn(
   const { data: validProjects } = await supabase
     .from('projects')
     .select('id')
-    .eq('workspace_id', workspaceId)
+    .eq('workspace_id', parsed.data.workspaceId)
     .in('id', cleanedProjectIds);
   const validIds = new Set((validProjects ?? []).map((p) => p.id));
   if (validIds.size !== cleanedProjectIds.length) {
     return { success: false, error: 'One or more selected projects are invalid.' };
   }
 
-  // Normalize activities: trim, drop empties, dedupe, cap at 10.
-  const activities = Array.isArray(clockInActivities)
+  // Normalize activities: already validated by Zod schema.
+  const activities = parsed.data.clockInActivities
     ? Array.from(
-        new Set(
-          clockInActivities
-            .map((a) => (typeof a === 'string' ? a.trim() : ''))
-            .filter((a) => a.length > 0 && a.length <= 64)
-        )
+        new Set(parsed.data.clockInActivities.map((a) => a.trim()).filter((a) => a.length > 0))
       ).slice(0, 10)
     : [];
 
@@ -164,13 +198,13 @@ export async function clockIn(
   const { data, error } = await supabase
     .from('work_sessions')
     .insert({
-      workspace_id: workspaceId,
+      workspace_id: parsed.data.workspaceId,
       profile_id: user.id,
       project_id: primaryProjectId,
       started_at: new Date().toISOString(),
-      clock_in_note: clockInNote?.trim() || null,
-      planned_duration_minutes: plannedDurationMinutes || null,
-      clock_in_reason: clockInReason?.trim() || null,
+      clock_in_note: parsed.data.clockInNote?.trim() || null,
+      planned_duration_minutes: parsed.data.plannedDurationMinutes || null,
+      clock_in_reason: parsed.data.clockInReason?.trim() || null,
       clock_in_activities: activities.length > 0 ? activities : null,
     })
     .select()
@@ -190,7 +224,7 @@ export async function clockIn(
   const { error: linkError } = await supabase.from('work_session_projects').insert(links);
   if (linkError) {
     console.error('[clockIn] Link insert error:', linkError);
-    await supabase.from('work_sessions').delete().eq('id', data.id);
+    await supabase.from('work_sessions').delete().eq('id', data.id).select();
     return { success: false, error: linkError.message };
   }
 
@@ -210,6 +244,9 @@ export async function clockOut(
   summary: string,
   reportUrl?: string
 ): Promise<ActionResult> {
+  const parsed = validateData(clockOutSchema, { workspaceId, sessionId, summary, reportUrl });
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -219,17 +256,13 @@ export async function clockOut(
     return { success: false, error: 'Not authenticated' };
   }
 
-  if (!summary.trim()) {
-    return { success: false, error: 'Summary is required.' };
-  }
-
   // Fetch the open session (must belong to this user)
   const { data: session, error: fetchError } = await supabase
     .from('work_sessions')
     .select('id, started_at, project_id, report_url')
-    .eq('id', sessionId)
+    .eq('id', parsed.data.sessionId)
     .eq('profile_id', user.id)
-    .eq('workspace_id', workspaceId)
+    .eq('workspace_id', parsed.data.workspaceId)
     .is('ended_at', null)
     .maybeSingle();
 
@@ -247,7 +280,7 @@ export async function clockOut(
   // session_reports counts as the attached report — the structured per-project
   // check below loops over every project linked to this session and lets
   // through only if all of them have one.
-  const status = await getSessionProjectsStatus(sessionId);
+  const status = await getSessionProjectsStatus(parsed.data.sessionId);
   if (status.projects.length === 0) {
     return {
       success: false,
@@ -268,16 +301,16 @@ export async function clockOut(
 
   const updatePayload: Record<string, unknown> = {
     ended_at: new Date().toISOString(),
-    summary: summary.trim(),
+    summary: parsed.data.summary.trim(),
   };
-  if (reportUrl) {
-    updatePayload.report_url = reportUrl;
+  if (parsed.data.reportUrl) {
+    updatePayload.report_url = parsed.data.reportUrl;
   }
 
   const { data, error } = await supabase
     .from('work_sessions')
     .update(updatePayload)
-    .eq('id', sessionId)
+    .eq('id', parsed.data.sessionId)
     .eq('profile_id', user.id)
     .select()
     .single();
@@ -285,6 +318,9 @@ export async function clockOut(
   if (error) {
     console.error('[clockOut] Update error:', error);
     return { success: false, error: error.message };
+  }
+  if (!data) {
+    return { success: false, error: 'Session update blocked by RLS' };
   }
 
   revalidatePath('/');
@@ -303,6 +339,9 @@ export async function autoClockOut(
   sessionId: string,
   reason: string
 ): Promise<ActionResult> {
+  const parsed = validateData(autoClockOutSchema, { workspaceId, sessionId, reason });
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -316,9 +355,9 @@ export async function autoClockOut(
   const { data: session, error: fetchError } = await supabase
     .from('work_sessions')
     .select('id, started_at')
-    .eq('id', sessionId)
+    .eq('id', parsed.data.sessionId)
     .eq('profile_id', user.id)
-    .eq('workspace_id', workspaceId)
+    .eq('workspace_id', parsed.data.workspaceId)
     .is('ended_at', null)
     .maybeSingle();
 
@@ -335,9 +374,9 @@ export async function autoClockOut(
     .from('work_sessions')
     .update({
       ended_at: new Date().toISOString(),
-      summary: reason,
+      summary: parsed.data.reason,
     })
-    .eq('id', sessionId)
+    .eq('id', parsed.data.sessionId)
     .eq('profile_id', user.id)
     .select()
     .single();
@@ -345,6 +384,9 @@ export async function autoClockOut(
   if (error) {
     console.error('[autoClockOut] Update error:', error);
     return { success: false, error: error.message };
+  }
+  if (!data) {
+    return { success: false, error: 'Session update blocked by RLS' };
   }
 
   return { success: true, data };
@@ -370,6 +412,9 @@ export async function adminOverrideClockOut(
   sessionId: string,
   reason: string
 ): Promise<ActionResult> {
+  const parsed = validateData(adminOverrideSchema, { workspaceId, sessionId, reason });
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -383,16 +428,13 @@ export async function adminOverrideClockOut(
     return { success: false, error: 'Admin only.' };
   }
 
-  const trimmedReason = reason.trim();
-  if (!trimmedReason) {
-    return { success: false, error: 'Override reason is required for the audit log.' };
-  }
+  const trimmedReason = parsed.data.reason.trim();
 
   const { data: session, error: fetchError } = await supabase
     .from('work_sessions')
     .select('id, started_at, profile_id, project_id, summary')
-    .eq('id', sessionId)
-    .eq('workspace_id', workspaceId)
+    .eq('id', parsed.data.sessionId)
+    .eq('workspace_id', parsed.data.workspaceId)
     .is('ended_at', null)
     .maybeSingle();
 
@@ -416,13 +458,16 @@ export async function adminOverrideClockOut(
       ended_at: new Date().toISOString(),
       summary: session.summary ? `${session.summary}\n\n${overrideStamp}` : overrideStamp,
     })
-    .eq('id', sessionId)
+    .eq('id', parsed.data.sessionId)
     .select()
     .single();
 
   if (error) {
     console.error('[adminOverrideClockOut] Update error:', error);
     return { success: false, error: error.message };
+  }
+  if (!data) {
+    return { success: false, error: 'Session update blocked by RLS' };
   }
 
   // Best-effort audit: only project sessions get an activity_log entry
@@ -433,7 +478,7 @@ export async function adminOverrideClockOut(
       actor_id: user.id,
       action_type: 'session_admin_overrode',
       action_data: {
-        session_id: sessionId,
+        session_id: parsed.data.sessionId,
         target_profile_id: session.profile_id,
         reason: trimmedReason,
         started_at: session.started_at,
@@ -738,9 +783,12 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
       .is('ended_at', null)
       .in('profile_id', staleSessionIds)
       .eq('workspace_id', workspaceId)
-      .then(({ error }) => {
+      .select()
+      .then(({ data: closedRows, error }) => {
         if (error) {
           console.error('[work-sessions] stale session auto-close failed:', error);
+        } else if (!closedRows || closedRows.length === 0) {
+          console.warn('[work-sessions] stale session auto-close: 0 rows updated (RLS?)');
         }
       });
   }
@@ -842,6 +890,11 @@ export async function updatePlannedLogoutTime(
   workspaceId: string,
   time: string | null
 ): Promise<ActionResult> {
+  // Normalize empty string to null before validation
+  const normalizedInput = time && time.trim() !== '' ? time.trim() : null;
+  const parsed = validateData(plannedLogoutTimeSchema, normalizedInput);
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -851,25 +904,19 @@ export async function updatePlannedLogoutTime(
     return { success: false, error: 'Not authenticated' };
   }
 
-  // Validate format: HH:MM or HH:MM:SS, or null/empty to clear
-  let normalizedTime: string | null = null;
-  if (time && time.trim() !== '') {
-    const trimmed = time.trim();
-    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
-    if (!timeRegex.test(trimmed)) {
-      return { success: false, error: 'Invalid time format. Use HH:MM (e.g. 16:00).' };
-    }
-    normalizedTime = trimmed;
-  }
-
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('profiles')
-    .update({ planned_logout_time: normalizedTime })
-    .eq('id', user.id);
+    .update({ planned_logout_time: parsed.data })
+    .eq('id', user.id)
+    .select()
+    .single();
 
   if (error) {
     console.error('[updatePlannedLogoutTime] Error:', error);
     return { success: false, error: error.message };
+  }
+  if (!updated) {
+    return { success: false, error: 'Profile update blocked by RLS' };
   }
 
   return { success: true };

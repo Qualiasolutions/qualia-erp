@@ -157,7 +157,7 @@ export async function updatePhaseResource(
 ): Promise<ActionResult> {
   const supabase = await createClient();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('phase_resources')
     .update({
       ...(input.title && { title: input.title }),
@@ -165,12 +165,15 @@ export async function updatePhaseResource(
       ...(input.description !== undefined && { description: input.description }),
       ...(input.resource_type && { resource_type: input.resource_type }),
     })
-    .eq('id', resourceId);
+    .eq('id', resourceId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[updatePhaseResource] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -182,12 +185,18 @@ export async function deletePhaseResource(resourceId: string): Promise<ActionRes
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  const { error } = await supabase.from('phase_resources').delete().eq('id', resourceId);
+  const { data, error } = await supabase
+    .from('phase_resources')
+    .delete()
+    .eq('id', resourceId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[deletePhaseResource] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -349,12 +358,18 @@ export async function updateProjectNote(noteId: string, content: string): Promis
     return { success: false, error: 'Not authorized' };
   }
 
-  const { error } = await supabase.from('project_notes').update({ content }).eq('id', noteId);
+  const { data: updatedNote, error } = await supabase
+    .from('project_notes')
+    .update({ content })
+    .eq('id', noteId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[updateProjectNote] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!updatedNote) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -390,12 +405,18 @@ export async function deleteProjectNote(noteId: string): Promise<ActionResult> {
     return { success: false, error: 'Not authorized' };
   }
 
-  const { error } = await supabase.from('project_notes').delete().eq('id', noteId);
+  const { data: deletedNote, error } = await supabase
+    .from('project_notes')
+    .delete()
+    .eq('id', noteId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[deleteProjectNote] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!deletedNote) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -545,12 +566,18 @@ export async function updatePhaseStatus(
     .eq('id', phaseId)
     .single();
 
-  const { error } = await supabase.from('project_phases').update({ status }).eq('id', phaseId);
+  const { data: updatedRow, error } = await supabase
+    .from('project_phases')
+    .update({ status })
+    .eq('id', phaseId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[updatePhaseStatus] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!updatedRow) return { success: false, error: 'Not found or permission denied' };
 
   // Notify clients for significant status changes (preference-aware)
   if (oldPhase && oldPhase.status !== status && (status === 'completed' || status === 'skipped')) {
@@ -579,12 +606,18 @@ export async function updatePhaseName(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  const { error } = await supabase.from('project_phases').update({ name }).eq('id', phaseId);
+  const { data: updatedPhase, error } = await supabase
+    .from('project_phases')
+    .update({ name })
+    .eq('id', phaseId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[updatePhaseName] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!updatedPhase) return { success: false, error: 'Not found or permission denied' };
 
   // Also update phase_name on all linked tasks
   await supabase.from('tasks').update({ phase_name: name }).eq('phase_id', phaseId);
@@ -619,12 +652,18 @@ export async function deletePhase(phaseId: string, _projectId: string): Promise<
   }
 
   // Delete the phase
-  const { error } = await supabase.from('project_phases').delete().eq('id', phaseId);
+  const { data: deletedPhase, error } = await supabase
+    .from('project_phases')
+    .delete()
+    .eq('id', phaseId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[deletePhase] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!deletedPhase) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -1196,15 +1235,18 @@ export async function togglePhaseTask(itemId: string, phaseId: string): Promise<
       completed_by: newState ? userId : null,
     };
 
-    const { error: updateError } = await supabase
+    const { data: updatedItem, error: updateError } = await supabase
       .from('phase_items')
       .update(updateData)
-      .eq('id', itemId);
+      .eq('id', itemId)
+      .select('id')
+      .single();
 
     if (updateError) {
       console.error('[togglePhaseTask] Error updating item:', updateError);
       return { success: false, error: updateError.message };
     }
+    if (!updatedItem) return { success: false, error: 'Not found or permission denied' };
 
     // Get project_id for revalidation
     const { data: phase } = await supabase

@@ -309,18 +309,21 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
 
   // Transaction: Remove old assignment and create new one
   // Step 1: Remove old assignment
-  const { error: removeError } = await supabase
+  const { data: removedAssignment, error: removeError } = await supabase
     .from('project_assignments')
     .update({
       removed_at: new Date().toISOString(),
       removed_by: user.id,
     })
-    .eq('id', assignment_id);
+    .eq('id', assignment_id)
+    .select('id')
+    .single();
 
   if (removeError) {
     console.error('Error removing old assignment:', removeError);
     return { success: false, error: 'Failed to remove old assignment' };
   }
+  if (!removedAssignment) return { success: false, error: 'Not found or permission denied' };
 
   // Step 2: Create new assignment
   const { data: newAssignment, error: createError } = await supabase
@@ -448,18 +451,21 @@ export async function removeAssignment(assignmentId: string): Promise<ActionResu
   }
 
   // Update assignment to mark as removed
-  const { error } = await supabase
+  const { data: removedRow, error } = await supabase
     .from('project_assignments')
     .update({
       removed_at: new Date().toISOString(),
       removed_by: user.id,
     })
-    .eq('id', assignmentId);
+    .eq('id', assignmentId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Error removing assignment:', error);
     return { success: false, error: error.message };
   }
+  if (!removedRow) return { success: false, error: 'Not found or permission denied' };
 
   // Cancel the unassigned employee's open tasks on this project so it stops
   // showing up in their inbox and in overdue_task daily-brief items. The

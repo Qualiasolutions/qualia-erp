@@ -1,10 +1,21 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { encryptToken, decryptToken } from '@/lib/token-encryption';
+import { validateData } from '@/lib/validation';
 
 import { Octokit } from '@octokit/rest';
 import type { ActionResult } from './shared';
+
+// ============ ZOD SCHEMAS ============
+
+const workspaceIdSchema = z.string().uuid('Invalid workspace ID');
+const providerSchema = z.enum(['github', 'vercel', 'zoho'] as const, {
+  message: 'Invalid integration provider',
+});
+const projectIdSchema = z.string().uuid('Invalid project ID');
+const provisioningStepSchema = z.enum(['github', 'vercel'] as const);
 import type {
   IntegrationProvider,
   GitHubConfig,
@@ -40,6 +51,9 @@ export async function getIntegrations(workspaceId: string): Promise<
     }>;
   }
 > {
+  const parsed = validateData(workspaceIdSchema, workspaceId);
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
 
   // Check admin permission
@@ -63,7 +77,7 @@ export async function getIntegrations(workspaceId: string): Promise<
   const { data, error } = await supabase
     .from('workspace_integrations')
     .select('provider, is_connected, last_verified_at, config')
-    .eq('workspace_id', workspaceId);
+    .eq('workspace_id', parsed.data);
 
   if (error) {
     return { success: false, error: error.message };
@@ -89,6 +103,14 @@ export async function saveIntegrationToken(
   token: string,
   config: GitHubConfig | VercelConfig | ZohoConfig
 ): Promise<ActionResult> {
+  const parsedWs = validateData(workspaceIdSchema, workspaceId);
+  if (!parsedWs.success) return { success: false, error: parsedWs.error };
+  const parsedProvider = validateData(providerSchema, provider);
+  if (!parsedProvider.success) return { success: false, error: parsedProvider.error };
+  if (!token || typeof token !== 'string' || token.trim().length === 0) {
+    return { success: false, error: 'Token is required' };
+  }
+
   const supabase = await createClient();
 
   // Check admin permission
@@ -162,6 +184,11 @@ export async function removeIntegration(
   workspaceId: string,
   provider: IntegrationProvider
 ): Promise<ActionResult> {
+  const parsedWs = validateData(workspaceIdSchema, workspaceId);
+  if (!parsedWs.success) return { success: false, error: parsedWs.error };
+  const parsedProvider = validateData(providerSchema, provider);
+  if (!parsedProvider.success) return { success: false, error: parsedProvider.error };
+
   const supabase = await createClient();
 
   // Check admin permission
@@ -182,20 +209,24 @@ export async function removeIntegration(
     return { success: false, error: 'Admin access required' };
   }
 
-  const { error } = await supabase
+  const { data: deleted, error } = await supabase
     .from('workspace_integrations')
     .delete()
-    .eq('workspace_id', workspaceId)
-    .eq('provider', provider);
+    .eq('workspace_id', parsedWs.data)
+    .eq('provider', parsedProvider.data)
+    .select();
 
   if (error) {
     return { success: false, error: error.message };
   }
+  if (!deleted || deleted.length === 0) {
+    return { success: false, error: 'Integration not found or already removed' };
+  }
 
   // Clear cached client
-  if (provider === 'github') await clearGitHubClientCache(workspaceId);
-  if (provider === 'vercel') await clearVercelClientCache(workspaceId);
-  if (provider === 'zoho') clearZohoClientCache(workspaceId);
+  if (parsedProvider.data === 'github') await clearGitHubClientCache(parsedWs.data);
+  if (parsedProvider.data === 'vercel') await clearVercelClientCache(parsedWs.data);
+  if (parsedProvider.data === 'zoho') clearZohoClientCache(parsedWs.data);
 
   return { success: true };
 }
@@ -207,6 +238,11 @@ export async function testIntegration(
   workspaceId: string,
   provider: IntegrationProvider
 ): Promise<ActionResult & { data?: { valid: boolean; error?: string } }> {
+  const parsedWs = validateData(workspaceIdSchema, workspaceId);
+  if (!parsedWs.success) return { success: false, error: parsedWs.error };
+  const parsedProvider = validateData(providerSchema, provider);
+  if (!parsedProvider.success) return { success: false, error: parsedProvider.error };
+
   const supabase = await createClient();
 
   // Check admin permission
@@ -231,8 +267,8 @@ export async function testIntegration(
   const { data: integration, error } = await supabase
     .from('workspace_integrations')
     .select('encrypted_token, config')
-    .eq('workspace_id', workspaceId)
-    .eq('provider', provider)
+    .eq('workspace_id', parsedWs.data)
+    .eq('provider', parsedProvider.data)
     .single();
 
   if (error || !integration) {
@@ -250,8 +286,8 @@ export async function testIntegration(
       decryptToken(integration.encrypted_token),
       config.teamId
     );
-  } else if (provider === 'zoho') {
-    const result = await testZohoConnection(workspaceId);
+  } else if (parsedProvider.data === 'zoho') {
+    const result = await testZohoConnection(parsedWs.data);
     testResult = { success: result.valid, error: result.error };
   } else {
     testResult = { success: true };
@@ -265,16 +301,18 @@ export async function testIntegration(
         is_connected: true,
         last_verified_at: new Date().toISOString(),
       })
-      .eq('workspace_id', workspaceId)
-      .eq('provider', provider);
+      .eq('workspace_id', parsedWs.data)
+      .eq('provider', parsedProvider.data)
+      .select();
   } else {
     await supabase
       .from('workspace_integrations')
       .update({
         is_connected: false,
       })
-      .eq('workspace_id', workspaceId)
-      .eq('provider', provider);
+      .eq('workspace_id', parsedWs.data)
+      .eq('provider', parsedProvider.data)
+      .select();
   }
 
   return {
@@ -293,6 +331,9 @@ export async function updateGitHubTemplates(
   workspaceId: string,
   templates: GitHubConfig['templates']
 ): Promise<ActionResult> {
+  const parsedWs = validateData(workspaceIdSchema, workspaceId);
+  if (!parsedWs.success) return { success: false, error: parsedWs.error };
+
   const supabase = await createClient();
 
   // Check admin permission
@@ -317,7 +358,7 @@ export async function updateGitHubTemplates(
   const { data: integration, error: fetchError } = await supabase
     .from('workspace_integrations')
     .select('config')
-    .eq('workspace_id', workspaceId)
+    .eq('workspace_id', parsedWs.data)
     .eq('provider', 'github')
     .single();
 
@@ -331,17 +372,22 @@ export async function updateGitHubTemplates(
     templates,
   };
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('workspace_integrations')
     .update({ config: newConfig })
-    .eq('workspace_id', workspaceId)
-    .eq('provider', 'github');
+    .eq('workspace_id', parsedWs.data)
+    .eq('provider', 'github')
+    .select()
+    .single();
 
   if (error) {
     return { success: false, error: error.message };
   }
+  if (!updated) {
+    return { success: false, error: 'Integration update blocked by RLS' };
+  }
 
-  await clearGitHubClientCache(workspaceId);
+  await clearGitHubClientCache(parsedWs.data);
 
   return { success: true };
 }
@@ -359,6 +405,9 @@ export async function startProvisioning(
   projectId: string,
   selectedIntegrations?: IntegrationSelections
 ): Promise<ActionResult & { data?: { jobStarted: boolean } }> {
+  const parsedId = validateData(projectIdSchema, projectId);
+  if (!parsedId.success) return { success: false, error: parsedId.error };
+
   const supabase = await createClient();
 
   // Auth check — only admins can trigger provisioning
@@ -421,7 +470,8 @@ export async function startProvisioning(
     await supabase
       .from('project_provisioning')
       .update({ status: 'failed', completed_at: new Date().toISOString() })
-      .eq('project_id', project.id);
+      .eq('project_id', project.id)
+      .select();
   }
 
   return { success: true, data: { jobStarted: true } };
@@ -439,7 +489,10 @@ export async function getProjectProvisioningStatus(projectId: string): Promise<
     };
   }
 > {
-  const result = await getProvisioningStatusFromLib(projectId);
+  const parsedId = validateData(projectIdSchema, projectId);
+  if (!parsedId.success) return { success: false, error: parsedId.error };
+
+  const result = await getProvisioningStatusFromLib(parsedId.data);
   return {
     success: result.success,
     error: result.error,
@@ -454,7 +507,12 @@ export async function retryProvisioning(
   projectId: string,
   step: 'github' | 'vercel'
 ): Promise<ActionResult> {
-  const result = await retryProvisioningStepFromLib(projectId, step);
+  const parsedId = validateData(projectIdSchema, projectId);
+  if (!parsedId.success) return { success: false, error: parsedId.error };
+  const parsedStep = validateData(provisioningStepSchema, step);
+  if (!parsedStep.success) return { success: false, error: parsedStep.error };
+
+  const result = await retryProvisioningStepFromLib(parsedId.data, parsedStep.data);
   return result;
 }
 
@@ -469,12 +527,15 @@ export async function checkIntegrationsConfigured(workspaceId: string): Promise<
     };
   }
 > {
+  const parsedWs = validateData(workspaceIdSchema, workspaceId);
+  if (!parsedWs.success) return { success: false, error: parsedWs.error };
+
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('workspace_integrations')
     .select('provider, is_connected')
-    .eq('workspace_id', workspaceId);
+    .eq('workspace_id', parsedWs.data);
 
   if (error) {
     return { success: false, error: error.message };
@@ -501,6 +562,9 @@ const WEBHOOK_URL = 'https://portal.qualiasolutions.net/api/github/webhook';
 export async function syncGitHubWebhooks(
   workspaceId: string
 ): Promise<ActionResult & { data?: { synced: number; skipped: number; failed: string[] } }> {
+  const parsedWs = validateData(workspaceIdSchema, workspaceId);
+  if (!parsedWs.success) return { success: false, error: parsedWs.error };
+
   const supabase = await createClient();
 
   const {
@@ -519,7 +583,7 @@ export async function syncGitHubWebhooks(
   const { data: githubIntegration } = await supabase
     .from('workspace_integrations')
     .select('encrypted_token, config')
-    .eq('workspace_id', workspaceId)
+    .eq('workspace_id', parsedWs.data)
     .eq('provider', 'github')
     .single();
 

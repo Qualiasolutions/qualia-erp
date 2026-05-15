@@ -491,12 +491,15 @@ export async function updateExpense(data: unknown): Promise<{ success: boolean; 
 
   const { id, ...fields } = parsed.data;
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('expenses')
     .update({ ...fields, updated_at: new Date().toISOString() })
-    .eq('id', id);
+    .eq('id', id)
+    .select('id')
+    .single();
 
   if (error) return { success: false, error: error.message };
+  if (!updated) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -510,9 +513,15 @@ export async function deleteExpense(id: string): Promise<{ success: boolean; err
   if (!(await checkAdmin())) return { success: false, error: 'Unauthorized' };
 
   const supabase = await createClient();
-  const { error } = await supabase.from('expenses').delete().eq('id', id);
+  const { data, error } = await supabase
+    .from('expenses')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .single();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -666,16 +675,19 @@ export async function updateManualInvoice(
   // Recompute balance if status flipped to paid.
   if (fields.status === 'paid') updatePayload.balance = 0;
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('financial_invoices')
     .update(updatePayload)
     .eq('zoho_id', zoho_id)
-    .eq('source', 'manual');
+    .eq('source', 'manual')
+    .select('zoho_id')
+    .single();
 
   if (error) {
     console.error('[updateManualInvoice] Update error:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

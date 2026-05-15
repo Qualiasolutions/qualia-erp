@@ -1,7 +1,17 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { validateData } from '@/lib/validation';
 import type { ActionResult } from './shared';
+
+// ============ ZOD SCHEMAS ============
+
+const userIdSchema = z.string().uuid('Invalid user ID');
+const adminNoteSchema = z.object({
+  targetUserId: z.string().uuid('Invalid target user ID'),
+  note: z.string().min(1, 'Note cannot be empty').max(5000, 'Note too long'),
+});
 
 export type AdminNote = {
   content: string;
@@ -103,6 +113,9 @@ export async function getOrCreateUserAIContext(
  * Admin: Add a note for a user
  */
 export async function setAdminNote(targetUserId: string, note: string): Promise<ActionResult> {
+  const parsed = validateData(adminNoteSchema, { targetUserId, note });
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -130,11 +143,11 @@ export async function setAdminNote(targetUserId: string, note: string): Promise<
   if (!membership) return { success: false, error: 'No workspace found' };
 
   // Get or create context
-  const context = await getOrCreateUserAIContext(targetUserId, membership.workspace_id);
+  const context = await getOrCreateUserAIContext(parsed.data.targetUserId, membership.workspace_id);
   if (!context) return { success: false, error: 'Failed to get user context' };
 
   const newNote: AdminNote = {
-    content: note.trim(),
+    content: parsed.data.note.trim(),
     from_name: profile.full_name || 'Admin',
     created_at: new Date().toISOString(),
     delivered: false,
@@ -142,15 +155,18 @@ export async function setAdminNote(targetUserId: string, note: string): Promise<
 
   const updatedNotes = [...context.admin_notes, newNote];
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('ai_user_context')
     .update({
       admin_notes: updatedNotes,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', context.id);
+    .eq('id', context.id)
+    .select()
+    .single();
 
   if (error) return { success: false, error: error.message };
+  if (!updated) return { success: false, error: 'Context update blocked by RLS' };
 
   return { success: true, data: newNote };
 }
@@ -159,6 +175,9 @@ export async function setAdminNote(targetUserId: string, note: string): Promise<
  * Admin: Clear all notes for a user
  */
 export async function clearAdminNotes(targetUserId: string): Promise<ActionResult> {
+  const parsed = validateData(userIdSchema, targetUserId);
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -175,15 +194,17 @@ export async function clearAdminNotes(targetUserId: string): Promise<ActionResul
 
   if (profile?.role !== 'admin') return { success: false, error: 'Admin access required' };
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('ai_user_context')
     .update({
       admin_notes: [],
       updated_at: new Date().toISOString(),
     })
-    .eq('user_id', targetUserId);
+    .eq('user_id', parsed.data)
+    .select();
 
   if (error) return { success: false, error: error.message };
+  // 0 updated rows could mean the user has no context row — not necessarily an error.
 
   return { success: true };
 }
@@ -209,15 +230,18 @@ export async function markNotesDelivered(
   const notes = (context.admin_notes as AdminNote[]) || [];
   const updated = notes.map((n) => ({ ...n, delivered: true }));
 
-  const { error } = await supabase
+  const { data: result, error } = await supabase
     .from('ai_user_context')
     .update({
       admin_notes: updated,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', context.id);
+    .eq('id', context.id)
+    .select()
+    .single();
 
   if (error) return { success: false, error: error.message };
+  if (!result) return { success: false, error: 'Context update blocked by RLS' };
 
   return { success: true };
 }
@@ -237,15 +261,18 @@ export async function updateConversationSummaries(
 
   const summaries = [...context.recent_summaries, newSummary].slice(-3);
 
-  const { error } = await supabase
+  const { data: result, error } = await supabase
     .from('ai_user_context')
     .update({
       recent_summaries: summaries,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', context.id);
+    .eq('id', context.id)
+    .select()
+    .single();
 
   if (error) return { success: false, error: error.message };
+  if (!result) return { success: false, error: 'Context update blocked by RLS' };
 
   return { success: true };
 }

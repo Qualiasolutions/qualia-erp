@@ -226,12 +226,18 @@ export async function updateOwnerUpdate(
   if (patch.priority !== undefined) updateData.priority = patch.priority;
   if (patch.pinned !== undefined) updateData.pinned = patch.pinned;
 
-  const { error } = await supabase.from('owner_updates').update(updateData).eq('id', updateId);
+  const { data, error } = await supabase
+    .from('owner_updates')
+    .update(updateData)
+    .eq('id', updateId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[updateOwnerUpdate] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -257,12 +263,18 @@ export async function deleteOwnerUpdate(updateId: string): Promise<ActionResult>
     return { success: false, error: 'Only admins can delete owner updates' };
   }
 
-  const { error } = await supabase.from('owner_updates').delete().eq('id', updateId);
+  const { data, error } = await supabase
+    .from('owner_updates')
+    .delete()
+    .eq('id', updateId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[deleteOwnerUpdate] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

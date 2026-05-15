@@ -1,8 +1,14 @@
 'use server';
 
+import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { validateData } from '@/lib/validation';
 import type { ActionResult } from './shared';
+
+// ============ ZOD SCHEMAS ============
+
+const viewAsUserIdSchema = z.string().uuid('Invalid user ID');
 
 const VIEW_AS_COOKIE = 'view-as-user-id';
 const MAX_AGE = 60 * 60; // 1 hour — short window limits risk if admin session is compromised
@@ -97,6 +103,9 @@ export async function getViewableUsers(): Promise<ActionResult> {
  */
 export async function setViewAsUser(userId: string): Promise<ActionResult> {
   try {
+    const parsed = validateData(viewAsUserIdSchema, userId);
+    if (!parsed.success) return { success: false, error: parsed.error };
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -121,7 +130,7 @@ export async function setViewAsUser(userId: string): Promise<ActionResult> {
     const { data: targetProfile } = await supabase
       .from('profiles')
       .select('id, role')
-      .eq('id', userId)
+      .eq('id', parsed.data)
       .single();
 
     if (!targetProfile) {
@@ -129,7 +138,7 @@ export async function setViewAsUser(userId: string): Promise<ActionResult> {
     }
 
     const cookieStore = await cookies();
-    cookieStore.set(VIEW_AS_COOKIE, userId, {
+    cookieStore.set(VIEW_AS_COOKIE, parsed.data, {
       httpOnly: true,
       path: '/',
       sameSite: 'strict',
@@ -140,7 +149,7 @@ export async function setViewAsUser(userId: string): Promise<ActionResult> {
     console.info(
       '[VIEW-AS] Admin %s started viewing as user %s (role: %s)',
       user.id,
-      userId,
+      parsed.data,
       targetProfile.role
     );
 

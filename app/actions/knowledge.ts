@@ -149,7 +149,7 @@ export async function updateKnowledgeGuide(
 
   const { slug, title, subtitle, category, projectType, steps, checklist } = parsed.data;
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('knowledge_guides')
     .update({
       title,
@@ -161,11 +161,14 @@ export async function updateKnowledgeGuide(
       updated_at: new Date().toISOString(),
       updated_by: user.id,
     })
-    .eq('slug', slug);
+    .eq('slug', slug)
+    .select('slug')
+    .single();
 
   if (error) {
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

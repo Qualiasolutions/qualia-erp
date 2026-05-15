@@ -474,12 +474,18 @@ export async function deleteMeeting(meetingId: string): Promise<ActionResult> {
     return { success: false, error: 'You do not have permission to delete this meeting' };
   }
 
-  const { error } = await supabase.from('meetings').delete().eq('id', meetingId);
+  const { data, error } = await supabase
+    .from('meetings')
+    .delete()
+    .eq('id', meetingId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Error deleting meeting:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -613,16 +619,19 @@ export async function removeMeetingAttendee(
     return { success: false, error: 'Not authenticated' };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('meeting_attendees')
     .delete()
     .eq('meeting_id', meetingId)
-    .eq('profile_id', profileId);
+    .eq('profile_id', profileId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Error removing meeting attendee:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }
@@ -644,16 +653,19 @@ export async function updateMeetingAttendeeStatus(
     return { success: false, error: 'Not authenticated' };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('meeting_attendees')
     .update({ status })
     .eq('meeting_id', meetingId)
-    .eq('profile_id', profileId);
+    .eq('profile_id', profileId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Error updating attendee status:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

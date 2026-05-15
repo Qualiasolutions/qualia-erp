@@ -346,12 +346,13 @@ export async function deleteClientRecord(id: string): Promise<ActionResult> {
     return { success: false, error: 'You do not have permission to delete this client' };
   }
 
-  const { error } = await supabase.from('clients').delete().eq('id', id);
+  const { data, error } = await supabase.from('clients').delete().eq('id', id).select().single();
 
   if (error) {
     console.error('Error deleting client:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   revalidatePath('/clients');
   revalidatePath('/admin');
@@ -395,10 +396,15 @@ export async function logClientActivity(
 
   // Update last_contacted_at if it's a contact activity
   if (['call', 'email', 'meeting'].includes(type)) {
-    await supabase
+    const { error: touchError } = await supabase
       .from('clients')
       .update({ last_contacted_at: new Date().toISOString() })
-      .eq('id', clientId);
+      .eq('id', clientId)
+      .select('id')
+      .single();
+    if (touchError) {
+      console.error('Error updating last_contacted_at:', touchError);
+    }
   }
 
   return { success: true, data };
@@ -431,18 +437,21 @@ export async function toggleClientStatus(
     return { success: false, error: 'Client not found' };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('clients')
     .update({
       lead_status: newStatus,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', clientId);
+    .eq('id', clientId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Error updating client status:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   // Log the status change
   const statusLabels: Record<LeadStatus, string> = {

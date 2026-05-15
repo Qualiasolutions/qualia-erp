@@ -115,12 +115,15 @@ export async function revokeApiToken(tokenId: string): Promise<ActionResult> {
     return { success: false, error: 'Not authorized to revoke this token' };
   }
 
-  const { error } = await admin
+  const { data, error } = await admin
     .from('api_tokens')
     .update({ revoked_at: new Date().toISOString() })
-    .eq('id', tokenId);
+    .eq('id', tokenId)
+    .select('id')
+    .single();
 
   if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Not found or permission denied' };
   return { success: true };
 }
 

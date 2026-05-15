@@ -136,12 +136,18 @@ export async function removeProjectLink(
     if (!hasAccess) return { success: false, error: 'Unauthorized' };
   }
 
-  const { error } = await supabase.from('project_integrations').delete().eq('id', integrationId);
+  const { data, error } = await supabase
+    .from('project_integrations')
+    .delete()
+    .eq('id', integrationId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[removeProjectLink] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
 }

@@ -1,8 +1,22 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { validateData } from '@/lib/validation';
 
 import type { ActionResult } from './shared';
+
+// ============ ZOD SCHEMAS ============
+
+const projectLogoUploadSchema = z.object({
+  project_id: z.string().uuid('Invalid project ID'),
+});
+
+const clientLogoUploadSchema = z.object({
+  client_id: z.string().uuid('Invalid client ID'),
+});
+
+const entityIdSchema = z.string().uuid('Invalid ID');
 
 // Max logo size: 5MB
 const MAX_LOGO_SIZE = 5 * 1024 * 1024;
@@ -28,15 +42,19 @@ export async function uploadProjectLogo(formData: FormData): Promise<ActionResul
   }
 
   const file = formData.get('file') as File | null;
-  const projectId = formData.get('project_id') as string | null;
+  const rawProjectId = formData.get('project_id') as string | null;
 
   if (!file) {
     return { success: false, error: 'No file provided' };
   }
 
-  if (!projectId) {
+  if (!rawProjectId) {
     return { success: false, error: 'Project ID is required' };
   }
+
+  const parsed = validateData(projectLogoUploadSchema, { project_id: rawProjectId });
+  if (!parsed.success) return { success: false, error: parsed.error };
+  const projectId = parsed.data.project_id;
 
   // Validate file size
   if (file.size > MAX_LOGO_SIZE) {
@@ -99,16 +117,22 @@ export async function uploadProjectLogo(formData: FormData): Promise<ActionResul
   const logoUrl = `${publicUrl}?t=${Date.now()}`;
 
   // Update project with logo URL
-  const { error: updateError } = await supabase
+  const { data: updatedProject, error: updateError } = await supabase
     .from('projects')
     .update({ logo_url: logoUrl })
-    .eq('id', projectId);
+    .eq('id', projectId)
+    .select()
+    .single();
 
   if (updateError) {
     console.error('[uploadProjectLogo] DB error:', updateError);
     // Clean up uploaded file
     await adminClient.storage.from(STORAGE_BUCKET).remove([storagePath]);
     return { success: false, error: 'Failed to update project' };
+  }
+  if (!updatedProject) {
+    await adminClient.storage.from(STORAGE_BUCKET).remove([storagePath]);
+    return { success: false, error: 'Project update blocked by RLS' };
   }
 
   return { success: true, data: { logo_url: logoUrl } };
@@ -118,6 +142,9 @@ export async function uploadProjectLogo(formData: FormData): Promise<ActionResul
  * Delete a project's logo
  */
 export async function deleteProjectLogo(projectId: string): Promise<ActionResult> {
+  const parsed = validateData(entityIdSchema, projectId);
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
 
   const {
@@ -132,7 +159,7 @@ export async function deleteProjectLogo(projectId: string): Promise<ActionResult
   const { data: project, error: fetchError } = await supabase
     .from('projects')
     .select('id, logo_url')
-    .eq('id', projectId)
+    .eq('id', parsed.data)
     .single();
 
   if (fetchError || !project) {
@@ -146,17 +173,22 @@ export async function deleteProjectLogo(projectId: string): Promise<ActionResult
   const extensions = ['jpg', 'png', 'webp', 'gif', 'avif'];
   await adminClient.storage
     .from(STORAGE_BUCKET)
-    .remove(extensions.map((ext) => `logos/projects/${projectId}/logo.${ext}`));
+    .remove(extensions.map((ext) => `logos/projects/${parsed.data}/logo.${ext}`));
 
   // Clear logo URL in database
-  const { error: updateError } = await supabase
+  const { data: updatedProject, error: updateError } = await supabase
     .from('projects')
     .update({ logo_url: null })
-    .eq('id', projectId);
+    .eq('id', parsed.data)
+    .select()
+    .single();
 
   if (updateError) {
     console.error('[deleteProjectLogo] DB error:', updateError);
     return { success: false, error: 'Failed to update project' };
+  }
+  if (!updatedProject) {
+    return { success: false, error: 'Project update blocked by RLS' };
   }
 
   return { success: true };
@@ -177,15 +209,19 @@ export async function uploadClientLogo(formData: FormData): Promise<ActionResult
   }
 
   const file = formData.get('file') as File | null;
-  const clientId = formData.get('client_id') as string | null;
+  const rawClientId = formData.get('client_id') as string | null;
 
   if (!file) {
     return { success: false, error: 'No file provided' };
   }
 
-  if (!clientId) {
+  if (!rawClientId) {
     return { success: false, error: 'Client ID is required' };
   }
+
+  const parsedClient = validateData(clientLogoUploadSchema, { client_id: rawClientId });
+  if (!parsedClient.success) return { success: false, error: parsedClient.error };
+  const clientId = parsedClient.data.client_id;
 
   // Validate file size
   if (file.size > MAX_LOGO_SIZE) {
@@ -248,16 +284,22 @@ export async function uploadClientLogo(formData: FormData): Promise<ActionResult
   const logoUrl = `${publicUrl}?t=${Date.now()}`;
 
   // Update client with logo URL
-  const { error: updateError } = await supabase
+  const { data: updatedClient, error: updateError } = await supabase
     .from('clients')
     .update({ logo_url: logoUrl })
-    .eq('id', clientId);
+    .eq('id', clientId)
+    .select()
+    .single();
 
   if (updateError) {
     console.error('[uploadClientLogo] DB error:', updateError);
     // Clean up uploaded file
     await adminClient.storage.from(STORAGE_BUCKET).remove([storagePath]);
     return { success: false, error: 'Failed to update client' };
+  }
+  if (!updatedClient) {
+    await adminClient.storage.from(STORAGE_BUCKET).remove([storagePath]);
+    return { success: false, error: 'Client update blocked by RLS' };
   }
 
   return { success: true, data: { logo_url: logoUrl } };
@@ -267,6 +309,9 @@ export async function uploadClientLogo(formData: FormData): Promise<ActionResult
  * Delete a client's logo
  */
 export async function deleteClientLogo(clientId: string): Promise<ActionResult> {
+  const parsed = validateData(entityIdSchema, clientId);
+  if (!parsed.success) return { success: false, error: parsed.error };
+
   const supabase = await createClient();
 
   const {
@@ -281,7 +326,7 @@ export async function deleteClientLogo(clientId: string): Promise<ActionResult> 
   const { data: client, error: fetchError } = await supabase
     .from('clients')
     .select('id, logo_url')
-    .eq('id', clientId)
+    .eq('id', parsed.data)
     .single();
 
   if (fetchError || !client) {
@@ -295,17 +340,22 @@ export async function deleteClientLogo(clientId: string): Promise<ActionResult> 
   const extensions = ['jpg', 'png', 'webp', 'gif', 'avif'];
   await adminClient.storage
     .from(STORAGE_BUCKET)
-    .remove(extensions.map((ext) => `logos/clients/${clientId}/logo.${ext}`));
+    .remove(extensions.map((ext) => `logos/clients/${parsed.data}/logo.${ext}`));
 
   // Clear logo URL in database
-  const { error: updateError } = await supabase
+  const { data: updatedClient, error: updateError } = await supabase
     .from('clients')
     .update({ logo_url: null })
-    .eq('id', clientId);
+    .eq('id', parsed.data)
+    .select()
+    .single();
 
   if (updateError) {
     console.error('[deleteClientLogo] DB error:', updateError);
     return { success: false, error: 'Failed to update client' };
+  }
+  if (!updatedClient) {
+    return { success: false, error: 'Client update blocked by RLS' };
   }
 
   return { success: true };

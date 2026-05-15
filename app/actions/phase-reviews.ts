@@ -148,19 +148,22 @@ export async function approvePhaseReview(
   const isAdmin = await isUserAdmin(user.id);
   if (!isAdmin) return { success: false, error: 'Only admins can approve reviews' };
 
-  const { error } = await supabase
+  const { data: approved, error } = await supabase
     .from('phase_reviews')
     .update({
       status: 'approved',
       reviewed_by: user.id,
       reviewed_at: new Date().toISOString(),
     })
-    .eq('id', reviewId);
+    .eq('id', reviewId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[approvePhaseReview] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!approved) return { success: false, error: 'Not found or permission denied' };
 
   // Get review details for activity log + phase completion
   const { data: review } = await supabase
@@ -238,7 +241,7 @@ export async function requestPhaseChanges(
   const isAdmin = await isUserAdmin(user.id);
   if (!isAdmin) return { success: false, error: 'Only admins can review phases' };
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('phase_reviews')
     .update({
       status: 'changes_requested',
@@ -246,12 +249,15 @@ export async function requestPhaseChanges(
       reviewed_at: new Date().toISOString(),
       feedback,
     })
-    .eq('id', reviewId);
+    .eq('id', reviewId)
+    .select('id')
+    .single();
 
   if (error) {
     console.error('[requestPhaseChanges] Error:', error);
     return { success: false, error: error.message };
   }
+  if (!updated) return { success: false, error: 'Not found or permission denied' };
 
   // Get review details for activity log
   const { data: review } = await supabase
