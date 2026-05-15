@@ -65,6 +65,7 @@ export function SelectWithOther({
   }, [options, searchQuery]);
 
   // Initialize custom mode if value is custom on mount
+  /* eslint-disable react-hooks/set-state-in-effect -- mount-once initialization for custom value detection */
   React.useEffect(() => {
     if (isCurrentValueCustom && value) {
       setCustomValue(value);
@@ -72,6 +73,7 @@ export function SelectWithOther({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Focus search input when popover opens
   React.useEffect(() => {
@@ -88,6 +90,7 @@ export function SelectWithOther({
   }, [isCustomMode]);
 
   // Reset search when closing
+  /* eslint-disable react-hooks/set-state-in-effect -- form reset when popover closes */
   React.useEffect(() => {
     if (!open) {
       setSearchQuery('');
@@ -96,6 +99,7 @@ export function SelectWithOther({
       }
     }
   }, [open, isCurrentValueCustom]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSelectOption = (optionValue: string) => {
     setIsCustomMode(false);

@@ -40,6 +40,7 @@ function TypewriterText({
   const [displayedText, setDisplayedText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- typewriter animation driven by setTimeout chain; fires on timer not render */
   useEffect(() => {
     // If streaming is done or text changed, catch up immediately if we're behind
     if (!isStreaming && currentIndex < text.length) {
@@ -70,6 +71,7 @@ function TypewriterText({
       setCurrentIndex(0);
     }
   }, [text, displayedText.length]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <p className="whitespace-pre-wrap leading-relaxed">

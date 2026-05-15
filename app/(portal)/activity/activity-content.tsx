@@ -147,6 +147,7 @@ export function ActivityContent({ projectIds }: ActivityContentProps) {
   );
 
   // Initial load
+  /* eslint-disable react-hooks/set-state-in-effect -- state reset and async fetch on filter change */
   useEffect(() => {
     setInitialLoading(true);
     setEntries([]);
@@ -154,6 +155,7 @@ export function ActivityContent({ projectIds }: ActivityContentProps) {
     fetchActivity();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectIds, selectedProjectId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const loadMore = () => {
     if (!cursor || isPending) return;

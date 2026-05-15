@@ -117,6 +117,7 @@ export function AdminProvider({ children }: AdminProviderProps) {
 
   const { user: authUser, isLoading: authLoading } = useAuthUser();
 
+  /* eslint-disable react-hooks/set-state-in-effect -- async profile fetch when auth state changes; no SWR hook available for profile role */
   useEffect(() => {
     if (authLoading) return;
 
@@ -152,6 +153,7 @@ export function AdminProvider({ children }: AdminProviderProps) {
 
     fetchProfile();
   }, [authUser, authLoading]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Only admins can use view-as; compute effective role
   const isRealAdmin = realRole === 'admin' || baseState.isSuperAdmin;

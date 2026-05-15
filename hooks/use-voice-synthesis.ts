@@ -37,6 +37,7 @@ export function useVoiceSynthesis(options: UseVoiceSynthesisOptions = {}): Voice
   useEffect(() => {
     // Check browser TTS support
     const hasBrowserTTS = typeof window !== 'undefined' && 'speechSynthesis' in window;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-once browser API detection; SSR-safe via useEffect
     setIsSupported(hasBrowserTTS || !!options.vibeVoiceUrl);
 
     if (hasBrowserTTS) {

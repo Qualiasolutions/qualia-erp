@@ -407,13 +407,6 @@ function WorkloadPersonDetails({ person }: { person: TeamWorkloadPerson }) {
               Attendance and sessions
               <ArrowRight className="size-3" />
             </Link>
-            <Link
-              className="inline-flex items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
-              href="/tasks?scope=all"
-            >
-              Workspace work
-              <ArrowRight className="size-3" />
-            </Link>
           </div>
         </DetailPanel>
       </div>

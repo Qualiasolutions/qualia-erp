@@ -49,10 +49,6 @@ import {
 } from '@/components/portal/assignment-focus-card';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
 import { hueFromId } from '@/lib/color-constants';
-import {
-  ProjectSubmitCarousel,
-  type CarouselProject,
-} from '@/components/portal/project-submit-carousel';
 import { EmployeeDailyTasks } from '@/components/portal/employee-daily-tasks';
 
 export type QualiaHomeRole = 'admin' | 'employee';
@@ -208,39 +204,41 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="stagger-1 mb-4 grid flex-shrink-0 animate-fade-in grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Milestones Due
-          </p>
-          <p className="text-3xl font-bold tabular-nums">{milestonesDueCount}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">this week</p>
+      {/* Stats Grid — admin only (employees see info in subtitle + ClientPulse) */}
+      {role === 'admin' && (
+        <div className="stagger-1 mb-4 grid flex-shrink-0 animate-fade-in grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Milestones Due
+            </p>
+            <p className="text-3xl font-bold tabular-nums">{milestonesDueCount}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">this week</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Active
+            </p>
+            <p className="text-3xl font-bold tabular-nums">
+              {activeProjects.length}{' '}
+              <span className="text-base font-normal text-muted-foreground">
+                {activeProjects.length === 1 ? 'project' : 'projects'}
+              </span>
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Open Requests
+            </p>
+            <p className="text-3xl font-bold tabular-nums">
+              {openRequestsCount === 0 ? (
+                <span className="text-base font-normal text-muted-foreground">All clear</span>
+              ) : (
+                openRequestsCount
+              )}
+            </p>
+          </div>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Active
-          </p>
-          <p className="text-3xl font-bold tabular-nums">
-            {activeProjects.length}{' '}
-            <span className="text-base font-normal text-muted-foreground">
-              {activeProjects.length === 1 ? 'project' : 'projects'}
-            </span>
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Open Requests
-          </p>
-          <p className="text-3xl font-bold tabular-nums">
-            {openRequestsCount === 0 ? (
-              <span className="text-base font-normal text-muted-foreground">All clear</span>
-            ) : (
-              openRequestsCount
-            )}
-          </p>
-        </div>
-      </div>
+      )}
 
       {role === 'admin' ? (
         <AdminMainGrid
@@ -256,6 +254,7 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
           meetings={meetings}
           isGated={isGated}
           milestonesDue={milestonesDue}
+          openRequestsCount={openRequestsCount}
         />
       )}
     </div>
@@ -411,49 +410,32 @@ function EmployeeMainGrid({
   meetings,
   isGated,
   milestonesDue,
+  openRequestsCount,
 }: {
   assignments: AssignmentFocusItem[];
   userId?: string;
   meetings: Array<{ id: string; title: string; start_time: string; end_time: string }>;
   isGated: boolean;
   milestonesDue: MilestoneDue[];
+  openRequestsCount: number;
 }) {
-  const carouselProjects = useMemo<CarouselProject[]>(() => {
-    return assignments
-      .filter(
-        (a) =>
-          a.project &&
-          !a.completed_at &&
-          a.project.status === 'Active' &&
-          !a.completion_requested_at
-      )
-      .map((a) => ({
-        id: a.project!.id,
-        name: a.project!.name,
-        description: a.project!.client?.name ?? null,
-        accentColor: null,
-        submitHref: `/projects/${a.project!.id}/roadmap`,
-      }));
-  }, [assignments]);
-
   return (
     <div className="stagger-2 grid min-h-0 flex-1 animate-fade-in gap-6 overflow-hidden lg:grid-cols-3">
       <div className="flex min-h-0 flex-col gap-6 overflow-y-auto lg:col-span-2">
-        {carouselProjects.length > 0 && <ProjectSubmitCarousel projects={carouselProjects} />}
+        {userId && <EmployeeDailyTasks userId={userId} />}
         <AssignmentFocusCard
           assignments={assignments}
           employeeId={userId}
           isGated={isGated}
           compact
         />
-        {userId && <EmployeeDailyTasks userId={userId} />}
         <MilestonesCard milestones={milestonesDue} className="min-h-0 flex-1" />
       </div>
 
-      {/* Right column — Today's Meetings + Client Pulse */}
+      {/* Right column — Today's Meetings + Client Pulse (with open-request count merged in) */}
       <div className="flex min-h-0 flex-col gap-6 overflow-y-auto">
         <TodayMeetingsCard meetings={meetings} isGated={isGated} />
-        <ClientPulseCard />
+        <ClientPulseCard openRequestsCount={openRequestsCount} />
       </div>
     </div>
   );
@@ -545,7 +527,13 @@ function pickPulseIcon(action: string | null): typeof Sparkles {
   return Target;
 }
 
-function ClientPulseCard({ className }: { className?: string }) {
+function ClientPulseCard({
+  className,
+  openRequestsCount,
+}: {
+  className?: string;
+  openRequestsCount?: number;
+}) {
   const { workspaceId } = useCurrentWorkspaceId();
   const { notifications } = useNotifications(workspaceId || null);
 
@@ -566,7 +554,14 @@ function ClientPulseCard({ className }: { className?: string }) {
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Client pulse
           </p>
-          <h2 className="mt-0.5 text-base font-semibold tracking-tight">Recent activity</h2>
+          <h2 className="mt-0.5 text-base font-semibold tracking-tight">
+            Recent activity
+            {openRequestsCount !== undefined && openRequestsCount > 0 ? (
+              <span className="ml-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                {openRequestsCount} open
+              </span>
+            ) : null}
+          </h2>
         </div>
         <Link
           href="/requests"
@@ -642,16 +637,6 @@ function WhosDoingWhatCard({
           </p>
           <h2 className="mt-0.5 text-base font-semibold">Who&apos;s doing what</h2>
         </div>
-        <Link href="/tasks?scope=all">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
-          >
-            All
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Button>
-        </Link>
       </div>
 
       {members.length === 0 ? (

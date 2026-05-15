@@ -314,6 +314,7 @@ function CurrentTimeIndicator() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- interval-driven current-time indicator; fires on timer not render
     setTopPx(computeTop());
     const interval = setInterval(() => {
       setTopPx(computeTop());

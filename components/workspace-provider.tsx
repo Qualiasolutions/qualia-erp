@@ -92,6 +92,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- async workspace load on auth state change; state set inside loadWorkspaces callback */
   useEffect(() => {
     if (authLoading) return;
 
@@ -102,6 +103,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
     loadWorkspaces(authUser.id);
   }, [authUser, authLoading, loadWorkspaces]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const setCurrentWorkspace = useCallback(
     async (workspace: WorkspaceWithAccess): Promise<boolean> => {

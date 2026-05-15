@@ -50,6 +50,7 @@ export function PhaseComments({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // If currentUserId is not provided as prop, resolve from browser client
+  /* eslint-disable react-hooks/set-state-in-effect -- one-shot async auth resolution when prop not provided */
   useEffect(() => {
     if (currentUserId) {
       setResolvedUserId(currentUserId);
@@ -60,6 +61,7 @@ export function PhaseComments({
       setResolvedUserId(user?.id ?? null);
     });
   }, [currentUserId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (scrollRef.current) {

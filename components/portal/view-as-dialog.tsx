@@ -52,6 +52,7 @@ export function ViewAsDialog({ open, onOpenChange }: ViewAsDialogProps) {
   const [selectingId, setSelectingId] = useState<string | null>(null);
 
   // Fetch users when dialog opens
+  /* eslint-disable react-hooks/set-state-in-effect -- async data fetch and form reset when dialog opens/closes */
   useEffect(() => {
     if (!open) {
       setSearch('');
@@ -79,6 +80,7 @@ export function ViewAsDialog({ open, onOpenChange }: ViewAsDialogProps) {
       cancelled = true;
     };
   }, [open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Filter users by search query
   const filtered = useMemo(() => {

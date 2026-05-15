@@ -51,6 +51,7 @@ export function IdlePromptDialog({
   const [remaining, setRemaining] = useState(gracePeriodSeconds);
 
   // Reset and start countdown whenever dialog opens
+  /* eslint-disable react-hooks/set-state-in-effect -- interval-driven countdown; resets when dialog opens */
   useEffect(() => {
     if (!open) {
       setRemaining(gracePeriodSeconds);
@@ -71,6 +72,7 @@ export function IdlePromptDialog({
 
     return () => clearInterval(interval);
   }, [open, gracePeriodSeconds]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const isAlmostDone = remaining <= 60;
 

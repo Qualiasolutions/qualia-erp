@@ -26,6 +26,7 @@ export function TrendsTab({ profileId }: { profileId: string }) {
   const [data, setData] = useState<EmployeeTrendsPayload | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- one-shot async trends fetch with cancellation guard */
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -38,6 +39,7 @@ export function TrendsTab({ profileId }: { profileId: string }) {
       cancelled = true;
     };
   }, [profileId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (loading) {
     return (

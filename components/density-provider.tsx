@@ -23,6 +23,7 @@ export function DensityProvider({ children }: { children: ReactNode }) {
   const [density, setDensityState] = useState<UIDensity>('default');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-once localStorage hydration; SSR-safe via useEffect
     setDensityState(readStored());
   }, []);
 

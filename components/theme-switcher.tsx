@@ -28,6 +28,7 @@ const ThemeSwitcher = () => {
   const curtainColorRef = useRef<string>('');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-once hydration flag to avoid SSR mismatch
     setMounted(true);
   }, []);
 

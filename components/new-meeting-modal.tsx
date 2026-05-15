@@ -130,6 +130,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
   const [selectedTime, setSelectedTime] = useState<string>('09:00');
   const [duration, setDuration] = useState<number>(60);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- form reset, async data fetch on modal open, and derived title from client selection */
   useEffect(() => {
     if (open) {
       getClients().then((data) => setClients(data as Client[]));
@@ -163,6 +164,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
       }
     }
   }, [meetingType, selectedClientId, customClientName, clients]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Calculate start and end times
   const getStartDateTime = () => {

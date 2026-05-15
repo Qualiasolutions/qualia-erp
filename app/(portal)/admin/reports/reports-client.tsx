@@ -154,9 +154,11 @@ export function AdminReportsClient() {
     setLoading(false);
   }, [workspaceId, dateRange]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- async data fetch on filter/date change; state set inside fetchData callback */
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const setPreset = (preset: 'since-may' | 'this-month' | 'last-month') => {
     const today = new Date();

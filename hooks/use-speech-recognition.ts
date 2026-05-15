@@ -86,6 +86,7 @@ export function useSpeechRecognition(
         ? window.SpeechRecognition || window.webkitSpeechRecognition
         : null;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-once browser API detection; SSR-safe via useEffect
     setIsSupported(!!SpeechRecognitionAPI);
 
     if (SpeechRecognitionAPI) {

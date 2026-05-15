@@ -64,6 +64,7 @@ export function ClockInModal({
 
   const presets = useMemo<WorkPreset[]>(() => getWorkPresetsForEmail(userEmail), [userEmail]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- form reset and async project fetch when modal opens */
   useEffect(() => {
     if (!open || !currentUserId) return;
 
@@ -91,6 +92,7 @@ export function ClockInModal({
       .catch(() => setError('Failed to load projects. Please try again.'))
       .finally(() => setLoadingProjects(false));
   }, [open, currentUserId, isAdmin]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   function toggleProject(projectId: string) {
     setError(null);

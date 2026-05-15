@@ -46,6 +46,7 @@ export function PlannedLogoutBanner() {
 
   // Re-show banner on navigation
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset dismiss state on route change so banner re-appears
     setDismissed(false);
   }, [pathname]);
 
@@ -58,11 +59,13 @@ export function PlannedLogoutBanner() {
     }
   }, [plannedLogoutTime]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- interval-driven time check; fires on timer not render */
   useEffect(() => {
     checkTime();
     const interval = setInterval(checkTime, 60_000);
     return () => clearInterval(interval);
   }, [checkTime]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Warn before closing tab whenever clocked in
   useBeforeunloadGuard(!!session);

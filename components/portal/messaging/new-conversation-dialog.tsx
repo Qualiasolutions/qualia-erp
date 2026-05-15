@@ -37,6 +37,7 @@ export function NewConversationDialog({
   const [search, setSearch] = useState('');
 
   // Fetch projects when the dialog opens
+  /* eslint-disable react-hooks/set-state-in-effect -- async data fetch when dialog opens + form reset on close */
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -64,6 +65,7 @@ export function NewConversationDialog({
   useEffect(() => {
     if (!open) setSearch('');
   }, [open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleStart = useCallback(
     async (projectId: string) => {

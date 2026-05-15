@@ -180,6 +180,7 @@ export function ProjectWizard({
   // Helper to check if any integrations are selected
   const hasSelectedIntegrations = selectedIntegrations.github || selectedIntegrations.vercel;
 
+  /* eslint-disable react-hooks/set-state-in-effect -- form reset when wizard opens with default project type */
   // Set default type when wizard opens with a defaultType
   useEffect(() => {
     if (open && defaultType) {
@@ -193,6 +194,7 @@ export function ProjectWizard({
       setMode('full');
     }
   }, [open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const updateWizardData = useCallback((updates: Partial<WizardData>) => {
     setWizardData((prev) => ({ ...prev, ...updates }));

@@ -576,6 +576,7 @@ function GuidePanel({
 
   useEffect(() => {
     panelRef.current?.scrollTo(0, 0);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset editing state when navigating to a different guide
     setEditing(false);
   }, [guide.slug]);
 
@@ -929,6 +930,7 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
   const [mounted, setMounted] = useState(false);
 
   // Load progress from localStorage on mount
+  /* eslint-disable react-hooks/set-state-in-effect -- mount-once localStorage hydration; SSR-safe via useEffect */
   useEffect(() => {
     try {
       const raw = localStorage.getItem(PROGRESS_KEY);
@@ -943,6 +945,7 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
     }
     setMounted(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const persistCompleted = useCallback((next: Set<string>) => {
     try {

@@ -60,6 +60,7 @@ export function EditClientModal({ client, open, onOpenChange }: EditClientModalP
   const [notes, setNotes] = useState(client.notes || '');
 
   // Reset form when client changes or modal opens
+  /* eslint-disable react-hooks/set-state-in-effect -- form reset when modal opens with new entity data */
   useEffect(() => {
     if (open) {
       setDisplayName(client.display_name || '');
@@ -71,6 +72,7 @@ export function EditClientModal({ client, open, onOpenChange }: EditClientModalP
       setError(null);
     }
   }, [client, open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

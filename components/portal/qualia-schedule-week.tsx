@@ -714,6 +714,7 @@ function DayGrid({
 
   // Current-time indicator (only when viewing today).
   const [nowOffset, setNowOffset] = useState<number | null>(null);
+  /* eslint-disable react-hooks/set-state-in-effect -- interval-driven current-time indicator; fires on timer not render */
   useEffect(() => {
     if (!isToday) {
       setNowOffset(null);
@@ -732,6 +733,7 @@ function DayGrid({
     const id = window.setInterval(compute, 60_000);
     return () => window.clearInterval(id);
   }, [isToday]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">

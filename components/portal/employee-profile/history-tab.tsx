@@ -57,6 +57,7 @@ export function HistoryTab({ profileId }: { profileId: string }) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- one-shot async history fetch with cancellation guard */
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -70,6 +71,7 @@ export function HistoryTab({ profileId }: { profileId: string }) {
       cancelled = true;
     };
   }, [profileId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const loadMore = async () => {
     setLoadingMore(true);

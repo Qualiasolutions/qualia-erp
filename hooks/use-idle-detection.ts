@@ -113,6 +113,7 @@ export function useIdleDetection({
     if (!enabled) {
       clearAllTimers();
       isIdleRef.current = false;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- state machine reset when idle detection is disabled
       setIsIdle(false);
       setIsGracePeriod(false);
       return;

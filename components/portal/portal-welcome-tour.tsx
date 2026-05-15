@@ -56,13 +56,6 @@ const TOUR_STEPS: TourStepDef[] = [
     appKey: 'projects',
   },
   {
-    selector: '[data-tour="tasks-nav"]',
-    fallbackSelector: 'a[href="/tasks"]',
-    title: 'Tasks & action items',
-    body: "Track what's pending on your side. We flag items that need your input.",
-    appKey: 'tasks',
-  },
-  {
     selector: '[data-tour="files-nav"]',
     fallbackSelector: 'a[href="/files"]',
     title: 'Files in one place',
@@ -700,6 +693,7 @@ export function PortalWelcomeTour({
   const [resolvedSteps, setResolvedSteps] = useState<TourStepDef[]>([]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-once hydration flag; SSR-safe via useEffect
     setMounted(true);
     reduced.current = prefersReducedMotion();
   }, []);

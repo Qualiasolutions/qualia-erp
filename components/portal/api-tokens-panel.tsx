@@ -57,9 +57,11 @@ export function ApiTokensPanel({ profiles }: { profiles: Profiles[] }) {
     setLoading(false);
   }
 
+  /* eslint-disable react-hooks/set-state-in-effect -- one-shot async token list fetch on mount */
   useEffect(() => {
     refresh();
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   function copyToClipboard(value: string) {
     navigator.clipboard.writeText(value).then(

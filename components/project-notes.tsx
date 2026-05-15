@@ -55,10 +55,12 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
     setCurrentUserId(user?.id || null);
   }, [supabase]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- async data + auth fetch on mount; state set inside callbacks */
   useEffect(() => {
     fetchNotes();
     getUser();
   }, [fetchNotes, getUser]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSubmit = () => {
     if (!newNote.trim()) return;

@@ -76,6 +76,7 @@ export function ControlReports() {
   const [loading, setLoading] = useState(true);
   const [, startTransition] = useTransition();
 
+  /* eslint-disable react-hooks/set-state-in-effect -- async data fetch on filter change with cancellation guard */
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -88,6 +89,7 @@ export function ControlReports() {
       cancelled = true;
     };
   }, [weekOffset]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (loading) {
     return (

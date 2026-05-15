@@ -48,12 +48,14 @@ export function ClientChatWidget({ userId, userName, userRole }: ClientChatWidge
   );
 
   // Hydrate open state from sessionStorage after mount to avoid SSR mismatch
+  /* eslint-disable react-hooks/set-state-in-effect -- mount-once sessionStorage hydration; SSR-safe via useEffect */
   useEffect(() => {
     const stored = sessionStorage.getItem('qualia-chat-open');
     if (stored === 'true') {
       setIsOpen(true);
     }
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleToggle = useCallback(() => {
     setIsOpen((prev) => {

@@ -127,6 +127,7 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
   const [selectedAttendees, setSelectedAttendees] = useState<Set<string>>(new Set());
 
   // Initialize form when meeting changes
+  /* eslint-disable react-hooks/set-state-in-effect -- form reset when selected meeting entity changes */
   useEffect(() => {
     if (meeting) {
       setTitle(meeting.title);
@@ -163,6 +164,7 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
       setError(null);
     }
   }, [meeting]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const toggleAttendee = (profileId: string) => {
     setSelectedAttendees((prev) => {

@@ -1,7 +1,6 @@
 'use client';
 
 import { memo } from 'react';
-import Link from 'next/link';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { CalendarDays, Clock, Flag, ListChecks, Sparkles } from 'lucide-react';
 
@@ -231,8 +230,7 @@ function TaskList({
     <ul className="divide-y divide-dashed divide-border">
       {tasks.map((task) => (
         <li key={task.id}>
-          <Link
-            href={`/tasks?taskId=${task.id}`}
+          <div
             className={cn(
               'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
               muted ? 'opacity-70' : '',
@@ -270,7 +268,7 @@ function TaskList({
             >
               {task.completedAt ? '✓' : dueLabel(task)}
             </span>
-          </Link>
+          </div>
         </li>
       ))}
     </ul>

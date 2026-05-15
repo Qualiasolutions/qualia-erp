@@ -132,9 +132,11 @@ export function AdminAttendanceClient() {
     setLoading(false);
   }, [filterProfile, dateRange, workspaceId]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- async data fetch on filter change; state set inside fetchData callback */
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Scroll the focused session into view once data lands
   useEffect(() => {

@@ -23,6 +23,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
   const [remember, setRemember] = useState(false);
 
   // Hydrate remembered email on mount.
+  /* eslint-disable react-hooks/set-state-in-effect -- mount-once localStorage hydration; SSR-safe via useEffect */
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const remembered = window.localStorage.getItem(REMEMBER_KEY) === '1';
@@ -31,6 +32,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       setEmail(window.localStorage.getItem(EMAIL_KEY) ?? '');
     }
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Persist (or clear) the remembered email each time the toggle or value changes.
   useEffect(() => {

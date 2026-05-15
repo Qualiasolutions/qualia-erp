@@ -77,6 +77,7 @@ export function StepProvisioning({
       status: 'pending',
     }));
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- derive initial provisioning steps from prop; runs on integration selection change
     setSteps(initialSteps);
   }, [selectedIntegrations]);
 

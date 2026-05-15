@@ -78,6 +78,7 @@ export function ClockOutModal({
 
   // Update duration every minute
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- interval-driven display update; fires on timer not render
     setDuration(formatDuration(session.started_at));
     const interval = setInterval(() => {
       setDuration(formatDuration(session.started_at));
@@ -88,6 +89,7 @@ export function ClockOutModal({
   // Poll for per-project reports while any are still missing. Stops as soon
   // as every project on this session has its /qualia-report attached.
   const allAttached = projectStatuses.length > 0 && projectStatuses.every((p) => p.hasReport);
+  /* eslint-disable react-hooks/set-state-in-effect -- form reset on modal open + async polling for report status */
   useEffect(() => {
     if (!open) return;
     setSummary('');
@@ -99,6 +101,7 @@ export function ClockOutModal({
     const interval = setInterval(checkForReports, 10_000);
     return () => clearInterval(interval);
   }, [open, allAttached, checkForReports]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSubmit = () => {
     if (!summary.trim()) {

@@ -192,6 +192,7 @@ export function ProjectDetailView({
       leadId !== (initialProject.lead?.id || null) ||
       clientId !== (initialProject.client?.id || null) ||
       targetDate !== (initialProject.target_date || '');
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- derived dirty-check that must be resettable after save; useMemo would not allow manual reset
     setHasChanges(changed);
   }, [name, description, projectType, leadId, clientId, targetDate, initialProject]);
 

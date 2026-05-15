@@ -150,12 +150,14 @@ function DialogBody({
   const client = clients.find((c) => c.id === clientId);
 
   // Reset / sync when template or open changes
+  /* eslint-disable react-hooks/set-state-in-effect -- form reset when dialog opens or template selection changes */
   useEffect(() => {
     if (!open) return;
     if (!template) return;
     setLines(template.line_items.map(lineFromTemplate));
     setDueDate(daysFromNow(template.default_due_days));
   }, [open, template, templateKey]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // When client changes, default emailTo if blank (we don't have client emails in DB yet,
   // so leave for the user to type — Zoho will infer from contact_id anyway).

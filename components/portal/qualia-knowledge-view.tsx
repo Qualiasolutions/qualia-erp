@@ -154,6 +154,7 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Hydrate persisted conversation on mount (one-shot)
+  /* eslint-disable react-hooks/set-state-in-effect -- mount-once localStorage hydration; SSR-safe via useEffect */
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(CHAT_STORAGE_KEY);
@@ -168,6 +169,7 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
     }
     setHydrated(true);
   }, [setMessages]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Persist on change (after hydration to avoid clobbering)
   useEffect(() => {
