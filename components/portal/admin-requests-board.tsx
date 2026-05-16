@@ -191,9 +191,9 @@ export function AdminRequestsBoard({
   ];
 
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex h-full flex-col gap-3">
       {/* Toolbar: scope · search · priority · count */}
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2">
         {!isClient && (
           <div className="flex gap-1 rounded-md bg-muted/30 p-1">
             <button
@@ -443,7 +443,7 @@ function DroppableColumn({
         </Badge>
       </header>
 
-      <div className="flex max-h-[calc(100vh-280px)] min-h-[200px] flex-col gap-2 overflow-y-auto">
+      <div className="flex max-h-[calc(100vh-220px)] min-h-[200px] flex-col gap-2 overflow-y-auto">
         {requests.length === 0 ? (
           <div
             className={cn(
@@ -504,7 +504,7 @@ function StaticColumn({
           {count}
         </Badge>
       </header>
-      <div className="flex max-h-[calc(100vh-280px)] min-h-[200px] flex-col gap-2 overflow-y-auto">
+      <div className="flex max-h-[calc(100vh-220px)] min-h-[200px] flex-col gap-2 overflow-y-auto">
         {children}
       </div>
     </div>

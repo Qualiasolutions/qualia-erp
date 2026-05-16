@@ -950,6 +950,100 @@ export async function markFeatureRequestDone(
 }
 
 /**
+ * Client-initiated reopen of a completed request.
+ *
+ * If the team marked something done but the client thinks the work isn't
+ * actually complete, they can reopen it with a short reason. Status flips
+ * `completed → in_progress`, a system comment is posted with the reason,
+ * and the admin + assigned employees get notified.
+ *
+ * Only the request owner (the client who submitted it) or an admin may
+ * reopen. The action no-ops with an error if the request isn't currently
+ * completed — there's nothing to reopen.
+ */
+export async function reopenCompletedRequest(
+  requestId: string,
+  reason: string
+): Promise<ActionResult> {
+  try {
+    const imp = await assertNotImpersonating();
+    if (!imp.ok) return { success: false, error: imp.error };
+
+    const trimmedReason = reason.trim();
+    if (trimmedReason.length < 5) {
+      return { success: false, error: 'Tell us briefly why — at least 5 characters.' };
+    }
+    if (trimmedReason.length > 1000) {
+      return { success: false, error: 'Reason is too long (max 1000 characters).' };
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const isAdmin = await isUserAdmin(user.id);
+    const adminClient = createAdminClient();
+
+    const { data: request, error: readError } = await adminClient
+      .from('client_feature_requests')
+      .select('id, title, status, client_id, project_id')
+      .eq('id', requestId)
+      .maybeSingle();
+
+    if (readError) return { success: false, error: readError.message || 'Failed to read request' };
+    if (!request) return { success: false, error: 'Request not found' };
+    if (!isAdmin && request.client_id !== user.id) {
+      return { success: false, error: 'Access denied' };
+    }
+    if (request.status !== 'completed') {
+      return { success: false, error: 'Only completed requests can be reopened.' };
+    }
+
+    const { error: updateError } = await adminClient
+      .from('client_feature_requests')
+      .update({ status: 'in_progress', updated_at: new Date().toISOString() })
+      .eq('id', requestId);
+
+    if (updateError)
+      return { success: false, error: updateError.message || 'Failed to reopen request' };
+
+    const { data: actorProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    const actorName = actorProfile?.full_name || (isAdmin ? 'Admin' : 'Client');
+    const commentBody = `Reopened by ${actorName} — work isn't complete yet: ${trimmedReason}`;
+
+    await adminClient.from('request_comments').insert({
+      request_id: requestId,
+      author_id: user.id,
+      content: commentBody,
+    });
+
+    if (!isAdmin && request.project_id) {
+      notifyAdminAndAssignedOfClientActivity({
+        projectId: request.project_id,
+        clientName: actorName,
+        activityType: 'reopened a completed request',
+        activityDetails: `"${request.title}" — ${trimmedReason}`,
+      }).catch((err) => console.error('[reopenCompletedRequest notify]', err));
+    }
+
+    return { success: true, data: { id: requestId, status: 'in_progress' } };
+  } catch (error) {
+    console.error('[reopenCompletedRequest] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to reopen request',
+    };
+  }
+}
+
+/**
  * Count open (non-completed, non-declined) feature requests visible to the current user.
  * Admin sees all workspace requests; employee sees requests on assigned projects.
  */

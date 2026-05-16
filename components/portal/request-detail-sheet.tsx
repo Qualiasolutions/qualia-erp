@@ -9,6 +9,7 @@ import {
   FileText,
   Image as ImageIcon,
   Loader2,
+  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -19,6 +20,15 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RichText } from '@/components/ui/rich-text';
@@ -28,6 +38,7 @@ import {
   updateFeatureRequest,
   markFeatureRequestDone,
   cancelFeatureRequest,
+  reopenCompletedRequest,
   getRequestAttachmentUrl,
   assignFeatureRequest,
 } from '@/app/actions/client-requests';
@@ -98,6 +109,8 @@ export function RequestDetailSheet({
   const [confirmAction, setConfirmAction] = useState<'cancel' | 'decline' | 'mark-done' | null>(
     null
   );
+  const [reopenOpen, setReopenOpen] = useState(false);
+  const [reopenReason, setReopenReason] = useState('');
 
   const handleAssignChange = useCallback(
     (newAssigneeId: string) => {
@@ -166,6 +179,27 @@ export function RequestDetailSheet({
       onClose();
     });
   }, [request, router, onClose]);
+
+  const handleReopen = useCallback(() => {
+    if (!request) return;
+    const reason = reopenReason.trim();
+    if (reason.length < 5) {
+      toast.error('Tell us briefly why — at least 5 characters.');
+      return;
+    }
+    startTransition(async () => {
+      const res = await reopenCompletedRequest(request.id, reason);
+      if (!res.success) {
+        toast.error(res.error || 'Failed to reopen request');
+        return;
+      }
+      toast.success('Reopened — the team will take another look.');
+      setReopenOpen(false);
+      setReopenReason('');
+      router.refresh();
+      onClose();
+    });
+  }, [request, reopenReason, router, onClose]);
 
   const handleClientCancel = useCallback(() => {
     if (!request) return;
@@ -286,6 +320,29 @@ export function RequestDetailSheet({
                 </section>
               )}
 
+              {/* Reopen — client-only path when a completed request feels wrong */}
+              {isClient && currentStatus === 'completed' && (
+                <section>
+                  <SectionHeading>Not actually done?</SectionHeading>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Flag this back to the team if the work isn’t complete. They’ll see your note and
+                    pick it up again.
+                  </p>
+                  <div className="mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isPending}
+                      onClick={() => setReopenOpen(true)}
+                      className="h-9 gap-1.5 px-3 text-xs"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Reopen request
+                    </Button>
+                  </div>
+                </section>
+              )}
+
               {/* Actions */}
               {(isStaff || isClient) && !isClosed && (
                 <section>
@@ -398,6 +455,72 @@ export function RequestDetailSheet({
         variant="destructive"
         onConfirm={handleClientCancel}
       />
+
+      <Dialog
+        open={reopenOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReopenOpen(false);
+            setReopenReason('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reopen this request?</DialogTitle>
+            <DialogDescription>
+              The team will be notified and the request moves back to In Progress. Tell them what
+              still needs work.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <label
+              htmlFor="reopen-reason"
+              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+            >
+              What’s missing? <span className="text-destructive">*</span>
+            </label>
+            <Textarea
+              id="reopen-reason"
+              placeholder="e.g. The logo update didn’t make it into the dark mode header."
+              value={reopenReason}
+              onChange={(e) => setReopenReason(e.target.value)}
+              rows={4}
+              maxLength={1000}
+              autoFocus
+              aria-required="true"
+              aria-describedby="reopen-reason-help"
+            />
+            <p id="reopen-reason-help" className="text-[11px] text-muted-foreground">
+              At least 5 characters. {reopenReason.length}/1000
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReopenOpen(false);
+                setReopenReason('');
+              }}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleReopen}
+              disabled={isPending || reopenReason.trim().length < 5}
+              className="gap-1.5"
+            >
+              {isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RotateCcw className="h-3.5 w-3.5" />
+              )}
+              Reopen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

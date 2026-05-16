@@ -130,21 +130,21 @@ export default async function PortalRequestsPage() {
   }
 
   return (
-    <div className="flex h-full animate-fade-in-up flex-col px-[clamp(1rem,3vw,2rem)] pb-[clamp(1.5rem,3vw,2rem)] pt-16 md:pt-[clamp(2rem,3vw,2.5rem)]">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-            <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
+    <div className="flex h-full animate-fade-in-up flex-col px-[clamp(0.75rem,2vw,1.5rem)] pb-[clamp(1rem,2vw,1.5rem)] pt-14 md:pt-[clamp(1.25rem,2vw,1.75rem)]">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="inline-block h-px w-5 bg-primary/60" aria-hidden />
             <span>{isStaff ? 'Triage queue' : 'My requests'}</span>
           </div>
-          <h1 className="mt-3 text-[clamp(1.5rem,1rem+1.6vw,2rem)] font-semibold leading-tight tracking-tight text-foreground">
+          <h1 className="mt-1.5 text-[clamp(1.25rem,0.9rem+1.2vw,1.75rem)] font-semibold leading-tight tracking-tight text-foreground">
             Requests
           </h1>
-          <p className="mt-1.5 max-w-[520px] text-sm text-muted-foreground">
+          <p className="mt-1 hidden max-w-[560px] text-xs text-muted-foreground sm:block">
             {isAdmin
-              ? `${requests.length} request${requests.length === 1 ? '' : 's'} across all clients — drag a card between columns to move it through the pipeline.`
+              ? `${requests.length} request${requests.length === 1 ? '' : 's'} across all clients — drag between columns to move through the pipeline.`
               : isEmployee
-                ? 'Client requests on your assigned projects — drag a card between columns to move it through the pipeline.'
+                ? 'Client requests on your assigned projects — drag between columns to move through the pipeline.'
                 : 'Ideas, changes, and questions — every thread you’ve opened with us, grouped by stage.'}
           </p>
         </div>
