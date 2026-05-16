@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
+import { AdminSectionNav } from '@/components/portal/admin-section-nav';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getPortalAuthUser();
@@ -10,5 +11,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (profile?.role !== 'admin') redirect('/dashboard');
 
-  return <>{children}</>;
+  return (
+    <div className="flex min-h-full flex-col">
+      <AdminSectionNav />
+      <div className="flex-1">{children}</div>
+    </div>
+  );
 }
