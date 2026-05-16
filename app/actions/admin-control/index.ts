@@ -71,6 +71,15 @@ export {
   type ReportFlag,
 } from './reports-perf';
 
+export {
+  getPeopleIndex,
+  getPersonDetail,
+  type PeopleIndexPayload,
+  type PersonDetailPayload,
+  type ProfileRow,
+  type ClientRow,
+} from './people';
+
 export type ControlTab = 'overview' | 'team' | 'finance' | 'system';
 
 const VALID_TABS = new Set<ControlTab>(['team', 'finance', 'system']);
