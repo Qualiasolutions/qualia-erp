@@ -26,6 +26,17 @@ import { canDeleteClient, isUserAdmin, type ActionResult, type ProfileRef } from
 // projects. Keep this comment in sync with the helper if you change either
 // column's meaning.
 
+// ============ LEGACY NAME HELPER ============
+
+/**
+ * clients.name is a legacy NOT NULL column. We keep it in lockstep with
+ * display_name. Never expose `name` to callers — always derive it here.
+ */
+function clientNameFields(displayName: string): { name: string; display_name: string } {
+  const trimmed = displayName.trim();
+  return { name: trimmed, display_name: trimmed };
+}
+
 // ============ CLIENT TYPES ============
 
 export type LeadStatus =
@@ -86,8 +97,7 @@ export async function createClientRecord(formData: FormData): Promise<ActionResu
   const { data, error } = await supabase
     .from('clients')
     .insert({
-      name: display_name.trim(), // Required NOT NULL column
-      display_name: display_name.trim(),
+      ...clientNameFields(display_name),
       phone: phone?.trim() || null,
       website: website?.trim() || null,
       billing_address: billing_address?.trim() || null,
@@ -294,7 +304,7 @@ export async function updateClientRecord(formData: FormData): Promise<ActionResu
   const { data, error } = await supabase
     .from('clients')
     .update({
-      ...(display_name && { display_name: display_name.trim() }),
+      ...(display_name && clientNameFields(display_name)),
       ...(phone !== undefined && { phone: phone?.trim() || null }),
       ...(website !== undefined && { website: website?.trim() || null }),
       ...(billing_address !== undefined && { billing_address: billing_address?.trim() || null }),
