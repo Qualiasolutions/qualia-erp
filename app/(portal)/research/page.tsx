@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getCachedUserRole } from '@/lib/portal-utils';
+import { getCachedUserRole } from '@/app/actions/shared';
 import { QualiaResearchView } from '@/components/portal/qualia-research-view';
 import { getResearchEntries } from '@/app/actions/research';
 

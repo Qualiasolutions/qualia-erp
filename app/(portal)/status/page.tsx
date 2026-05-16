@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getCachedUserRole } from '@/lib/portal-utils';
+import { getCachedUserRole } from '@/app/actions/shared';
 import { getMonitors, getOverallStatus, type Monitor } from '@/lib/uptime';
 import { StatusDashboard, type ProjectInfo } from '@/components/status/status-dashboard';
 

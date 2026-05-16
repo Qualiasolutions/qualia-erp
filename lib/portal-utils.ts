@@ -1,64 +1,25 @@
 import { createClient } from '@/lib/supabase/server';
 
 /**
- * Check if a user has the 'client' role
- * @param userId - The user ID to check
- * @returns true if user has client role, false otherwise
- */
-export async function isClientRole(userId: string): Promise<boolean> {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-    return data?.role === 'client';
-  } catch (error) {
-    console.error('Failed to check client role:', error);
-    return false;
-  }
-}
-
-/**
- * Check if a user has the 'admin' role
- */
-export async function isAdminRole(userId: string): Promise<boolean> {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-    return data?.role === 'admin';
-  } catch (error) {
-    console.error('Failed to check admin role:', error);
-    return false;
-  }
-}
-
-/**
- * Check if a user has portal admin privileges. After 2026-04-18 this is
- * just admin — `manager` was removed from the role model.
+ * Synchronous admin check — takes an already-resolved role string.
+ * After 2026-04-18 this is just admin — `manager` was removed from the role
+ * model. For the async DB-fetching variant use `isUserAdmin` from
+ * `@/app/actions/shared`.
  */
 export function isPortalAdminRole(role: string | null): boolean {
   return role === 'admin';
 }
 
 /**
- * Get user role from profiles
+ * Strict project-access check used by client-facing surfaces (feature
+ * requests, comments, file downloads). Employees must be explicitly
+ * assigned via `project_assignments` — plain workspace membership is NOT
+ * sufficient here.
+ *
+ * For the looser "any workspace member can read" variant used by internal
+ * operations, use `canAccessProject` from `@/app/actions/shared`.
  */
-export async function getCachedUserRole(userId: string): Promise<string | null> {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-    return data?.role || null;
-  } catch (error) {
-    console.error('Failed to get user role:', error);
-    return null;
-  }
-}
-
-/**
- * Check if a client has access to a specific project
- * @param userId - The client user ID
- * @param projectId - The project ID to check access for
- * @returns true if client has access, false otherwise
- */
-export async function canAccessProject(userId: string, projectId: string): Promise<boolean> {
+export async function canAccessProjectStrict(userId: string, projectId: string): Promise<boolean> {
   try {
     const supabase = await createClient();
 
@@ -68,12 +29,8 @@ export async function canAccessProject(userId: string, projectId: string): Promi
       .eq('id', userId)
       .single();
 
-    // Admins can access any project
-    if (profile?.role === 'admin') {
-      return true;
-    }
+    if (profile?.role === 'admin') return true;
 
-    // Employees: check project_assignments
     if (profile?.role === 'employee') {
       const { data } = await supabase
         .from('project_assignments')
@@ -85,7 +42,6 @@ export async function canAccessProject(userId: string, projectId: string): Promi
       return !!data;
     }
 
-    // Clients: check client_projects
     const { data } = await supabase
       .from('client_projects')
       .select('id')
