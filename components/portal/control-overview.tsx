@@ -6,7 +6,7 @@ import { ArrowRight, CheckCircle2, FileText, Link2, Receipt, Users } from 'lucid
 
 import { cn } from '@/lib/utils';
 import type { OverviewPayload } from '@/app/actions/admin-control';
-import type { CommandCenterPayload } from '@/app/actions/admin-control/command-center';
+import type { CommandCenterPayload } from '@/app/actions/admin-control';
 import type { BillableClient } from '@/app/actions/invoice-generation';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
