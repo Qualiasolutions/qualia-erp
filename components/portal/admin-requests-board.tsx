@@ -78,6 +78,7 @@ export function AdminRequestsBoard({
   staffOptions = [],
 }: AdminRequestsBoardProps) {
   const router = useRouter();
+  const isClient = userRole === 'client';
   const [scope, setScope] = useState<'all' | 'mine'>('all');
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
   const [query, setQuery] = useState('');
@@ -100,7 +101,7 @@ export function AdminRequestsBoard({
     return requests.filter((r) => {
       const uiStatus = r.id in optimisticStatus ? optimisticStatus[r.id] : toUiStatus(r.status);
       if (uiStatus === 'archived') return false;
-      if (scope === 'mine' && r.assigned_to !== currentUserId) return false;
+      if (!isClient && scope === 'mine' && r.assigned_to !== currentUserId) return false;
       if (priorityFilter !== 'all' && r.priority !== priorityFilter) return false;
       if (q) {
         const haystack = `${r.title} ${r.description ?? ''} ${r.project?.name ?? ''}`.toLowerCase();
@@ -108,7 +109,7 @@ export function AdminRequestsBoard({
       }
       return true;
     });
-  }, [requests, optimisticStatus, scope, currentUserId, priorityFilter, query]);
+  }, [requests, optimisticStatus, scope, currentUserId, priorityFilter, query, isClient]);
 
   const grouped = useMemo(() => {
     const groups: Record<RequestStatus, FeatureRequest[]> = {
@@ -178,7 +179,8 @@ export function AdminRequestsBoard({
     const s = r.id in optimisticStatus ? optimisticStatus[r.id] : toUiStatus(r.status);
     return s !== 'archived';
   }).length;
-  const hasActiveFilter = priorityFilter !== 'all' || query.trim().length > 0 || scope === 'mine';
+  const hasActiveFilter =
+    priorityFilter !== 'all' || query.trim().length > 0 || (!isClient && scope === 'mine');
 
   const PRIORITIES: { value: PriorityFilter; label: string }[] = [
     { value: 'all', label: 'All' },
@@ -192,32 +194,34 @@ export function AdminRequestsBoard({
     <div className="flex h-full flex-col gap-4">
       {/* Toolbar: scope · search · priority · count */}
       <div className="flex flex-wrap items-center gap-2.5">
-        <div className="flex gap-1 rounded-md bg-muted/30 p-1">
-          <button
-            type="button"
-            onClick={() => setScope('all')}
-            className={cn(
-              'rounded px-3 py-1.5 text-sm transition-colors',
-              scope === 'all'
-                ? 'bg-background font-medium text-foreground shadow-elevation-1'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            All
-          </button>
-          <button
-            type="button"
-            onClick={() => setScope('mine')}
-            className={cn(
-              'rounded px-3 py-1.5 text-sm transition-colors',
-              scope === 'mine'
-                ? 'bg-background font-medium text-foreground shadow-elevation-1'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            Mine
-          </button>
-        </div>
+        {!isClient && (
+          <div className="flex gap-1 rounded-md bg-muted/30 p-1">
+            <button
+              type="button"
+              onClick={() => setScope('all')}
+              className={cn(
+                'rounded px-3 py-1.5 text-sm transition-colors',
+                scope === 'all'
+                  ? 'bg-background font-medium text-foreground shadow-elevation-1'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => setScope('mine')}
+              className={cn(
+                'rounded px-3 py-1.5 text-sm transition-colors',
+                scope === 'mine'
+                  ? 'bg-background font-medium text-foreground shadow-elevation-1'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Mine
+            </button>
+          </div>
+        )}
 
         <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
           <Search
@@ -274,7 +278,7 @@ export function AdminRequestsBoard({
               onClick={() => {
                 setPriorityFilter('all');
                 setQuery('');
-                setScope('all');
+                if (!isClient) setScope('all');
               }}
               className="cursor-pointer rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
@@ -284,7 +288,7 @@ export function AdminRequestsBoard({
         </div>
       </div>
 
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      {isClient ? (
         <div
           className="-mx-1 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-1 pb-2 md:grid md:snap-none md:grid-cols-3 md:overflow-visible"
           role="region"
@@ -300,21 +304,43 @@ export function AdminRequestsBoard({
               requests={grouped[col.key]}
               commentCounts={commentCounts}
               onCardClick={handleCardClick}
+              readOnly
             />
           ))}
         </div>
+      ) : (
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <div
+            className="-mx-1 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-1 pb-2 md:grid md:snap-none md:grid-cols-3 md:overflow-visible"
+            role="region"
+            aria-label="Requests pipeline"
+          >
+            {COLUMNS.map((col) => (
+              <KanbanColumn
+                key={col.key}
+                status={col.key}
+                label={col.label}
+                eyebrow={col.eyebrow}
+                count={grouped[col.key].length}
+                requests={grouped[col.key]}
+                commentCounts={commentCounts}
+                onCardClick={handleCardClick}
+              />
+            ))}
+          </div>
 
-        <DragOverlay dropAnimation={null}>
-          {activeRequest ? (
-            <RequestCard
-              request={activeRequest}
-              commentCount={commentCounts[activeRequest.id] ?? 0}
-              draggable={false}
-              isDragOverlay
-            />
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+          <DragOverlay dropAnimation={null}>
+            {activeRequest ? (
+              <RequestCard
+                request={activeRequest}
+                commentCount={commentCounts[activeRequest.id] ?? 0}
+                draggable={false}
+                isDragOverlay
+              />
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      )}
 
       <RequestDetailSheet
         request={openRequest}
@@ -330,6 +356,53 @@ export function AdminRequestsBoard({
 /* ─── Column ───────────────────────────────────────────────────────────── */
 
 function KanbanColumn({
+  status,
+  label,
+  eyebrow,
+  count,
+  requests,
+  commentCounts,
+  onCardClick,
+  readOnly = false,
+}: {
+  status: RequestStatus;
+  label: string;
+  eyebrow: string;
+  count: number;
+  requests: FeatureRequest[];
+  commentCounts: Record<string, number>;
+  onCardClick: (id: string) => void;
+  readOnly?: boolean;
+}) {
+  return readOnly ? (
+    <StaticColumn label={label} eyebrow={eyebrow} count={count}>
+      {requests.length === 0 ? (
+        <EmptyColumn />
+      ) : (
+        requests.map((r) => (
+          <ClickableCard
+            key={r.id}
+            request={r}
+            commentCount={commentCounts[r.id] ?? 0}
+            onClick={() => onCardClick(r.id)}
+          />
+        ))
+      )}
+    </StaticColumn>
+  ) : (
+    <DroppableColumn
+      status={status}
+      label={label}
+      eyebrow={eyebrow}
+      count={count}
+      requests={requests}
+      commentCounts={commentCounts}
+      onCardClick={onCardClick}
+    />
+  );
+}
+
+function DroppableColumn({
   status,
   label,
   eyebrow,
@@ -398,6 +471,78 @@ function KanbanColumn({
           ))
         )}
       </div>
+    </div>
+  );
+}
+
+/* ─── Static (read-only) column for clients ────────────────────────────── */
+
+function StaticColumn({
+  label,
+  eyebrow,
+  count,
+  children,
+}: {
+  label: string;
+  eyebrow: string;
+  count: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex w-[280px] shrink-0 snap-start flex-col rounded-2xl border border-border/70 bg-card/40 p-3 sm:w-[300px] md:w-auto md:min-w-0 md:shrink">
+      <header className="mb-2 flex items-center justify-between gap-2 px-1">
+        <div className="min-w-0">
+          <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/80">
+            {eyebrow}
+          </div>
+          <div className="mt-0.5 text-sm font-semibold tracking-tight text-foreground">{label}</div>
+        </div>
+        <Badge
+          variant="outline"
+          className="h-5 shrink-0 rounded-full border-border/70 bg-card px-1.5 text-[10px] font-medium tabular-nums text-muted-foreground"
+        >
+          {count}
+        </Badge>
+      </header>
+      <div className="flex max-h-[calc(100vh-280px)] min-h-[200px] flex-col gap-2 overflow-y-auto">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function EmptyColumn() {
+  return (
+    <div className="flex min-h-[160px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 px-3 pb-4 pt-6 text-center">
+      <Inbox className="h-6 w-6 text-muted-foreground/25" />
+      <span className="text-[11px] text-muted-foreground/40">All clear</span>
+    </div>
+  );
+}
+
+function ClickableCard({
+  request,
+  commentCount,
+  onClick,
+}: {
+  request: FeatureRequest;
+  commentCount: number;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      className="cursor-pointer rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+    >
+      <RequestCard request={request} commentCount={commentCount} draggable={false} />
     </div>
   );
 }

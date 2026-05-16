@@ -8,7 +8,6 @@ import { isUserAdmin } from '@/app/actions/shared';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import dynamic from 'next/dynamic';
-import { PortalRequestList } from '@/components/portal/portal-request-list';
 import { PortalRequestDialog } from '@/components/portal/portal-request-dialog';
 
 const AdminRequestsBoard = dynamic(
@@ -109,10 +108,9 @@ export default async function PortalRequestsPage() {
   const projects = projectsData;
   const isStaff = isAdmin || isEmployee;
 
-  // Comment counts are surfaced as a chip on each kanban card; the client list
-  // fetches its own counts inline, so this is staff-only.
+  // Comment counts surface as a chip on each kanban card for every role.
   const commentCounts =
-    isStaff && requests.length > 0 ? await getRequestCommentCounts(requests.map((r) => r.id)) : {};
+    requests.length > 0 ? await getRequestCommentCounts(requests.map((r) => r.id)) : {};
 
   // Team members feed the assignee picker (Sheet) + filter (toolbar). Admin-only
   // server action — employees see assignment via the joined `assignee` field on
@@ -132,18 +130,12 @@ export default async function PortalRequestsPage() {
   }
 
   return (
-    <div
-      className={
-        isStaff
-          ? 'flex h-full animate-fade-in-up flex-col px-[clamp(1rem,3vw,2rem)] pb-[clamp(1.5rem,3vw,2rem)] pt-16 md:pt-[clamp(2rem,3vw,2.5rem)]'
-          : 'animate-fade-in-up px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(2rem,4vw,3rem)] pt-16 md:pt-[clamp(2.5rem,4vw,3.5rem)]'
-      }
-    >
+    <div className="flex h-full animate-fade-in-up flex-col px-[clamp(1rem,3vw,2rem)] pb-[clamp(1.5rem,3vw,2rem)] pt-16 md:pt-[clamp(2rem,3vw,2.5rem)]">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
             <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
-            <span>{isStaff ? 'Triage queue' : 'Conversations'}</span>
+            <span>{isStaff ? 'Triage queue' : 'My requests'}</span>
           </div>
           <h1 className="mt-3 text-[clamp(1.5rem,1rem+1.6vw,2rem)] font-semibold leading-tight tracking-tight text-foreground">
             Requests
@@ -153,27 +145,19 @@ export default async function PortalRequestsPage() {
               ? `${requests.length} request${requests.length === 1 ? '' : 's'} across all clients — drag a card between columns to move it through the pipeline.`
               : isEmployee
                 ? 'Client requests on your assigned projects — drag a card between columns to move it through the pipeline.'
-                : 'Ideas, changes, and questions — track every thread you’ve opened with us.'}
+                : 'Ideas, changes, and questions — every thread you’ve opened with us, grouped by stage.'}
           </p>
         </div>
         {!isEmployee && <PortalRequestDialog projects={projects} />}
       </header>
 
-      {isStaff ? (
-        <AdminRequestsBoard
-          requests={requests}
-          commentCounts={commentCounts}
-          currentUserId={user.id}
-          userRole={isAdmin ? 'admin' : 'employee'}
-          staffOptions={staffOptions}
-        />
-      ) : (
-        <PortalRequestList
-          requests={requests}
-          currentUserId={user.id}
-          userRole={profile?.role || 'client'}
-        />
-      )}
+      <AdminRequestsBoard
+        requests={requests}
+        commentCounts={commentCounts}
+        currentUserId={user.id}
+        userRole={isAdmin ? 'admin' : isEmployee ? 'employee' : 'client'}
+        staffOptions={staffOptions}
+      />
     </div>
   );
 }
