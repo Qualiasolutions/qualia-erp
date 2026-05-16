@@ -4,6 +4,8 @@
  * - assertAppEnabledForClient — server-side App Library guard
  * - assertNotImpersonating — mutation guard against view-as-user-id cookie
  * - isPortalAdminRole — pure role predicate
+ * - canAccessProjectStrict — admin passthrough smoke (deeper paths covered
+ *   via integration in activity-feed / phase-comments / project-files)
  */
 
 const mockCookieGet = jest.fn();
@@ -33,6 +35,7 @@ jest.mock('@/lib/supabase/server', () => ({
 import {
   assertAppEnabledForClient,
   assertNotImpersonating,
+  canAccessProjectStrict,
   isPortalAdminRole,
 } from '@/lib/portal-utils';
 
@@ -66,6 +69,34 @@ describe('isPortalAdminRole', () => {
   it('returns false for unknown role strings', () => {
     expect(isPortalAdminRole('owner')).toBe(false);
     expect(isPortalAdminRole('')).toBe(false);
+  });
+});
+
+describe('canAccessProjectStrict', () => {
+  // The flat mock chain in this file (select → eq → limit → maybeSingle) does
+  // not match canAccessProjectStrict's multi-call shape (profile.single, then
+  // assignments/client_projects.maybeSingle with two `.eq`s). For now we cover
+  // the admin-passthrough branch which short-circuits before any project-side
+  // query. The employee + client branches are exercised end-to-end via
+  // activity-feed / phase-comments / project-files server actions.
+  const mockSingle = jest.fn();
+  beforeEach(() => {
+    mockSingle.mockReset();
+    // Wire the existing select→eq chain to expose .single() in addition to
+    // .limit() — both are used across the file's helpers.
+    mockEq.mockReturnValue({ limit: mockLimit, single: mockSingle });
+  });
+
+  it('admin role passes without project lookup', async () => {
+    mockSingle.mockResolvedValueOnce({ data: { role: 'admin' } });
+    const result = await canAccessProjectStrict('admin-user', 'project-1');
+    expect(result).toBe(true);
+  });
+
+  it('returns false on error (defensive try/catch)', async () => {
+    mockSingle.mockRejectedValueOnce(new Error('db down'));
+    const result = await canAccessProjectStrict('user-1', 'project-1');
+    expect(result).toBe(false);
   });
 });
 

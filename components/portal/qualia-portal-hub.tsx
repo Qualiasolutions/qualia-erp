@@ -107,7 +107,6 @@ export function QualiaPortalHub({
   clientId,
   displayName,
   companyName,
-  enabledApps,
   upcomingMeetings = [],
 }: QualiaPortalHubProps) {
   const hue = useMemo(() => hueFromId(clientId), [clientId]);
@@ -118,12 +117,12 @@ export function QualiaPortalHub({
 
   const greeting = useMemo(() => getGreeting(new Date().getHours()), []);
 
-  const threadDestination = enabledApps?.includes('messages')
-    ? '/messages'
-    : enabledApps?.includes('requests')
-      ? '/requests'
-      : '/messages';
-  const threadAppLabel = threadDestination === '/requests' ? 'request' : 'thread';
+  // Clients have no /messages route — staff messaging is internal only,
+  // and clients reach the conversation via the floating ClientChatWidget
+  // mounted in (portal)/layout.tsx. The hub's ThreadCard routes them to
+  // /requests, the unified surface for raising work.
+  const threadDestination = '/requests';
+  const threadAppLabel = 'request';
 
   if (isError) {
     return (
@@ -414,13 +413,15 @@ const EngagementRow = memo(function EngagementRow({
    MeetingsSidebar
    ====================================================================== */
 
+const MEETING_DATE_FMT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+});
+
 function formatMeetingDate(value: string) {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(value));
+  return MEETING_DATE_FMT.format(new Date(value));
 }
 
 function MeetingsSidebar({

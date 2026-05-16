@@ -11,7 +11,7 @@ import {
   notifyEmployeesOfClientComment,
   notifyAdminAndAssignedOfClientActivity,
 } from '@/lib/email';
-import { canAccessProject } from '@/lib/portal-utils';
+import { canAccessProjectStrict } from '@/lib/portal-utils';
 
 // ============ SCHEMAS ============
 
@@ -57,7 +57,7 @@ export async function createPhaseComment(data: CreatePhaseCommentInput): Promise
 
   const { projectId, phaseName, commentText, isInternal } = parsed.data;
 
-  if (!(await canAccessProject(user.id, projectId))) {
+  if (!(await canAccessProjectStrict(user.id, projectId))) {
     return { success: false, error: 'Project not found or access denied' };
   }
 
@@ -138,7 +138,7 @@ export async function getPhaseComments(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  if (!(await canAccessProject(user.id, projectId))) {
+  if (!(await canAccessProjectStrict(user.id, projectId))) {
     return { success: false, error: 'Project not found or access denied' };
   }
 
@@ -253,7 +253,7 @@ export async function getAllPhaseCommentCounts(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  if (!(await canAccessProject(user.id, projectId))) {
+  if (!(await canAccessProjectStrict(user.id, projectId))) {
     return { success: false, error: 'Project not found or access denied' };
   }
 
@@ -294,7 +294,7 @@ export async function getPhaseCommentCount(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  if (!(await canAccessProject(user.id, projectId))) {
+  if (!(await canAccessProjectStrict(user.id, projectId))) {
     return { success: false, error: 'Project not found or access denied' };
   }
 
@@ -332,7 +332,7 @@ export async function getProjectCommentsCount(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  if (!(await canAccessProject(user.id, projectId))) {
+  if (!(await canAccessProjectStrict(user.id, projectId))) {
     return { success: false, error: 'Project not found or access denied' };
   }
 

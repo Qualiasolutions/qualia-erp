@@ -30,7 +30,7 @@ export type ProjectFileWithUploader = ProjectFile & {
   phase?: { id: string; phase_name: string | null } | null;
 };
 import { canAccessProject, canDeleteProjectFile, type ActionResult } from './shared';
-import { canAccessProject as canClientAccessProject } from '@/lib/portal-utils';
+import { canAccessProjectStrict as canClientAccessProject } from '@/lib/portal-utils';
 import { createActivityLogEntry } from './activity-feed';
 import {
   notifyEmployeesOfClientFileUpload,

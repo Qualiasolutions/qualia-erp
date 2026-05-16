@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getCachedUserRole, isPortalAdminRole } from '@/lib/portal-utils';
+import { isPortalAdminRole } from '@/lib/portal-utils';
+import { getCachedUserRole } from '@/app/actions/shared';
 import { AdminContent } from './admin-content';
 
 export const metadata = {

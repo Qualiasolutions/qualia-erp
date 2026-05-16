@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import { type ActionResult, isUserAdmin } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
-import { canAccessProject } from '@/lib/portal-utils';
+import { canAccessProjectStrict } from '@/lib/portal-utils';
 export type { ActivityLogEntry } from '@/lib/activity-utils';
 
 // BH-V3: Whitelist of valid action types (matches DB CHECK constraint)
@@ -58,7 +58,7 @@ export async function getProjectActivityFeed(
   }
 
   // Verify user has access to this project
-  const hasAccess = await canAccessProject(user.id, projectId);
+  const hasAccess = await canAccessProjectStrict(user.id, projectId);
   if (!hasAccess) {
     return { success: false, error: 'Access denied' };
   }
