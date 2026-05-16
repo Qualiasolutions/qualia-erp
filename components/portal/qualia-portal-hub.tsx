@@ -118,12 +118,12 @@ export function QualiaPortalHub({
 
   const greeting = useMemo(() => getGreeting(new Date().getHours()), []);
 
-  const threadDestination = enabledApps?.includes('messages')
-    ? '/messages'
-    : enabledApps?.includes('requests')
-      ? '/requests'
-      : '/messages';
-  const threadAppLabel = threadDestination === '/requests' ? 'request' : 'thread';
+  // Clients have no /messages route — staff messaging is internal only,
+  // and clients reach the conversation via the floating ClientChatWidget
+  // mounted in (portal)/layout.tsx. The hub's ThreadCard routes them to
+  // /requests, the unified surface for raising work.
+  const threadDestination = '/requests';
+  const threadAppLabel = 'request';
 
   if (isError) {
     return (
