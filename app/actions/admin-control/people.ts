@@ -35,8 +35,18 @@ export type PersonAssignment = {
   id: string;
   projectId: string;
   projectName: string | null;
+  clientId: string | null;
+  clientName: string | null;
   assignedAt: string | null;
   deadlineDate: string | null;
+};
+
+export type AssignedEmployee = {
+  id: string;
+  fullName: string | null;
+  email: string | null;
+  role: string | null;
+  avatarUrl: string | null;
 };
 
 export type AttendanceSummary = {
@@ -71,6 +81,7 @@ export type ClientDetailPayload = {
     name: string;
     status: string;
   }>;
+  assignedEmployees: AssignedEmployee[];
 };
 
 export type PersonDetailPayload = ProfileDetailPayload | ClientDetailPayload;
@@ -203,12 +214,12 @@ export async function getPersonDetail(id: string): Promise<PersonDetailPayload |
     // Get audit data (reuse existing function)
     const audit = await getEmployeeAudit(id);
 
-    // Get active assignments
+    // Get active assignments with project + client info
     const { data: assignmentsRaw } = await supabase
       .from('project_assignments')
       .select(
         `id, assigned_at, deadline_date,
-        project:projects!project_assignments_project_id_fkey (id, name)`
+        project:projects!project_assignments_project_id_fkey (id, name, client_id, client:clients (id, display_name))`
       )
       .eq('employee_id', id)
       .is('removed_at', null)
@@ -217,12 +228,31 @@ export async function getPersonDetail(id: string): Promise<PersonDetailPayload |
     const assignments: PersonAssignment[] = (assignmentsRaw ?? []).map(
       (a: Record<string, unknown>) => {
         const proj = Array.isArray(a.project)
-          ? (a.project as Array<{ id: string; name: string }>)[0]
-          : (a.project as { id: string; name: string } | null);
+          ? (
+              a.project as Array<{
+                id: string;
+                name: string;
+                client_id: string | null;
+                client: { id: string; display_name: string | null } | null;
+              }>
+            )[0]
+          : (a.project as {
+              id: string;
+              name: string;
+              client_id: string | null;
+              client: { id: string; display_name: string | null } | null;
+            } | null);
+        const clientObj = proj?.client
+          ? Array.isArray(proj.client)
+            ? (proj.client as Array<{ id: string; display_name: string | null }>)[0]
+            : proj.client
+          : null;
         return {
           id: a.id as string,
           projectId: proj?.id ?? '',
           projectName: proj?.name ?? null,
+          clientId: clientObj?.id ?? proj?.client_id ?? null,
+          clientName: clientObj?.display_name ?? null,
           assignedAt: (a.assigned_at as string | null) ?? null,
           deadlineDate: (a.deadline_date as string | null) ?? null,
         };
@@ -263,6 +293,51 @@ export async function getPersonDetail(id: string): Promise<PersonDetailPayload |
       status: p.status,
     }));
 
+    // Get distinct employees assigned to any of this client's projects
+    const assignedEmployees: AssignedEmployee[] = [];
+    const projectIds = projects.map((p) => p.id);
+    if (projectIds.length > 0) {
+      const { data: employeeRows } = await supabase
+        .from('project_assignments')
+        .select(
+          `employee:profiles!project_assignments_employee_id_fkey (id, full_name, email, role, avatar_url)`
+        )
+        .in('project_id', projectIds)
+        .is('removed_at', null);
+
+      // Deduplicate by profile id
+      const seen = new Set<string>();
+      for (const row of employeeRows ?? []) {
+        const emp = Array.isArray(row.employee)
+          ? (
+              row.employee as Array<{
+                id: string;
+                full_name: string | null;
+                email: string | null;
+                role: string | null;
+                avatar_url: string | null;
+              }>
+            )[0]
+          : (row.employee as {
+              id: string;
+              full_name: string | null;
+              email: string | null;
+              role: string | null;
+              avatar_url: string | null;
+            } | null);
+        if (emp && !seen.has(emp.id)) {
+          seen.add(emp.id);
+          assignedEmployees.push({
+            id: emp.id,
+            fullName: emp.full_name,
+            email: emp.email,
+            role: emp.role,
+            avatarUrl: emp.avatar_url,
+          });
+        }
+      }
+    }
+
     return {
       kind: 'client',
       id: client.id,
@@ -271,6 +346,7 @@ export async function getPersonDetail(id: string): Promise<PersonDetailPayload |
       leadStatus: client.lead_status,
       logoUrl: client.logo_url,
       projects,
+      assignedEmployees,
     };
   }
 

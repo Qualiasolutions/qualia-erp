@@ -1,3 +1,19 @@
+/**
+ * /api/v1/reports — Shift Submission ingest.
+ *
+ * A row in session_reports is what one employee shipped during a single
+ * clock-in window. It is telemetry. It is NEVER a task or milestone
+ * completion signal.
+ *
+ * DO NOT mutate phase_items.is_completed or project_phases.status from
+ * this handler. Completion belongs to the operator-driven kanban path
+ * in app/actions/pipeline.ts (togglePhaseTask). The framework counters
+ * in the payload (milestone, phase, tasks_done, tasks_total) are
+ * metadata for the admin UI, not state transitions.
+ *
+ * Regression-guarded by __tests__/actions/reports-isolation.test.ts.
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/server';

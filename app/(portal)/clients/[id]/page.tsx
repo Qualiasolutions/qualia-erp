@@ -145,6 +145,46 @@ async function ClientLoader({ id }: ClientLoaderProps) {
     }));
   }
 
+  // Fetch distinct employees assigned to any of this client's projects
+  const erpProjectIds = erpLinkedProjects.map((p) => p.id);
+  const assignedTeam: Array<{
+    id: string;
+    fullName: string | null;
+    email: string | null;
+    role: string | null;
+    avatarUrl: string | null;
+  }> = [];
+  if (erpProjectIds.length > 0) {
+    const { data: teamRows } = await supabase
+      .from('project_assignments')
+      .select(
+        `employee:profiles!project_assignments_employee_id_fkey (id, full_name, email, role, avatar_url)`
+      )
+      .in('project_id', erpProjectIds)
+      .is('removed_at', null);
+
+    const seen = new Set<string>();
+    for (const row of teamRows ?? []) {
+      const emp = normalizeFKResponse(row.employee) as {
+        id: string;
+        full_name: string | null;
+        email: string | null;
+        role: string | null;
+        avatar_url: string | null;
+      } | null;
+      if (emp && !seen.has(emp.id)) {
+        seen.add(emp.id);
+        assignedTeam.push({
+          id: emp.id,
+          fullName: emp.full_name,
+          email: emp.email,
+          role: emp.role,
+          avatarUrl: emp.avatar_url,
+        });
+      }
+    }
+  }
+
   return (
     <ClientDetailView
       client={clientForView}
@@ -152,6 +192,7 @@ async function ClientLoader({ id }: ClientLoaderProps) {
       availableProjects={allProjects}
       erpLinkedProjects={erpLinkedProjects}
       erpAvailableProjects={erpAvailableProjects}
+      assignedTeam={assignedTeam}
       isAdmin={isAdmin}
     />
   );

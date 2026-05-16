@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { StatCard } from '@/components/ui/stat-card';
 import {
   getFrameworkReports,
   getFrameworkReportsProjects,
@@ -52,20 +53,6 @@ function StatusIcon({ status }: { status: string | null }) {
     return <XCircle className="size-3.5 text-destructive" />;
   }
   return <Circle className="size-3.5 text-muted-foreground" />;
-}
-
-function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-5">
-      <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="mt-2 text-[26px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
-        {value}
-      </div>
-      {sub && <div className="mt-1 text-[11px] text-muted-foreground/80">{sub}</div>}
-    </div>
-  );
 }
 
 export function FrameworkReportsTab({ focusId }: { focusId?: string | null }) {
@@ -128,13 +115,18 @@ export function FrameworkReportsTab({ focusId }: { focusId?: string | null }) {
       {/* Stats row */}
       {stats && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-          <StatCard label="Total Reports" value={stats.totalReports} sub="last 2000" />
-          <StatCard label="Last 7d" value={stats.reportsLast7d} />
-          <StatCard label="Last 30d" value={stats.reportsLast30d} />
-          <StatCard label="Projects" value={stats.distinctProjects} />
-          <StatCard label="Commits" value={stats.totalCommits} />
-          <StatCard label="Builds" value={stats.totalBuilds} />
-          <StatCard label="Deploys" value={stats.totalDeploys} />
+          <StatCard
+            label="Total Submissions"
+            value={stats.totalReports}
+            helperText="last 2000"
+            tone="neutral"
+          />
+          <StatCard label="Last 7d" value={stats.reportsLast7d} tone="positive" />
+          <StatCard label="Last 30d" value={stats.reportsLast30d} tone="positive" />
+          <StatCard label="Projects" value={stats.distinctProjects} tone="neutral" />
+          <StatCard label="Commits" value={stats.totalCommits} tone="neutral" />
+          <StatCard label="Builds" value={stats.totalBuilds} tone="warning" />
+          <StatCard label="Deploys" value={stats.totalDeploys} tone="positive" />
         </div>
       )}
 
