@@ -107,7 +107,6 @@ export function QualiaPortalHub({
   clientId,
   displayName,
   companyName,
-  enabledApps,
   upcomingMeetings = [],
 }: QualiaPortalHubProps) {
   const hue = useMemo(() => hueFromId(clientId), [clientId]);
@@ -414,13 +413,15 @@ const EngagementRow = memo(function EngagementRow({
    MeetingsSidebar
    ====================================================================== */
 
+const MEETING_DATE_FMT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+});
+
 function formatMeetingDate(value: string) {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(value));
+  return MEETING_DATE_FMT.format(new Date(value));
 }
 
 function MeetingsSidebar({
