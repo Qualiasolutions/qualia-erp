@@ -11,7 +11,7 @@ export {
   type OverdueInvoiceRow,
   type ProjectNoDeadlineRow,
   type StaleActionRow,
-} from './overview-command-center';
+} from './command-center';
 export {
   loadPlanningHealth,
   loadPlanningHealthFor,
