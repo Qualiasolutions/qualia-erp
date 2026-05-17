@@ -4,6 +4,7 @@ import { useState, useEffect, useLayoutEffect, useCallback, useRef, useId } from
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { persistInternalOnboardingState } from '@/app/actions/auth';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -40,6 +41,17 @@ type TooltipPlacement = 'right' | 'left' | 'bottom' | 'top';
 /* ------------------------------------------------------------------ */
 
 const TOUR_STORAGE_KEY = 'qualia-portal-tour-v4';
+const TOUR_VERSION = 4;
+
+// Fire-and-forget DB persist. localStorage gives an instant per-device
+// "don't show me again"; the DB write means the same user gets it once across
+// devices, incognito, or after a cache clear. The dashboard server component
+// is the source of truth on the next render.
+function persistTourSeen() {
+  persistInternalOnboardingState(TOUR_VERSION).catch((err) => {
+    console.warn('[portal-welcome-tour] failed to persist completion:', err);
+  });
+}
 
 const SPOTLIGHT_PADDING = 10;
 const SPOTLIGHT_RADIUS = 14;
@@ -715,6 +727,7 @@ export function PortalWelcomeTour({
       setResolvedSteps(available);
       if (available.length === 0) {
         localStorage.setItem(TOUR_STORAGE_KEY, 'true');
+        persistTourSeen();
         setPhase('done');
       }
     }, 50);
@@ -808,6 +821,7 @@ export function PortalWelcomeTour({
       setTimeout(() => {
         setPhase('done');
         localStorage.setItem(TOUR_STORAGE_KEY, 'true');
+        persistTourSeen();
       }, 200);
       return;
     }
@@ -817,6 +831,7 @@ export function PortalWelcomeTour({
       () => {
         setPhase('done');
         localStorage.setItem(TOUR_STORAGE_KEY, 'true');
+        persistTourSeen();
       },
       reduced.current ? 0 : 180
     );

@@ -153,16 +153,21 @@ export default async function PortalDashboard({
   const companyName = displayName;
   const logoUrl = await getClientPrimaryLogo(effectiveUserId);
 
-  // Client: show their dashboard. Welcome tour is gated to the real user
-  // (not admin impersonating), so it only triggers for actual clients on
-  // their first login in a given browser.
+  // Client: show their dashboard. Welcome tour is gated to:
+  //   - the real user (not admin impersonating)
+  //   - actual clients
+  //   - users who haven't completed the current tour version yet (DB-backed,
+  //     not just localStorage — so the tour stays dismissed across devices /
+  //     incognito / cache clears)
+  const TOUR_VERSION = 4;
+  const tourCompleted = (profile?.internal_onboarding_version ?? 0) >= TOUR_VERSION;
   return (
     <PortalDashboardContent
       clientId={effectiveUserId}
       displayName={displayName}
       companyName={companyName}
       logoUrl={logoUrl}
-      showWelcomeTour={realRole === 'client'}
+      showWelcomeTour={realRole === 'client' && !tourCompleted}
     />
   );
 }

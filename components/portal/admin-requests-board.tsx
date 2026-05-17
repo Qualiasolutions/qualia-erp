@@ -190,103 +190,139 @@ export function AdminRequestsBoard({
     { value: 'low', label: 'Low' },
   ];
 
+  // Clients with no requests at all see a full-page zero-state CTA instead
+  // of three empty columns + a useless toolbar. The "New request" button in
+  // the page header is the primary action.
+  if (isClient && totalUnfiltered === 0) {
+    return (
+      <div className="flex min-h-[420px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-card/30 px-6 py-12 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/15">
+          <Inbox className="h-5 w-5 text-primary" aria-hidden />
+        </div>
+        <h2 className="mt-4 text-base font-semibold tracking-tight text-foreground">
+          No requests yet
+        </h2>
+        <p className="mt-1.5 max-w-[360px] text-sm leading-relaxed text-muted-foreground">
+          When you submit a feature request, change, or question, it shows up here so you can follow
+          its status through to completion.
+        </p>
+        <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">
+          Use the &ldquo;New request&rdquo; button at the top right
+        </p>
+      </div>
+    );
+  }
+
+  // Clients only see search + count. Priority chips and Mine/All are
+  // staff-only — clients don't triage their own queue.
+  const showStaffControls = !isClient;
+  // Search is only useful with enough rows to scroll through. Below the
+  // threshold (5 total), it's noise.
+  const showSearch = totalUnfiltered >= 5 || query.length > 0;
+
   return (
     <div className="flex h-full flex-col gap-3">
       {/* Toolbar: scope · search · priority · count */}
-      <div className="flex flex-wrap items-center gap-2">
-        {!isClient && (
-          <div className="flex gap-1 rounded-md bg-muted/30 p-1">
-            <button
-              type="button"
-              onClick={() => setScope('all')}
-              className={cn(
-                'rounded px-3 py-1.5 text-sm transition-colors',
-                scope === 'all'
-                  ? 'bg-background font-medium text-foreground shadow-elevation-1'
-                  : 'text-muted-foreground hover:text-foreground'
+      {(showStaffControls || showSearch) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {showStaffControls && (
+            <div className="flex gap-1 rounded-md bg-muted/30 p-1">
+              <button
+                type="button"
+                onClick={() => setScope('all')}
+                className={cn(
+                  'rounded px-3 py-1.5 text-sm transition-colors',
+                  scope === 'all'
+                    ? 'bg-background font-medium text-foreground shadow-elevation-1'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => setScope('mine')}
+                className={cn(
+                  'rounded px-3 py-1.5 text-sm transition-colors',
+                  scope === 'mine'
+                    ? 'bg-background font-medium text-foreground shadow-elevation-1'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Mine
+              </button>
+            </div>
+          )}
+
+          {showSearch && (
+            <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
+              <Search
+                className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60"
+                aria-hidden
+              />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search requests…"
+                aria-label="Search requests"
+                className="h-9 w-full rounded-md border border-border bg-card pl-8 pr-8 text-sm placeholder:text-muted-foreground/70 focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  aria-label="Clear search"
+                  className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               )}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              onClick={() => setScope('mine')}
-              className={cn(
-                'rounded px-3 py-1.5 text-sm transition-colors',
-                scope === 'mine'
-                  ? 'bg-background font-medium text-foreground shadow-elevation-1'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              Mine
-            </button>
+            </div>
+          )}
+
+          {showStaffControls && (
+            <div className="flex flex-wrap gap-1" role="group" aria-label="Filter by priority">
+              {PRIORITIES.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setPriorityFilter(p.value)}
+                  aria-pressed={priorityFilter === p.value}
+                  className={cn(
+                    'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                    priorityFilter === p.value
+                      ? 'border-primary/40 bg-primary/10 text-primary'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/20 hover:text-foreground'
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="ml-auto flex items-center gap-2 font-mono text-[11px] tabular-nums text-muted-foreground">
+            <span>
+              {totalVisible}
+              {hasActiveFilter && totalVisible !== totalUnfiltered ? ` / ${totalUnfiltered}` : ''}
+            </span>
+            {hasActiveFilter && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPriorityFilter('all');
+                  setQuery('');
+                  if (!isClient) setScope('all');
+                }}
+                className="cursor-pointer rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                Reset
+              </button>
+            )}
           </div>
-        )}
-
-        <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
-          <Search
-            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60"
-            aria-hidden
-          />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search requests…"
-            aria-label="Search requests"
-            className="h-9 w-full rounded-md border border-border bg-card pl-8 pr-8 text-sm placeholder:text-muted-foreground/70 focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery('')}
-              aria-label="Clear search"
-              className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          )}
         </div>
-
-        <div className="flex flex-wrap gap-1" role="group" aria-label="Filter by priority">
-          {PRIORITIES.map((p) => (
-            <button
-              key={p.value}
-              type="button"
-              onClick={() => setPriorityFilter(p.value)}
-              aria-pressed={priorityFilter === p.value}
-              className={cn(
-                'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                priorityFilter === p.value
-                  ? 'border-primary/40 bg-primary/10 text-primary'
-                  : 'border-border bg-card text-muted-foreground hover:border-primary/20 hover:text-foreground'
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="ml-auto flex items-center gap-2 font-mono text-[11px] tabular-nums text-muted-foreground">
-          <span>
-            {totalVisible}
-            {hasActiveFilter && totalVisible !== totalUnfiltered ? ` / ${totalUnfiltered}` : ''}
-          </span>
-          {hasActiveFilter && (
-            <button
-              type="button"
-              onClick={() => {
-                setPriorityFilter('all');
-                setQuery('');
-                if (!isClient) setScope('all');
-              }}
-              className="cursor-pointer rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              Reset
-            </button>
-          )}
-        </div>
-      </div>
+      )}
 
       {isClient ? (
         <div
@@ -304,6 +340,7 @@ export function AdminRequestsBoard({
               requests={grouped[col.key]}
               commentCounts={commentCounts}
               onCardClick={handleCardClick}
+              isClient
               readOnly
             />
           ))}
@@ -364,6 +401,7 @@ function KanbanColumn({
   commentCounts,
   onCardClick,
   readOnly = false,
+  isClient = false,
 }: {
   status: RequestStatus;
   label: string;
@@ -373,6 +411,7 @@ function KanbanColumn({
   commentCounts: Record<string, number>;
   onCardClick: (id: string) => void;
   readOnly?: boolean;
+  isClient?: boolean;
 }) {
   return readOnly ? (
     <StaticColumn label={label} eyebrow={eyebrow} count={count}>
@@ -384,6 +423,7 @@ function KanbanColumn({
             key={r.id}
             request={r}
             commentCount={commentCounts[r.id] ?? 0}
+            isClient={isClient}
             onClick={() => onCardClick(r.id)}
           />
         ))
@@ -524,10 +564,12 @@ function ClickableCard({
   request,
   commentCount,
   onClick,
+  isClient = false,
 }: {
   request: FeatureRequest;
   commentCount: number;
   onClick: () => void;
+  isClient?: boolean;
 }) {
   return (
     <div
@@ -542,7 +584,12 @@ function ClickableCard({
       tabIndex={0}
       className="cursor-pointer rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
     >
-      <RequestCard request={request} commentCount={commentCount} draggable={false} />
+      <RequestCard
+        request={request}
+        commentCount={commentCount}
+        draggable={false}
+        isClient={isClient}
+      />
     </div>
   );
 }
@@ -588,13 +635,20 @@ const RequestCard = memo(function RequestCard({
   commentCount,
   draggable,
   isDragOverlay,
+  isClient = false,
 }: {
   request: FeatureRequest;
   commentCount: number;
   draggable: boolean;
   isDragOverlay?: boolean;
+  isClient?: boolean;
 }) {
   const attachmentCount = request.attachments?.length ?? 0;
+  // Heading hierarchy depends on viewer:
+  //   - Staff (admin/employee) scan by project → project name as primary
+  //   - Clients scan by their own request topic → request title as primary
+  // Both views still show both fields, just with the emphasis swapped.
+  const projectLabel = request.project?.name ?? null;
   return (
     <article
       className={cn(
@@ -612,14 +666,29 @@ const RequestCard = memo(function RequestCard({
           />
         )}
         <div className="min-w-0 flex-1">
-          {/* Project name as primary heading */}
-          <p className="text-sm font-semibold leading-snug text-foreground">
-            {request.project?.name ?? <span className="text-muted-foreground/50">No project</span>}
-          </p>
-          {/* Request title as secondary line */}
-          <h3 className="mt-0.5 line-clamp-2 text-xs font-normal text-muted-foreground">
-            {request.title}
-          </h3>
+          {isClient ? (
+            <>
+              {/* Client view: request title is what they wrote, primary heading */}
+              <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+                {request.title}
+              </h3>
+              {projectLabel && (
+                <p className="mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70">
+                  {projectLabel}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Staff view: project name as primary so triagers can group by client */}
+              <p className="text-sm font-semibold leading-snug text-foreground">
+                {projectLabel ?? <span className="text-muted-foreground/50">No project</span>}
+              </p>
+              <h3 className="mt-0.5 line-clamp-2 text-xs font-normal text-muted-foreground">
+                {request.title}
+              </h3>
+            </>
+          )}
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <PriorityBadge priority={request.priority} />
           </div>

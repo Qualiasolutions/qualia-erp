@@ -23,6 +23,8 @@ export type PortalProfile = {
   email: string | null;
   avatar_url: string | null;
   role: string | null;
+  internal_onboarding_version: number;
+  internal_onboarding_completed_at: string | null;
 };
 
 /**
@@ -45,7 +47,9 @@ export const getPortalProfile = cache(async (userId: string): Promise<PortalProf
   const supabase = await createClient();
   const { data } = await supabase
     .from('profiles')
-    .select('id, full_name, email, avatar_url, role')
+    .select(
+      'id, full_name, email, avatar_url, role, internal_onboarding_version, internal_onboarding_completed_at'
+    )
     .eq('id', userId)
     .single();
   return data;
