@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const VALID_TABS = new Set(['profile', 'attendance', 'audit', 'assignments', 'team']);
+const VALID_TABS = new Set(['profile', 'attendance', 'audit', 'assignments']);
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -211,59 +211,31 @@ function AssignmentsTab({ person }: { person: Extract<PersonDetailPayload, { kin
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-hidden rounded-xl border border-border bg-card/40">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/35">
-              <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Project
-              </th>
-              <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Client
-              </th>
-              <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Assigned
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {assignments.map((a, i) => (
-              <tr key={a.id} className={`${i > 0 ? 'border-t border-border' : ''}`}>
-                <td className="px-5 py-3.5">
-                  <Link
-                    href={`/projects/${a.projectId}`}
-                    className="font-medium text-foreground hover:text-primary"
-                  >
-                    {a.projectName ?? 'Unknown project'}
-                  </Link>
-                  {a.deadlineDate && (
-                    <span className="ml-2 font-mono text-[11px] text-muted-foreground">
-                      due {a.deadlineDate}
-                    </span>
-                  )}
-                </td>
-                <td className="px-5 py-3.5">
-                  {a.clientId ? (
-                    <Link
-                      href={`/clients/${a.clientId}`}
-                      className="text-foreground hover:text-primary"
-                    >
-                      {a.clientName ?? '—'}
-                    </Link>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </td>
-                <td className="px-5 py-3.5 text-right font-mono text-[11px] text-muted-foreground">
-                  {a.assignedAt
-                    ? new Date(a.assignedAt).toLocaleDateString('en-IE', { dateStyle: 'medium' })
-                    : '—'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ul className="overflow-hidden rounded-xl border border-border bg-card/40">
+        {assignments.map((a, i) => (
+          <li
+            key={a.id}
+            className={`flex items-center justify-between gap-4 px-5 py-3.5 ${i > 0 ? 'border-t border-border' : ''}`}
+          >
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium text-foreground">
+                {a.projectName ?? 'Unknown project'}
+              </span>
+              {a.deadlineDate && (
+                <span className="font-mono text-[11px] text-muted-foreground">
+                  Deadline: {a.deadlineDate}
+                </span>
+              )}
+            </div>
+            {a.assignedAt && (
+              <span className="font-mono text-[11px] text-muted-foreground">
+                Assigned{' '}
+                {new Date(a.assignedAt).toLocaleDateString('en-IE', { dateStyle: 'medium' })}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
 
       <Link
         href="/admin/assignments"
@@ -288,9 +260,7 @@ function ClientDetail({
   defaultTab: string;
 }) {
   const resolvedTab =
-    defaultTab === 'profile' || defaultTab === 'assignments' || defaultTab === 'team'
-      ? defaultTab
-      : 'profile';
+    defaultTab === 'profile' || defaultTab === 'assignments' ? defaultTab : 'profile';
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8 md:py-12">
@@ -333,9 +303,6 @@ function ClientDetail({
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="assignments">Projects ({person.projects.length})</TabsTrigger>
-          <TabsTrigger value="team">
-            Assigned employees ({person.assignedEmployees.length})
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-6">
@@ -380,47 +347,6 @@ function ClientDetail({
                   </Link>
                   <span className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                     {p.status}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </TabsContent>
-
-        <TabsContent value="team" className="mt-6">
-          {person.assignedEmployees.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-12">
-              <p className="text-sm text-muted-foreground">
-                No employees assigned to this client&apos;s projects yet.
-              </p>
-            </div>
-          ) : (
-            <ul className="overflow-hidden rounded-xl border border-border bg-card/40">
-              {person.assignedEmployees.map((emp, i) => (
-                <li
-                  key={emp.id}
-                  className={`flex items-center gap-4 px-5 py-3.5 ${i > 0 ? 'border-t border-border' : ''}`}
-                >
-                  {emp.avatarUrl ? (
-                    <img src={emp.avatarUrl} alt="" className="size-8 rounded-full object-cover" />
-                  ) : (
-                    <div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
-                      <span className="text-xs font-semibold text-primary">
-                        {(emp.fullName || emp.email || '?')[0].toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex flex-1 flex-col gap-0.5">
-                    <Link
-                      href={`/admin/people/${emp.id}`}
-                      className="text-sm font-medium text-foreground hover:text-primary"
-                    >
-                      {emp.fullName ?? 'Unnamed'}
-                    </Link>
-                    <span className="text-[12px] text-muted-foreground">{emp.email ?? '—'}</span>
-                  </div>
-                  <span className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {emp.role ?? '—'}
                   </span>
                 </li>
               ))}

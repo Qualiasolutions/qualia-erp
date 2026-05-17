@@ -251,11 +251,8 @@ export function AdminReportsClient() {
           <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight">
-                Shift Submissions
+                Reports
               </h1>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                What an employee shipped during one clock-in window — not a task-completion signal.
-              </p>
               <p className="mt-1 text-sm text-muted-foreground">{activeTabMeta.desc}</p>
             </div>
             <Popover>
