@@ -5,7 +5,7 @@ import { getFinancialSummary } from '@/app/actions/financials';
 import { isUserAdmin } from '@/app/actions/shared';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { loadPlanningHealthFor, type PlanningHealthPayload } from './planning-health';
-import { loadCommandCenterFor, type CommandCenterPayload } from './overview-command-center';
+import { loadCommandCenterFor, type CommandCenterPayload } from './command-center';
 
 export type OverviewKpi = {
   label: string;

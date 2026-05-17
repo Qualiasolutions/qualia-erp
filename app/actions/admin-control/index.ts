@@ -11,7 +11,7 @@ export {
   type OverdueInvoiceRow,
   type ProjectNoDeadlineRow,
   type StaleActionRow,
-} from './overview-command-center';
+} from './command-center';
 export {
   loadPlanningHealth,
   loadPlanningHealthFor,
@@ -70,15 +70,6 @@ export {
   type ProjectPerfRow,
   type ReportFlag,
 } from './reports-perf';
-
-export {
-  getPeopleIndex,
-  getPersonDetail,
-  type PeopleIndexPayload,
-  type PersonDetailPayload,
-  type ProfileRow,
-  type ClientRow,
-} from './people';
 
 export type ControlTab = 'overview' | 'team' | 'finance' | 'system';
 

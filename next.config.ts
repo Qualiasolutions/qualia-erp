@@ -26,8 +26,8 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
-        source: '/admin/audit',
-        destination: '/admin/people',
+        source: '/admin/audit/:id',
+        destination: '/audit/:id',
         permanent: false,
       },
       {

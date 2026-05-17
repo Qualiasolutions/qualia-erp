@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import type { Client } from '@/types/database';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -14,18 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Building2,
-  Phone,
-  Globe,
-  Folder,
-  User,
-  Users,
-  Pencil,
-  Plus,
-  X,
-  Trash2,
-} from 'lucide-react';
+import { Building2, Phone, Globe, Folder, User, Pencil, Plus, X, Trash2 } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { WorkShowcase } from '@/components/work-showcase';
@@ -85,21 +73,12 @@ interface ERPAvailableProject {
   project_type: string | null;
 }
 
-interface AssignedTeamMember {
-  id: string;
-  fullName: string | null;
-  email: string | null;
-  role: string | null;
-  avatarUrl: string | null;
-}
-
 interface ClientDetailViewProps {
   client: ExtendedClient;
   assignedProjects: Project[];
   availableProjects: Project[];
   erpLinkedProjects: ERPProject[];
   erpAvailableProjects: ERPAvailableProject[];
-  assignedTeam: AssignedTeamMember[];
   isAdmin: boolean;
 }
 
@@ -146,7 +125,6 @@ export function ClientDetailView({
   availableProjects,
   erpLinkedProjects: initialErpLinkedProjects,
   erpAvailableProjects,
-  assignedTeam,
   isAdmin,
 }: ClientDetailViewProps) {
   const [client, setClient] = useState(initialClient);
@@ -278,55 +256,6 @@ export function ClientDetailView({
               </Button>
             </div>
           </div>
-        </div>
-
-        {/* Assigned team */}
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <div className="border-b border-border bg-secondary/40 px-5 py-3">
-            <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <Users className="h-3.5 w-3.5" />
-              Assigned team
-              <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold tabular-nums">
-                {assignedTeam.length}
-              </span>
-            </h3>
-          </div>
-          {assignedTeam.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-muted-foreground">
-              No employees assigned yet.
-            </p>
-          ) : (
-            <div className="divide-y divide-border">
-              {assignedTeam.map((emp) => (
-                <div
-                  key={emp.id}
-                  className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-secondary/30"
-                >
-                  {emp.avatarUrl ? (
-                    <img src={emp.avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                      <span className="text-xs font-semibold text-primary">
-                        {(emp.fullName || emp.email || '?')[0].toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <Link
-                      href={`/admin/people/${emp.id}`}
-                      className="text-sm font-medium text-foreground transition-colors hover:text-primary"
-                    >
-                      {emp.fullName ?? 'Unnamed'}
-                    </Link>
-                    <p className="truncate text-xs text-muted-foreground">{emp.email ?? '—'}</p>
-                  </div>
-                  <span className="shrink-0 rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {emp.role ?? '—'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Client Details — structured finance-style layout */}
