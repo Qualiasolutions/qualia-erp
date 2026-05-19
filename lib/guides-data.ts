@@ -272,9 +272,9 @@ export const guides: Guide[] = [
         id: 'hp-6',
         title: 'The ERP Connection',
         description:
-          "Every push updates .planning/tracking.json via a bot commit (the pre-push hook does it automatically). The ERP reads that file from GitHub and renders your project status on the dashboard. At clock-out, /qualia-report POSTs a structured session report with a stable QS-REPORT-NN ID. The ERP refuses to clock you out without today's report.",
+          "The framework keeps .planning/tracking.json updated locally on every state transition. It's local telemetry — the pre-push hook stamps it but doesn't commit it (v6.2 dropped the bot-commit; the ERP never read it from GitHub anyway). The ERP gets all the signal it needs from /qualia-report, which POSTs a structured session report with a stable QS-REPORT-NN ID at clock-out. The ERP refuses to clock you out without today's report.",
         tips: [
-          'You never edit tracking.json manually. The hooks own it.',
+          'You never edit tracking.json manually. The framework owns it locally; the ERP only sees data via /qualia-report.',
           'Reports get stable IDs (QS-REPORT-01, -02, …) that survive retries and network flakes.',
           'Clock-out will not work without a report. Run /qualia-report before stopping, every day.',
         ],
