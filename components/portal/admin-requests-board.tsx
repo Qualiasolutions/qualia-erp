@@ -208,9 +208,9 @@ export function AdminRequestsBoard({
   // the page header is the primary action.
   if (isClient && totalUnfiltered === 0) {
     return (
-      <div className="flex min-h-[420px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-card/30 px-6 py-12 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/15">
-          <Inbox className="h-5 w-5 text-primary" aria-hidden />
+      <div className="flex min-h-[340px] flex-col items-center justify-center rounded-xl border border-border bg-card px-5 py-12 text-center">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/[0.08] text-primary ring-1 ring-primary/15">
+          <Inbox className="h-4 w-4" aria-hidden />
         </div>
         <h2 className="mt-4 text-base font-semibold tracking-tight text-foreground">
           No requests yet
@@ -219,8 +219,8 @@ export function AdminRequestsBoard({
           When you submit a feature request, change, or question, it shows up here so you can follow
           its status through to completion.
         </p>
-        <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">
-          Use the &ldquo;New request&rdquo; button at the top right
+        <p className="mt-4 rounded-md bg-muted/50 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+          New request opens the intake flow
         </p>
       </div>
     );
