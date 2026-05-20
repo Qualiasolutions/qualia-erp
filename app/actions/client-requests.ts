@@ -246,8 +246,7 @@ export async function getProjectBriefs(projectId: string): Promise<ActionResult>
         status,
         brief_data,
         attachments,
-        created_at,
-        submitter:profiles!client_feature_requests_client_id_fkey(id, full_name, avatar_url)
+        created_at
       `
       )
       .eq('project_id', projectId)
@@ -256,21 +255,28 @@ export async function getProjectBriefs(projectId: string): Promise<ActionResult>
 
     if (error) return { success: false, error: error.message || 'Failed to load briefs' };
 
-    const normalized = (data ?? []).map((r) => {
-      const rec = r as typeof r & {
-        submitter?:
-          | { id: string; full_name: string | null; avatar_url: string | null }
-          | { id: string; full_name: string | null; avatar_url: string | null }[]
-          | null;
-      };
-      return {
-        ...rec,
-        attachments: Array.isArray(rec.attachments) ? (rec.attachments as RequestAttachment[]) : [],
-        submitter: Array.isArray(rec.submitter)
-          ? (rec.submitter[0] ?? null)
-          : (rec.submitter ?? null),
-      };
-    });
+    // The client_id FK on client_feature_requests targets auth.users, not
+    // profiles, so PostgREST can't embed the submitter. Fetch profiles in a
+    // second query keyed by the distinct client_ids.
+    const rows = data ?? [];
+    const submitterIds = Array.from(new Set(rows.map((r) => r.client_id).filter(Boolean)));
+    const submittersById = new Map<
+      string,
+      { id: string; full_name: string | null; avatar_url: string | null }
+    >();
+    if (submitterIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', submitterIds);
+      for (const p of profiles ?? []) submittersById.set(p.id, p);
+    }
+
+    const normalized = rows.map((r) => ({
+      ...r,
+      attachments: Array.isArray(r.attachments) ? (r.attachments as RequestAttachment[]) : [],
+      submitter: submittersById.get(r.client_id) ?? null,
+    }));
 
     return { success: true, data: normalized };
   } catch (error) {
