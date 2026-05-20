@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
-import { Loader2, User, Bell, Save, Lock, Plug, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { Loader2, User, Bell, Save, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -243,53 +242,6 @@ export function SettingsContent({
       </header>
 
       <div className="space-y-6">
-        {/* Workspace & admin links — non-clients only */}
-        {userRole !== 'client' && (
-          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Link
-              href="/settings/integrations"
-              className="group flex items-start justify-between gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-card/70"
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/[0.08] dark:bg-primary/15">
-                  <Plug className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold tracking-tight text-foreground">
-                    Integrations
-                  </h2>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    GitHub, Vercel, Zoho — connect external services to projects.
-                  </p>
-                </div>
-              </div>
-              <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
-            </Link>
-
-            {userRole === 'admin' && (
-              <Link
-                href="/admin?tab=system"
-                className="group flex items-start justify-between gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-card/70"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/[0.08] dark:bg-primary/15">
-                    <ShieldCheck className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold tracking-tight text-foreground">
-                      Admin console
-                    </h2>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Workspace, team, finance, system health, API tokens.
-                    </p>
-                  </div>
-                </div>
-                <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
-              </Link>
-            )}
-          </section>
-        )}
-
         {/* Profile Settings */}
         <section className="animate-fade-in rounded-2xl border border-border bg-card p-6 fill-mode-both md:p-7">
           <div className="mb-5 flex items-center gap-3">
