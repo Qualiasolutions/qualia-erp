@@ -158,26 +158,27 @@ function RoadmapHeader({
   const doneCount = phases.filter((p) => resolvePhaseStatus(p) === 'done').length;
 
   return (
-    <header className="mb-8">
-      <div className="mb-2 flex items-center gap-2.5">
-        <span
-          className="size-2 rounded-[2px]"
-          style={{ background: clientAccent(clientHue) }}
-          aria-hidden
-        />
-        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          {project.client?.name ?? 'Internal'} / {project.status}
-        </span>
-      </div>
-      <div className="flex flex-wrap items-end justify-between gap-6">
-        <div>
-          <h1 className="text-[clamp(1.75rem,1.4rem+1.6vw,2.5rem)] font-semibold tracking-tight text-foreground">
-            {project.name}
-          </h1>
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 font-mono text-xs text-muted-foreground">
+    <header className="mb-5 rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span
+              className="size-2 shrink-0 rounded-[2px]"
+              style={{ background: clientAccent(clientHue) }}
+              aria-hidden
+            />
+            <h1 className="truncate text-base font-semibold tracking-tight text-foreground">
+              {project.name}
+            </h1>
+            <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+            <p className="truncate text-sm text-muted-foreground">
+              {project.client?.name ?? 'Internal'} / {project.status}
+            </p>
+          </div>
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] text-muted-foreground">
             {start && end && (
               <span className="tabular-nums">
-                {fmtDate(start)} → {fmtDate(end)}
+                {fmtDate(start)} {'->'} {fmtDate(end)}
               </span>
             )}
             {totalDays > 0 && <span className="tabular-nums">{totalDays} days</span>}
@@ -185,7 +186,7 @@ function RoadmapHeader({
             {project.project_type && <span>{project.project_type}</span>}
           </div>
         </div>
-        <dl className="flex gap-6">
+        <dl className="flex gap-4">
           <KPI label="Complete" value={`${doneCount}/${phases.length}`} />
           <KPI
             label="Progress"
@@ -202,7 +203,7 @@ function RoadmapHeader({
           />
         </dl>
       </div>
-      <div className="mt-5 h-1 overflow-hidden rounded-full bg-border/40">
+      <div className="mt-3 h-1 overflow-hidden rounded-full bg-border/40">
         <div
           className="h-full rounded-full transition-[width] duration-500"
           style={{
@@ -217,12 +218,12 @@ function RoadmapHeader({
 
 function KPI({ label, value, accentHue }: { label: string; value: string; accentHue?: number }) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0.5 text-right">
       <dt className="font-mono text-[9.5px] uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </dt>
       <dd
-        className="text-lg font-semibold tabular-nums tracking-tight"
+        className="text-base font-semibold tabular-nums tracking-tight"
         style={accentHue !== undefined ? { color: clientAccent(accentHue) } : undefined}
       >
         {value}

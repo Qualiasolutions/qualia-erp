@@ -43,11 +43,23 @@ export default async function PortalActivityPage() {
   }
 
   return (
-    <div className="animate-fade-in-up space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Activity</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Recent updates across your projects</p>
-      </div>
+    <div className="animate-fade-in-up space-y-4 px-4 pb-6 pt-16 md:px-6 md:pt-6">
+      <header className="rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="mr-auto min-w-[180px]">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold tracking-tight text-foreground">Activity</h1>
+              <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+              <p className="truncate text-sm text-muted-foreground">
+                Recent updates across accessible projects
+              </p>
+            </div>
+          </div>
+          <span className="rounded-md border border-border bg-muted/40 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            {projectIds.length} project{projectIds.length === 1 ? '' : 's'}
+          </span>
+        </div>
+      </header>
       <ActivityContent projectIds={projectIds} />
     </div>
   );
