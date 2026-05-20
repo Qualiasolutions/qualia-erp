@@ -6,8 +6,6 @@ import { Activity } from 'lucide-react';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { ActivityContent } from './activity-content';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = { title: 'Activity' };
 
@@ -26,16 +24,23 @@ export default async function PortalActivityPage() {
     if (!allowed) {
       return (
         <div className="flex h-full items-center justify-center p-4 md:p-6 lg:p-8">
-          <EmptyState
-            icon={Activity}
-            title="Activity is not enabled"
-            description="Your dashboard shows the tools available for this workspace."
-            action={
-              <Button asChild size="sm">
-                <Link href="/dashboard">Back to dashboard</Link>
-              </Button>
-            }
-          />
+          <div className="shadow-subtle flex animate-fade-in flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-card/70 p-10 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted/50 ring-1 ring-border/60">
+              <Activity className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-medium text-foreground">Activity is not enabled</h3>
+              <p className="text-sm text-muted-foreground">
+                Your dashboard shows the tools available for this workspace.
+              </p>
+            </div>
+            <Link
+              href="/dashboard"
+              className="mt-2 inline-flex h-9 items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              Back to dashboard
+            </Link>
+          </div>
         </div>
       );
     }
