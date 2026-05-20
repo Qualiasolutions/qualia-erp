@@ -4,9 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
+  Briefcase,
   Calendar,
   Check,
+  Clock3,
   ExternalLink,
+  GitBranch,
   Lock,
   MessageSquare,
   Plus,
@@ -26,6 +29,7 @@ import {
   useTodaysMeetings,
   useTeamTodaySnapshot,
   useEmployeeAssignments,
+  useMyAdminHomeProjects,
   useDailyBrief,
   invalidateDailyBrief,
   useNotifications,
@@ -47,18 +51,16 @@ import {
   AssignmentFocusCard,
   type AssignmentFocusItem,
 } from '@/components/portal/assignment-focus-card';
-import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
 import { hueFromId } from '@/lib/color-constants';
 import { EmployeeDailyTasks } from '@/components/portal/employee-daily-tasks';
 import { StatCard } from '@/components/ui/stat-card';
+import type { AdminHomeProject } from '@/app/actions/admin-home';
 
 export type QualiaHomeRole = 'admin' | 'employee';
 
 interface QualiaHomeViewProps {
   role: QualiaHomeRole;
   displayName: string;
-  /** Admin only — used for active-projects count. */
-  workspaces?: ClientWorkspace[];
   /** Employee only — drives useEmployeeAssignments for project list. */
   userId?: string;
 }
@@ -96,7 +98,7 @@ function initialsOf(name: string | null | undefined): string {
   );
 }
 
-export function QualiaHomeView({ role, displayName, workspaces, userId }: QualiaHomeViewProps) {
+export function QualiaHomeView({ role, displayName, userId }: QualiaHomeViewProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const raf = requestAnimationFrame(() => setMounted(true));
@@ -134,6 +136,9 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
   );
 
   const { members: teamMembers } = useTeamTodaySnapshot();
+  const { projects: ownerProjects, isLoading: ownerProjectsLoading } = useMyAdminHomeProjects(
+    role === 'admin' ? userId : undefined
+  );
 
   const { data: assignments } = useEmployeeAssignments(role === 'employee' ? userId : undefined);
 
@@ -142,20 +147,16 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
     return ((assignments ?? []) as AssignmentFocusItem[]).filter((a) => a.project);
   }, [assignments, role]);
 
-  // Active projects: admin -> flatten workspaces; employee -> assignments.
+  // Admin shows only Fawzi's current project lane, not every active workspace project.
   const activeProjects = useMemo(() => {
-    if (role === 'admin' && workspaces) {
-      return workspaces.flatMap((ws) =>
-        ws.projects
-          .filter((p) => p.status === 'Active')
-          .map((p) => ({
-            id: p.id,
-            name: p.name,
-            clientName: ws.name,
-            logoUrl: p.logo_url,
-            href: `/projects/${p.id}/roadmap`,
-          }))
-      );
+    if (role === 'admin') {
+      return ownerProjects.map((p) => ({
+        id: p.id,
+        name: p.name,
+        clientName: p.clientName ?? 'Internal',
+        logoUrl: p.logoUrl,
+        href: p.href,
+      }));
     }
     return employeeAssignments
       .filter((a) => a.project && a.project.status === 'Active')
@@ -166,10 +167,13 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
         logoUrl: a.project!.logo_url ?? null,
         href: `/projects/${a.project!.id}/roadmap`,
       }));
-  }, [role, workspaces, employeeAssignments]);
+  }, [role, ownerProjects, employeeAssignments]);
 
-  // Milestones due this week
-  const activeProjectIds = useMemo(() => activeProjects.map((p) => p.id), [activeProjects]);
+  // Employee milestone card still uses due-this-week. Admin uses project progress instead.
+  const activeProjectIds = useMemo(
+    () => (role === 'employee' ? activeProjects.map((p) => p.id) : []),
+    [activeProjects, role]
+  );
   const { milestones: milestonesDue } = useMilestonesDue(activeProjectIds);
   const milestonesDueCount = milestonesDue.length;
 
@@ -178,13 +182,19 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
 
   const firstName = displayName.split(' ')[0] || displayName;
   const weekSummary =
-    milestonesDueCount === 0
-      ? 'No milestones due this week'
-      : `${milestonesDueCount} milestone${milestonesDueCount === 1 ? '' : 's'} due this week`;
+    role === 'admin'
+      ? ownerProjects.length === 0
+        ? 'No project focus set'
+        : `${ownerProjects.length} project${ownerProjects.length === 1 ? '' : 's'} in your lane`
+      : milestonesDueCount === 0
+        ? 'No milestones due this week'
+        : `${milestonesDueCount} milestone${milestonesDueCount === 1 ? '' : 's'} due this week`;
   const activeSummary =
-    activeProjects.length > 0
-      ? `${activeProjects.length} active ${activeProjects.length === 1 ? 'project' : 'projects'}`
-      : 'No active projects';
+    role === 'admin'
+      ? `${teamMembers.filter((member) => member.latestProgress).length} teammate progress signals`
+      : activeProjects.length > 0
+        ? `${activeProjects.length} active ${activeProjects.length === 1 ? 'project' : 'projects'}`
+        : 'No active projects';
 
   return (
     <div className="flex h-full flex-col overflow-hidden p-4 md:p-6 lg:p-8">
@@ -217,8 +227,8 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
       {/* Stats Grid — admin only (employees see info in subtitle + ClientPulse) */}
       {role === 'admin' && (
         <AdminSignalStrip
-          milestonesDueCount={milestonesDueCount}
-          activeProjectsCount={activeProjects.length}
+          ownerProjectCount={ownerProjects.length}
+          teamProgressCount={teamMembers.filter((member) => member.latestProgress).length}
           openRequestsCount={openRequestsCount}
         />
       )}
@@ -226,9 +236,9 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
       {role === 'admin' ? (
         <AdminMainGrid
           teamMembers={teamMembers}
-          activeProjects={activeProjects}
+          ownerProjects={ownerProjects}
+          ownerProjectsLoading={ownerProjectsLoading}
           meetings={meetings}
-          milestonesDue={milestonesDue}
         />
       ) : (
         <EmployeeMainGrid
@@ -341,12 +351,12 @@ function MilestonesCard({
 /* --------- Admin layout --------- */
 
 function AdminSignalStrip({
-  milestonesDueCount,
-  activeProjectsCount,
+  ownerProjectCount,
+  teamProgressCount,
   openRequestsCount,
 }: {
-  milestonesDueCount: number;
-  activeProjectsCount: number;
+  ownerProjectCount: number;
+  teamProgressCount: number;
   openRequestsCount: number;
 }) {
   return (
@@ -354,17 +364,17 @@ function AdminSignalStrip({
       <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <StatCard
           flat
-          label="Milestones due"
-          value={milestonesDueCount}
-          helperText="this week"
-          tone={milestonesDueCount > 0 ? 'warning' : 'neutral'}
-          adornment={<Target className="size-4" aria-hidden />}
+          label="My projects"
+          value={ownerProjectCount === 0 ? 'None' : ownerProjectCount}
+          helperText={ownerProjectCount === 1 ? 'project in your lane' : 'projects in your lane'}
+          tone={ownerProjectCount === 0 ? 'warning' : 'neutral'}
+          adornment={<Briefcase className="size-4" aria-hidden />}
         />
         <StatCard
           flat
-          label="Active work"
-          value={activeProjectsCount}
-          helperText={activeProjectsCount === 1 ? 'project in flight' : 'projects in flight'}
+          label="Team progress"
+          value={teamProgressCount}
+          helperText={teamProgressCount === 1 ? 'person has a signal' : 'people have signals'}
           adornment={<Users className="size-4" aria-hidden />}
         />
         <StatCard
@@ -382,45 +392,244 @@ function AdminSignalStrip({
 
 function AdminMainGrid({
   teamMembers,
-  activeProjects,
+  ownerProjects,
+  ownerProjectsLoading,
   meetings,
-  milestonesDue,
 }: {
   teamMembers: ReturnType<typeof useTeamTodaySnapshot>['members'];
-  activeProjects: Array<{
-    id: string;
-    name: string;
-    clientName: string;
-    logoUrl: string | null;
-    href: string;
-  }>;
+  ownerProjects: AdminHomeProject[];
+  ownerProjectsLoading: boolean;
   meetings: Array<{ id: string; title: string; start_time: string; end_time: string }>;
-  milestonesDue: MilestoneDue[];
 }) {
   return (
     <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto lg:grid-cols-3">
-      <div className="stagger-2 animate-fade-in lg:col-span-2">
+      <div className="stagger-2 flex min-h-0 animate-fade-in flex-col gap-6 lg:col-span-2">
+        <OwnerProjectsCard projects={ownerProjects} isLoading={ownerProjectsLoading} />
         <MemoryStackCard />
       </div>
 
       <div className="stagger-3 animate-fade-in space-y-6">
-        <MilestonesCard
-          milestones={milestonesDue}
-          title="Milestones This Week"
-          emptyText="No milestones due this week."
-        />
-
+        <TeamProgressCard members={teamMembers} />
         <ClientPulseCard />
-
         <TodayMeetingsCard meetings={meetings} isGated={false} />
-
-        <WhosDoingWhatCard members={teamMembers} />
-
-        <div className="text-xs text-muted-foreground">
-          {activeProjects.length} active {activeProjects.length === 1 ? 'project' : 'projects'} in
-          flight.
-        </div>
       </div>
+    </div>
+  );
+}
+
+function relativeWhen(value: string | null | undefined): string {
+  if (!value) return 'No recent signal';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'No recent signal';
+  return formatDistanceToNow(date, { addSuffix: true });
+}
+
+function OwnerProjectsCard({
+  projects,
+  isLoading,
+}: {
+  projects: AdminHomeProject[];
+  isLoading: boolean;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border px-5 py-4">
+        <div>
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            My project lane
+          </p>
+          <h2 className="mt-0.5 text-base font-semibold tracking-tight">Current work</h2>
+        </div>
+        <Briefcase className="h-4 w-4 text-muted-foreground" aria-hidden />
+      </div>
+
+      {isLoading && projects.length === 0 ? (
+        <div className="grid gap-3 p-5 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="h-28 animate-pulse rounded-lg bg-muted/60" />
+          ))}
+        </div>
+      ) : projects.length === 0 ? (
+        <EmptyState
+          icon={Briefcase}
+          title="No projects in your lane yet"
+          compact
+          minimal
+          className="px-5 py-10"
+        />
+      ) : (
+        <div className="grid gap-3 p-5 md:grid-cols-2">
+          {projects.map((project) => (
+            <Link
+              key={project.id}
+              href={project.href}
+              className="group flex min-h-[150px] flex-col rounded-lg border border-border bg-background/60 p-4 transition-colors hover:border-primary/40 hover:bg-muted/25"
+            >
+              <div className="flex min-w-0 items-start gap-3">
+                <Avatar className="h-10 w-10 rounded-lg">
+                  {project.logoUrl ? (
+                    <AvatarImage src={project.logoUrl} alt={project.name} />
+                  ) : null}
+                  <AvatarFallback className={cn('rounded-lg', avatarTone(project.id))}>
+                    {initialsOf(project.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{project.name}</p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {project.clientName ?? 'Internal'}
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                {project.phaseLabel ? (
+                  <Badge variant="secondary" className="gap-1 px-2 py-0.5 text-[10px]">
+                    <GitBranch className="h-3 w-3" />
+                    {project.phaseLabel}
+                  </Badge>
+                ) : null}
+                {project.sourceLabels.slice(0, 2).map((label) => (
+                  <Badge key={label} variant="outline" className="px-2 py-0.5 text-[10px]">
+                    {label}
+                  </Badge>
+                ))}
+              </div>
+
+              <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                {project.phaseName ?? project.note ?? project.status ?? 'No current phase signal'}
+              </p>
+
+              <div className="mt-auto flex items-center gap-1.5 pt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                <Clock3 className="h-3 w-3" />
+                {relativeWhen(project.lastTouchedAt)}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TeamProgressCard({
+  members,
+}: {
+  members: ReturnType<typeof useTeamTodaySnapshot>['members'];
+}) {
+  const sortedMembers = members.slice().sort((a, b) => {
+    if (a.isOnline !== b.isOnline) return a.isOnline ? -1 : 1;
+    return (
+      new Date(b.latestProgress?.updatedAt ?? 0).getTime() -
+      new Date(a.latestProgress?.updatedAt ?? 0).getTime()
+    );
+  });
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Latest employee progress
+          </p>
+          <h2 className="mt-0.5 text-base font-semibold">Where the team reached</h2>
+        </div>
+        <Users className="h-4 w-4 text-muted-foreground" aria-hidden />
+      </div>
+
+      {sortedMembers.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="No team activity yet"
+          compact
+          minimal
+          className="px-5 py-8"
+        />
+      ) : (
+        <div className="divide-y divide-border">
+          {sortedMembers.map((member) => {
+            const progress = member.latestProgress;
+            const body = (
+              <div className="flex items-start gap-3 px-5 py-3.5 transition-colors hover:bg-muted/30">
+                <div className="relative">
+                  <Avatar className="h-9 w-9">
+                    {member.avatarUrl ? (
+                      <AvatarImage src={member.avatarUrl} alt={member.fullName ?? ''} />
+                    ) : null}
+                    <AvatarFallback className={avatarTone(member.profileId)}>
+                      {initialsOf(member.fullName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {member.isOnline && (
+                    <span
+                      className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-card"
+                      aria-label="online"
+                    />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="truncate text-sm font-medium">
+                      {member.fullName ?? 'Unnamed'}
+                    </span>
+                    {progress?.phaseLabel ? (
+                      <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-[10px]">
+                        <GitBranch className="h-3 w-3" />
+                        {progress.phaseLabel}
+                      </Badge>
+                    ) : null}
+                  </div>
+
+                  {progress ? (
+                    <>
+                      <p className="mt-1 truncate text-xs font-medium">
+                        {progress.projectName ?? 'Project'}
+                      </p>
+                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                        {progress.phaseName ??
+                          progress.note ??
+                          progress.status ??
+                          'Progress signal'}
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <span className="font-mono uppercase tracking-[0.08em]">
+                          {progress.status ?? 'Updated'}
+                        </span>
+                        <span aria-hidden>·</span>
+                        <span>{relativeWhen(progress.updatedAt)}</span>
+                        {member.openTasksCount > 0 ? (
+                          <>
+                            <span aria-hidden>·</span>
+                            <span>
+                              {member.openTasksCount} open{' '}
+                              {member.openTasksCount === 1 ? 'task' : 'tasks'}
+                            </span>
+                          </>
+                        ) : null}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="mt-1 text-xs text-muted-foreground">No recent project signal.</p>
+                  )}
+                </div>
+              </div>
+            );
+
+            return progress?.projectId ? (
+              <Link key={member.profileId} href={`/projects/${progress.projectId}/roadmap`}>
+                {body}
+              </Link>
+            ) : (
+              <div key={member.profileId}>{body}</div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -639,84 +848,6 @@ function ClientPulseCard({
             );
           })}
         </ul>
-      )}
-    </div>
-  );
-}
-
-/* --------- Who's doing what (sidebar team snapshot) --------- */
-
-function WhosDoingWhatCard({
-  members,
-}: {
-  members: ReturnType<typeof useTeamTodaySnapshot>['members'];
-}) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Team on Deck
-          </p>
-          <h2 className="mt-0.5 text-base font-semibold">Who&apos;s doing what</h2>
-        </div>
-      </div>
-
-      {members.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="No team activity yet"
-          compact
-          minimal
-          className="px-5 py-8"
-        />
-      ) : (
-        <div className="divide-y divide-border">
-          {members.map((member) => (
-            <div key={member.profileId} className="px-5 py-3.5 transition-colors hover:bg-muted/30">
-              <div className="flex items-start gap-3">
-                <div className="relative">
-                  <Avatar className="h-9 w-9">
-                    {member.avatarUrl ? (
-                      <AvatarImage src={member.avatarUrl} alt={member.fullName ?? ''} />
-                    ) : null}
-                    <AvatarFallback className={avatarTone(member.profileId)}>
-                      {initialsOf(member.fullName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {member.isOnline && (
-                    <span
-                      className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-card"
-                      aria-label="online"
-                    />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium">
-                      {member.fullName ?? 'Unnamed'}
-                    </span>
-                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-                      {member.openTasksCount}
-                    </Badge>
-                  </div>
-                  {member.topTasks.length > 0 ? (
-                    <div className="mt-1.5 space-y-1">
-                      {member.topTasks.slice(0, 2).map((task) => (
-                        <div key={task.id} className="flex items-center gap-1.5 text-xs">
-                          <span className="text-primary">→</span>
-                          <span className="truncate text-muted-foreground">{task.title}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-1 text-xs text-muted-foreground">Nothing open.</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
       )}
     </div>
   );
