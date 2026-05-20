@@ -24,12 +24,15 @@ export function EmployeeDailyTasks({ userId, maxItems = 5, className }: Employee
 
   return (
     <section
-      className={cn('rounded-2xl border border-border bg-card p-5 shadow-elevation-1', className)}
+      className={cn(
+        'rounded-xl border border-border bg-card p-5 shadow-[0_1px_0_hsl(var(--border)/0.45)]',
+        className
+      )}
     >
       <header className="mb-4 flex items-center gap-2">
         <ListChecks className="h-4 w-4 text-muted-foreground" />
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Today&apos;s Tasks
+          Today&apos;s tasks
         </h3>
       </header>
       {isLoading && active.length === 0 ? (

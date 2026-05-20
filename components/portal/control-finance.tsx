@@ -101,7 +101,7 @@ export function ControlFinance({ data }: { data: FinancePayload | undefined }) {
       </div>
 
       {/* KPI strip — flat divider-driven, parity with billing summary */}
-      <div className="grid grid-cols-2 divide-x divide-border/70 overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-4">
+      <div className="grid grid-cols-2 divide-x divide-border/70 overflow-hidden rounded-xl border border-border bg-card lg:grid-cols-4">
         {data.kpis.map((k) => (
           <StatCard
             key={k.label}

@@ -49,8 +49,8 @@ export function ProjectSubmitCarousel({
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-border bg-card shadow-elevation-2',
-        'p-6',
+        'relative overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_0_hsl(var(--border)/0.45)]',
+        'p-5 md:p-6',
         className
       )}
       onMouseEnter={() => setPaused(true)}
@@ -74,12 +74,12 @@ export function ProjectSubmitCarousel({
             ) : (
               <div className="h-2 w-12 rounded-full bg-primary" />
             )}
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Submit work
             </span>
           </div>
           <div>
-            <h3 className="text-2xl font-semibold tracking-tight">{current.name}</h3>
+            <h3 className="text-lg font-semibold tracking-tight text-foreground">{current.name}</h3>
             {current.description ? (
               <p className="mt-1 text-sm text-muted-foreground">{current.description}</p>
             ) : null}

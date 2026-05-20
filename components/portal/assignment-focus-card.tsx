@@ -88,7 +88,7 @@ export function AssignmentFocusCard({
   return (
     <section
       className={cn(
-        'rounded-2xl border border-primary/20 bg-primary/[0.035] p-4 shadow-sm md:p-5',
+        'rounded-xl border border-primary/15 bg-primary/[0.035] p-4 shadow-[0_1px_0_hsl(var(--border)/0.45)] md:p-5',
         compact ? 'mb-4' : 'mb-5',
         isGated && 'opacity-70',
         className
