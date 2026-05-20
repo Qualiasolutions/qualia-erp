@@ -148,7 +148,9 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
       .eq('id', user.id)
       .single();
 
-    let query = supabase
+    const readClient = !isAdmin && profile?.role === 'employee' ? createAdminClient() : supabase;
+
+    let query = readClient
       .from('client_feature_requests')
       .select(
         `
@@ -190,7 +192,7 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
       { id: string; full_name: string | null; email: string | null; avatar_url: string | null }
     >();
     if (clientIds.length > 0) {
-      const { data: profiles } = await supabase
+      const { data: profiles } = await readClient
         .from('profiles')
         .select('id, full_name, email, avatar_url')
         .in('id', clientIds);
@@ -276,7 +278,9 @@ export async function getProjectBriefs(projectId: string): Promise<ActionResult>
       if (!staff) return { success: false, error: 'Access denied' };
     }
 
-    const { data, error } = await supabase
+    const readClient = createAdminClient();
+
+    const { data, error } = await readClient
       .from('client_feature_requests')
       .select(
         `
@@ -293,22 +297,25 @@ export async function getProjectBriefs(projectId: string): Promise<ActionResult>
       `
       )
       .eq('project_id', projectId)
-      .like('title', 'Project brief —%')
       .order('created_at', { ascending: false });
 
     if (error) return { success: false, error: error.message || 'Failed to load briefs' };
 
+    const briefRows = (data ?? []).filter(
+      (row) => row.title.startsWith('Project brief —') || row.brief_data
+    );
+
     // The client_id FK on client_feature_requests targets auth.users, not
     // profiles, so PostgREST can't embed the submitter. Fetch profiles in a
     // second query keyed by the distinct client_ids.
-    const rows = data ?? [];
+    const rows = briefRows;
     const submitterIds = Array.from(new Set(rows.map((r) => r.client_id).filter(Boolean)));
     const submittersById = new Map<
       string,
       { id: string; full_name: string | null; avatar_url: string | null }
     >();
     if (submitterIds.length > 0) {
-      const { data: profiles } = await supabase
+      const { data: profiles } = await readClient
         .from('profiles')
         .select('id, full_name, avatar_url')
         .in('id', submitterIds);

@@ -217,8 +217,8 @@ export default async function Page() {
 NEXT_PUBLIC_SUPABASE_URL=your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-anon-key
 
-# Optional - only if using service role (NEVER client-side)
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+# Optional - server-only service role key when needed
+SUPABASE_SERVER_SECRET=your-server-only-key
 
 # AI Integration
 OPENAI_API_KEY=sk-...

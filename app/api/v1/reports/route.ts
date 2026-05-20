@@ -118,6 +118,13 @@ type ProjectCandidate = {
   metadata: unknown;
 };
 
+type ProjectIntegrationCandidate = {
+  project_id: string;
+  external_url: string | null;
+  external_id: string | null;
+  metadata: unknown;
+};
+
 function normalizeToken(value: string | null | undefined): string {
   return (value ?? '')
     .toLowerCase()
@@ -153,6 +160,10 @@ function projectAliases(metadata: unknown): string[] {
   const aliases = (metadata as { framework_aliases?: unknown }).framework_aliases;
   if (!Array.isArray(aliases)) return [];
   return aliases.filter((alias): alias is string => typeof alias === 'string');
+}
+
+function repoCandidates(...values: Array<string | null | undefined>): string[] {
+  return values.filter((value): value is string => Boolean(normalizeRepo(value)));
 }
 
 function projectNamesOverlap(reportProject: string, sessionProject: string): boolean {
@@ -196,14 +207,35 @@ async function resolveErpProject(
     );
   }
 
-  const { data, error } = await supabase
-    .from('projects')
-    .select('id, name, client_id, github_repo_url, is_pre_production, metadata')
-    .limit(1000);
+  const [projectsResult, integrationsResult] = await Promise.all([
+    supabase
+      .from('projects')
+      .select('id, name, client_id, github_repo_url, is_pre_production, metadata')
+      .limit(1000),
+    supabase
+      .from('project_integrations')
+      .select('project_id, external_url, external_id, metadata')
+      .eq('service_type', 'github')
+      .limit(2000),
+  ]);
 
-  if (error || !data) {
-    console.warn('[api/v1/reports] Could not resolve ERP project:', error?.message);
+  if (projectsResult.error || !projectsResult.data) {
+    console.warn('[api/v1/reports] Could not resolve ERP project:', projectsResult.error?.message);
     return null;
+  }
+
+  if (integrationsResult.error) {
+    console.warn(
+      '[api/v1/reports] Could not read project integrations:',
+      integrationsResult.error.message
+    );
+  }
+
+  const integrationsByProject = new Map<string, ProjectIntegrationCandidate[]>();
+  for (const integration of (integrationsResult.data ?? []) as ProjectIntegrationCandidate[]) {
+    const current = integrationsByProject.get(integration.project_id) ?? [];
+    current.push(integration);
+    integrationsByProject.set(integration.project_id, current);
   }
 
   const reportProject = normalizeProjectName(body.project);
@@ -212,16 +244,32 @@ async function resolveErpProject(
   const incomingRepoSlug =
     repoSlug(body.git_remote) || normalizeProjectName(body.project_id) || reportProject;
 
-  const scored = (data as ProjectCandidate[])
+  const scored = (projectsResult.data as ProjectCandidate[])
     .map((project) => {
       const projectName = normalizeProjectName(project.name);
-      const projectRepo = normalizeRepo(project.github_repo_url);
-      const projectRepoSlug = repoSlug(project.github_repo_url);
-      const aliases = projectAliases(project.metadata).map(normalizeProjectName);
+      const integrations = integrationsByProject.get(project.id) ?? [];
+      const repos = repoCandidates(
+        project.github_repo_url,
+        ...integrations.flatMap((integration) => [
+          integration.external_url,
+          integration.external_id,
+        ])
+      );
+      const aliases = [
+        ...projectAliases(project.metadata),
+        ...integrations.flatMap((integration) => projectAliases(integration.metadata)),
+      ].map(normalizeProjectName);
       let score = 0;
 
-      if (incomingRemote && projectRepo && incomingRemote === projectRepo) score = 130;
-      else if (incomingRepoSlug && projectRepoSlug && incomingRepoSlug === projectRepoSlug)
+      if (incomingRemote && repos.some((repo) => incomingRemote === normalizeRepo(repo)))
+        score = 130;
+      else if (
+        incomingRepoSlug &&
+        repos.some((repo) => {
+          const candidateSlug = repoSlug(repo);
+          return candidateSlug && incomingRepoSlug === candidateSlug;
+        })
+      )
         score = 110;
       else if (
         (reportProject && aliases.includes(reportProject)) ||
