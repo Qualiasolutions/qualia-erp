@@ -132,7 +132,7 @@ function MonitorCard({
   return (
     <div
       className={cn(
-        'group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card p-5 transition-all duration-200 ease-premium',
+        'group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card p-4 transition-all duration-200 ease-premium sm:p-5',
         'hover:border-primary/20 hover:shadow-md',
         monitor.status === 8 && 'border-amber-500/30',
         monitor.status === 9 && 'border-red-500/40',
@@ -150,8 +150,8 @@ function MonitorCard({
         <div className="mb-4 flex items-start justify-between">
           <div
             className={cn(
-              'flex size-14 items-center justify-center overflow-hidden rounded-xl border-2 transition-all duration-200 ease-premium',
-              'bg-gradient-to-br from-muted/40 to-muted/10',
+              'flex size-11 items-center justify-center overflow-hidden rounded-lg border transition-all duration-200 ease-premium sm:size-12',
+              'bg-muted/30',
               monitor.status === 2 && 'border-border group-hover:border-emerald-500/20',
               monitor.status === 8 && 'border-amber-500/20',
               monitor.status === 9 && 'border-red-500/20',
@@ -162,9 +162,9 @@ function MonitorCard({
               <Image
                 src={project.logoUrl}
                 alt={project.name}
-                width={32}
-                height={32}
-                className="size-8 rounded-lg object-cover"
+                width={28}
+                height={28}
+                className="size-7 rounded-md object-cover"
                 unoptimized
                 onError={() => setImageFailed(true)}
               />
@@ -172,9 +172,9 @@ function MonitorCard({
               <Image
                 src={faviconUrl}
                 alt=""
-                width={32}
-                height={32}
-                className="size-8"
+                width={28}
+                height={28}
+                className="size-7"
                 unoptimized
                 onError={() => setImageFailed(true)}
               />
@@ -366,7 +366,7 @@ function MonitorSection({
         <div className="flex items-center gap-3">
           <div
             className={cn(
-              'flex size-8 items-center justify-center rounded-xl bg-muted/30',
+              'flex size-8 items-center justify-center rounded-lg bg-muted/30',
               config.accent
             )}
           >
@@ -471,19 +471,21 @@ export function StatusDashboard({
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-6 p-4 sm:space-y-10 sm:p-6 lg:p-8">
           {/* Header — desktop only */}
-          <div className="hidden items-end justify-between md:flex">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
-                  <Activity className="size-5 text-primary" />
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">System Status</h1>
+          <div className="hidden items-center justify-between border-b border-border/70 pb-4 md:flex">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                <Activity className="size-4 text-primary" />
               </div>
-              <p className="ml-[52px] text-sm text-muted-foreground">
-                Real-time monitoring across {monitors.length} services
-              </p>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Live monitoring
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {monitors.length} service{monitors.length !== 1 ? 's' : ''} tracked
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/40">
+            <div className="flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
               <span className="relative flex size-1.5">
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-30" />
                 <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
@@ -495,7 +497,7 @@ export function StatusDashboard({
           {/* Stats bar */}
           <div
             className={cn(
-              'relative overflow-hidden rounded-xl border bg-card p-3 sm:p-6',
+              'overflow-hidden rounded-xl border bg-card',
               overall.allUp
                 ? 'border-emerald-500/15'
                 : overall.downCount > 0
@@ -503,24 +505,12 @@ export function StatusDashboard({
                   : 'border-amber-500/20'
             )}
           >
-            {/* Gradient bg */}
-            <div
-              className={cn(
-                'absolute inset-0',
-                overall.allUp
-                  ? 'bg-gradient-to-r from-emerald-500/[0.04] via-transparent to-emerald-500/[0.02]'
-                  : overall.downCount > 0
-                    ? 'bg-gradient-to-r from-red-500/[0.05] via-transparent to-red-500/[0.02]'
-                    : 'bg-gradient-to-r from-amber-500/[0.04] via-transparent to-amber-500/[0.02]'
-              )}
-            />
-
-            <div className="relative grid gap-3 sm:grid-cols-3 md:grid-cols-5 md:gap-0 md:divide-x md:divide-border/20">
+            <div className="grid grid-cols-2 divide-x divide-y divide-border/70 md:grid-cols-5 md:divide-y-0">
               {/* Status */}
-              <div className="flex min-w-0 items-center gap-3 rounded-lg bg-background/45 p-3 sm:col-span-3 md:col-span-2 md:gap-4 md:rounded-none md:bg-transparent md:p-6">
+              <div className="col-span-2 flex min-w-0 items-center gap-3 px-4 py-4 sm:px-5 md:gap-4 md:px-6">
                 <div
                   className={cn(
-                    'flex size-11 shrink-0 items-center justify-center rounded-xl sm:size-12',
+                    'flex size-10 shrink-0 items-center justify-center rounded-lg sm:size-11',
                     overall.allUp && 'bg-emerald-500/10',
                     overall.downCount > 0 && 'bg-red-500/10',
                     overall.degradedCount > 0 && overall.downCount === 0 && 'bg-amber-500/10'
@@ -561,7 +551,7 @@ export function StatusDashboard({
               ].map((stat) => (
                 <div
                   key={stat.label}
-                  className="flex min-w-0 flex-col justify-center rounded-lg bg-background/45 px-3 py-3 sm:px-4 md:rounded-none md:bg-transparent md:px-6 md:py-5"
+                  className="flex min-w-0 flex-col justify-center px-4 py-4 sm:px-5 md:px-6 md:py-5"
                 >
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">
                     {stat.label}
