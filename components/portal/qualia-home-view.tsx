@@ -400,7 +400,7 @@ function AdminMainGrid({
   return (
     <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto lg:grid-cols-3">
       <div className="stagger-2 animate-fade-in lg:col-span-2">
-        <DailyBriefCard />
+        <MemoryStackCard />
       </div>
 
       <div className="stagger-3 animate-fade-in space-y-6">
@@ -722,7 +722,7 @@ function WhosDoingWhatCard({
   );
 }
 
-/* --------- Daily Brief --------- */
+/* --------- Memory Stack --------- */
 
 const TAG_TONES: Record<string, string> = {
   OWNER: 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400',
@@ -755,6 +755,7 @@ function BriefRow({
   onToggle: () => void;
 }) {
   const done = item.dismissed_at !== null;
+  const body = item.lead ? item.body : item.body.trimStart();
   return (
     <div
       className={cn(
@@ -766,7 +767,7 @@ function BriefRow({
         type="button"
         onClick={onToggle}
         aria-pressed={done}
-        aria-label={done ? 'Mark as not done' : 'Mark as done'}
+        aria-label={done ? 'Restore memory' : 'Mark as resolved'}
         disabled={pending}
         className={cn(
           'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border transition-colors',
@@ -789,13 +790,13 @@ function BriefRow({
         )}
       >
         {item.lead ? <span className="font-semibold">{item.lead}</span> : null}
-        <span>{item.body}</span>
+        <span>{body}</span>
       </p>
     </div>
   );
 }
 
-function DailyBriefCard() {
+function MemoryStackCard() {
   const today = new Date();
   const dateLabel = today.toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -838,9 +839,9 @@ function DailyBriefCard() {
     try {
       const result = await regenerateMyDailyBrief();
       if (!result.success) {
-        toast.error(result.error || 'Failed to regenerate brief');
+        toast.error(result.error || 'Failed to refresh memory stack');
       } else {
-        toast.success('Brief refreshed');
+        toast.success('Memory stack synced');
         invalidateDailyBrief();
       }
     } finally {
@@ -880,15 +881,17 @@ function DailyBriefCard() {
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Qualia Solutions
           </p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight">Daily Brief</h2>
-          <p className="mt-1 text-xs text-muted-foreground">{dateLabel} · auto-generated</p>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight">Memory Stack</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {dateLabel} · deadlines, calls, gaps, money, and captured notes
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span
             className="rounded-md border border-border bg-muted/40 px-2 py-1 font-mono text-[10px] font-semibold uppercase tabular-nums tracking-[0.12em] text-muted-foreground"
             aria-live="polite"
           >
-            {dismissedCount}/{totalToday} done
+            {dismissedCount}/{totalToday} resolved
           </span>
           <Button
             type="button"
@@ -896,10 +899,10 @@ function DailyBriefCard() {
             size="sm"
             onClick={() => setShowAdd((v) => !v)}
             className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
-            aria-label="Add manual item"
+            aria-label="Capture memory"
           >
             <Plus className="h-3 w-3" aria-hidden />
-            Add
+            Capture
           </Button>
           <Button
             type="button"
@@ -908,10 +911,10 @@ function DailyBriefCard() {
             onClick={handleRegenerate}
             disabled={isRegenerating}
             className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
-            aria-label="Regenerate brief"
+            aria-label="Refresh memory stack"
           >
             <RefreshCw className={cn('h-3 w-3', isRegenerating && 'animate-spin')} aria-hidden />
-            Refresh
+            Sync
           </Button>
         </div>
       </div>
@@ -925,14 +928,14 @@ function DailyBriefCard() {
             type="text"
             value={addLead}
             onChange={(e) => setAddLead(e.target.value)}
-            placeholder="Lead (optional, e.g. 'Chase Futini:')"
+            placeholder="Label (optional, e.g. 'Client follow-up:')"
             className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           />
           <input
             type="text"
             value={addBody}
             onChange={(e) => setAddBody(e.target.value)}
-            placeholder="What needs doing?"
+            placeholder="What should stay in your head?"
             className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             autoFocus
           />
@@ -950,7 +953,7 @@ function DailyBriefCard() {
               Cancel
             </Button>
             <Button type="submit" size="sm" disabled={!addBody.trim()}>
-              Add
+              Capture
             </Button>
           </div>
         </form>
@@ -958,14 +961,16 @@ function DailyBriefCard() {
 
       <div className="pb-2">
         {isLoading && sections.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-muted-foreground">Loading brief…</div>
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            Loading memory stack…
+          </div>
         ) : sections.length === 0 ? (
           <div className="px-5 py-10 text-center">
-            <p className="text-sm font-medium text-foreground">All clear.</p>
+            <p className="text-sm font-medium text-foreground">Nothing urgent in memory.</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {dismissedCount > 0
-                ? `${dismissedCount} ticked today.`
-                : 'Press Refresh to regenerate, or add an item.'}
+                ? `${dismissedCount} resolved today.`
+                : 'Sync live signals, or capture something manually.'}
             </p>
           </div>
         ) : (
@@ -1004,7 +1009,7 @@ function DailyBriefCard() {
             onClick={() => setShowHistory((v) => !v)}
             className="flex w-full items-center justify-between gap-2 px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-primary"
           >
-            <span>Today&apos;s history · {dismissedCount} done</span>
+            <span>Resolved recently · {dismissedCount}</span>
             <RotateCcw
               className={cn('h-3 w-3 transition-transform', showHistory && 'rotate-180')}
               aria-hidden
@@ -1028,9 +1033,7 @@ function DismissedToday() {
       const { getDailyBriefHistory } = await import('@/app/actions/daily-brief');
       const data = await getDailyBriefHistory(1);
       if (!cancelled) {
-        // Only show items dismissed today
-        const today = brief?.forDate ?? new Date().toISOString().slice(0, 10);
-        setItems(data.filter((i) => i.for_date === today));
+        setItems(data);
       }
     })();
     return () => {
