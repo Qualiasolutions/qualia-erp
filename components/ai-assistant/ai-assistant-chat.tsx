@@ -148,29 +148,6 @@ export function AIAssistantChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [displayMessages]);
-
-  // Auto-speak assistant responses when TTS is enabled
-  useEffect(() => {
-    if (!ttsEnabled || isStreaming) return;
-
-    const lastMessage = displayMessages[displayMessages.length - 1];
-    if (
-      !lastMessage ||
-      lastMessage.role !== 'assistant' ||
-      lastMessage.id === lastSpokenIdRef.current ||
-      !lastMessage.content.trim()
-    )
-      return;
-
-    lastSpokenIdRef.current = lastMessage.id;
-    speakText(lastMessage.content);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayMessages, isStreaming, ttsEnabled]);
-
   const speakText = useCallback(async (text: string) => {
     // Stop any existing audio
     if (audioRef.current) {
@@ -217,6 +194,28 @@ export function AIAssistantChat() {
       setIsSpeaking(false);
     }
   }, []);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [displayMessages]);
+
+  // Auto-speak assistant responses when TTS is enabled
+  useEffect(() => {
+    if (!ttsEnabled || isStreaming) return;
+
+    const lastMessage = displayMessages[displayMessages.length - 1];
+    if (
+      !lastMessage ||
+      lastMessage.role !== 'assistant' ||
+      lastMessage.id === lastSpokenIdRef.current ||
+      !lastMessage.content.trim()
+    )
+      return;
+
+    lastSpokenIdRef.current = lastMessage.id;
+    speakText(lastMessage.content);
+  }, [displayMessages, isStreaming, speakText, ttsEnabled]);
 
   const toggleTts = useCallback(() => {
     setTtsEnabled((prev) => {

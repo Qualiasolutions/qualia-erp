@@ -40,6 +40,8 @@ export async function getRecentActivities(
   limit: number = 20,
   _workspaceId?: string | null
 ): Promise<Activity[]> {
+  void _workspaceId;
+
   const parsed = GetRecentActivitiesSchema.safeParse({ limit });
   if (!parsed.success) return [];
   const validatedLimit = parsed.data.limit;

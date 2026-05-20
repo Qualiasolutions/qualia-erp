@@ -517,10 +517,11 @@ function TooltipCard({
         'shadow-[0_32px_80px_-12px_hsl(var(--primary)/0.22),0_0_0_1px_hsl(var(--primary)/0.04)]',
         'dark:border-primary/[0.22] dark:bg-background/85',
         visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-1.5 opacity-0',
-        !reducedMotion && 'duration-[260ms] transition-[opacity,transform]'
+        !reducedMotion && 'transition-[opacity,transform]'
       )}
       style={{
         ...tooltipStyle,
+        transitionDuration: reducedMotion ? '0ms' : '260ms',
         transitionTimingFunction: easing,
       }}
     >
@@ -696,7 +697,7 @@ export function PortalWelcomeTour({
   const [mounted, setMounted] = useState(false);
 
   const welcomeHeadingId = useId();
-  const reduced = useRef(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   const activeSteps = enabledApps
     ? TOUR_STEPS.filter((s) => enabledApps.includes(s.appKey))
@@ -707,7 +708,7 @@ export function PortalWelcomeTour({
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-once hydration flag; SSR-safe via useEffect
     setMounted(true);
-    reduced.current = prefersReducedMotion();
+    setReducedMotion(prefersReducedMotion());
   }, []);
 
   useEffect(() => {
@@ -743,22 +744,22 @@ export function PortalWelcomeTour({
     const el = getElement(step);
     if (!el) return;
 
-    el.scrollIntoView({ behavior: reduced.current ? 'auto' : 'smooth', block: 'center' });
+    el.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
 
     const updateRect = () => {
       const rect = el.getBoundingClientRect();
       setSpotRect(rectToSpotlight(rect));
     };
 
-    const scrollDelay = reduced.current ? 0 : 100;
+    const scrollDelay = reducedMotion ? 0 : 100;
     const timer = setTimeout(() => {
       updateRect();
-      const tooltipDelay = reduced.current ? 0 : 220;
+      const tooltipDelay = reducedMotion ? 0 : 220;
       setTimeout(() => setTooltipVisible(true), tooltipDelay);
     }, scrollDelay);
 
     return () => clearTimeout(timer);
-  }, [phase, currentIndex, resolvedSteps]);
+  }, [phase, currentIndex, reducedMotion, resolvedSteps]);
 
   useEffect(() => {
     if (phase !== 'tour' || resolvedSteps.length === 0) return;
@@ -787,6 +788,69 @@ export function PortalWelcomeTour({
     };
   }, [phase, currentIndex, resolvedSteps]);
 
+  const dismiss = useCallback(() => {
+    if (phase === 'welcome') {
+      setWelcomeExiting(true);
+      setTimeout(() => {
+        setPhase('done');
+        localStorage.setItem(TOUR_STORAGE_KEY, 'true');
+        persistTourSeen();
+      }, 200);
+      return;
+    }
+
+    setTooltipVisible(false);
+    setTimeout(
+      () => {
+        setPhase('done');
+        localStorage.setItem(TOUR_STORAGE_KEY, 'true');
+        persistTourSeen();
+      },
+      reducedMotion ? 0 : 180
+    );
+  }, [phase, reducedMotion]);
+
+  const startTour = useCallback(() => {
+    setWelcomeExiting(true);
+    setTimeout(
+      () => {
+        setPhase('tour');
+        setCurrentIndex(0);
+        setWelcomeExiting(false);
+      },
+      reducedMotion ? 0 : 220
+    );
+  }, [reducedMotion]);
+
+  const goNext = useCallback(() => {
+    if (resolvedSteps.length === 0) return;
+
+    if (currentIndex >= resolvedSteps.length - 1) {
+      dismiss();
+      return;
+    }
+
+    setTooltipVisible(false);
+    setTimeout(
+      () => {
+        setCurrentIndex((i) => i + 1);
+      },
+      reducedMotion ? 0 : 180
+    );
+  }, [currentIndex, dismiss, reducedMotion, resolvedSteps.length]);
+
+  const goBack = useCallback(() => {
+    if (currentIndex <= 0) return;
+
+    setTooltipVisible(false);
+    setTimeout(
+      () => {
+        setCurrentIndex((i) => i - 1);
+      },
+      reducedMotion ? 0 : 180
+    );
+  }, [currentIndex, reducedMotion]);
+
   useEffect(() => {
     if (phase === 'hidden' || phase === 'done') return;
 
@@ -813,70 +877,7 @@ export function PortalWelcomeTour({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  });
-
-  const dismiss = useCallback(() => {
-    if (phase === 'welcome') {
-      setWelcomeExiting(true);
-      setTimeout(() => {
-        setPhase('done');
-        localStorage.setItem(TOUR_STORAGE_KEY, 'true');
-        persistTourSeen();
-      }, 200);
-      return;
-    }
-
-    setTooltipVisible(false);
-    setTimeout(
-      () => {
-        setPhase('done');
-        localStorage.setItem(TOUR_STORAGE_KEY, 'true');
-        persistTourSeen();
-      },
-      reduced.current ? 0 : 180
-    );
-  }, [phase]);
-
-  const startTour = useCallback(() => {
-    setWelcomeExiting(true);
-    setTimeout(
-      () => {
-        setPhase('tour');
-        setCurrentIndex(0);
-        setWelcomeExiting(false);
-      },
-      reduced.current ? 0 : 220
-    );
-  }, []);
-
-  const goNext = useCallback(() => {
-    if (resolvedSteps.length === 0) return;
-
-    if (currentIndex >= resolvedSteps.length - 1) {
-      dismiss();
-      return;
-    }
-
-    setTooltipVisible(false);
-    setTimeout(
-      () => {
-        setCurrentIndex((i) => i + 1);
-      },
-      reduced.current ? 0 : 180
-    );
-  }, [currentIndex, resolvedSteps.length, dismiss]);
-
-  const goBack = useCallback(() => {
-    if (currentIndex <= 0) return;
-
-    setTooltipVisible(false);
-    setTimeout(
-      () => {
-        setCurrentIndex((i) => i - 1);
-      },
-      reduced.current ? 0 : 180
-    );
-  }, [currentIndex]);
+  }, [dismiss, goBack, goNext, phase]);
 
   if (phase === 'hidden' || phase === 'done' || !mounted) return null;
 
@@ -899,7 +900,7 @@ export function PortalWelcomeTour({
       {phase === 'tour' && resolvedSteps.length > 0 && (
         <>
           <ClickBlocker />
-          <SpotlightOverlay rect={spotRect} reducedMotion={reduced.current} />
+          <SpotlightOverlay rect={spotRect} reducedMotion={reducedMotion} />
           <TooltipCard
             step={resolvedSteps[currentIndex]}
             currentIndex={currentIndex}
@@ -909,7 +910,7 @@ export function PortalWelcomeTour({
             onBack={goBack}
             onSkip={dismiss}
             visible={tooltipVisible}
-            reducedMotion={reduced.current}
+            reducedMotion={reducedMotion}
           />
         </>
       )}

@@ -43,7 +43,7 @@ export function PresenceProvider({
 }: PresenceProviderProps) {
   const pathname = usePathname();
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
-  const trackedAtRef = useRef<number>(Date.now());
+  const trackedAtRef = useRef<number>(0);
   const [entries, setEntries] = useState<PresenceEntry[]>([]);
 
   useEffect(() => {

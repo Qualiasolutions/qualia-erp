@@ -1,62 +1,53 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
-  Briefcase,
   Calendar,
-  Check,
-  Clock3,
   ExternalLink,
-  GitBranch,
   Lock,
   MessageSquare,
-  Plus,
-  RefreshCw,
-  RotateCcw,
   Sparkles,
   Target,
-  Users,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { toast } from 'sonner';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   useTodaysMeetings,
-  useTeamTodaySnapshot,
   useEmployeeAssignments,
-  useMyAdminHomeProjects,
-  useDailyBrief,
-  invalidateDailyBrief,
   useNotifications,
   useCurrentWorkspaceId,
   useMilestonesDue,
   useOpenRequestsCount,
   type MilestoneDue,
 } from '@/lib/swr';
-import {
-  dismissBriefItem,
-  undismissBriefItem,
-  createManualBriefItem,
-  regenerateMyDailyBrief,
-  type BriefItem,
-} from '@/app/actions/daily-brief';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useClockGate } from '@/components/clock-gate-provider';
 import {
   AssignmentFocusCard,
   type AssignmentFocusItem,
 } from '@/components/portal/assignment-focus-card';
-import { hueFromId } from '@/lib/color-constants';
 import { EmployeeDailyTasks } from '@/components/portal/employee-daily-tasks';
-import { StatCard } from '@/components/ui/stat-card';
-import type { AdminHomeProject } from '@/app/actions/admin-home';
 
 export type QualiaHomeRole = 'admin' | 'employee';
+
+const OWNER_WAITING_ITEMS = [
+  { status: 'Waiting on requirements', item: 'SHSO' },
+  { status: 'Waiting on requirements', item: 'Kronospan' },
+  { status: 'Waiting on requirements', item: 'Velicor' },
+  { status: 'Waiting on forms', item: '7Buddas' },
+  { status: 'Waiting on forms', item: 'AI Expo' },
+  { status: 'Waiting on forms', item: 'Geo' },
+  { status: 'Waiting on demo', item: 'Moayad demo' },
+  { status: 'Waiting on decision', item: 'Sanad Dispatcher' },
+  { status: 'Waiting on decision', item: 'Fotini' },
+  { status: 'Proposal to send', item: 'VivaP' },
+] as const;
+
+type OwnerWaitingItem = (typeof OWNER_WAITING_ITEMS)[number];
 
 interface QualiaHomeViewProps {
   role: QualiaHomeRole;
@@ -71,31 +62,6 @@ function getGreeting(hour: number): string {
   if (hour < 17) return 'Good afternoon';
   if (hour < 20) return 'Good evening';
   return 'Still up';
-}
-
-function avatarTone(seed: string): string {
-  // Deterministic mapping to a small palette so avatars feel branded but varied.
-  const palette = [
-    'bg-primary/10 text-primary',
-    'bg-blue-500/10 text-blue-500',
-    'bg-violet-500/10 text-violet-500',
-    'bg-emerald-500/10 text-emerald-500',
-    'bg-amber-500/10 text-amber-500',
-    'bg-rose-500/10 text-rose-500',
-  ];
-  const hue = hueFromId(seed);
-  return palette[hue % palette.length] ?? palette[0];
-}
-
-function initialsOf(name: string | null | undefined): string {
-  if (!name) return '?';
-  return (
-    name
-      .split(/\s+/)
-      .map((p) => p.charAt(0).toUpperCase())
-      .slice(0, 2)
-      .join('') || '?'
-  );
 }
 
 export function QualiaHomeView({ role, displayName, userId }: QualiaHomeViewProps) {
@@ -135,11 +101,6 @@ export function QualiaHomeView({ role, displayName, userId }: QualiaHomeViewProp
     [todayMeetings]
   );
 
-  const { members: teamMembers } = useTeamTodaySnapshot();
-  const { projects: ownerProjects, isLoading: ownerProjectsLoading } = useMyAdminHomeProjects(
-    role === 'admin' ? userId : undefined
-  );
-
   const { data: assignments } = useEmployeeAssignments(role === 'employee' ? userId : undefined);
 
   const employeeAssignments = useMemo<AssignmentFocusItem[]>(() => {
@@ -147,17 +108,7 @@ export function QualiaHomeView({ role, displayName, userId }: QualiaHomeViewProp
     return ((assignments ?? []) as AssignmentFocusItem[]).filter((a) => a.project);
   }, [assignments, role]);
 
-  // Admin shows only Fawzi's current project lane, not every active workspace project.
   const activeProjects = useMemo(() => {
-    if (role === 'admin') {
-      return ownerProjects.map((p) => ({
-        id: p.id,
-        name: p.name,
-        clientName: p.clientName ?? 'Internal',
-        logoUrl: p.logoUrl,
-        href: p.href,
-      }));
-    }
     return employeeAssignments
       .filter((a) => a.project && a.project.status === 'Active')
       .map((a) => ({
@@ -167,7 +118,7 @@ export function QualiaHomeView({ role, displayName, userId }: QualiaHomeViewProp
         logoUrl: a.project!.logo_url ?? null,
         href: `/projects/${a.project!.id}/roadmap`,
       }));
-  }, [role, ownerProjects, employeeAssignments]);
+  }, [employeeAssignments]);
 
   // Employee milestone card still uses due-this-week. Admin uses project progress instead.
   const activeProjectIds = useMemo(
@@ -183,15 +134,13 @@ export function QualiaHomeView({ role, displayName, userId }: QualiaHomeViewProp
   const firstName = displayName.split(' ')[0] || displayName;
   const weekSummary =
     role === 'admin'
-      ? ownerProjects.length === 0
-        ? 'No project focus set'
-        : `${ownerProjects.length} project${ownerProjects.length === 1 ? '' : 's'} in your lane`
+      ? `${OWNER_WAITING_ITEMS.length} manual follow-ups`
       : milestonesDueCount === 0
         ? 'No milestones due this week'
         : `${milestonesDueCount} milestone${milestonesDueCount === 1 ? '' : 's'} due this week`;
   const activeSummary =
     role === 'admin'
-      ? `${teamMembers.filter((member) => member.latestProgress).length} teammate progress signals`
+      ? 'Manual dashboard'
       : activeProjects.length > 0
         ? `${activeProjects.length} active ${activeProjects.length === 1 ? 'project' : 'projects'}`
         : 'No active projects';
@@ -224,22 +173,8 @@ export function QualiaHomeView({ role, displayName, userId }: QualiaHomeViewProp
         </div>
       </header>
 
-      {/* Stats Grid — admin only (employees see info in subtitle + ClientPulse) */}
-      {role === 'admin' && (
-        <AdminSignalStrip
-          ownerProjectCount={ownerProjects.length}
-          teamProgressCount={teamMembers.filter((member) => member.latestProgress).length}
-          openRequestsCount={openRequestsCount}
-        />
-      )}
-
       {role === 'admin' ? (
-        <AdminMainGrid
-          teamMembers={teamMembers}
-          ownerProjects={ownerProjects}
-          ownerProjectsLoading={ownerProjectsLoading}
-          meetings={meetings}
-        />
+        <AdminMainGrid meetings={meetings} />
       ) : (
         <EmployeeMainGrid
           assignments={employeeAssignments}
@@ -350,286 +285,65 @@ function MilestonesCard({
 
 /* --------- Admin layout --------- */
 
-function AdminSignalStrip({
-  ownerProjectCount,
-  teamProgressCount,
-  openRequestsCount,
-}: {
-  ownerProjectCount: number;
-  teamProgressCount: number;
-  openRequestsCount: number;
-}) {
-  return (
-    <section className="stagger-2 mb-4 flex-shrink-0 animate-fade-in overflow-hidden rounded-xl border border-border bg-card">
-      <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        <StatCard
-          flat
-          label="My projects"
-          value={ownerProjectCount === 0 ? 'None' : ownerProjectCount}
-          helperText={ownerProjectCount === 1 ? 'project in your lane' : 'projects in your lane'}
-          tone={ownerProjectCount === 0 ? 'warning' : 'neutral'}
-          adornment={<Briefcase className="size-4" aria-hidden />}
-        />
-        <StatCard
-          flat
-          label="Team progress"
-          value={teamProgressCount}
-          helperText={teamProgressCount === 1 ? 'person has a signal' : 'people have signals'}
-          adornment={<Users className="size-4" aria-hidden />}
-        />
-        <StatCard
-          flat
-          label="Open requests"
-          value={openRequestsCount === 0 ? 'Clear' : openRequestsCount}
-          helperText={openRequestsCount === 0 ? 'client inbox' : 'need review'}
-          tone={openRequestsCount > 0 ? 'warning' : 'neutral'}
-          adornment={<MessageSquare className="size-4" aria-hidden />}
-        />
-      </div>
-    </section>
-  );
-}
-
 function AdminMainGrid({
-  teamMembers,
-  ownerProjects,
-  ownerProjectsLoading,
   meetings,
 }: {
-  teamMembers: ReturnType<typeof useTeamTodaySnapshot>['members'];
-  ownerProjects: AdminHomeProject[];
-  ownerProjectsLoading: boolean;
   meetings: Array<{ id: string; title: string; start_time: string; end_time: string }>;
 }) {
   return (
     <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto lg:grid-cols-3">
-      <div className="stagger-2 flex min-h-0 animate-fade-in flex-col gap-6 lg:col-span-2">
-        <OwnerProjectsCard projects={ownerProjects} isLoading={ownerProjectsLoading} />
-        <MemoryStackCard />
+      <div className="stagger-2 animate-fade-in lg:col-span-2">
+        <OwnerWaitingListCard />
       </div>
 
       <div className="stagger-3 animate-fade-in space-y-6">
-        <TeamProgressCard members={teamMembers} />
-        <ClientPulseCard />
         <TodayMeetingsCard meetings={meetings} isGated={false} />
+        <ClientPulseCard />
       </div>
     </div>
   );
 }
 
-function relativeWhen(value: string | null | undefined): string {
-  if (!value) return 'No recent signal';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'No recent signal';
-  return formatDistanceToNow(date, { addSuffix: true });
-}
+function OwnerWaitingListCard() {
+  const grouped = OWNER_WAITING_ITEMS.reduce<Record<string, OwnerWaitingItem[]>>((acc, entry) => {
+    acc[entry.status] = [...(acc[entry.status] ?? []), entry];
+    return acc;
+  }, {});
 
-function OwnerProjectsCard({
-  projects,
-  isLoading,
-}: {
-  projects: AdminHomeProject[];
-  isLoading: boolean;
-}) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div>
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            My project lane
+            Fawzi dashboard
           </p>
-          <h2 className="mt-0.5 text-base font-semibold tracking-tight">Current work</h2>
+          <h2 className="mt-0.5 text-base font-semibold tracking-tight">Waiting list</h2>
         </div>
-        <Briefcase className="h-4 w-4 text-muted-foreground" aria-hidden />
+        <Badge variant="secondary" className="px-2 py-0.5 text-xs">
+          {OWNER_WAITING_ITEMS.length}
+        </Badge>
       </div>
 
-      {isLoading && projects.length === 0 ? (
-        <div className="grid gap-3 p-5 md:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-28 animate-pulse rounded-lg bg-muted/60" />
-          ))}
-        </div>
-      ) : projects.length === 0 ? (
-        <EmptyState
-          icon={Briefcase}
-          title="No projects in your lane yet"
-          compact
-          minimal
-          className="px-5 py-10"
-        />
-      ) : (
-        <div className="grid gap-3 p-5 md:grid-cols-2">
-          {projects.map((project) => (
-            <Link
-              key={project.id}
-              href={project.href}
-              className="group flex min-h-[150px] flex-col rounded-lg border border-border bg-background/60 p-4 transition-colors hover:border-primary/40 hover:bg-muted/25"
-            >
-              <div className="flex min-w-0 items-start gap-3">
-                <Avatar className="h-10 w-10 rounded-lg">
-                  {project.logoUrl ? (
-                    <AvatarImage src={project.logoUrl} alt={project.name} />
-                  ) : null}
-                  <AvatarFallback className={cn('rounded-lg', avatarTone(project.id))}>
-                    {initialsOf(project.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{project.name}</p>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {project.clientName ?? 'Internal'}
-                      </p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                {project.phaseLabel ? (
-                  <Badge variant="secondary" className="gap-1 px-2 py-0.5 text-[10px]">
-                    <GitBranch className="h-3 w-3" />
-                    {project.phaseLabel}
-                  </Badge>
-                ) : null}
-                {project.sourceLabels.slice(0, 2).map((label) => (
-                  <Badge key={label} variant="outline" className="px-2 py-0.5 text-[10px]">
-                    {label}
-                  </Badge>
-                ))}
-              </div>
-
-              <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
-                {project.phaseName ?? project.note ?? project.status ?? 'No current phase signal'}
-              </p>
-
-              <div className="mt-auto flex items-center gap-1.5 pt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                <Clock3 className="h-3 w-3" />
-                {relativeWhen(project.lastTouchedAt)}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TeamProgressCard({
-  members,
-}: {
-  members: ReturnType<typeof useTeamTodaySnapshot>['members'];
-}) {
-  const sortedMembers = members.slice().sort((a, b) => {
-    if (a.isOnline !== b.isOnline) return a.isOnline ? -1 : 1;
-    return (
-      new Date(b.latestProgress?.updatedAt ?? 0).getTime() -
-      new Date(a.latestProgress?.updatedAt ?? 0).getTime()
-    );
-  });
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Latest employee progress
-          </p>
-          <h2 className="mt-0.5 text-base font-semibold">Where the team reached</h2>
-        </div>
-        <Users className="h-4 w-4 text-muted-foreground" aria-hidden />
+      <div className="grid gap-4 p-5 md:grid-cols-2">
+        {Object.entries(grouped).map(([status, items]) => (
+          <section key={status} className="rounded-lg border border-border bg-background/60 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold">{status}</p>
+              <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
+                {items.length}
+              </span>
+            </div>
+            <ul className="mt-3 space-y-2">
+              {items.map((entry) => (
+                <li key={`${entry.status}-${entry.item}`} className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+                  <span className="min-w-0 truncate text-sm text-foreground">{entry.item}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
       </div>
-
-      {sortedMembers.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="No team activity yet"
-          compact
-          minimal
-          className="px-5 py-8"
-        />
-      ) : (
-        <div className="divide-y divide-border">
-          {sortedMembers.map((member) => {
-            const progress = member.latestProgress;
-            const body = (
-              <div className="flex items-start gap-3 px-5 py-3.5 transition-colors hover:bg-muted/30">
-                <div className="relative">
-                  <Avatar className="h-9 w-9">
-                    {member.avatarUrl ? (
-                      <AvatarImage src={member.avatarUrl} alt={member.fullName ?? ''} />
-                    ) : null}
-                    <AvatarFallback className={avatarTone(member.profileId)}>
-                      {initialsOf(member.fullName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {member.isOnline && (
-                    <span
-                      className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-card"
-                      aria-label="online"
-                    />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="truncate text-sm font-medium">
-                      {member.fullName ?? 'Unnamed'}
-                    </span>
-                    {progress?.phaseLabel ? (
-                      <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-[10px]">
-                        <GitBranch className="h-3 w-3" />
-                        {progress.phaseLabel}
-                      </Badge>
-                    ) : null}
-                  </div>
-
-                  {progress ? (
-                    <>
-                      <p className="mt-1 truncate text-xs font-medium">
-                        {progress.projectName ?? 'Project'}
-                      </p>
-                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                        {progress.phaseName ??
-                          progress.note ??
-                          progress.status ??
-                          'Progress signal'}
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
-                        <span className="font-mono uppercase tracking-[0.08em]">
-                          {progress.status ?? 'Updated'}
-                        </span>
-                        <span aria-hidden>·</span>
-                        <span>{relativeWhen(progress.updatedAt)}</span>
-                        {member.openTasksCount > 0 ? (
-                          <>
-                            <span aria-hidden>·</span>
-                            <span>
-                              {member.openTasksCount} open{' '}
-                              {member.openTasksCount === 1 ? 'task' : 'tasks'}
-                            </span>
-                          </>
-                        ) : null}
-                      </div>
-                    </>
-                  ) : (
-                    <p className="mt-1 text-xs text-muted-foreground">No recent project signal.</p>
-                  )}
-                </div>
-              </div>
-            );
-
-            return progress?.projectId ? (
-              <Link key={member.profileId} href={`/projects/${progress.projectId}/roadmap`}>
-                {body}
-              </Link>
-            ) : (
-              <div key={member.profileId}>{body}</div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
@@ -849,358 +563,6 @@ function ClientPulseCard({
           })}
         </ul>
       )}
-    </div>
-  );
-}
-
-/* --------- Memory Stack --------- */
-
-const TAG_TONES: Record<string, string> = {
-  OWNER: 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400',
-  TEAM: 'border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-400',
-  ME: 'border-primary/25 bg-primary/10 text-primary',
-};
-
-function BriefTagPill({ tag }: { tag: string }) {
-  const tone = TAG_TONES[tag] ?? 'border-border bg-muted text-muted-foreground';
-  return (
-    <span
-      className={cn(
-        'inline-flex w-[68px] shrink-0 justify-center rounded-md border px-1.5 py-0.5',
-        'font-mono text-[9px] font-semibold uppercase tracking-[0.08em]',
-        tone
-      )}
-    >
-      {tag}
-    </span>
-  );
-}
-
-function BriefRow({
-  item,
-  pending,
-  onToggle,
-}: {
-  item: BriefItem;
-  pending: boolean;
-  onToggle: () => void;
-}) {
-  const done = item.dismissed_at !== null;
-  const body = item.lead ? item.body : item.body.trimStart();
-  return (
-    <div
-      className={cn(
-        'flex items-start gap-3 px-5 py-2.5 transition-opacity',
-        (done || pending) && 'opacity-50'
-      )}
-    >
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-pressed={done}
-        aria-label={done ? 'Restore memory' : 'Mark as resolved'}
-        disabled={pending}
-        className={cn(
-          'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card',
-          done
-            ? 'border-primary bg-primary text-primary-foreground'
-            : 'border-border bg-background hover:border-primary/50',
-          pending && 'cursor-not-allowed'
-        )}
-      >
-        {done ? <Check className="h-3 w-3" strokeWidth={3} aria-hidden /> : null}
-      </button>
-      <span className="mt-0.5">
-        <BriefTagPill tag={item.tag} />
-      </span>
-      <p
-        className={cn(
-          'flex-1 text-sm leading-relaxed text-foreground',
-          done && 'line-through decoration-muted-foreground/60 decoration-1'
-        )}
-      >
-        {item.lead ? <span className="font-semibold">{item.lead}</span> : null}
-        <span>{body}</span>
-      </p>
-    </div>
-  );
-}
-
-function MemoryStackCard() {
-  const today = new Date();
-  const dateLabel = today.toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-
-  const { brief, isLoading } = useDailyBrief();
-  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [showAdd, setShowAdd] = useState(false);
-  const [addBody, setAddBody] = useState('');
-  const [addLead, setAddLead] = useState('');
-
-  const handleToggle = useCallback(async (item: BriefItem) => {
-    setPendingIds((prev) => new Set(prev).add(item.id));
-    try {
-      const result =
-        item.dismissed_at === null
-          ? await dismissBriefItem(item.id)
-          : await undismissBriefItem(item.id);
-      if (!result.success) {
-        toast.error(result.error || 'Failed to update item');
-      } else {
-        invalidateDailyBrief();
-      }
-    } finally {
-      setPendingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(item.id);
-        return next;
-      });
-    }
-  }, []);
-
-  const handleRegenerate = useCallback(async () => {
-    setIsRegenerating(true);
-    try {
-      const result = await regenerateMyDailyBrief();
-      if (!result.success) {
-        toast.error(result.error || 'Failed to refresh memory stack');
-      } else {
-        toast.success('Memory stack synced');
-        invalidateDailyBrief();
-      }
-    } finally {
-      setIsRegenerating(false);
-    }
-  }, []);
-
-  const handleAdd = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!addBody.trim()) return;
-      const result = await createManualBriefItem({
-        body: addBody.trim(),
-        lead: addLead.trim() || undefined,
-      });
-      if (!result.success) {
-        toast.error(result.error || 'Failed to add item');
-        return;
-      }
-      setAddBody('');
-      setAddLead('');
-      setShowAdd(false);
-      invalidateDailyBrief();
-    },
-    [addBody, addLead]
-  );
-
-  const sections = brief?.sections ?? [];
-  const activeCount = brief?.totals.active ?? 0;
-  const dismissedCount = brief?.totals.dismissed ?? 0;
-  const totalToday = activeCount + dismissedCount;
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
-        <div>
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Qualia Solutions
-          </p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight">Memory Stack</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {dateLabel} · deadlines, calls, gaps, money, and captured notes
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <span
-            className="rounded-md border border-border bg-muted/40 px-2 py-1 font-mono text-[10px] font-semibold uppercase tabular-nums tracking-[0.12em] text-muted-foreground"
-            aria-live="polite"
-          >
-            {dismissedCount}/{totalToday} resolved
-          </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowAdd((v) => !v)}
-            className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
-            aria-label="Capture memory"
-          >
-            <Plus className="h-3 w-3" aria-hidden />
-            Capture
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleRegenerate}
-            disabled={isRegenerating}
-            className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
-            aria-label="Refresh memory stack"
-          >
-            <RefreshCw className={cn('h-3 w-3', isRegenerating && 'animate-spin')} aria-hidden />
-            Sync
-          </Button>
-        </div>
-      </div>
-
-      {showAdd ? (
-        <form
-          onSubmit={handleAdd}
-          className="flex flex-col gap-2 border-b border-border bg-muted/20 px-5 py-3"
-        >
-          <input
-            type="text"
-            value={addLead}
-            onChange={(e) => setAddLead(e.target.value)}
-            placeholder="Label (optional, e.g. 'Client follow-up:')"
-            className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          />
-          <input
-            type="text"
-            value={addBody}
-            onChange={(e) => setAddBody(e.target.value)}
-            placeholder="What should stay in your head?"
-            className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            autoFocus
-          />
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setShowAdd(false);
-                setAddBody('');
-                setAddLead('');
-              }}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" size="sm" disabled={!addBody.trim()}>
-              Capture
-            </Button>
-          </div>
-        </form>
-      ) : null}
-
-      <div className="pb-2">
-        {isLoading && sections.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-            Loading memory stack…
-          </div>
-        ) : sections.length === 0 ? (
-          <div className="px-5 py-10 text-center">
-            <p className="text-sm font-medium text-foreground">Nothing urgent in memory.</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {dismissedCount > 0
-                ? `${dismissedCount} resolved today.`
-                : 'Sync live signals, or capture something manually.'}
-            </p>
-          </div>
-        ) : (
-          sections.map((section) => (
-            <section key={section.heading} className="pt-5">
-              <div className="flex items-center justify-between gap-3 px-5 pb-2">
-                <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  {section.heading}
-                </p>
-                <p
-                  className="font-mono text-[10px] tabular-nums text-muted-foreground/70"
-                  aria-label={`${section.items.length} items`}
-                >
-                  {section.items.length}
-                </p>
-              </div>
-              <div>
-                {section.items.map((item) => (
-                  <BriefRow
-                    key={item.id}
-                    item={item}
-                    pending={pendingIds.has(item.id)}
-                    onToggle={() => handleToggle(item)}
-                  />
-                ))}
-              </div>
-            </section>
-          ))
-        )}
-      </div>
-
-      {dismissedCount > 0 ? (
-        <div className="border-t border-border bg-muted/30">
-          <button
-            type="button"
-            onClick={() => setShowHistory((v) => !v)}
-            className="flex w-full items-center justify-between gap-2 px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-primary"
-          >
-            <span>Resolved recently · {dismissedCount}</span>
-            <RotateCcw
-              className={cn('h-3 w-3 transition-transform', showHistory && 'rotate-180')}
-              aria-hidden
-            />
-          </button>
-          {showHistory ? <DismissedToday /> : null}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function DismissedToday() {
-  const { brief } = useDailyBrief();
-  const [items, setItems] = useState<BriefItem[]>([]);
-  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const { getDailyBriefHistory } = await import('@/app/actions/daily-brief');
-      const data = await getDailyBriefHistory(1);
-      if (!cancelled) {
-        setItems(data);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [brief?.forDate, brief?.totals.dismissed]);
-
-  const handleUndo = useCallback(async (item: BriefItem) => {
-    setPendingIds((prev) => new Set(prev).add(item.id));
-    try {
-      const result = await undismissBriefItem(item.id);
-      if (result.success) {
-        invalidateDailyBrief();
-      } else {
-        toast.error(result.error || 'Failed to undo');
-      }
-    } finally {
-      setPendingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(item.id);
-        return next;
-      });
-    }
-  }, []);
-
-  if (items.length === 0) return null;
-  return (
-    <div className="border-t border-border bg-background/40 pb-2">
-      {items.map((item) => (
-        <BriefRow
-          key={item.id}
-          item={item}
-          pending={pendingIds.has(item.id)}
-          onToggle={() => handleUndo(item)}
-        />
-      ))}
     </div>
   );
 }

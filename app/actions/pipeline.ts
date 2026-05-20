@@ -600,6 +600,8 @@ export async function updatePhaseName(
   name: string,
   _projectId: string
 ): Promise<ActionResult> {
+  void _projectId;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -626,6 +628,8 @@ export async function updatePhaseName(
 }
 
 export async function deletePhase(phaseId: string, _projectId: string): Promise<ActionResult> {
+  void _projectId;
+
   const supabase = await createClient();
   const {
     data: { user },

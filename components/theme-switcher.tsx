@@ -26,6 +26,7 @@ const ThemeSwitcher = () => {
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<CurtainPhase>('idle');
   const curtainColorRef = useRef<string>('');
+  const [curtainColor, setCurtainColor] = useState('');
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-once hydration flag to avoid SSR mismatch
@@ -48,6 +49,7 @@ const ThemeSwitcher = () => {
       document.body.appendChild(probe);
       curtainColorRef.current =
         getComputedStyle(probe).backgroundColor || (next === 'dark' ? '#0d1416' : '#edf0f0');
+      setCurtainColor(curtainColorRef.current);
       probe.remove();
     }
 
@@ -62,7 +64,7 @@ const ThemeSwitcher = () => {
   const curtainStyle: CSSProperties = {
     position: 'fixed',
     inset: 0,
-    background: curtainColorRef.current,
+    background: curtainColor,
     transformOrigin: 'top',
     transform: phase === 'falling' ? 'scaleY(1)' : 'scaleY(0)',
     transition: phase !== 'idle' ? `transform ${DURATION}ms ${EASING}` : 'none',

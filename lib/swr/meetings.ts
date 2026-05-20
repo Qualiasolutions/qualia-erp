@@ -1,10 +1,9 @@
 'use client';
 
 import useSWR, { mutate } from 'swr';
-import type { SWRConfiguration } from 'swr';
 import { getMeetings } from '@/app/actions/meetings';
 import { cacheKeys } from './cache-keys';
-import { autoRefreshConfig, isDocumentVisible, onErrorRetry, swrConfig } from './config';
+import { autoRefreshConfig } from './config';
 
 // Type for meetings with all relations
 export type MeetingWithRelations = Awaited<ReturnType<typeof getMeetings>>[number];
