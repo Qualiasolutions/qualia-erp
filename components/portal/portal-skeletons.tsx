@@ -156,7 +156,7 @@ export function PortalDashboardSkeleton() {
             <Skeleton className="mt-2 h-5 w-40 bg-muted/50" />
             <div className="mt-6 space-y-4">
               {[1, 2].map((i) => (
-                <div key={i} className="rounded-2xl border border-border/60 bg-card/40 p-5">
+                <div key={i} className="rounded-xl border border-border bg-card p-5">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-3 w-28 bg-muted/50" />
@@ -175,14 +175,14 @@ export function PortalDashboardSkeleton() {
           <div className="space-y-8">
             <div>
               <Skeleton className="h-3 w-24 bg-muted/50" />
-              <div className="mt-3 rounded-2xl border border-border bg-card/60 p-4">
+              <div className="mt-3 rounded-xl border border-border bg-card p-4">
                 <Skeleton className="h-4 w-20 bg-muted/50" />
                 <Skeleton className="mt-1 h-3 w-28 bg-muted/40" />
               </div>
             </div>
             <div>
               <Skeleton className="h-3 w-24 bg-muted/50" />
-              <div className="mt-3 rounded-2xl border border-border bg-card/60 p-5">
+              <div className="mt-3 rounded-xl border border-border bg-card p-5">
                 <Skeleton className="h-3 w-full bg-muted/40" />
                 <Skeleton className="mt-2 h-3 w-3/4 bg-muted/40" />
                 <Skeleton className="mt-4 h-10 w-full rounded-xl bg-muted/40" />
@@ -200,15 +200,20 @@ export function PortalDashboardSkeleton() {
  */
 export function PortalBillingSkeleton() {
   return (
-    <div className="space-y-8 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(2rem,4vw,3rem)] pt-16 md:pt-[clamp(2.5rem,4vw,3.5rem)]">
-      <div>
-        <Skeleton className="h-3 w-24 bg-muted/50" />
-        <Skeleton className="mt-3 h-7 w-32 bg-muted/50" />
-        <Skeleton className="mt-2 h-3 w-72 max-w-full bg-muted/40" />
-      </div>
+    <div className="space-y-4 px-4 pb-8 pt-16 md:px-6 md:pt-6">
+      <header className="rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-20 bg-muted/50" />
+            <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+            <Skeleton className="h-4 w-56 max-w-[48vw] bg-muted/40" />
+          </div>
+          <Skeleton className="h-9 w-28 rounded-lg bg-muted/50" />
+        </div>
+      </header>
 
       {/* Summary tiles — divider-driven */}
-      <div className="grid grid-cols-3 divide-x divide-border/70 overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="grid grid-cols-1 divide-y divide-border/70 overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {[1, 2, 3].map((i) => (
           <div key={i} className="px-[clamp(1rem,3vw,2rem)] py-5">
             <Skeleton className="h-2.5 w-20 bg-muted/50" />
@@ -219,7 +224,7 @@ export function PortalBillingSkeleton() {
       </div>
 
       {/* Invoice table */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="border-b border-border bg-muted/20 px-5 py-3">
           <Skeleton className="h-3 w-full bg-muted/50" />
         </div>

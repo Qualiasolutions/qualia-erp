@@ -8,9 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function ScheduleLoading() {
   return (
     <div className="flex h-full flex-col">
-      {/* PageHeader skeleton — matches PageHeader component */}
-      <header className="flex items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
-        <div className="flex items-center gap-2.5">
+      {/* PageHeader skeleton — mobile shows route context, desktop shows actions only. */}
+      <header className="flex items-center justify-between border-b border-border bg-card/80 px-4 py-3 backdrop-blur-xl sm:px-6 md:min-h-14 md:justify-end md:px-6 md:py-2">
+        <div className="flex items-center gap-2.5 md:sr-only md:absolute md:h-px md:w-px md:overflow-hidden">
           <Skeleton className="h-7 w-7 rounded-lg" />
           <Skeleton className="h-5 w-20 rounded" />
         </div>
