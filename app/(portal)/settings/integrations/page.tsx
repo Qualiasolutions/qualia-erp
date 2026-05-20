@@ -52,16 +52,16 @@ async function IntegrationsLoader() {
 
 function IntegrationsSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="grid gap-px overflow-hidden rounded-xl border border-border bg-border/50">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="animate-pulse rounded-xl border border-border bg-card p-5">
-          <div className="flex items-start gap-4">
-            <div className="h-10 w-10 rounded-lg bg-muted" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 w-32 rounded bg-muted" />
-              <div className="h-3 w-48 rounded bg-muted" />
+        <div key={i} className="animate-pulse bg-card p-4 md:p-5">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-lg bg-muted/60" />
+            <div className="flex-1 space-y-2 pt-0.5">
+              <div className="h-4 w-32 rounded bg-muted/60" />
+              <div className="h-3 w-48 rounded bg-muted/45" />
             </div>
-            <div className="h-8 w-20 rounded bg-muted" />
+            <div className="h-8 w-20 rounded-lg bg-muted/55" />
           </div>
         </div>
       ))}
@@ -82,16 +82,18 @@ export default function IntegrationsPage() {
         </span>
       </PageHeader>
 
-      <div className="flex-1 overflow-y-auto p-6 lg:p-8">
-        <div className="space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 pb-8 pt-4 md:px-6 lg:px-8">
+        <div className="space-y-4">
           <Suspense fallback={<IntegrationsSkeleton />}>
             <IntegrationsLoader />
           </Suspense>
 
           {/* Help Section */}
-          <div className="rounded-xl border border-border bg-muted/30 p-5">
-            <h3 className="text-sm font-medium text-foreground">How it works</h3>
-            <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h3 className="text-sm font-semibold tracking-tight text-foreground">
+              Provisioning rules
+            </h3>
+            <ul className="mt-3 grid gap-2 text-sm text-muted-foreground md:grid-cols-3">
               <li>
                 <strong>GitHub:</strong> Creates a new repository from your template when a project
                 is created
@@ -104,7 +106,7 @@ export default function IntegrationsPage() {
                 <strong>Zoho:</strong> Creates invoices and manages client contacts
               </li>
             </ul>
-            <p className="mt-3 text-xs text-muted-foreground">
+            <p className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
               Provisioning happens automatically when you create a project. SEO and Ads projects
               don&apos;t require external resources.
             </p>
