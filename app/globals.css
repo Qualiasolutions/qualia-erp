@@ -537,7 +537,7 @@
    ============================================ */
 @layer utilities {
   .page-header {
-    @apply sticky top-0 z-sticky border-b border-border px-6 py-4 backdrop-blur-xl sm:px-8 sm:py-5;
+    @apply sticky top-0 z-sticky border-b border-border px-4 py-3 backdrop-blur-xl sm:px-6 md:min-h-14 md:justify-end md:px-6 md:py-2;
     background: hsl(var(--card) / 0.86);
   }
 
