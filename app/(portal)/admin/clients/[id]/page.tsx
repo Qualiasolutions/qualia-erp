@@ -82,56 +82,52 @@ export default async function AdminPortalClientDetailPage({ params }: PageProps)
   const clientName = profile.full_name || profile.company || profile.email || 'Unnamed client';
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
-      <header className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <Button variant="ghost" size="sm" asChild className="-ml-2 mb-4 gap-2">
-            <Link href="/admin/clients">
+    <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+      <header className="rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" size="sm" asChild className="h-9 gap-2">
+            <Link href="/admin/clients" aria-label="Back to portal clients">
               <ArrowLeft className="size-4" />
-              Portal clients
             </Link>
           </Button>
-          <div className="flex items-center gap-4">
-            <Avatar className="size-16 rounded-2xl">
-              {profile.avatar_url && (
-                <AvatarImage src={profile.avatar_url} alt="" className="object-cover" />
-              )}
-              <AvatarFallback className="rounded-2xl bg-primary/10 text-lg font-semibold text-primary">
-                {getInitials(clientName)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                <span className="inline-block h-px w-5 bg-primary/60" aria-hidden />
-                <span>Portal account</span>
-              </div>
-              <h1 className="mt-1 truncate text-[clamp(1.5rem,1.2rem+1.2vw,2.25rem)] font-semibold tracking-tight">
+          <Avatar className="size-10 rounded-lg">
+            {profile.avatar_url && (
+              <AvatarImage src={profile.avatar_url} alt="" className="object-cover" />
+            )}
+            <AvatarFallback className="rounded-lg bg-primary/10 text-sm font-semibold text-primary">
+              {getInitials(clientName)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h1 className="truncate text-base font-semibold tracking-tight text-foreground">
                 {clientName}
               </h1>
+              <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
               {profile.email && (
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <p className="flex min-w-0 items-center gap-1.5 truncate text-sm text-muted-foreground">
                   <Mail className="size-3.5" />
                   {profile.email}
                 </p>
               )}
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
-          <SummaryTile label="Projects" value={projects.length} icon={FolderKanban} />
-          <SummaryTile
-            label="Open requests"
-            value={openRequests.length}
-            icon={MessageSquareText}
-            tone="warn"
-          />
-          <SummaryTile
-            label="Completed"
-            value={completedRequests.length}
-            icon={CalendarClock}
-            tone="primary"
-          />
+          <div className="grid grid-cols-3 gap-2 sm:min-w-[360px]">
+            <SummaryTile label="Projects" value={projects.length} icon={FolderKanban} />
+            <SummaryTile
+              label="Open requests"
+              value={openRequests.length}
+              icon={MessageSquareText}
+              tone="warn"
+            />
+            <SummaryTile
+              label="Completed"
+              value={completedRequests.length}
+              icon={CalendarClock}
+              tone="primary"
+            />
+          </div>
         </div>
       </header>
 

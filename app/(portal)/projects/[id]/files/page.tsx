@@ -65,27 +65,25 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
   const internalFiles = files.filter((f) => !f.is_client_upload);
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <header className="flex items-start gap-3">
-        <Link
-          href={`/projects/${projectId}`}
-          aria-label={`Back to ${project.name}`}
-          className="mt-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-        <div>
-          <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-            <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
-            <span>{project.name}</span>
+    <div className="space-y-4">
+      <header className="rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href={`/projects/${projectId}`}
+            aria-label={`Back to ${project.name}`}
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-background/60 text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold tracking-tight text-foreground">
+                Project files
+              </h1>
+              <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+              <p className="truncate text-sm text-muted-foreground">{project.name}</p>
+            </div>
           </div>
-          <h1 className="mt-2 text-[clamp(1.375rem,1rem+1.2vw,1.75rem)] font-semibold leading-tight tracking-tight text-foreground">
-            Project files
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Briefs, drafts, and deliverables — everything we share for this engagement.
-          </p>
         </div>
       </header>
 
@@ -126,7 +124,7 @@ export default async function ProjectFilesPage({ params }: ProjectFilesPageProps
   const { id: projectId } = await params;
 
   return (
-    <div className="px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
+    <div className="px-4 pb-6 pt-16 md:px-6 md:pt-6">
       <Suspense
         fallback={
           <div className="space-y-6">

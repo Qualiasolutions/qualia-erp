@@ -22,19 +22,24 @@ export default async function AuditIndexPage() {
   const rows = await getAuditIndex();
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 md:px-8 md:py-12">
-      <header className="flex flex-col gap-2">
-        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          Hidden surface · admin only
-        </span>
-        <h1 className="text-[clamp(1.75rem,1.4rem+1.7vw,2.5rem)] font-semibold tracking-tight">
-          Performance audit
-        </h1>
-        <p className="max-w-prose text-sm text-muted-foreground">
-          Data-driven snapshot per employee, used to shape May scope. Each profile opens to
-          attendance, framework hygiene, project history, and a self-assessment form for the
-          interview.
-        </p>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+      <header className="rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="mr-auto min-w-[180px]">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold tracking-tight text-foreground">
+                Performance audit
+              </h1>
+              <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+              <p className="truncate text-sm text-muted-foreground">
+                Admin-only employee snapshots
+              </p>
+            </div>
+          </div>
+          <span className="rounded-md border border-border bg-muted/40 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            {rows.length} employee{rows.length === 1 ? '' : 's'}
+          </span>
+        </div>
       </header>
 
       {rows.length === 0 ? (
