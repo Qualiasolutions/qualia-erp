@@ -396,8 +396,8 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
 function EmptyChatState({ onPick }: { onPick: (q: string) => void }) {
   return (
     <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
-        <QualiaMark size={32} className="h-8 w-8" />
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/[0.08] ring-1 ring-primary/15">
+        <QualiaMark size={28} className="h-7 w-7" />
       </div>
       <h2 className="text-lg font-semibold text-foreground">Ask the Qualia Assistant</h2>
       <p className="mt-1 max-w-md text-sm text-muted-foreground">
@@ -1104,10 +1104,7 @@ function LifecycleContent() {
   return (
     <ol className="qm-stagger relative space-y-4 pl-3">
       {/* Vertical rail */}
-      <div
-        className="absolute bottom-3 left-[19px] top-3 w-px bg-gradient-to-b from-primary/40 via-border to-border"
-        aria-hidden
-      />
+      <div className="absolute bottom-3 left-[19px] top-3 w-px bg-border" aria-hidden />
       {LIFECYCLE.map((s) => {
         const Icon = s.icon;
         return (
@@ -1120,7 +1117,7 @@ function LifecycleContent() {
             >
               <Icon size={16} weight="duotone" />
             </span>
-            <div className="min-w-0 flex-1 rounded-2xl border border-border bg-muted/20 p-4 transition-colors hover:bg-muted/40">
+            <div className="min-w-0 flex-1 rounded-xl border border-border bg-muted/20 p-4 transition-colors hover:bg-muted/40">
               <div className="flex items-baseline gap-2">
                 <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Step {s.step}
@@ -1210,7 +1207,7 @@ function PlaybookContent() {
         return (
           <section
             key={seg.time}
-            className="overflow-hidden rounded-2xl border border-border bg-card"
+            className="overflow-hidden rounded-xl border border-border bg-card"
           >
             <header className={cn('flex items-center gap-3 px-4 py-3', seg.bgTint)}>
               <span
@@ -1351,7 +1348,7 @@ function ConceptsContent() {
         <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-foreground">
           The hierarchy
         </h3>
-        <div className="overflow-hidden rounded-2xl border border-border bg-muted/20">
+        <div className="overflow-hidden rounded-xl border border-border bg-muted/20">
           {HIERARCHY.map((h, i) => (
             <div
               key={h.name}
