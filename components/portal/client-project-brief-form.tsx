@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { createFeatureRequest } from '@/app/actions/client-requests';
 import { cn } from '@/lib/utils';
+import type { BriefData, BriefSection } from '@/lib/validation';
 
 interface ClientProjectBriefFormProps {
   projectId: string;
@@ -311,6 +312,48 @@ function buildDescription(f: BriefFields): string {
   return sections.join('\n\n');
 }
 
+function buildBriefData(fields: BriefFields): BriefData {
+  const sections: BriefSection[] = [];
+
+  const pushChips = (key: string, label: string, values: string[], note: string) => {
+    if (values.length === 0 && !note.trim()) return;
+    const section: BriefSection = { key, label };
+    if (values.length > 0) section.values = values;
+    if (note.trim()) section.note = note.trim();
+    sections.push(section);
+  };
+
+  const pushChip = (key: string, label: string, value: string, note: string) => {
+    if (!value && !note.trim()) return;
+    const section: BriefSection = { key, label };
+    if (value) section.value = value;
+    if (note.trim()) section.note = note.trim();
+    sections.push(section);
+  };
+
+  const pushText = (key: string, label: string, value: string) => {
+    if (!value.trim()) return;
+    sections.push({ key, label, value: value.trim() });
+  };
+
+  pushChip('type', 'Project type', fields.type, fields.typeNote);
+  pushChips('goals', 'Goals', fields.goals, fields.goalsNote);
+  pushChips('audience', 'Target audience', fields.audience, fields.audienceNote);
+  pushChips('geography', 'Geography', fields.geography, fields.geographyNote);
+  pushChips('integrations', 'Must-have integrations', fields.integrations, fields.integrationsNote);
+  pushText('references', 'References / inspiration', fields.references);
+  pushChip('timeline', 'Timeline', fields.timeline, fields.timelineNote);
+  pushChip('budget', 'Budget', fields.budget, fields.budgetNote);
+  pushChip('ownership', 'Ownership preference', fields.ownership, fields.ownershipNote);
+  pushText('notes', 'Anything else', fields.notes);
+
+  return {
+    variant: 'generic',
+    submitted_at: new Date().toISOString(),
+    sections,
+  };
+}
+
 export function ClientProjectBriefForm({
   projectId,
   projectName,
@@ -402,11 +445,13 @@ export function ClientProjectBriefForm({
 
     setSubmitting(true);
     const description = buildDescription(fields);
+    const briefData = buildBriefData(fields);
     const result = await createFeatureRequest({
       project_id: projectId,
       title: `Project brief — ${projectName}`,
       description,
       priority: 'medium',
+      brief_data: briefData,
     });
     setSubmitting(false);
 
