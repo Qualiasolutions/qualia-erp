@@ -469,11 +469,11 @@ export function ClientProjectBriefForm({
     return (
       <div
         className={cn(
-          'mx-auto flex max-w-2xl flex-col items-center justify-center gap-4 rounded-2xl border border-primary/20 bg-primary/[0.04] px-8 py-12 text-center',
+          'mx-auto flex max-w-2xl flex-col gap-4 rounded-xl border border-border bg-card p-6 text-left shadow-elevation-1 sm:flex-row sm:items-center',
           className
         )}
       >
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/[0.08] text-primary ring-1 ring-primary/15">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -486,7 +486,7 @@ export function ClientProjectBriefForm({
         </div>
         <div>
           <h3 className="text-lg font-semibold tracking-tight text-foreground">Brief received</h3>
-          <p className="mt-1.5 text-sm text-muted-foreground">
+          <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
             We&apos;ll review your input and reach out shortly. You can always add more via
             Requests.
           </p>
@@ -508,12 +508,12 @@ export function ClientProjectBriefForm({
   return (
     <div
       className={cn(
-        'mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card/40 backdrop-blur-sm',
+        'mx-auto w-full max-w-2xl overflow-hidden rounded-xl border border-border bg-card shadow-elevation-1',
         className
       )}
     >
       {/* Header */}
-      <div className="border-b border-border bg-gradient-to-b from-primary/[0.04] to-transparent px-7 pb-5 pt-6">
+      <div className="border-b border-border px-5 py-4">
         <div className="flex items-baseline justify-between">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/85">
             {step.eyebrow} of {STEPS.length}
@@ -524,14 +524,14 @@ export function ClientProjectBriefForm({
         </div>
 
         {/* Progress bar */}
-        <div className="bg-muted-foreground/12 mt-3 h-[3px] w-full overflow-hidden rounded-full">
+        <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-border/50">
           <div
-            className="duration-[420ms] ease-[cubic-bezier(0.19,1,0.22,1)] h-full rounded-full bg-gradient-to-r from-primary/70 to-primary shadow-[0_0_12px_hsl(var(--primary)/0.6)] transition-[width]"
+            className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
             style={{ width: `${progressPct}%` }}
           />
         </div>
 
-        <h2 className="mt-5 text-[20px] font-semibold leading-tight tracking-tight text-foreground sm:text-[22px]">
+        <h2 className="mt-4 text-lg font-semibold leading-tight tracking-tight text-foreground">
           {step.title}
         </h2>
         {step.hint && (
@@ -540,12 +540,9 @@ export function ClientProjectBriefForm({
       </div>
 
       {/* Body */}
-      <div
-        key={stepIndex}
-        className="animate-[stepIn_320ms_cubic-bezier(0.19,1,0.22,1)_both] space-y-5 px-7 py-7"
-      >
+      <div key={stepIndex} className="animate-[stepIn_240ms_ease-out_both] space-y-4 px-5 py-5">
         {step.kind === 'chips' && step.options && (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {step.options.map((opt) => {
               const selected = value === opt.value;
               return (
@@ -554,10 +551,10 @@ export function ClientProjectBriefForm({
                   type="button"
                   onClick={() => update(step.key, opt.value as BriefFields[typeof step.key])}
                   className={cn(
-                    'group relative flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13.5px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    'group relative flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-3 py-2 text-[13px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     selected
-                      ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.6),0_8px_24px_-6px_hsl(var(--primary)/0.45)]'
-                      : 'border-border bg-card/50 text-muted-foreground hover:border-primary/40 hover:bg-primary/[0.04] hover:text-foreground'
+                      ? 'border-primary/40 bg-primary/[0.08] text-foreground shadow-sm'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-primary/[0.04] hover:text-foreground'
                   )}
                 >
                   {opt.label}
@@ -581,7 +578,7 @@ export function ClientProjectBriefForm({
         )}
 
         {step.kind === 'multi-chips' && step.options && (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {step.options.map((opt) => {
               const selected = Array.isArray(value) && value.includes(opt.value);
               return (
@@ -590,10 +587,10 @@ export function ClientProjectBriefForm({
                   type="button"
                   onClick={() => toggleMulti(step.key, opt.value)}
                   className={cn(
-                    'group relative flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13.5px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    'group relative flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-3 py-2 text-[13px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     selected
-                      ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.6),0_8px_24px_-6px_hsl(var(--primary)/0.45)]'
-                      : 'border-border bg-card/50 text-muted-foreground hover:border-primary/40 hover:bg-primary/[0.04] hover:text-foreground'
+                      ? 'border-primary/40 bg-primary/[0.08] text-foreground shadow-sm'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-primary/[0.04] hover:text-foreground'
                   )}
                 >
                   {opt.label}
@@ -621,7 +618,7 @@ export function ClientProjectBriefForm({
             value={typeof value === 'string' ? value : ''}
             onChange={(e) => update(step.key, e.target.value as BriefFields[typeof step.key])}
             placeholder={step.placeholder}
-            className="min-h-[140px] resize-none rounded-xl text-[14px] leading-relaxed"
+            className="min-h-[140px] resize-none rounded-lg text-sm leading-relaxed"
             autoFocus
           />
         )}
@@ -632,13 +629,13 @@ export function ClientProjectBriefForm({
             value={noteValue}
             onChange={(e) => update(step.noteKey as keyof BriefFields, e.target.value as never)}
             placeholder={step.notePlaceholder ?? 'Anything to add? (optional)'}
-            className="min-h-[80px] resize-none rounded-xl text-[13.5px] leading-relaxed text-foreground/90 placeholder:text-muted-foreground/55"
+            className="min-h-[80px] resize-none rounded-lg text-[13.5px] leading-relaxed text-foreground/90 placeholder:text-muted-foreground/55"
           />
         )}
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/20 px-7 py-4">
+      <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/20 px-5 py-3">
         <div className="flex items-center gap-3">
           {!isFirst ? (
             <button
@@ -668,7 +665,7 @@ export function ClientProjectBriefForm({
         <Button
           onClick={goNext}
           disabled={submitting || (!canAdvance && !step.optional)}
-          className="group h-10 min-w-[130px] gap-1.5 rounded-xl px-5 text-[12.5px] font-medium shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.45)] transition-all duration-200 hover:shadow-[0_8px_28px_-4px_hsl(var(--primary)/0.55)] hover:brightness-110"
+          className="group h-10 min-w-[130px] gap-1.5 rounded-lg px-5 text-[12.5px] font-medium shadow-sm transition-all duration-200 hover:shadow-md"
         >
           {submitting ? (
             'Sending…'
