@@ -530,20 +530,18 @@ export function QualiaSchedule({
 
   return (
     <div className="flex h-full flex-col">
-      {/* ── Header ── */}
-      <header className="mb-4 flex flex-col gap-4 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {weekLabel}
-          </p>
-          <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight text-foreground">
-            Schedule
-          </h1>
-        </div>
+      <header className="mb-4 rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="mr-auto min-w-[170px]">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold tracking-tight text-foreground">Schedule</h1>
+              <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+              <p className="truncate text-sm text-muted-foreground">{weekLabel}</p>
+            </div>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-3 sm:gap-5">
           {/* TZ Bands */}
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <TzBand label="Nicosia" timezone="Europe/Nicosia" />
             <TzBand label="Amman" timezone="Asia/Amman" />
           </div>
