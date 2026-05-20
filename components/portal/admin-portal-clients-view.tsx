@@ -48,19 +48,19 @@ export function AdminPortalClientsView({
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-3xl">
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-            <span className="inline-block h-px w-5 bg-primary/60" aria-hidden />
-            <span>Registered portal clients</span>
+      <header className="flex flex-col gap-4 rounded-xl border border-border bg-card/60 p-4 shadow-elevation-1 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 max-w-3xl">
+          <h1 className="sr-only">Client command center</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Registered portal clients
+            </span>
+            <span className="hidden h-3 w-px bg-border sm:block" aria-hidden />
+            <p className="text-sm font-medium text-foreground">
+              Login accounts, linked projects, and open client requests in one place.
+            </p>
           </div>
-          <h1 className="mt-2 text-[clamp(1.5rem,1.2rem+1.2vw,2.25rem)] font-semibold tracking-tight">
-            Client command center
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Every login-enabled client account, the projects they can see, and the open requests
-            waiting on the team.
-          </p>
         </div>
 
         <div className="grid grid-cols-3 gap-2 sm:min-w-[440px]">
