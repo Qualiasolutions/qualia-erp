@@ -227,10 +227,10 @@ export function QualiaPortalHub({
       </section>
 
       {/* Body */}
-      <div className="relative px-[clamp(1.5rem,4vw,2.5rem)] pb-16 pt-10">
-        <div className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-[2fr_1fr]">
+      <div className="relative px-[clamp(1.25rem,4vw,2rem)] pb-12 pt-6">
+        <div className="grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-[2fr_1fr]">
           <EngagementsSection projects={projects} accentColor={accentColor} isLoading={isLoading} />
-          <aside className="flex flex-col gap-8">
+          <aside className="flex flex-col gap-6">
             <MeetingsSidebar meetings={upcomingMeetings} accentColor={accentColor} />
             <InvoicesSidebar
               unpaidCount={stats?.unpaidInvoiceCount ?? 0}
@@ -456,10 +456,10 @@ function MeetingsSidebar({
           Meetings
         </span>
       </div>
-      <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex items-start gap-3">
           <div
-            className="flex size-9 shrink-0 items-center justify-center rounded-xl text-white"
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white"
             style={{ background: accentColor }}
             aria-hidden
           >
@@ -477,7 +477,7 @@ function MeetingsSidebar({
           type="button"
           onClick={() => setMeetingModalOpen(true)}
           className={cn(
-            'mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl',
+            'mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg',
             'text-sm font-medium text-white shadow-sm transition-all duration-150',
             'hover:translate-y-[-1px] hover:shadow-md',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
@@ -495,7 +495,7 @@ function MeetingsSidebar({
           {meetings.length > 0 ? (
             <ul className="space-y-3">
               {meetings.map((meeting) => (
-                <li key={meeting.id} className="rounded-xl bg-muted/35 p-3">
+                <li key={meeting.id} className="rounded-lg bg-muted/35 p-3">
                   <div className="text-sm font-medium leading-snug text-foreground">
                     {meeting.title}
                   </div>
@@ -557,7 +557,7 @@ function InvoicesSidebar({
           Recent invoices
         </span>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
           <div className="min-w-0">
             <div className="text-sm font-medium text-foreground">
@@ -607,14 +607,14 @@ function ThreadCard({
           Open a {appLabel}
         </span>
       </div>
-      <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="rounded-xl border border-border bg-card p-4">
         <p className="text-sm leading-relaxed text-muted-foreground">
           Questions, feedback, a new idea? Drop a note — we typically reply within the hour.
         </p>
         <Link
           href={destination}
           className={cn(
-            'mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl',
+            'mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg',
             'text-sm font-medium text-white shadow-sm transition-all duration-150',
             'hover:translate-y-[-1px] hover:shadow-md',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'

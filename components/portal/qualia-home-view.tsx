@@ -261,11 +261,11 @@ function MilestonesCard({
   return (
     <div
       className={cn(
-        'flex flex-col overflow-hidden rounded-2xl border border-border bg-card',
+        'flex flex-col overflow-hidden rounded-xl border border-border bg-card',
         className
       )}
     >
-      <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-6 py-4">
+      <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-5 py-3.5">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Milestones
@@ -277,7 +277,7 @@ function MilestonesCard({
         </div>
       </div>
       {milestones.length === 0 ? (
-        <EmptyState icon={Target} title={emptyText} compact minimal className="px-6 py-10" />
+        <EmptyState icon={Target} title={emptyText} compact minimal className="px-5 py-8" />
       ) : (
         <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
           {milestones.map((m) => {
@@ -293,7 +293,7 @@ function MilestonesCard({
               <li key={m.id}>
                 <Link
                   href={m.project ? `/projects/${m.project.id}/roadmap` : '#'}
-                  className="block px-6 py-3.5 transition-colors hover:bg-muted/30"
+                  className="block px-5 py-3 transition-colors hover:bg-muted/30"
                 >
                   <div className="flex items-center gap-3">
                     <span
@@ -476,7 +476,7 @@ function TodayMeetingsCard({
   return (
     <div
       className={cn(
-        'flex flex-col overflow-hidden rounded-2xl border border-border bg-card p-6',
+        'flex flex-col overflow-hidden rounded-xl border border-border bg-card p-5',
         isGated && 'opacity-60',
         className
       )}
@@ -568,7 +568,7 @@ function ClientPulseCard({
   return (
     <div
       className={cn(
-        'flex flex-col overflow-hidden rounded-2xl border border-border bg-card',
+        'flex flex-col overflow-hidden rounded-xl border border-border bg-card',
         className
       )}
     >
@@ -652,7 +652,7 @@ function WhosDoingWhatCard({
   members: ReturnType<typeof useTeamTodaySnapshot>['members'];
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -758,7 +758,7 @@ function BriefRow({
   return (
     <div
       className={cn(
-        'flex items-start gap-3 px-6 py-2.5 transition-opacity',
+        'flex items-start gap-3 px-5 py-2.5 transition-opacity',
         (done || pending) && 'opacity-50'
       )}
     >
@@ -874,13 +874,13 @@ function DailyBriefCard() {
   const totalToday = activeCount + dismissedCount;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
         <div>
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Qualia Solutions
           </p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight">Daily Brief</h2>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight">Daily Brief</h2>
           <p className="mt-1 text-xs text-muted-foreground">{dateLabel} · auto-generated</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -919,7 +919,7 @@ function DailyBriefCard() {
       {showAdd ? (
         <form
           onSubmit={handleAdd}
-          className="flex flex-col gap-2 border-b border-border bg-muted/20 px-6 py-3"
+          className="flex flex-col gap-2 border-b border-border bg-muted/20 px-5 py-3"
         >
           <input
             type="text"
@@ -958,9 +958,9 @@ function DailyBriefCard() {
 
       <div className="pb-2">
         {isLoading && sections.length === 0 ? (
-          <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading brief…</div>
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">Loading brief…</div>
         ) : sections.length === 0 ? (
-          <div className="px-6 py-12 text-center">
+          <div className="px-5 py-10 text-center">
             <p className="text-sm font-medium text-foreground">All clear.</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {dismissedCount > 0
@@ -971,7 +971,7 @@ function DailyBriefCard() {
         ) : (
           sections.map((section) => (
             <section key={section.heading} className="pt-5">
-              <div className="flex items-center justify-between gap-3 px-6 pb-2">
+              <div className="flex items-center justify-between gap-3 px-5 pb-2">
                 <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   {section.heading}
                 </p>
@@ -1002,7 +1002,7 @@ function DailyBriefCard() {
           <button
             type="button"
             onClick={() => setShowHistory((v) => !v)}
-            className="flex w-full items-center justify-between gap-2 px-6 py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-primary"
+            className="flex w-full items-center justify-between gap-2 px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-primary"
           >
             <span>Today&apos;s history · {dismissedCount} done</span>
             <RotateCcw
