@@ -50,6 +50,7 @@ import {
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
 import { hueFromId } from '@/lib/color-constants';
 import { EmployeeDailyTasks } from '@/components/portal/employee-daily-tasks';
+import { StatCard } from '@/components/ui/stat-card';
 
 export type QualiaHomeRole = 'admin' | 'employee';
 
@@ -175,69 +176,51 @@ export function QualiaHomeView({ role, displayName, workspaces, userId }: Qualia
   // Open requests count
   const { count: openRequestsCount } = useOpenRequestsCount();
 
+  const firstName = displayName.split(' ')[0] || displayName;
+  const weekSummary =
+    milestonesDueCount === 0
+      ? 'No milestones due this week'
+      : `${milestonesDueCount} milestone${milestonesDueCount === 1 ? '' : 's'} due this week`;
+  const activeSummary =
+    activeProjects.length > 0
+      ? `${activeProjects.length} active ${activeProjects.length === 1 ? 'project' : 'projects'}`
+      : 'No active projects';
+
   return (
-    <div className="flex h-full flex-col overflow-hidden p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-4 flex-shrink-0 animate-fade-in">
-        <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="h-2 w-2 rounded-full bg-primary" />
-          <span className="font-medium tracking-wider">{dayName}</span>
-          <span>·</span>
-          <span>{dateStr}</span>
-          <span>·</span>
-          <span className="font-mono">{timeStr}</span>
+    <div className="flex h-full flex-col overflow-hidden p-4 md:p-6 lg:p-8">
+      <header className="stagger-1 mb-4 flex-shrink-0 animate-fade-in rounded-xl border border-border bg-card px-4 py-3 md:px-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-1.5 rounded-full bg-primary" aria-hidden />
+                {dayName}
+              </span>
+              <span aria-hidden>·</span>
+              <span>{dateStr}</span>
+              <span aria-hidden>·</span>
+              <span className="tabular-nums">{timeStr}</span>
+            </div>
+            <h1 className="mt-1 truncate text-lg font-semibold tracking-tight md:text-xl">
+              {getGreeting(hour)}, <span className="text-primary">{firstName}</span>
+            </h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground md:justify-end">
+            <span className="rounded-md bg-primary/[0.07] px-2 py-1 font-medium text-primary">
+              {weekSummary}
+            </span>
+            <span className="rounded-md bg-muted/60 px-2 py-1">{activeSummary}</span>
+          </div>
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight lg:text-4xl">
-          {getGreeting(hour)}, <span className="text-primary">{displayName.split(' ')[0]}</span>
-        </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
-          <span>
-            {milestonesDueCount === 0
-              ? 'No milestones due this week.'
-              : `${milestonesDueCount} milestone${milestonesDueCount === 1 ? '' : 's'} due this week.`}
-            {activeProjects.length > 0
-              ? ` ${activeProjects.length} active ${
-                  activeProjects.length === 1 ? 'project' : 'projects'
-                } in flight.`
-              : ''}
-          </span>
-        </div>
-      </div>
+      </header>
 
       {/* Stats Grid — admin only (employees see info in subtitle + ClientPulse) */}
       {role === 'admin' && (
-        <div className="stagger-1 mb-4 grid flex-shrink-0 animate-fade-in grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Milestones Due
-            </p>
-            <p className="text-3xl font-bold tabular-nums">{milestonesDueCount}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">this week</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Active
-            </p>
-            <p className="text-3xl font-bold tabular-nums">
-              {activeProjects.length}{' '}
-              <span className="text-base font-normal text-muted-foreground">
-                {activeProjects.length === 1 ? 'project' : 'projects'}
-              </span>
-            </p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Open Requests
-            </p>
-            <p className="text-3xl font-bold tabular-nums">
-              {openRequestsCount === 0 ? (
-                <span className="text-base font-normal text-muted-foreground">All clear</span>
-              ) : (
-                openRequestsCount
-              )}
-            </p>
-          </div>
-        </div>
+        <AdminSignalStrip
+          milestonesDueCount={milestonesDueCount}
+          activeProjectsCount={activeProjects.length}
+          openRequestsCount={openRequestsCount}
+        />
       )}
 
       {role === 'admin' ? (
@@ -356,6 +339,46 @@ function MilestonesCard({
 }
 
 /* --------- Admin layout --------- */
+
+function AdminSignalStrip({
+  milestonesDueCount,
+  activeProjectsCount,
+  openRequestsCount,
+}: {
+  milestonesDueCount: number;
+  activeProjectsCount: number;
+  openRequestsCount: number;
+}) {
+  return (
+    <section className="stagger-2 mb-4 flex-shrink-0 animate-fade-in overflow-hidden rounded-xl border border-border bg-card">
+      <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <StatCard
+          flat
+          label="Milestones due"
+          value={milestonesDueCount}
+          helperText="this week"
+          tone={milestonesDueCount > 0 ? 'warning' : 'neutral'}
+          adornment={<Target className="size-4" aria-hidden />}
+        />
+        <StatCard
+          flat
+          label="Active work"
+          value={activeProjectsCount}
+          helperText={activeProjectsCount === 1 ? 'project in flight' : 'projects in flight'}
+          adornment={<Users className="size-4" aria-hidden />}
+        />
+        <StatCard
+          flat
+          label="Open requests"
+          value={openRequestsCount === 0 ? 'Clear' : openRequestsCount}
+          helperText={openRequestsCount === 0 ? 'client inbox' : 'need review'}
+          tone={openRequestsCount > 0 ? 'warning' : 'neutral'}
+          adornment={<MessageSquare className="size-4" aria-hidden />}
+        />
+      </div>
+    </section>
+  );
+}
 
 function AdminMainGrid({
   teamMembers,
