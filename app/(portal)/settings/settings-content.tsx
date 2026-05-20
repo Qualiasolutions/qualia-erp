@@ -94,11 +94,11 @@ function PasswordChangeSection() {
 
   return (
     <section
-      className="animate-fade-in rounded-2xl border border-border bg-card p-6 fill-mode-both md:p-7"
+      className="animate-fade-in rounded-xl border border-border bg-card p-5 fill-mode-both md:p-6"
       style={{ animationDelay: '100ms' }}
     >
       <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/[0.08] dark:bg-primary/15">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
           <Lock className="h-4 w-4 text-primary" />
         </div>
         <div>
@@ -144,7 +144,7 @@ function PasswordChangeSection() {
           <Button
             type="submit"
             disabled={isPending || !newPassword || !confirmPassword}
-            className="min-h-[40px] cursor-pointer rounded-xl bg-primary text-primary-foreground"
+            className="min-h-[40px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
           >
             {isPending ? (
               <>
@@ -238,11 +238,11 @@ export function SettingsContent({
         </div>
       </header>
 
-      <div className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Profile Settings */}
-        <section className="animate-fade-in rounded-2xl border border-border bg-card p-6 fill-mode-both md:p-7">
+        <section className="animate-fade-in rounded-xl border border-border bg-card p-5 fill-mode-both md:p-6">
           <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/[0.08] dark:bg-primary/15">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
               <User className="h-4 w-4 text-primary" />
             </div>
             <div>
@@ -302,7 +302,7 @@ export function SettingsContent({
               <Button
                 type="submit"
                 disabled={profileSaving}
-                className="min-h-[40px] cursor-pointer rounded-xl bg-primary text-primary-foreground"
+                className="min-h-[40px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
               >
                 {profileSaving ? (
                   <>
@@ -325,12 +325,12 @@ export function SettingsContent({
 
         {/* Notification Preferences */}
         <section
-          className="animate-fade-in overflow-hidden rounded-2xl border border-border bg-card fill-mode-both"
+          className="animate-fade-in overflow-hidden rounded-xl border border-border bg-card fill-mode-both lg:col-span-2"
           style={{ animationDelay: '150ms' }}
         >
-          <div className="p-6 pb-0 md:p-7 md:pb-0">
+          <div className="p-5 pb-0 md:p-6 md:pb-0">
             <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/[0.1] dark:bg-amber-500/15">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/[0.1] dark:bg-amber-500/15">
                 <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
@@ -346,11 +346,11 @@ export function SettingsContent({
 
           <form onSubmit={handleNotificationSubmit}>
             {/* Notification Toggles */}
-            <div className="divide-y divide-border/50 px-1 md:px-2">
+            <div className="grid gap-px bg-border/50 p-px md:grid-cols-2">
               {filteredNotificationItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex min-h-[56px] items-center justify-between gap-4 px-5 py-4 md:px-5"
+                  className="flex min-h-[64px] items-center justify-between gap-4 bg-card px-4 py-4 md:px-5"
                 >
                   <div className="space-y-0.5">
                     <Label htmlFor={item.id} className="cursor-pointer text-sm font-medium">
@@ -417,7 +417,7 @@ export function SettingsContent({
               <Button
                 type="submit"
                 disabled={notificationsSaving}
-                className="min-h-[40px] cursor-pointer rounded-xl bg-primary text-primary-foreground"
+                className="min-h-[40px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
               >
                 {notificationsSaving ? (
                   <>
