@@ -24,6 +24,7 @@ import {
   LineChart,
   CalendarClock,
   CheckCircle2,
+  FileText,
 } from 'lucide-react';
 import { useProjectAssignments, invalidateProjectAssignments } from '@/lib/swr';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -61,6 +62,7 @@ import { cn } from '@/lib/utils';
 import { ProjectReportsPanel } from '@/components/project-reports-panel';
 import { ProjectResources } from '@/components/project-resources';
 import { ProjectFilesPanel } from '@/components/project-files-panel';
+import { ProjectBriefViewer } from '@/components/project-brief-viewer';
 import { LogoUpload } from '@/components/logo-upload';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { ProjectIntegrationsDisplay } from '@/components/project-integrations-display';
@@ -404,6 +406,13 @@ export function ProjectDetailView({
               </div>
             )}
 
+            {/* Client briefs — staff-only readout of submitted intake forms */}
+            {!isClient && (
+              <div className="shrink-0 border-b border-border">
+                <ProjectBriefViewer projectId={project.id} />
+              </div>
+            )}
+
             {/* Resources — links to live docs/deploys; visible to clients */}
             <div className="min-h-0 flex-1 border-b border-border">
               <ProjectResources
@@ -639,17 +648,23 @@ export function ProjectDetailView({
 
           <Tabs defaultValue="resources" className="flex min-h-0 flex-1 flex-col">
             <TabsList
-              className={cn('mx-4 mt-3 grid w-auto', isClient ? 'grid-cols-1' : 'grid-cols-2')}
+              className={cn('mx-4 mt-3 grid w-auto', isClient ? 'grid-cols-1' : 'grid-cols-3')}
             >
               <TabsTrigger value="resources" className="gap-1.5 text-xs">
                 <LinkIcon className="h-3.5 w-3.5" />
                 Resources
               </TabsTrigger>
               {!isClient && (
-                <TabsTrigger value="reports" className="gap-1.5 text-xs">
-                  <LineChart className="h-3.5 w-3.5" />
-                  Reports
-                </TabsTrigger>
+                <>
+                  <TabsTrigger value="briefs" className="gap-1.5 text-xs">
+                    <FileText className="h-3.5 w-3.5" />
+                    Briefs
+                  </TabsTrigger>
+                  <TabsTrigger value="reports" className="gap-1.5 text-xs">
+                    <LineChart className="h-3.5 w-3.5" />
+                    Reports
+                  </TabsTrigger>
+                </>
               )}
             </TabsList>
             <TabsContent value="resources" className="mt-0 min-h-0 flex-1">
@@ -660,9 +675,14 @@ export function ProjectDetailView({
               />
             </TabsContent>
             {!isClient && (
-              <TabsContent value="reports" className="mt-0 min-h-0 flex-1">
-                <ProjectReportsPanel projectName={project.name} className="h-full" />
-              </TabsContent>
+              <>
+                <TabsContent value="briefs" className="mt-0 min-h-0 flex-1 overflow-y-auto">
+                  <ProjectBriefViewer projectId={project.id} />
+                </TabsContent>
+                <TabsContent value="reports" className="mt-0 min-h-0 flex-1">
+                  <ProjectReportsPanel projectName={project.name} className="h-full" />
+                </TabsContent>
+              </>
             )}
           </Tabs>
         </SheetContent>

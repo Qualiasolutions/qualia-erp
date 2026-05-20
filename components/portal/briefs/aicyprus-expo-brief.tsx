@@ -38,6 +38,7 @@ export function AICyprusExpoBrief({
       projectName={projectName}
       formTitle="AI Cyprus Expo"
       modulesStep={MODULES}
+      variant="aicyprus-expo"
       className={className}
     />
   );

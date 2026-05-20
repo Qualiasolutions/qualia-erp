@@ -17,6 +17,7 @@ export async function createFeatureRequest(input: {
   title: string;
   description?: string;
   priority?: string;
+  brief_data?: unknown;
 }): Promise<ActionResult> {
   try {
     const imp = await assertNotImpersonating();
@@ -56,6 +57,7 @@ export async function createFeatureRequest(input: {
         title: safeInput.title.trim(),
         description: safeInput.description?.trim() || null,
         priority: safeInput.priority || 'medium',
+        brief_data: safeInput.brief_data ?? null,
       })
       .select()
       .single();
@@ -204,6 +206,78 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get requests',
+    };
+  }
+}
+
+/**
+ * Return submitted project briefs (intake-form feature requests) for a project.
+ * Internal-only — admin or employee assigned to the project. Client role gets
+ * back an access-denied error since this is the staff-facing readout.
+ *
+ * Returns rows ordered newest-first. Each row carries the structured
+ * `brief_data` when present; the viewer falls back to parsing `description`
+ * for older briefs that pre-date the brief_data column.
+ */
+export async function getProjectBriefs(projectId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const isAdmin = await isUserAdmin(user.id);
+    if (!isAdmin) {
+      const staff = await isStaffOnProject(user.id, projectId);
+      if (!staff) return { success: false, error: 'Access denied' };
+    }
+
+    const { data, error } = await supabase
+      .from('client_feature_requests')
+      .select(
+        `
+        id,
+        client_id,
+        project_id,
+        title,
+        description,
+        priority,
+        status,
+        brief_data,
+        attachments,
+        created_at,
+        submitter:profiles!client_feature_requests_client_id_fkey(id, full_name, avatar_url)
+      `
+      )
+      .eq('project_id', projectId)
+      .like('title', 'Project brief —%')
+      .order('created_at', { ascending: false });
+
+    if (error) return { success: false, error: error.message || 'Failed to load briefs' };
+
+    const normalized = (data ?? []).map((r) => {
+      const rec = r as typeof r & {
+        submitter?:
+          | { id: string; full_name: string | null; avatar_url: string | null }
+          | { id: string; full_name: string | null; avatar_url: string | null }[]
+          | null;
+      };
+      return {
+        ...rec,
+        attachments: Array.isArray(rec.attachments) ? (rec.attachments as RequestAttachment[]) : [],
+        submitter: Array.isArray(rec.submitter)
+          ? (rec.submitter[0] ?? null)
+          : (rec.submitter ?? null),
+      };
+    });
+
+    return { success: true, data: normalized };
+  } catch (error) {
+    console.error('[getProjectBriefs] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to load briefs',
     };
   }
 }

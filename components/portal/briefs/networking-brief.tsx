@@ -37,6 +37,7 @@ export function NetworkingBrief({
       projectName={projectName}
       formTitle="Hivora"
       modulesStep={MODULES}
+      variant="networking"
       className={className}
     />
   );

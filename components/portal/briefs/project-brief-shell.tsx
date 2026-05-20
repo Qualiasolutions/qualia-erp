@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { createFeatureRequest } from '@/app/actions/client-requests';
-import { uploadProjectFile } from '@/app/actions/project-files';
+import { createFeatureRequest, uploadRequestAttachment } from '@/app/actions/client-requests';
+import type { BriefData, BriefSection } from '@/lib/validation';
 import { cn } from '@/lib/utils';
 import {
   AUDIENCE_OPTIONS,
@@ -20,14 +20,17 @@ import {
   TIMELINE_OPTIONS,
 } from './brief-types';
 
+// Aligned with uploadRequestAttachment limits in app/actions/client-requests.ts.
 const MAX_FILES = 8;
-const MAX_FILE_SIZE_MB = 50;
+const MAX_FILE_SIZE_MB = 20;
 
 interface ProjectBriefShellProps {
   projectId: string;
   projectName: string;
   formTitle: string;
   modulesStep: BriefModulesStep;
+  /** Identifies this variant in the structured brief_data payload. */
+  variant: string;
   className?: string;
 }
 
@@ -143,7 +146,7 @@ function buildSteps(modulesStep: BriefModulesStep): Step[] {
       eyebrow: 'Step 9',
       shortLabel: 'Files',
       title: 'Upload anything we should see',
-      hint: 'Logo, brief PDF, screenshots, references — up to 8 files, 50MB each.',
+      hint: 'Logo, brief PDF, screenshots, references — up to 8 files, 20MB each.',
       kind: 'files',
       optional: true,
     },
@@ -198,11 +201,53 @@ function buildDescription(
   return sections.join('\n\n');
 }
 
+function buildBriefData(variant: string, fields: BriefFields, modulesLabel: string): BriefData {
+  const sections: BriefSection[] = [];
+
+  const pushChips = (key: string, label: string, values: string[], note: string) => {
+    if (values.length === 0 && !note.trim()) return;
+    const section: BriefSection = { key, label };
+    if (values.length > 0) section.values = values;
+    if (note.trim()) section.note = note.trim();
+    sections.push(section);
+  };
+
+  const pushChip = (key: string, label: string, value: string, note: string) => {
+    if (!value && !note.trim()) return;
+    const section: BriefSection = { key, label };
+    if (value) section.value = value;
+    if (note.trim()) section.note = note.trim();
+    sections.push(section);
+  };
+
+  const pushText = (key: string, label: string, value: string) => {
+    if (!value.trim()) return;
+    sections.push({ key, label, value: value.trim() });
+  };
+
+  pushChips('goals', 'Goals', fields.goals, fields.goalsNote);
+  pushChips('audience', 'Audience', fields.audience, fields.audienceNote);
+  pushChips('modules', modulesLabel, fields.modules, fields.modulesNote);
+  pushChips('geography', 'Geography', fields.geography, fields.geographyNote);
+  pushChips('integrations', 'Integrations', fields.integrations, fields.integrationsNote);
+  pushText('references', 'References', fields.references);
+  pushChip('timeline', 'Timeline', fields.timeline, fields.timelineNote);
+  pushChip('budget', 'Budget', fields.budget, fields.budgetNote);
+  pushText('notes', 'Anything else', fields.notes);
+
+  return {
+    variant,
+    submitted_at: new Date().toISOString(),
+    sections,
+  };
+}
+
 export function ProjectBriefShell({
   projectId,
   projectName,
   formTitle,
   modulesStep,
+  variant,
   className,
 }: ProjectBriefShellProps) {
   const STEPS = buildSteps(modulesStep);
@@ -324,40 +369,44 @@ export function ProjectBriefShell({
 
     setSubmitting(true);
 
-    const uploaded: { name: string; size: number }[] = [];
-    for (const file of files) {
-      const fd = new FormData();
-      fd.set('file', file);
-      fd.set('project_id', projectId);
-      fd.set('description', `Project brief attachment — ${projectName}`);
-      fd.set('is_client_visible', 'true');
-      const res = await uploadProjectFile(fd);
-      if (res.success) {
-        uploaded.push({ name: file.name, size: file.size });
-      } else {
-        toast.error(`Could not upload ${file.name}: ${res.error}`);
-      }
-    }
-
-    const description = buildDescription(fields, uploaded);
+    // Create the request first so files attach to a known request_id. The
+    // markdown description carries the same data as brief_data for back-compat
+    // with the existing /requests detail view; brief_data drives the new
+    // structured viewer on the project page.
+    const briefData = buildBriefData(variant, fields, modulesStep.title);
+    const description = buildDescription(fields, []);
     const result = await createFeatureRequest({
       project_id: projectId,
       title: `Project brief — ${projectName}`,
       description,
       priority: 'medium',
+      brief_data: briefData,
     });
 
-    setSubmitting(false);
-
-    if (result.success) {
-      toast.success('Brief sent — we’ll review and get back to you');
-      setSubmitted(true);
-      setFields({ ...INITIAL_FIELDS, modules: modulesStep.defaults ?? [] });
-      setFiles([]);
-      setStepIndex(0);
-    } else {
+    if (!result.success || !result.data) {
+      setSubmitting(false);
       toast.error(result.error || 'Failed to send brief');
+      return;
     }
+
+    const requestId = (result.data as { id: string }).id;
+
+    for (const file of files) {
+      const fd = new FormData();
+      fd.set('file', file);
+      fd.set('request_id', requestId);
+      const res = await uploadRequestAttachment(fd);
+      if (!res.success) {
+        toast.error(`Could not upload ${file.name}: ${res.error}`);
+      }
+    }
+
+    setSubmitting(false);
+    toast.success('Brief sent — we’ll review and get back to you');
+    setSubmitted(true);
+    setFields({ ...INITIAL_FIELDS, modules: modulesStep.defaults ?? [] });
+    setFiles([]);
+    setStepIndex(0);
   }
 
   if (submitted) {
