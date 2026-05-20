@@ -10,6 +10,7 @@ import {
   Image as ImageIcon,
   Loader2,
   RotateCcw,
+  Building2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -31,6 +32,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RichText } from '@/components/ui/rich-text';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { RequestCommentThread } from './request-comment-thread';
@@ -63,7 +65,18 @@ interface FeatureRequest {
   admin_response: string | null;
   created_at: string;
   attachments?: RequestAttachmentMeta[] | null;
-  project: { id: string; name: string } | null;
+  project: {
+    id: string;
+    name: string;
+    logo_url: string | null;
+    client: { id: string; display_name: string | null; logo_url: string | null } | null;
+  } | null;
+  client: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  } | null;
   assigned_to?: string | null;
   assignee?: { id: string; full_name: string | null; avatar_url: string | null } | null;
 }
@@ -221,6 +234,16 @@ export function RequestDetailSheet({
   const currentStatus = toUiStatus(request.status);
   const isClosed = currentStatus === 'completed' || currentStatus === 'declined';
   const attachmentCount = request.attachments?.length ?? 0;
+  const clientName =
+    request.project?.client?.display_name ||
+    request.client?.full_name ||
+    request.client?.email ||
+    'Unknown client';
+  const logoUrl =
+    request.project?.client?.logo_url ??
+    request.project?.logo_url ??
+    request.client?.avatar_url ??
+    null;
 
   return (
     <>
@@ -244,6 +267,29 @@ export function RequestDetailSheet({
               {request.title}
             </SheetTitle>
             <SheetDescription className="sr-only">Detail view for feature request</SheetDescription>
+            {isStaff && (
+              <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 p-3">
+                <Avatar className="size-10 rounded-xl">
+                  {logoUrl && <AvatarImage src={logoUrl} alt="" className="object-cover" />}
+                  <AvatarFallback className="rounded-xl bg-primary/10 text-xs font-semibold text-primary">
+                    {clientName ? (
+                      clientName.slice(0, 2).toUpperCase()
+                    ) : (
+                      <Building2 className="size-4" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 text-left">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Submitted by
+                  </p>
+                  <p className="truncate text-sm font-semibold text-foreground">{clientName}</p>
+                  {request.client?.email && (
+                    <p className="truncate text-xs text-muted-foreground">{request.client.email}</p>
+                  )}
+                </div>
+              </div>
+            )}
             <StatusPipeline currentStatus={currentStatus} />
           </SheetHeader>
 

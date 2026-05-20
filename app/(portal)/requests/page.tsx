@@ -100,7 +100,18 @@ export default async function PortalRequestsPage() {
       type: string;
       uploaded_at: string;
     }> | null;
-    project: { id: string; name: string } | null;
+    project: {
+      id: string;
+      name: string;
+      logo_url: string | null;
+      client: { id: string; display_name: string | null; logo_url: string | null } | null;
+    } | null;
+    client: {
+      id: string;
+      full_name: string | null;
+      email: string | null;
+      avatar_url: string | null;
+    } | null;
     assigned_to: string | null;
     assignee: { id: string; full_name: string | null; avatar_url: string | null } | null;
   }>;

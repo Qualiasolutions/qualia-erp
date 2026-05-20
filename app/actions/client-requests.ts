@@ -164,7 +164,7 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
         assigned_to,
         created_at,
         updated_at,
-        project:projects(id, name),
+        project:projects(id, name, logo_url, client:clients(id, display_name, logo_url)),
         assignee:profiles!client_feature_requests_assigned_to_fkey(id, full_name, avatar_url)
       `
       )
@@ -184,18 +184,61 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
     const { data, error } = await query;
     if (error) return { success: false, error: error.message || 'Failed to get requests' };
 
+    const clientIds = Array.from(new Set((data || []).map((r) => r.client_id).filter(Boolean)));
+    const clientProfiles = new Map<
+      string,
+      { id: string; full_name: string | null; email: string | null; avatar_url: string | null }
+    >();
+    if (clientIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, avatar_url')
+        .in('id', clientIds);
+      for (const profile of profiles || []) {
+        clientProfiles.set(profile.id, profile);
+      }
+    }
+
     // Normalize FK arrays
     const normalized = (data || []).map((r) => {
       const rec = r as typeof r & {
         assigned_to?: string | null;
+        client_id: string;
+        project?:
+          | {
+              id: string;
+              name: string;
+              logo_url: string | null;
+              client:
+                | { id: string; display_name: string | null; logo_url: string | null }
+                | { id: string; display_name: string | null; logo_url: string | null }[]
+                | null;
+            }
+          | Array<{
+              id: string;
+              name: string;
+              logo_url: string | null;
+              client:
+                | { id: string; display_name: string | null; logo_url: string | null }
+                | { id: string; display_name: string | null; logo_url: string | null }[]
+                | null;
+            }>
+          | null;
         assignee?:
           | { id: string; full_name: string | null; avatar_url: string | null }
           | { id: string; full_name: string | null; avatar_url: string | null }[]
           | null;
       };
+      const project = Array.isArray(rec.project) ? rec.project[0] || null : rec.project;
+      const crmClient = project?.client
+        ? Array.isArray(project.client)
+          ? project.client[0] || null
+          : project.client
+        : null;
       return {
         ...rec,
-        project: Array.isArray(rec.project) ? rec.project[0] || null : rec.project,
+        project: project ? { ...project, client: crmClient } : null,
+        client: clientProfiles.get(rec.client_id) ?? null,
         assignee: Array.isArray(rec.assignee) ? rec.assignee[0] || null : (rec.assignee ?? null),
       };
     });
@@ -636,7 +679,7 @@ export async function deleteFeatureRequest(requestId: string): Promise<ActionRes
       await adminClient.storage.from('project-files').remove(storagePaths);
     }
 
-    const { data: deletedComments, error: commentsError } = await adminClient
+    const { error: commentsError } = await adminClient
       .from('request_comments')
       .delete()
       .eq('request_id', requestId)

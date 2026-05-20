@@ -773,7 +773,9 @@ export interface MergedPortalClient {
   created_at: string;
   lastSignIn: string | null;
   isActive: boolean;
-  projects: Array<{ id: string; name: string }>;
+  requestCount: number;
+  openRequestCount: number;
+  projects: Array<{ id: string; name: string; status: string | null; logo_url: string | null }>;
 }
 
 /**
@@ -800,7 +802,7 @@ export async function getPortalClientManagement(): Promise<ActionResult> {
 
     // Fetch all data in parallel. The cached sign-in map (H14) avoids
     // redundant auth.admin.listUsers calls via a 120s snapshot.
-    const [clientsResult, assignmentsResult, signInRecord] = await Promise.all([
+    const [clientsResult, assignmentsResult, requestResult, signInRecord] = await Promise.all([
       // All client profiles
       supabase
         .from('profiles')
@@ -811,7 +813,10 @@ export async function getPortalClientManagement(): Promise<ActionResult> {
       // All client-project assignments with project names
       supabase
         .from('client_projects')
-        .select('client_id, project_id, project:projects!project_id(id, name)'),
+        .select('client_id, project_id, project:projects!project_id(id, name, status, logo_url)'),
+
+      // Request counts by portal profile id.
+      supabase.from('client_feature_requests').select('client_id, status'),
 
       // Auth users last_sign_in_at — cached per H14
       getCachedPortalSignInMap(),
@@ -824,15 +829,31 @@ export async function getPortalClientManagement(): Promise<ActionResult> {
     const signInMap = new Map<string, string | null>(Object.entries(signInRecord));
 
     // Build client_id -> projects map from assignments
-    const projectsMap = new Map<string, Array<{ id: string; name: string }>>();
+    const projectsMap = new Map<
+      string,
+      Array<{ id: string; name: string; status: string | null; logo_url: string | null }>
+    >();
     for (const assignment of assignmentsResult.data ?? []) {
       const projectRaw = assignment.project;
       const project = Array.isArray(projectRaw) ? projectRaw[0] : projectRaw;
       if (!project) continue;
 
       const existing = projectsMap.get(assignment.client_id) ?? [];
-      existing.push({ id: project.id, name: project.name });
+      existing.push({
+        id: project.id,
+        name: project.name,
+        status: project.status,
+        logo_url: project.logo_url,
+      });
       projectsMap.set(assignment.client_id, existing);
+    }
+
+    const requestCounts = new Map<string, { total: number; open: number }>();
+    for (const request of requestResult.data ?? []) {
+      const existing = requestCounts.get(request.client_id) ?? { total: 0, open: 0 };
+      existing.total += 1;
+      if (request.status !== 'completed' && request.status !== 'declined') existing.open += 1;
+      requestCounts.set(request.client_id, existing);
     }
 
     // 30-day activity threshold
@@ -845,6 +866,7 @@ export async function getPortalClientManagement(): Promise<ActionResult> {
       const lastSignIn = email ? (signInMap.get(email) ?? null) : null;
       const isActive = lastSignIn ? new Date(lastSignIn) >= thirtyDaysAgo : false;
       const projects = projectsMap.get(profile.id) ?? [];
+      const requestSummary = requestCounts.get(profile.id) ?? { total: 0, open: 0 };
 
       return {
         id: profile.id,
@@ -853,6 +875,8 @@ export async function getPortalClientManagement(): Promise<ActionResult> {
         created_at: profile.created_at,
         lastSignIn,
         isActive,
+        requestCount: requestSummary.total,
+        openRequestCount: requestSummary.open,
         projects,
       };
     });

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarClock, ClipboardCheck, FileBarChart, LayoutDashboard } from 'lucide-react';
+import { CalendarClock, ClipboardCheck, FileBarChart, LayoutDashboard, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -26,6 +26,12 @@ const LINKS: SectionLink[] = [
     label: 'Reports',
     icon: FileBarChart,
     match: (p) => p.startsWith('/admin/reports'),
+  },
+  {
+    href: '/admin/clients',
+    label: 'Portal Clients',
+    icon: Users,
+    match: (p) => p.startsWith('/admin/clients'),
   },
   {
     href: '/admin/attendance',

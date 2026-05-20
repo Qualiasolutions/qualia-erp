@@ -13,10 +13,11 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { Inbox, Paperclip, MessageSquare, GripVertical, Search, X } from 'lucide-react';
+import { Building2, Inbox, Paperclip, MessageSquare, GripVertical, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { updateFeatureRequest } from '@/app/actions/client-requests';
 import { RequestDetailSheet } from './request-detail-sheet';
@@ -34,7 +35,18 @@ interface FeatureRequest {
   attachments?:
     | { name: string; path: string; size: number; type: string; uploaded_at: string }[]
     | null;
-  project: { id: string; name: string } | null;
+  project: {
+    id: string;
+    name: string;
+    logo_url: string | null;
+    client: { id: string; display_name: string | null; logo_url: string | null } | null;
+  } | null;
+  client: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  } | null;
   assigned_to?: string | null;
   assignee?: { id: string; full_name: string | null; avatar_url: string | null } | null;
 }
@@ -104,7 +116,8 @@ export function AdminRequestsBoard({
       if (!isClient && scope === 'mine' && r.assigned_to !== currentUserId) return false;
       if (priorityFilter !== 'all' && r.priority !== priorityFilter) return false;
       if (q) {
-        const haystack = `${r.title} ${r.description ?? ''} ${r.project?.name ?? ''}`.toLowerCase();
+        const haystack =
+          `${r.title} ${r.description ?? ''} ${r.project?.name ?? ''} ${getRequestClientName(r)}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
@@ -649,6 +662,12 @@ const RequestCard = memo(function RequestCard({
   //   - Clients scan by their own request topic → request title as primary
   // Both views still show both fields, just with the emphasis swapped.
   const projectLabel = request.project?.name ?? null;
+  const clientName = getRequestClientName(request);
+  const logoUrl =
+    request.project?.client?.logo_url ??
+    request.project?.logo_url ??
+    request.client?.avatar_url ??
+    null;
   return (
     <article
       className={cn(
@@ -680,11 +699,28 @@ const RequestCard = memo(function RequestCard({
             </>
           ) : (
             <>
-              {/* Staff view: project name as primary so triagers can group by client */}
-              <p className="text-sm font-semibold leading-snug text-foreground">
-                {projectLabel ?? <span className="text-muted-foreground/50">No project</span>}
-              </p>
-              <h3 className="mt-0.5 line-clamp-2 text-xs font-normal text-muted-foreground">
+              {/* Staff view: client identity is primary so triagers instantly see who asked. */}
+              <div className="mb-2 flex items-center gap-2 rounded-lg border border-border/60 bg-muted/25 px-2 py-1.5">
+                <Avatar className="size-7 rounded-lg">
+                  {logoUrl && <AvatarImage src={logoUrl} alt="" className="object-cover" />}
+                  <AvatarFallback className="rounded-lg bg-primary/10 text-[10px] font-semibold text-primary">
+                    {clientName ? (
+                      clientName.slice(0, 2).toUpperCase()
+                    ) : (
+                      <Building2 className="size-3" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-semibold leading-tight text-foreground">
+                    {clientName || 'Unknown client'}
+                  </p>
+                  <p className="truncate text-[10px] leading-tight text-muted-foreground">
+                    {projectLabel ?? 'No linked project'}
+                  </p>
+                </div>
+              </div>
+              <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
                 {request.title}
               </h3>
             </>
@@ -719,6 +755,15 @@ const RequestCard = memo(function RequestCard({
     </article>
   );
 });
+
+function getRequestClientName(request: FeatureRequest): string {
+  return (
+    request.project?.client?.display_name ||
+    request.client?.full_name ||
+    request.client?.email ||
+    'Unknown client'
+  );
+}
 
 function AssigneeChip({ assignee }: { assignee: FeatureRequest['assignee'] }) {
   if (!assignee) {
