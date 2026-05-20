@@ -117,6 +117,14 @@ const PAGES: PageDef[] = [
     appKey: 'requests',
   },
   {
+    id: 'clients',
+    label: 'Clients',
+    icon: 'clients',
+    href: '/clients',
+    roles: ['admin'],
+    appKey: 'clients',
+  },
+  {
     id: 'client-billing',
     label: 'Billing',
     icon: 'payments',
@@ -140,6 +148,7 @@ const ROLE_ORDER: Record<Role, string[]> = {
     'projects',
     'schedule',
     'requests',
+    'clients',
     'knowledge',
     'admin-panel',
     'settings',

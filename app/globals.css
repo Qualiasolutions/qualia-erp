@@ -558,6 +558,30 @@
     background: var(--shell-bg);
   }
 
+  .portal-main {
+    position: relative;
+    background:
+      linear-gradient(180deg, hsl(var(--background) / 0.66) 0%, hsl(var(--surface-2) / 0.82) 100%),
+      radial-gradient(circle at 72% 0%, hsl(var(--primary) / 0.07), transparent 30rem);
+  }
+
+  .portal-main::before {
+    content: '';
+    pointer-events: none;
+    position: fixed;
+    inset: 0 0 auto var(--sidebar-w, 256px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.34), transparent);
+    opacity: 0.55;
+    z-index: 1;
+  }
+
+  @media (max-width: 767px) {
+    .portal-main::before {
+      inset-left: 0;
+    }
+  }
+
   .erp-panel {
     background: var(--panel);
     border: 1px solid hsl(var(--border));
