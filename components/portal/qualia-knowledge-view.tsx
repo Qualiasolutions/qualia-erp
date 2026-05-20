@@ -278,7 +278,7 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
         {/* Messages or empty state */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto rounded-2xl border border-border bg-card/40 p-3 lg:p-4"
+          className="flex-1 overflow-y-auto rounded-xl border border-border bg-card/60 p-3 lg:p-4"
         >
           {!hasMessages ? (
             <EmptyChatState onPick={submit} />
@@ -311,7 +311,7 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
 
         {/* Composer */}
         <form onSubmit={handleSubmit} className="mt-2 flex-shrink-0">
-          <div className="relative rounded-2xl border border-border bg-card shadow-sm transition-colors focus-within:border-primary/50 focus-within:shadow-md">
+          <div className="relative rounded-xl border border-border bg-card shadow-sm transition-colors focus-within:border-primary/50 focus-within:shadow-md">
             <textarea
               ref={inputRef}
               rows={1}
@@ -320,7 +320,7 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
               onKeyDown={handleKeyDown}
               placeholder="Ask anything about Qualia…"
               disabled={isStreaming}
-              className="block max-h-32 min-h-[48px] w-full resize-none rounded-2xl bg-transparent px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed"
+              className="block max-h-32 min-h-[48px] w-full resize-none rounded-xl bg-transparent px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed"
             />
             <div className="absolute bottom-1.5 right-1.5">
               {isStreaming ? (
@@ -681,19 +681,19 @@ function ResourceCard({ resource, onOpen }: { resource: ResourceMeta; onOpen: ()
       type="button"
       onClick={onOpen}
       className={cn(
-        'group relative flex w-full cursor-pointer items-start gap-3 overflow-hidden rounded-2xl border border-border bg-card p-4 text-left ring-2 ring-transparent transition-all duration-200',
-        'hover:-translate-y-0.5 hover:shadow-lg',
+        'group relative flex w-full cursor-pointer items-start gap-3 overflow-hidden rounded-xl border border-border bg-card p-3 text-left ring-2 ring-transparent transition-colors duration-150',
+        'hover:border-primary/25 hover:bg-muted/20',
         'focus-visible:outline-none focus-visible:ring-primary/40',
         resource.ringClass
       )}
     >
       <span
         className={cn(
-          'flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-muted/70 transition-transform duration-200 group-hover:scale-110',
+          'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-muted/70 transition-colors duration-150',
           resource.accent
         )}
       >
-        <Icon size={22} weight="duotone" />
+        <Icon size={19} weight="duotone" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold leading-tight text-foreground">{resource.title}</p>
@@ -736,36 +736,23 @@ function ResourceModal({ id, onClose }: { id: ResourceId; onClose: () => void })
       aria-modal="true"
       aria-label={meta.title}
       onClick={onClose}
-      className="qm-overlay fixed inset-0 z-modal flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm"
+      className="qm-overlay fixed inset-0 z-modal flex items-center justify-center bg-foreground/35 p-4 backdrop-blur-sm"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="qm-panel relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-2xl"
+        className="qm-panel relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-elevation-4"
       >
-        {/* Decorative gradient header */}
-        <div
-          className={cn(
-            'absolute inset-x-0 top-0 h-32 bg-gradient-to-b opacity-40',
-            id === 'commands' && 'from-emerald-500/30',
-            id === 'lifecycle' && 'from-blue-500/30',
-            id === 'playbook' && 'from-amber-500/30',
-            id === 'concepts' && 'from-violet-500/30',
-            id === 'design-integration' && 'from-rose-500/30'
-          )}
-          aria-hidden
-        />
-
-        <header className="relative flex flex-shrink-0 items-start gap-4 border-b border-border px-6 py-5">
+        <header className="relative flex flex-shrink-0 items-start gap-3 border-b border-border px-4 py-3">
           <span
             className={cn(
-              'flex h-12 w-12 items-center justify-center rounded-2xl bg-card ring-1 ring-border',
+              'flex h-9 w-9 items-center justify-center rounded-lg bg-muted/60 ring-1 ring-border',
               meta.accent
             )}
           >
-            <Icon size={26} weight="duotone" />
+            <Icon size={20} weight="duotone" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-semibold leading-tight tracking-tight text-foreground">
+            <h2 className="text-base font-semibold leading-tight tracking-tight text-foreground">
               {meta.title}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">{meta.subtitle}</p>

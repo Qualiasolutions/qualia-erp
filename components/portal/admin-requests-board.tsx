@@ -477,7 +477,7 @@ function DroppableColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        'flex w-[280px] shrink-0 snap-start flex-col rounded-2xl border border-border/70 bg-card/40 p-3 transition-colors sm:w-[300px] md:w-auto md:min-w-0 md:shrink',
+        'flex w-[280px] shrink-0 snap-start flex-col rounded-xl border border-border bg-card/60 p-2.5 transition-colors sm:w-[300px] md:w-auto md:min-w-0 md:shrink',
         isOver && 'border-primary/40 bg-primary/[0.04]'
       )}
     >
@@ -500,7 +500,7 @@ function DroppableColumn({
         {requests.length === 0 ? (
           <div
             className={cn(
-              'flex min-h-[160px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 px-3 pb-4 pt-6 text-center',
+              'flex min-h-[140px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/60 px-3 pb-4 pt-6 text-center',
               isOver && 'border-primary/40'
             )}
           >
@@ -542,7 +542,7 @@ function StaticColumn({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex w-[280px] shrink-0 snap-start flex-col rounded-2xl border border-border/70 bg-card/40 p-3 sm:w-[300px] md:w-auto md:min-w-0 md:shrink">
+    <div className="flex w-[280px] shrink-0 snap-start flex-col rounded-xl border border-border bg-card/60 p-2.5 sm:w-[300px] md:w-auto md:min-w-0 md:shrink">
       <header className="mb-2 flex items-center justify-between gap-2 px-1">
         <div className="min-w-0">
           <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/80">
@@ -566,7 +566,7 @@ function StaticColumn({
 
 function EmptyColumn() {
   return (
-    <div className="flex min-h-[160px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 px-3 pb-4 pt-6 text-center">
+    <div className="flex min-h-[140px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/60 px-3 pb-4 pt-6 text-center">
       <Inbox className="h-6 w-6 text-muted-foreground/25" />
       <span className="text-[11px] text-muted-foreground/40">All clear</span>
     </div>

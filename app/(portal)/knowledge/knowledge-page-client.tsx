@@ -1063,33 +1063,30 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
       </PageHeader>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-3xl space-y-8 p-4 sm:p-6 lg:p-8">
-          {/* Hero — Start where you are */}
+        <div className="mx-auto w-full max-w-3xl space-y-5 p-4 sm:p-5 lg:p-6">
           <section
             className={cn(
-              'relative overflow-hidden rounded-2xl border p-6 sm:p-7',
-              allDone
-                ? 'border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-card'
-                : 'border-border bg-gradient-to-br from-primary/5 via-card to-card'
+              'relative overflow-hidden rounded-xl border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]',
+              allDone ? 'border-primary/30 bg-primary/[0.04]' : 'border-border'
             )}
           >
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                 {allDone ? (
-                  <Trophy className="h-5 w-5 text-primary" />
+                  <Trophy className="h-4 w-4 text-primary" />
                 ) : (
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <Sparkles className="h-4 w-4 text-primary" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                <h1 className="text-base font-semibold tracking-tight text-foreground">
                   {allDone
                     ? "You've covered the path"
                     : totalDone === 0
                       ? 'Start where you are'
                       : 'Keep going'}
                 </h1>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
                   {allDone
                     ? 'Come back any time to review a lesson or unlock the other tracks.'
                     : 'Work through the path in order. Each lesson builds on the last.'}
@@ -1098,8 +1095,8 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
             </div>
 
             {/* Progress bar */}
-            <div className="mt-5">
-              <div className="mb-2 flex items-center justify-between text-xs">
+            <div className="mt-3">
+              <div className="mb-1.5 flex items-center justify-between text-xs">
                 <span className="font-medium tabular-nums text-foreground">
                   {mounted ? `${totalDone} of ${totalSteps} complete` : '—'}
                 </span>
@@ -1107,7 +1104,7 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
                   {mounted ? `${progressPct}%` : ''}
                 </span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
                   style={{ width: mounted ? `${progressPct}%` : '0%' }}
@@ -1119,10 +1116,10 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
             {nextGuide && (
               <button
                 onClick={() => setSelectedGuide(nextGuide)}
-                className="mt-5 flex w-full items-center gap-3 rounded-xl border border-primary/20 bg-background/60 p-4 text-left transition-colors duration-150 hover:border-primary/40 hover:bg-background/80"
+                className="mt-3 flex w-full items-center gap-3 rounded-lg border border-primary/20 bg-background/60 px-3 py-2.5 text-left transition-colors duration-150 hover:border-primary/40 hover:bg-background/80"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <ArrowRight className="h-4 w-4 text-primary" />
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                  <ArrowRight className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
@@ -1139,7 +1136,7 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
             {mounted && totalDone > 0 && (
               <button
                 onClick={() => setResetConfirmOpen(true)}
-                className="mt-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                className="mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
               >
                 <RotateCcw className="h-3 w-3" />
                 Reset my progress
@@ -1191,7 +1188,7 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
                           <div
                             key={g.slug}
                             className={cn(
-                              'group relative flex flex-col rounded-xl border bg-card p-4 transition-colors duration-150',
+                              'group relative flex flex-col rounded-lg border bg-card p-3 transition-colors duration-150',
                               isDone && 'border-primary/40 bg-primary/[0.03]'
                             )}
                           >
@@ -1215,7 +1212,7 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
                             >
                               <div
                                 className={cn(
-                                  'flex h-8 w-8 items-center justify-center rounded-lg',
+                                  'flex h-7 w-7 items-center justify-center rounded-md',
                                   categoryColors[g.category].bg
                                 )}
                               >
@@ -1226,13 +1223,13 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
                                   );
                                 })()}
                               </div>
-                              <h3 className="mt-3 text-[14px] font-semibold leading-snug text-foreground">
+                              <h3 className="mt-2.5 text-[13px] font-semibold leading-snug text-foreground">
                                 {g.title}
                               </h3>
                               <p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-muted-foreground">
                                 {g.subtitle}
                               </p>
-                              <span className="mt-3 inline-flex items-center gap-1 text-xs text-primary">
+                              <span className="mt-2.5 inline-flex items-center gap-1 text-xs text-primary">
                                 {isDone ? 'Review' : 'Open track'}
                                 <ArrowRight className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
                               </span>
