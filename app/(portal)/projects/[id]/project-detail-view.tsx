@@ -680,7 +680,11 @@ export function ProjectDetailView({
                   <ProjectBriefViewer projectId={project.id} />
                 </TabsContent>
                 <TabsContent value="reports" className="mt-0 min-h-0 flex-1">
-                  <ProjectReportsPanel projectName={project.name} className="h-full" />
+                  <ProjectReportsPanel
+                    projectId={project.id}
+                    projectName={project.name}
+                    className="h-full"
+                  />
                 </TabsContent>
               </>
             )}

@@ -554,7 +554,6 @@ function MilestoneSection({
 export function ProjectWorkflow({
   projectId,
   projectName,
-  workspaceId,
   userRole,
   className,
 }: ProjectWorkflowProps) {
@@ -593,16 +592,17 @@ export function ProjectWorkflow({
       toastError({
         action: 'load the workflow',
         error: err instanceof Error ? err : undefined,
-        onRetry: fetchData,
       });
     } finally {
       setIsLoading(false);
     }
   }, [projectId]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- async server-action load hydrates the workflow state */
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Fetch the latest session report for this project once on mount — used to
   // show "last report by X · time ago" next to the Roadmap header so anyone
@@ -613,7 +613,7 @@ export function ProjectWorkflow({
     (async () => {
       try {
         const { getSessionReportsForProject } = await import('@/app/actions/work-sessions');
-        const rows = await getSessionReportsForProject(projectName, 1);
+        const rows = await getSessionReportsForProject(projectName, 1, { projectId });
         if (!cancelled && rows.length > 0) {
           const r = rows[0];
           setLastReport({
@@ -629,7 +629,7 @@ export function ProjectWorkflow({
     return () => {
       cancelled = true;
     };
-  }, [projectName]);
+  }, [projectId, projectName]);
 
   // Check if this project has GitHub-synced phases
   const isGitHubSynced = phases.some((p) => p.github_synced_at);

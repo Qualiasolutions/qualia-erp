@@ -40,8 +40,6 @@ const adminOverrideSchema = z.object({
   reason: z.string().min(1, 'Override reason is required').max(2000),
 });
 
-const workspaceIdSchema = z.string().uuid('Invalid workspace ID');
-const sessionIdSchema = z.string().uuid('Invalid session ID');
 const plannedLogoutTimeSchema = z
   .string()
   .regex(/^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/, 'Invalid time format. Use HH:MM')
@@ -860,6 +858,8 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
  * Returns a TIME string (e.g. "16:00:00") or null if not set.
  */
 export async function getPlannedLogoutTime(_workspaceId: string): Promise<string | null> {
+  void _workspaceId;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -1180,7 +1180,7 @@ export interface ProjectSessionReport {
 export async function getSessionReportsForProject(
   projectName: string,
   limit = 20,
-  options?: { includeDryRun?: boolean }
+  options?: { includeDryRun?: boolean; projectId?: string }
 ): Promise<ProjectSessionReport[]> {
   const supabase = await createClient();
   const {
@@ -1202,36 +1202,82 @@ export async function getSessionReportsForProject(
   if (role === 'client') return [];
 
   if (role !== 'admin') {
-    const { data: assignment } = await admin
-      .from('project_assignments')
-      .select('id, projects!inner(name)')
-      .eq('employee_id', user.id)
-      .is('removed_at', null)
-      .eq('projects.name', projectName)
-      .limit(1)
-      .maybeSingle();
-    if (!assignment) return [];
+    if (options?.projectId) {
+      const { data: assignment } = await admin
+        .from('project_assignments')
+        .select('id')
+        .eq('employee_id', user.id)
+        .eq('project_id', options.projectId)
+        .is('removed_at', null)
+        .limit(1)
+        .maybeSingle();
+      if (!assignment) return [];
+    } else {
+      const { data: assignment } = await admin
+        .from('project_assignments')
+        .select('id, projects!inner(name)')
+        .eq('employee_id', user.id)
+        .is('removed_at', null)
+        .eq('projects.name', projectName)
+        .limit(1)
+        .maybeSingle();
+      if (!assignment) return [];
+    }
   }
 
-  let reportsQuery = admin
+  const selectColumns =
+    'id, client_report_id, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, notes, commits';
+  const allRows: ProjectSessionReport[] = [];
+
+  if (options?.projectId) {
+    let canonicalQuery = admin
+      .from('session_reports')
+      .select(selectColumns)
+      .eq('erp_project_id', options.projectId)
+      .order('submitted_at', { ascending: false, nullsFirst: false })
+      .limit(limit);
+
+    if (!options.includeDryRun) {
+      canonicalQuery = canonicalQuery.neq('dry_run', true);
+    }
+
+    const { data: canonicalRows, error: canonicalError } = await canonicalQuery;
+    if (canonicalError) {
+      console.error('[getSessionReportsForProject] Canonical error:', canonicalError);
+    } else {
+      allRows.push(...((canonicalRows ?? []) as ProjectSessionReport[]));
+    }
+  }
+
+  // Keep the name fallback for legacy rows that predate `erp_project_id`, and
+  // use a substring match so "Innrvo App" still appears on the Innrvo project.
+  const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
+  let nameQuery = admin
     .from('session_reports')
-    .select(
-      'id, client_report_id, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, notes, commits'
-    )
-    .ilike('project_name', projectName)
+    .select(selectColumns)
+    .ilike('project_name', `%${escapeLike(projectName)}%`)
     .order('submitted_at', { ascending: false, nullsFirst: false })
     .limit(limit);
 
   if (!options?.includeDryRun) {
     // Filter dry_run=true synthetic pings (qualia-framework erp-ping) out of production views
-    reportsQuery = reportsQuery.neq('dry_run', true);
+    nameQuery = nameQuery.neq('dry_run', true);
   }
 
-  const { data, error } = await reportsQuery;
+  const { data: nameRows, error: nameError } = await nameQuery;
 
-  if (error) {
-    console.error('[getSessionReportsForProject] Error:', error);
-    return [];
+  if (nameError) {
+    console.error('[getSessionReportsForProject] Name fallback error:', nameError);
+  } else {
+    allRows.push(...((nameRows ?? []) as ProjectSessionReport[]));
   }
-  return (data ?? []) as ProjectSessionReport[];
+
+  const byId = new Map<string, ProjectSessionReport>();
+  for (const row of allRows) byId.set(row.id, row);
+
+  return Array.from(byId.values())
+    .sort(
+      (a, b) => new Date(b.submitted_at ?? 0).getTime() - new Date(a.submitted_at ?? 0).getTime()
+    )
+    .slice(0, limit);
 }
