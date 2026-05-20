@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { Activity } from 'lucide-react';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { ActivityContent } from './activity-content';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = { title: 'Activity' };
 
@@ -19,7 +23,22 @@ export default async function PortalActivityPage() {
   // App Library guard: block clients if the "activity" app is disabled
   if (role === 'client') {
     const allowed = await assertAppEnabledForClient(user.id, 'activity', role);
-    if (!allowed) redirect('/dashboard');
+    if (!allowed) {
+      return (
+        <div className="flex h-full items-center justify-center p-4 md:p-6 lg:p-8">
+          <EmptyState
+            icon={Activity}
+            title="Activity is not enabled"
+            description="Your dashboard shows the tools available for this workspace."
+            action={
+              <Button asChild size="sm">
+                <Link href="/dashboard">Back to dashboard</Link>
+              </Button>
+            }
+          />
+        </div>
+      );
+    }
   }
 
   // Get all project IDs the user has access to

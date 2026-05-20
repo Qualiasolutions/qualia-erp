@@ -36,16 +36,6 @@ type OverallStatus = {
   degradedCount: number;
 };
 
-function getFaviconUrl(url: string): string | null {
-  if (!url) return null;
-  try {
-    const hostname = new URL(url).hostname;
-    return `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`;
-  } catch {
-    return null;
-  }
-}
-
 function StatusPulse({ status }: { status: MonitorStatus }) {
   if (status === 2) {
     return (
@@ -116,7 +106,6 @@ function MonitorCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
-  const faviconUrl = getFaviconUrl(monitor.url);
   const responseTime = parseInt(monitor.average_response_time || '0');
   const uptimeRatios = monitor.custom_uptime_ratio?.split('-') || [];
   const [uptime7d, uptime30d] = uptimeRatios;
@@ -165,16 +154,6 @@ function MonitorCard({
                 width={28}
                 height={28}
                 className="size-7 rounded-md object-cover"
-                unoptimized
-                onError={() => setImageFailed(true)}
-              />
-            ) : faviconUrl && !imageFailed ? (
-              <Image
-                src={faviconUrl}
-                alt=""
-                width={28}
-                height={28}
-                className="size-7"
                 unoptimized
                 onError={() => setImageFailed(true)}
               />
