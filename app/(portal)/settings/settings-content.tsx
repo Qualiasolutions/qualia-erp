@@ -227,21 +227,18 @@ export function SettingsContent({
   };
 
   return (
-    <div className="animate-fade-in-up px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(2rem,4vw,3rem)] pt-16 md:pt-[clamp(2.5rem,4vw,3.5rem)]">
-      <header className="mb-8">
-        <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-          <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
-          <span>Account</span>
+    <div className="animate-fade-in-up px-4 pb-8 pt-16 md:px-6 md:pt-6">
+      <header className="mb-4 rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex items-center gap-2">
+          <h1 className="text-base font-semibold tracking-tight text-foreground">Settings</h1>
+          <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+          <p className="truncate text-sm text-muted-foreground">
+            Profile, password, and notifications
+          </p>
         </div>
-        <h1 className="mt-3 text-[clamp(1.5rem,1rem+1.6vw,2rem)] font-semibold leading-tight tracking-tight text-foreground">
-          Settings
-        </h1>
-        <p className="mt-1.5 max-w-[480px] text-sm text-muted-foreground">
-          Profile, password, notifications. Tweak how the portal feels for you.
-        </p>
       </header>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Profile Settings */}
         <section className="animate-fade-in rounded-2xl border border-border bg-card p-6 fill-mode-both md:p-7">
           <div className="mb-5 flex items-center gap-3">
