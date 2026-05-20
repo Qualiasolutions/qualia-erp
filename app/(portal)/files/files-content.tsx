@@ -449,16 +449,16 @@ export function PortalFilesContent({ files }: PortalFilesContentProps) {
   /* ---- Empty state ---- */
   if (files.length === 0) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
+      <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-border bg-card px-6 py-10">
         <div className="max-w-md text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500/10 to-qualia-600/5 ring-1 ring-primary/10">
-            <FolderOpen className="h-10 w-10 text-primary/60" />
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/[0.08] ring-1 ring-primary/15">
+            <FolderOpen className="h-6 w-6 text-primary/70" />
           </div>
-          <h3 className="text-xl font-semibold tracking-tight text-foreground">No files yet</h3>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground/80">
+          <h3 className="text-base font-semibold tracking-tight text-foreground">No files yet</h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             Deliverables and project files will appear here once your team shares them.
           </p>
-          <div className="mx-auto mt-6 flex items-center gap-2 rounded-md border border-dashed border-muted-foreground/20 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          <div className="mx-auto mt-5 flex max-w-sm items-center gap-2 rounded-lg border border-border bg-muted/25 px-3 py-2.5 text-left text-sm text-muted-foreground">
             <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>To upload files, open a project and use the Files tab.</span>
           </div>
@@ -470,7 +470,7 @@ export function PortalFilesContent({ files }: PortalFilesContentProps) {
   return (
     <div className="space-y-4">
       {/* Upload hint banner */}
-      <div className="flex items-center gap-2 rounded-md border border-dashed border-muted-foreground/20 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-[0_1px_0_hsl(var(--border)/0.45)]">
         <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span>To upload files, open a project and use the Files tab.</span>
       </div>
@@ -495,7 +495,7 @@ export function PortalFilesContent({ files }: PortalFilesContentProps) {
       </div>
 
       {/* File count summary */}
-      <p className="text-xs text-muted-foreground/60">
+      <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
         {filteredFiles.length} {filteredFiles.length === 1 ? 'file' : 'files'}
         {searchQuery.trim() && ` matching "${searchQuery.trim()}"`}
         {' across '}

@@ -263,11 +263,24 @@ export function QualiaClientsView({ clients }: QualiaClientsViewProps) {
       <div className="stagger-3 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-xl border border-border bg-card">
         {filteredClients.length === 0 ? (
           <div className="flex flex-1 items-center justify-center p-10 text-center">
-            <p className="text-sm text-muted-foreground">
-              {clients.length === 0
-                ? 'No clients yet — add your first one to get started.'
-                : 'No clients match your filters.'}
-            </p>
+            <div className="max-w-sm">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/[0.08] ring-1 ring-primary/15">
+                <Users className="h-6 w-6 text-primary/70" />
+              </div>
+              <p className="text-base font-semibold tracking-tight text-foreground">
+                {clients.length === 0 ? 'No clients yet' : 'No clients match'}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {clients.length === 0
+                  ? 'Add the first client to start tracking access, projects, and billing.'
+                  : 'Adjust the search or filters to bring clients back into view.'}
+              </p>
+              {clients.length > 0 ? (
+                <Button variant="outline" size="sm" onClick={clearFilters} className="mt-5">
+                  Clear filters
+                </Button>
+              ) : null}
+            </div>
           </div>
         ) : viewMode === 'list' ? (
           <ClientsTable
