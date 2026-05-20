@@ -359,7 +359,7 @@ export function QualiaScheduleWeek({
 
       {/* Detail dialog */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="gap-0 rounded-2xl border-border bg-card p-0 sm:max-w-[480px]">
+        <DialogContent className="gap-0 rounded-xl border-border bg-card p-0 sm:max-w-[480px]">
           {selected && (
             <>
               <DialogHeader className="p-6 pb-4">
@@ -564,7 +564,7 @@ function WeekGrid({
   }, [events]);
 
   return (
-    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-xl border border-border bg-card">
       <div
         className="grid flex-shrink-0 border-b border-border"
         style={{ gridTemplateColumns: '50px repeat(7, 1fr)' }}
@@ -736,7 +736,7 @@ function DayGrid({
   /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
-    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-xl border border-border bg-card">
       <div
         className="grid flex-shrink-0 border-b border-border"
         style={{ gridTemplateColumns: '56px 1fr' }}
@@ -918,7 +918,7 @@ function MonthGrid({
   }, [meetings]);
 
   return (
-    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-xl border border-border bg-card">
       {/* Day-of-week header */}
       <div
         className="grid flex-shrink-0 border-b border-border"
