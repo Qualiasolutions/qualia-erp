@@ -87,9 +87,12 @@ const payloadSchema = z.object({
     .optional(),
   dry_run: z.boolean().optional().default(false),
   // v4.2 — ERP linkage. client_id is a UUID FK to public.clients;
+  // erp_project_id is a UUID FK to public.projects and is the strongest
+  // Framework -> ERP project link when the framework already knows it.
   // framework_version is the semver that produced this payload. Both are
   // optional — pre-v4.2 framework installs simply don't send them and
   // legacy rows persist with NULL.
+  erp_project_id: z.string().uuid().optional(),
   client_id: z.string().uuid().optional(),
   framework_version: z.string().optional(),
 });
@@ -109,6 +112,7 @@ type OpenWorkSession = {
 type ProjectCandidate = {
   id: string;
   name: string;
+  client_id: string | null;
   github_repo_url: string | null;
   is_pre_production: boolean | null;
   metadata: unknown;
@@ -166,12 +170,35 @@ function buildFrameworkReportUrl(request: NextRequest, reportId: string): string
 async function resolveErpProject(
   supabase: AdminClient,
   body: Payload
-): Promise<{ id: string; name: string } | null> {
+): Promise<{ id: string; name: string; client_id: string | null } | null> {
   if (body.dry_run) return null;
+
+  if (body.erp_project_id) {
+    const { data: directProject, error: directError } = await supabase
+      .from('projects')
+      .select('id, name, client_id')
+      .eq('id', body.erp_project_id)
+      .maybeSingle();
+
+    if (directError) {
+      console.warn(
+        `[api/v1/reports] Direct ERP project lookup failed for erp_project_id="${body.erp_project_id}":`,
+        directError.message
+      );
+    }
+
+    if (directProject) {
+      return directProject;
+    }
+
+    console.warn(
+      `[api/v1/reports] erp_project_id="${body.erp_project_id}" was not found; falling back to repo/name matching`
+    );
+  }
 
   const { data, error } = await supabase
     .from('projects')
-    .select('id, name, github_repo_url, is_pre_production, metadata')
+    .select('id, name, client_id, github_repo_url, is_pre_production, metadata')
     .limit(1000);
 
   if (error || !data) {
@@ -209,7 +236,7 @@ async function resolveErpProject(
 
       if (score > 0 && project.is_pre_production) score += 5;
 
-      return { id: project.id, name: project.name, score };
+      return { id: project.id, name: project.name, client_id: project.client_id, score };
     })
     .filter((match) => match.score > 0)
     .sort((a, b) => b.score - a.score);
@@ -222,7 +249,7 @@ async function resolveErpProject(
     return null;
   }
 
-  return { id: scored[0].id, name: scored[0].name };
+  return { id: scored[0].id, name: scored[0].name, client_id: scored[0].client_id };
 }
 
 async function linkReportToActiveWorkSession({
@@ -410,6 +437,7 @@ export async function POST(request: NextRequest) {
   const gapFlat = flattenGapCycles(body.gap_cycles, body.phase);
   const erpProject = await resolveErpProject(supabase, body);
   const erpProjectId = erpProject?.id ?? null;
+  const reportClientId = body.client_id ?? erpProject?.client_id ?? null;
 
   // Build the row object once — used by both insert and upsert paths.
   const row = {
@@ -442,7 +470,7 @@ export async function POST(request: NextRequest) {
     deploy_count: body.deploy_count ?? null,
     client_report_id: body.client_report_id || null,
     dry_run: body.dry_run,
-    client_id: body.client_id || null,
+    client_id: reportClientId,
     erp_project_id: erpProjectId,
     framework_version: body.framework_version || null,
     idempotency_key: idempotencyKey,
