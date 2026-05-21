@@ -50,8 +50,18 @@ export interface ProjectStatsData {
   };
   roadmap_progress: number;
   is_pre_production: boolean;
-  metadata: { is_partnership?: boolean; partner_name?: string } | null;
+  metadata: {
+    is_partnership?: boolean;
+    partner_name?: string;
+    framework_progress_percent?: unknown;
+  } | null;
   sort_order: number;
+}
+
+function frameworkRoadmapProgress(metadata: ProjectStatsData['metadata']): number | null {
+  const value = metadata?.framework_progress_percent;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return Math.max(0, Math.min(100, value)) / 100;
 }
 
 // ============ PROJECT ACTIONS ============
@@ -301,36 +311,41 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
     }
   }
 
-  const allProjects: ProjectStatsData[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
-    id: p.id as string,
-    name: p.name as string,
-    status: p.status as string,
-    start_date: p.start_date as string | null,
-    target_date: p.target_date as string | null,
-    project_group: p.project_group as string | null,
-    project_type: p.project_type as string | null,
-    deployment_platform: p.deployment_platform as string | null,
-    client_id: p.client_id as string | null,
-    client_name: p.client_name as string | null,
-    logo_url: (p.logo_url as string | null) || null,
-    lead: p.lead_id
-      ? {
-          id: p.lead_id as string,
-          full_name: p.lead_full_name as string | null,
-          email: p.lead_email as string | null,
-        }
-      : null,
-    issue_stats: {
-      total: Number(p.total_issues),
-      done: Number(p.done_issues),
-    },
-    roadmap_progress: (p.roadmap_progress as number) || 0,
-    is_pre_production: (p.is_pre_production as boolean) || false,
-    metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
-    sort_order: sortMap.get(p.id as string) ?? 0,
-    team: teamByProject.get(p.id as string) || [],
-    has_github: githubProjectIds.has(p.id as string),
-  }));
+  const allProjects: ProjectStatsData[] = (rawProjects || []).map((p: Record<string, unknown>) => {
+    const projectMetadata = p.metadata as ProjectStatsData['metadata'];
+    const frameworkProgress = frameworkRoadmapProgress(projectMetadata);
+
+    return {
+      id: p.id as string,
+      name: p.name as string,
+      status: p.status as string,
+      start_date: p.start_date as string | null,
+      target_date: p.target_date as string | null,
+      project_group: p.project_group as string | null,
+      project_type: p.project_type as string | null,
+      deployment_platform: p.deployment_platform as string | null,
+      client_id: p.client_id as string | null,
+      client_name: p.client_name as string | null,
+      logo_url: (p.logo_url as string | null) || null,
+      lead: p.lead_id
+        ? {
+            id: p.lead_id as string,
+            full_name: p.lead_full_name as string | null,
+            email: p.lead_email as string | null,
+          }
+        : null,
+      issue_stats: {
+        total: Number(p.total_issues),
+        done: Number(p.done_issues),
+      },
+      roadmap_progress: frameworkProgress ?? ((p.roadmap_progress as number) || 0),
+      is_pre_production: (p.is_pre_production as boolean) || false,
+      metadata: projectMetadata,
+      sort_order: sortMap.get(p.id as string) ?? 0,
+      team: teamByProject.get(p.id as string) || [],
+      has_github: githubProjectIds.has(p.id as string),
+    };
+  });
 
   // Filter only for clients (linked projects only); internal users see all.
   const visibleProjects = clientProjectIds
