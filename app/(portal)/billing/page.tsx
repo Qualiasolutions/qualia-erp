@@ -64,21 +64,20 @@ export default async function PortalBillingPage() {
   }>;
 
   return (
-    <div className="animate-fade-in-up px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(2rem,4vw,3rem)] pt-16 md:pt-[clamp(2.5rem,4vw,3.5rem)]">
-      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-            <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
-            <span>Finance</span>
+    <div className="animate-fade-in-up px-4 pb-8 pt-16 md:px-6 md:pt-6">
+      <header className="mb-4 rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold tracking-tight text-foreground">Billing</h1>
+              <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+              <p className="truncate text-sm text-muted-foreground">
+                Invoices, payments, and delivered work
+              </p>
+            </div>
           </div>
-          <h1 className="mt-3 text-[clamp(1.5rem,1rem+1.6vw,2rem)] font-semibold leading-tight tracking-tight text-foreground">
-            Billing
-          </h1>
-          <p className="mt-1.5 max-w-[480px] text-sm text-muted-foreground">
-            Invoices, payments, and the running ledger of work delivered.
-          </p>
+          {isAdmin && <PortalInvoiceFormDialog clients={clientList} />}
         </div>
-        {isAdmin && <PortalInvoiceFormDialog clients={clientList} />}
       </header>
 
       {invoiceLoadError && (
@@ -88,7 +87,7 @@ export default async function PortalBillingPage() {
       )}
 
       {invoices.length > 0 && (
-        <div className="mb-8">
+        <div className="mb-4">
           <PortalBillingSummary invoices={invoices} />
         </div>
       )}

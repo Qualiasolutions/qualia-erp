@@ -689,6 +689,7 @@ export type Database = {
           admin_response: string | null;
           assigned_to: string | null;
           attachments: Json;
+          brief_data: Json | null;
           client_id: string;
           created_at: string | null;
           description: string | null;
@@ -703,6 +704,7 @@ export type Database = {
           admin_response?: string | null;
           assigned_to?: string | null;
           attachments?: Json;
+          brief_data?: Json | null;
           client_id: string;
           created_at?: string | null;
           description?: string | null;
@@ -717,6 +719,7 @@ export type Database = {
           admin_response?: string | null;
           assigned_to?: string | null;
           attachments?: Json;
+          brief_data?: Json | null;
           client_id?: string;
           created_at?: string | null;
           description?: string | null;
@@ -5245,8 +5248,8 @@ export type Database = {
       match_documents: {
         Args: {
           filter_workspace_id?: string;
-          match_count: number;
-          match_threshold: number;
+          match_count?: number;
+          match_threshold?: number;
           query_embedding: string;
         };
         Returns: {

@@ -148,133 +148,139 @@ export function QualiaClientsView({ clients }: QualiaClientsViewProps) {
   };
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-5 flex flex-shrink-0 items-center justify-between">
-        <div className="flex animate-fade-in items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-            <Users className="h-4 w-4 text-primary" />
+    <div className="flex flex-1 flex-col overflow-hidden p-4 lg:p-6">
+      <div className="mb-4 rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="mr-2 flex min-w-[160px] items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+              <Users className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base font-semibold tracking-tight">Clients</h1>
+              <p className="text-xs text-muted-foreground">
+                {filteredClients.length} of {counts.total} shown
+              </p>
+            </div>
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Clients</h1>
-        </div>
 
-        <div className="animate-fade-in">
-          <NewClientModal />
-        </div>
-      </div>
+          <div className="hidden items-center gap-2 text-xs text-muted-foreground xl:flex">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              {counts.active} active
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              {counts.inactive} inactive
+            </span>
+            {counts.dead > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                {counts.dead} dead
+              </span>
+            )}
+          </div>
 
-      {/* Stats Badges */}
-      <div className="stagger-1 mb-6 flex animate-fade-in flex-wrap items-center gap-2">
-        <Badge variant="secondary" className="h-8 bg-muted/50 px-3 text-sm">
-          {counts.total} <span className="ml-1 text-muted-foreground">total</span>
-        </Badge>
-        <Badge variant="secondary" className="h-8 bg-emerald-500/10 px-3 text-sm text-emerald-500">
-          <span className="mr-2 h-2 w-2 rounded-full bg-emerald-500" />
-          {counts.active} <span className="ml-1 text-emerald-500/70">active</span>
-        </Badge>
-        <Badge variant="secondary" className="h-8 bg-amber-500/10 px-3 text-sm text-amber-500">
-          <span className="mr-2 h-2 w-2 rounded-full bg-amber-500" />
-          {counts.inactive} <span className="ml-1 text-amber-500/70">inactive</span>
-        </Badge>
-        {counts.dead > 0 && (
-          <Badge variant="secondary" className="h-8 bg-red-500/10 px-3 text-sm text-red-500">
-            <span className="mr-2 h-2 w-2 rounded-full bg-red-500" />
-            {counts.dead} <span className="ml-1 text-red-500/70">dead</span>
-          </Badge>
-        )}
-      </div>
-
-      {/* Filters */}
-      <div className="stagger-2 mb-6 flex animate-fade-in flex-wrap items-center gap-3">
-        <div className="relative max-w-sm flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search clients…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-11 rounded-xl border-transparent bg-muted/30 pl-10 focus:border-primary/30"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className="h-11 w-32 rounded-xl border-transparent bg-muted/30">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="dead">Dead</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={assignedFilter}
-          onValueChange={(v) => setAssignedFilter(v as 'all' | 'me' | 'unassigned')}
-        >
-          <SelectTrigger className="h-11 w-36 rounded-xl border-transparent bg-muted/30">
-            <SelectValue placeholder="All Assigned" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Assigned</SelectItem>
-            <SelectItem value="unassigned">Unassigned</SelectItem>
-          </SelectContent>
-        </Select>
-        {(searchQuery || statusFilter !== 'active' || assignedFilter !== 'all') && (
-          <Button
-            variant="ghost"
-            onClick={clearFilters}
-            className="h-11 gap-2 text-muted-foreground hover:text-foreground"
+          <div className="relative max-w-sm flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search clients…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-9 rounded-lg bg-background/60 pl-10 focus:border-primary/30"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+            <SelectTrigger className="h-9 w-32 rounded-lg bg-background/60">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="dead">Dead</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={assignedFilter}
+            onValueChange={(v) => setAssignedFilter(v as 'all' | 'me' | 'unassigned')}
           >
-            <X className="h-4 w-4" />
-            Clear
-          </Button>
-        )}
+            <SelectTrigger className="h-9 w-36 rounded-lg bg-background/60">
+              <SelectValue placeholder="All Assigned" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Assigned</SelectItem>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+            </SelectContent>
+          </Select>
+          {(searchQuery || statusFilter !== 'active' || assignedFilter !== 'all') && (
+            <Button
+              variant="ghost"
+              onClick={clearFilters}
+              className="h-9 gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+              Clear
+            </Button>
+          )}
 
-        <div className="ml-auto flex items-center gap-4">
-          <span className="text-sm text-muted-foreground">
-            {filteredClients.length} of {counts.total} clients
-          </span>
-          <div className="flex items-center gap-1 rounded-xl bg-muted/30 p-1">
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={cn(
-                'rounded-lg p-2 transition-all duration-200',
-                viewMode === 'list'
-                  ? 'bg-card shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-              aria-label="List view"
-              aria-pressed={viewMode === 'list'}
-            >
-              <List className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('grid')}
-              className={cn(
-                'rounded-lg p-2 transition-all duration-200',
-                viewMode === 'grid'
-                  ? 'bg-card shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-              aria-label="Grid view"
-              aria-pressed={viewMode === 'grid'}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
+          <div className="ml-auto flex items-center gap-2">
+            <div className="flex items-center gap-1 rounded-lg bg-background/60 p-1">
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  'rounded-lg p-2 transition-all duration-200',
+                  viewMode === 'list'
+                    ? 'bg-card shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                aria-label="List view"
+                aria-pressed={viewMode === 'list'}
+              >
+                <List className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={cn(
+                  'rounded-lg p-2 transition-all duration-200',
+                  viewMode === 'grid'
+                    ? 'bg-card shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                aria-label="Grid view"
+                aria-pressed={viewMode === 'grid'}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
+            <NewClientModal />
           </div>
         </div>
       </div>
 
       {/* Body */}
-      <div className="stagger-3 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="stagger-3 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-xl border border-border bg-card">
         {filteredClients.length === 0 ? (
           <div className="flex flex-1 items-center justify-center p-10 text-center">
-            <p className="text-sm text-muted-foreground">
-              {clients.length === 0
-                ? 'No clients yet — add your first one to get started.'
-                : 'No clients match your filters.'}
-            </p>
+            <div className="max-w-sm">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/[0.08] ring-1 ring-primary/15">
+                <Users className="h-6 w-6 text-primary/70" />
+              </div>
+              <p className="text-base font-semibold tracking-tight text-foreground">
+                {clients.length === 0 ? 'No clients yet' : 'No clients match'}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {clients.length === 0
+                  ? 'Add the first client to start tracking access, projects, and billing.'
+                  : 'Adjust the search or filters to bring clients back into view.'}
+              </p>
+              {clients.length > 0 ? (
+                <Button variant="outline" size="sm" onClick={clearFilters} className="mt-5">
+                  Clear filters
+                </Button>
+              ) : null}
+            </div>
           </div>
         ) : viewMode === 'list' ? (
           <ClientsTable

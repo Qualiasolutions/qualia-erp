@@ -45,34 +45,32 @@ export function NotificationPreferencesForm({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
       {/* Notification Types */}
-      <section className="rounded-xl border border-border bg-card">
+      <section className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="p-5 pb-0">
           <div className="mb-4 flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
               <Bell className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-foreground">Email Notifications</h2>
+              <h2 className="text-base font-semibold text-foreground">Email notifications</h2>
               <p className="text-sm text-muted-foreground">
-                Choose which notifications you&apos;d like to receive via email
+                Choose which alerts should leave the app
               </p>
             </div>
           </div>
         </div>
 
-        <div className="divide-y divide-border/50">
+        <div className="grid gap-px bg-border/50 p-px md:grid-cols-2">
           {isClient ? (
             <>
-              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
+              <div className="flex min-h-[64px] items-center justify-between bg-card px-4 py-4 md:px-5">
                 <div className="flex-1">
                   <Label htmlFor="project_update" className="text-sm font-medium">
-                    Project Status Changes
+                    Project status changes
                   </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Get notified when project status changes
-                  </p>
+                  <p className="text-sm text-muted-foreground">When a project changes state</p>
                 </div>
                 <Switch
                   id="project_update"
@@ -81,14 +79,12 @@ export function NotificationPreferencesForm({
                 />
               </div>
 
-              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
+              <div className="flex min-h-[64px] items-center justify-between bg-card px-4 py-4 md:px-5">
                 <div className="flex-1">
                   <Label htmlFor="meeting_reminder" className="text-sm font-medium">
-                    Meeting Reminders
+                    Meeting reminders
                   </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Get notified about upcoming meetings
-                  </p>
+                  <p className="text-sm text-muted-foreground">Before scheduled meetings</p>
                 </div>
                 <Switch
                   id="meeting_reminder"
@@ -99,14 +95,12 @@ export function NotificationPreferencesForm({
             </>
           ) : (
             <>
-              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
+              <div className="flex min-h-[64px] items-center justify-between bg-card px-4 py-4 md:px-5">
                 <div className="flex-1">
                   <Label htmlFor="task_assigned" className="text-sm font-medium">
-                    Task Assignments
+                    Task assignments
                   </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Get notified when tasks are assigned to you
-                  </p>
+                  <p className="text-sm text-muted-foreground">When a task is assigned to you</p>
                 </div>
                 <Switch
                   id="task_assigned"
@@ -115,14 +109,12 @@ export function NotificationPreferencesForm({
                 />
               </div>
 
-              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
+              <div className="flex min-h-[64px] items-center justify-between bg-card px-4 py-4 md:px-5">
                 <div className="flex-1">
                   <Label htmlFor="task_due_soon" className="text-sm font-medium">
-                    Task Due Soon
+                    Task due soon
                   </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Get notified when tasks are approaching their due date
-                  </p>
+                  <p className="text-sm text-muted-foreground">As due dates approach</p>
                 </div>
                 <Switch
                   id="task_due_soon"
@@ -131,14 +123,12 @@ export function NotificationPreferencesForm({
                 />
               </div>
 
-              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
+              <div className="flex min-h-[64px] items-center justify-between bg-card px-4 py-4 md:px-5">
                 <div className="flex-1">
                   <Label htmlFor="project_update" className="text-sm font-medium">
-                    Project Updates
+                    Project updates
                   </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Get notified about project status changes and updates
-                  </p>
+                  <p className="text-sm text-muted-foreground">Status changes and milestones</p>
                 </div>
                 <Switch
                   id="project_update"
@@ -147,14 +137,12 @@ export function NotificationPreferencesForm({
                 />
               </div>
 
-              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
+              <div className="flex min-h-[64px] items-center justify-between bg-card px-4 py-4 md:px-5">
                 <div className="flex-1">
                   <Label htmlFor="meeting_reminder" className="text-sm font-medium">
-                    Meeting Reminders
+                    Meeting reminders
                   </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Get notified about upcoming meetings
-                  </p>
+                  <p className="text-sm text-muted-foreground">Before scheduled meetings</p>
                 </div>
                 <Switch
                   id="meeting_reminder"
@@ -163,14 +151,12 @@ export function NotificationPreferencesForm({
                 />
               </div>
 
-              <div className="flex min-h-[56px] items-center justify-between px-5 py-4">
+              <div className="flex min-h-[64px] items-center justify-between bg-card px-4 py-4 md:px-5">
                 <div className="flex-1">
                   <Label htmlFor="client_activity" className="text-sm font-medium">
-                    Client Activity
+                    Client activity
                   </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Get notified when clients comment, upload files, or take actions
-                  </p>
+                  <p className="text-sm text-muted-foreground">Comments, files, and approvals</p>
                 </div>
                 <Switch
                   id="client_activity"
@@ -191,10 +177,8 @@ export function NotificationPreferencesForm({
               <Mail className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-foreground">Delivery Method</h2>
-              <p className="text-sm text-muted-foreground">
-                Choose how you&apos;d like to receive notifications
-              </p>
+              <h2 className="text-base font-semibold text-foreground">Delivery method</h2>
+              <p className="text-sm text-muted-foreground">Default notification channel</p>
             </div>
           </div>
         </div>
@@ -208,28 +192,24 @@ export function NotificationPreferencesForm({
             <div className="flex items-center space-x-3 rounded-lg border border-border p-4 transition-colors duration-150 hover:bg-muted/30">
               <RadioGroupItem value="both" id="both" />
               <Label htmlFor="both" className="flex-1 cursor-pointer">
-                <div className="text-sm font-medium">Email and In-App</div>
-                <p className="text-sm text-muted-foreground">
-                  Receive notifications via email and in the app
-                </p>
+                <div className="text-sm font-medium">Email and in-app</div>
+                <p className="text-sm text-muted-foreground">Send both copies</p>
               </Label>
             </div>
 
             <div className="flex items-center space-x-3 rounded-lg border border-border p-4 transition-colors duration-150 hover:bg-muted/30">
               <RadioGroupItem value="email" id="email" />
               <Label htmlFor="email" className="flex-1 cursor-pointer">
-                <div className="text-sm font-medium">Email Only</div>
-                <p className="text-sm text-muted-foreground">Only receive email notifications</p>
+                <div className="text-sm font-medium">Email only</div>
+                <p className="text-sm text-muted-foreground">Keep the portal quiet</p>
               </Label>
             </div>
 
             <div className="flex items-center space-x-3 rounded-lg border border-border p-4 transition-colors duration-150 hover:bg-muted/30">
               <RadioGroupItem value="in_app" id="in_app" />
               <Label htmlFor="in_app" className="flex-1 cursor-pointer">
-                <div className="text-sm font-medium">In-App Only</div>
-                <p className="text-sm text-muted-foreground">
-                  Only receive notifications within the app
-                </p>
+                <div className="text-sm font-medium">In-app only</div>
+                <p className="text-sm text-muted-foreground">No email copy</p>
               </Label>
             </div>
           </RadioGroup>
@@ -237,7 +217,7 @@ export function NotificationPreferencesForm({
       </section>
 
       {/* Save Button */}
-      <div className="flex justify-end">
+      <div className="flex justify-end lg:col-span-2">
         <Button
           onClick={handleSave}
           disabled={isPending}
@@ -251,7 +231,7 @@ export function NotificationPreferencesForm({
           ) : (
             <>
               <Save className="mr-1.5 h-4 w-4" />
-              Save Changes
+              Save changes
             </>
           )}
         </Button>

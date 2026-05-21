@@ -61,57 +61,41 @@ const PROJECT_TYPES: Array<{
   value: WizardProjectType;
   label: string;
   icon: React.ReactNode;
-  gradient: string;
-  bgGradient: string;
 }> = [
   {
     value: 'web_design',
     label: 'Website',
     icon: <Globe className="h-5 w-5" />,
-    gradient: 'from-blue-500 to-cyan-500',
-    bgGradient: 'from-blue-500/10 to-cyan-500/10',
   },
   {
     value: 'ai_agent',
     label: 'AI Agent',
     icon: <Bot className="h-5 w-5" />,
-    gradient: 'from-violet-500 to-purple-500',
-    bgGradient: 'from-violet-500/10 to-purple-500/10',
   },
   {
     value: 'voice_agent',
     label: 'Voice',
     icon: <Phone className="h-5 w-5" />,
-    gradient: 'from-pink-500 to-rose-500',
-    bgGradient: 'from-pink-500/10 to-rose-500/10',
   },
   {
     value: 'ai_platform',
     label: 'AI Platform',
     icon: <Sparkles className="h-5 w-5" />,
-    gradient: 'from-indigo-500 to-violet-500',
-    bgGradient: 'from-indigo-500/10 to-violet-500/10',
   },
   {
     value: 'seo',
     label: 'SEO',
     icon: <TrendingUp className="h-5 w-5" />,
-    gradient: 'from-emerald-500 to-green-500',
-    bgGradient: 'from-emerald-500/10 to-green-500/10',
   },
   {
     value: 'app',
     label: 'App',
     icon: <Smartphone className="h-5 w-5" />,
-    gradient: 'from-teal-500 to-cyan-500',
-    bgGradient: 'from-teal-500/10 to-cyan-500/10',
   },
   {
     value: 'ads',
     label: 'Ads',
     icon: <Megaphone className="h-5 w-5" />,
-    gradient: 'from-orange-500 to-amber-500',
-    bgGradient: 'from-orange-500/10 to-amber-500/10',
   },
 ];
 
@@ -309,30 +293,19 @@ export function ProjectWizard({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
         showCloseButton={false}
-        className="w-full max-w-md gap-0 overflow-hidden rounded-2xl border-0 bg-gradient-to-b from-card to-card/95 p-0 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.4)]"
+        className="w-full max-w-md gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-elevation-4"
       >
         <DialogTitle className="sr-only">Create New Project</DialogTitle>
         <DialogDescription className="sr-only">Create a new project</DialogDescription>
 
-        {/* Header with gradient accent */}
-        <div className="relative overflow-hidden">
-          {/* Background gradient */}
-          <div
-            className={cn(
-              'absolute inset-0 opacity-50 transition-all duration-500',
-              selectedType
-                ? `bg-gradient-to-br ${selectedType.bgGradient}`
-                : 'bg-gradient-to-br from-qualia-500/10 to-transparent'
-            )}
-          />
-
-          <div className="relative px-6 py-5">
+        <div className="relative overflow-hidden border-b border-border">
+          <div className="relative px-5 py-4">
             <Button
               variant="ghost"
               size="icon"
               onClick={handleClose}
               disabled={isSubmitting || showProvisioning}
-              className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              className="absolute right-3 top-3 h-8 w-8 rounded-lg text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
               aria-label="Close wizard"
             >
               <X className="h-4 w-4" />
@@ -341,15 +314,11 @@ export function ProjectWizard({
             <div className="flex items-center gap-3">
               <div
                 className={cn(
-                  'flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg',
-                  selectedType ? selectedType.gradient : 'from-qualia-500 to-qualia-600'
+                  'flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] text-primary ring-1 ring-primary/15',
+                  showProvisioning && 'bg-primary text-primary-foreground ring-primary'
                 )}
               >
-                {selectedType ? (
-                  <span className="text-white">{selectedType.icon}</span>
-                ) : (
-                  <Sparkles className="h-5 w-5 text-white" />
-                )}
+                {selectedType ? <span>{selectedType.icon}</span> : <Sparkles className="h-5 w-5" />}
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-foreground">
@@ -368,7 +337,7 @@ export function ProjectWizard({
         </div>
 
         {/* Content */}
-        <div className="p-6 pt-4">
+        <div className="p-5">
           {showProvisioning && createdProjectId ? (
             <StepProvisioning
               projectId={createdProjectId}
@@ -381,19 +350,19 @@ export function ProjectWizard({
           ) : (
             <div className="space-y-5">
               {error && (
-                <div className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                <div className="flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
                   <X className="h-4 w-4 shrink-0" />
                   {error}
                 </div>
               )}
 
               {/* Mode Toggle */}
-              <div className="flex gap-2 rounded-xl bg-muted/50 p-1">
+              <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
                 <button
                   type="button"
                   onClick={() => setMode('full')}
                   className={cn(
-                    'flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all',
+                    'flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                     mode === 'full'
                       ? 'bg-background text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
@@ -406,9 +375,9 @@ export function ProjectWizard({
                   type="button"
                   onClick={() => setMode('demo')}
                   className={cn(
-                    'flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all',
+                    'flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                     mode === 'demo'
-                      ? 'bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-600 shadow-sm dark:text-amber-400'
+                      ? 'bg-amber-500/10 text-amber-700 shadow-sm dark:text-amber-400'
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
@@ -428,7 +397,7 @@ export function ProjectWizard({
                   value={wizardData.name}
                   onChange={(e) => updateWizardData({ name: e.target.value })}
                   placeholder={mode === 'demo' ? 'e.g. Acme Corp Demo' : 'e.g. Acme Corp Website'}
-                  className="h-12 rounded-xl border-border bg-muted/30 text-base transition-all focus:border-primary/50 focus:bg-background focus:ring-2 focus:ring-primary/20"
+                  className="h-10 rounded-lg border-border bg-muted/30 text-sm transition-colors focus:border-primary/50 focus:bg-background focus:ring-2 focus:ring-primary/20"
                   autoFocus
                 />
               </div>
@@ -450,30 +419,24 @@ export function ProjectWizard({
                             type="button"
                             onClick={() => updateWizardData({ project_type: type.value })}
                             className={cn(
-                              'group relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all duration-200',
+                              'group relative flex min-h-[76px] flex-col items-center justify-center gap-2 rounded-lg border p-2.5 transition-colors duration-150',
                               isSelected
-                                ? 'border-transparent bg-gradient-to-br shadow-lg ' +
-                                    type.bgGradient
+                                ? 'border-primary/40 bg-primary/[0.06] text-primary shadow-sm'
                                 : 'border-border bg-muted/20 hover:border-border hover:bg-muted/40'
                             )}
                           >
                             {/* Selection indicator */}
                             {isSelected && (
-                              <div
-                                className={cn(
-                                  'absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br shadow-md',
-                                  type.gradient
-                                )}
-                              >
+                              <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary shadow-sm">
                                 <Check className="h-3 w-3 text-white" />
                               </div>
                             )}
 
                             <div
                               className={cn(
-                                'transition-transform duration-200 group-hover:scale-110',
+                                'transition-colors duration-150',
                                 isSelected
-                                  ? `bg-gradient-to-br bg-clip-text text-transparent ${type.gradient}`
+                                  ? 'text-primary'
                                   : 'text-muted-foreground group-hover:text-foreground'
                               )}
                             >
@@ -518,7 +481,7 @@ export function ProjectWizard({
                       otherPlaceholder="Enter client name"
                       icon={<Building className="h-4 w-4 text-muted-foreground" />}
                       className="w-full"
-                      triggerClassName="h-12 w-full rounded-xl border-border bg-muted/30 transition-all hover:bg-muted/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                      triggerClassName="h-10 w-full rounded-lg border-border bg-muted/30 transition-colors hover:bg-muted/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
 
@@ -581,7 +544,7 @@ export function ProjectWizard({
 
               {/* Demo mode hint */}
               {mode === 'demo' && (
-                <div className="rounded-xl bg-gradient-to-r from-amber-500/5 to-orange-500/5 px-4 py-3">
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
                   <p className="text-center text-sm text-muted-foreground">
                     Demo projects are for quick presentations. You can convert to a full project
                     later.
@@ -594,10 +557,10 @@ export function ProjectWizard({
                 onClick={handleSubmit}
                 disabled={!isValid || isSubmitting}
                 className={cn(
-                  'h-12 w-full rounded-xl text-base font-medium shadow-lg transition-all hover:shadow-xl disabled:opacity-50',
+                  'h-10 w-full rounded-lg text-sm font-medium shadow-sm transition-colors disabled:opacity-50',
                   mode === 'demo'
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400'
-                    : 'bg-gradient-to-r from-qualia-600 to-qualia-500 hover:from-qualia-500 hover:to-qualia-400'
+                    ? 'bg-amber-600 text-white hover:bg-amber-600/90'
+                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
                 )}
               >
                 {isSubmitting ? (

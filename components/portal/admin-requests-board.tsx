@@ -13,10 +13,11 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { Inbox, Paperclip, MessageSquare, GripVertical, Search, X } from 'lucide-react';
+import { Building2, Inbox, Paperclip, MessageSquare, GripVertical, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { updateFeatureRequest } from '@/app/actions/client-requests';
 import { RequestDetailSheet } from './request-detail-sheet';
@@ -34,7 +35,18 @@ interface FeatureRequest {
   attachments?:
     | { name: string; path: string; size: number; type: string; uploaded_at: string }[]
     | null;
-  project: { id: string; name: string } | null;
+  project: {
+    id: string;
+    name: string;
+    logo_url: string | null;
+    client: { id: string; display_name: string | null; logo_url: string | null } | null;
+  } | null;
+  client: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  } | null;
   assigned_to?: string | null;
   assignee?: { id: string; full_name: string | null; avatar_url: string | null } | null;
 }
@@ -104,7 +116,8 @@ export function AdminRequestsBoard({
       if (!isClient && scope === 'mine' && r.assigned_to !== currentUserId) return false;
       if (priorityFilter !== 'all' && r.priority !== priorityFilter) return false;
       if (q) {
-        const haystack = `${r.title} ${r.description ?? ''} ${r.project?.name ?? ''}`.toLowerCase();
+        const haystack =
+          `${r.title} ${r.description ?? ''} ${r.project?.name ?? ''} ${getRequestClientName(r)}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
@@ -195,9 +208,9 @@ export function AdminRequestsBoard({
   // the page header is the primary action.
   if (isClient && totalUnfiltered === 0) {
     return (
-      <div className="flex min-h-[420px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-card/30 px-6 py-12 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/15">
-          <Inbox className="h-5 w-5 text-primary" aria-hidden />
+      <div className="flex min-h-[340px] flex-col items-center justify-center rounded-xl border border-border bg-card px-5 py-12 text-center">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/[0.08] text-primary ring-1 ring-primary/15">
+          <Inbox className="h-4 w-4" aria-hidden />
         </div>
         <h2 className="mt-4 text-base font-semibold tracking-tight text-foreground">
           No requests yet
@@ -206,8 +219,8 @@ export function AdminRequestsBoard({
           When you submit a feature request, change, or question, it shows up here so you can follow
           its status through to completion.
         </p>
-        <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">
-          Use the &ldquo;New request&rdquo; button at the top right
+        <p className="mt-4 rounded-md bg-muted/50 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+          New request opens the intake flow
         </p>
       </div>
     );
@@ -464,7 +477,7 @@ function DroppableColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        'flex w-[280px] shrink-0 snap-start flex-col rounded-2xl border border-border/70 bg-card/40 p-3 transition-colors sm:w-[300px] md:w-auto md:min-w-0 md:shrink',
+        'flex w-[280px] shrink-0 snap-start flex-col rounded-xl border border-border bg-card/60 p-2.5 transition-colors sm:w-[300px] md:w-auto md:min-w-0 md:shrink',
         isOver && 'border-primary/40 bg-primary/[0.04]'
       )}
     >
@@ -487,7 +500,7 @@ function DroppableColumn({
         {requests.length === 0 ? (
           <div
             className={cn(
-              'flex min-h-[160px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 px-3 pb-4 pt-6 text-center',
+              'flex min-h-[140px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/60 px-3 pb-4 pt-6 text-center',
               isOver && 'border-primary/40'
             )}
           >
@@ -529,7 +542,7 @@ function StaticColumn({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex w-[280px] shrink-0 snap-start flex-col rounded-2xl border border-border/70 bg-card/40 p-3 sm:w-[300px] md:w-auto md:min-w-0 md:shrink">
+    <div className="flex w-[280px] shrink-0 snap-start flex-col rounded-xl border border-border bg-card/60 p-2.5 sm:w-[300px] md:w-auto md:min-w-0 md:shrink">
       <header className="mb-2 flex items-center justify-between gap-2 px-1">
         <div className="min-w-0">
           <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/80">
@@ -553,7 +566,7 @@ function StaticColumn({
 
 function EmptyColumn() {
   return (
-    <div className="flex min-h-[160px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 px-3 pb-4 pt-6 text-center">
+    <div className="flex min-h-[140px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/60 px-3 pb-4 pt-6 text-center">
       <Inbox className="h-6 w-6 text-muted-foreground/25" />
       <span className="text-[11px] text-muted-foreground/40">All clear</span>
     </div>
@@ -649,6 +662,12 @@ const RequestCard = memo(function RequestCard({
   //   - Clients scan by their own request topic → request title as primary
   // Both views still show both fields, just with the emphasis swapped.
   const projectLabel = request.project?.name ?? null;
+  const clientName = getRequestClientName(request);
+  const logoUrl =
+    request.project?.client?.logo_url ??
+    request.project?.logo_url ??
+    request.client?.avatar_url ??
+    null;
   return (
     <article
       className={cn(
@@ -680,11 +699,28 @@ const RequestCard = memo(function RequestCard({
             </>
           ) : (
             <>
-              {/* Staff view: project name as primary so triagers can group by client */}
-              <p className="text-sm font-semibold leading-snug text-foreground">
-                {projectLabel ?? <span className="text-muted-foreground/50">No project</span>}
-              </p>
-              <h3 className="mt-0.5 line-clamp-2 text-xs font-normal text-muted-foreground">
+              {/* Staff view: client identity is primary so triagers instantly see who asked. */}
+              <div className="mb-2 flex items-center gap-2 rounded-lg border border-border/60 bg-muted/25 px-2 py-1.5">
+                <Avatar className="size-7 rounded-lg">
+                  {logoUrl && <AvatarImage src={logoUrl} alt="" className="object-cover" />}
+                  <AvatarFallback className="rounded-lg bg-primary/10 text-[10px] font-semibold text-primary">
+                    {clientName ? (
+                      clientName.slice(0, 2).toUpperCase()
+                    ) : (
+                      <Building2 className="size-3" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-semibold leading-tight text-foreground">
+                    {clientName || 'Unknown client'}
+                  </p>
+                  <p className="truncate text-[10px] leading-tight text-muted-foreground">
+                    {projectLabel ?? 'No linked project'}
+                  </p>
+                </div>
+              </div>
+              <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
                 {request.title}
               </h3>
             </>
@@ -719,6 +755,15 @@ const RequestCard = memo(function RequestCard({
     </article>
   );
 });
+
+function getRequestClientName(request: FeatureRequest): string {
+  return (
+    request.project?.client?.display_name ||
+    request.client?.full_name ||
+    request.client?.email ||
+    'Unknown client'
+  );
+}
 
 function AssigneeChip({ assignee }: { assignee: FeatureRequest['assignee'] }) {
   if (!assignee) {

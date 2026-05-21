@@ -74,6 +74,11 @@ export function CommandMenu() {
       .join('');
   }, []);
 
+  const handleClose = React.useCallback(() => {
+    setOpen(false);
+    setInputValue('');
+  }, []);
+
   // Keyboard shortcuts
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -116,7 +121,7 @@ export function CommandMenu() {
 
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
-  }, [open, mode]);
+  }, [handleClose, open, mode]);
 
   // Focus input when opened
   React.useEffect(() => {
@@ -137,15 +142,13 @@ export function CommandMenu() {
     return () => window.removeEventListener('openAIChat', handleOpenAIChat as EventListener);
   }, []);
 
-  const handleClose = () => {
-    setOpen(false);
-    setInputValue('');
-  };
-
-  const runCommand = React.useCallback((command: () => unknown) => {
-    handleClose();
-    command();
-  }, []);
+  const runCommand = React.useCallback(
+    (command: () => unknown) => {
+      handleClose();
+      command();
+    },
+    [handleClose]
+  );
 
   // Handle input change - detect "ai:" prefix
   const handleInputChange = (value: string) => {

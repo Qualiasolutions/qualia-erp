@@ -36,6 +36,7 @@ export function KartaticBrief({
       projectName={projectName}
       formTitle="Kartatek"
       modulesStep={MODULES}
+      variant="kartatic"
       className={className}
     />
   );

@@ -34,11 +34,11 @@ const ALL = '__all__';
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-lg border border-border bg-card px-3.5 py-3">
       <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </div>
-      <div className="mt-2 text-[26px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
+      <div className="mt-2 text-xl font-semibold tabular-nums leading-none tracking-tight text-foreground">
         {value}
       </div>
       {sub && <div className="mt-1 text-[11px] text-muted-foreground/80">{sub}</div>}
@@ -116,7 +116,7 @@ export function AIPromptsTab({
 
   return (
     <div>
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         <StatCard
           label="Conversations"
           value={totalConversations}
@@ -134,7 +134,7 @@ export function AIPromptsTab({
         />
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
         <Select value={filterUser} onValueChange={setFilterUser}>
           <SelectTrigger className="h-9 w-[220px] text-xs">
             <SelectValue placeholder="All employees" />

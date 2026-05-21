@@ -4,6 +4,7 @@ import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/sidebar-provider';
 import { type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 interface PageHeaderProps {
   /** Icon element rendered inside the icon container */
@@ -22,15 +23,28 @@ interface PageHeaderProps {
  * Shared page header with a mobile hamburger menu trigger.
  * Replaces inline <header> tags across all main pages.
  *
- * Mobile: shows hamburger button (md:hidden) + icon + title + actions
- * Desktop: hides hamburger, shows icon + title + actions
+ * Mobile: shows hamburger button (md:hidden) + icon + title + actions.
+ * Desktop: sidebar already marks the current route, so the visible header
+ * collapses to actions only; the page title remains in the DOM for a11y.
  */
 export function PageHeader({ icon, iconBg, title, children, className }: PageHeaderProps) {
   const { toggleMobile } = useSidebar();
+  const hasActions = Boolean(children);
 
   return (
-    <header className={`page-header flex items-center justify-between ${className ?? ''}`}>
-      <div className="flex items-center gap-2.5">
+    <header
+      className={cn(
+        'page-header flex items-center justify-between gap-3',
+        !hasActions && 'md:sr-only md:absolute md:h-px md:w-px md:overflow-hidden md:p-0',
+        className
+      )}
+    >
+      <div
+        className={cn(
+          'flex items-center gap-2.5',
+          hasActions && 'md:sr-only md:absolute md:h-px md:w-px md:overflow-hidden'
+        )}
+      >
         {/* Hamburger — mobile only, 44×44 touch target */}
         <Button
           type="button"
@@ -57,7 +71,7 @@ export function PageHeader({ icon, iconBg, title, children, className }: PageHea
         <h1 className="text-base font-semibold text-foreground sm:text-lg">{title}</h1>
       </div>
 
-      {children && <div className="flex items-center gap-2">{children}</div>}
+      {children && <div className="ml-auto flex items-center gap-2">{children}</div>}
     </header>
   );
 }

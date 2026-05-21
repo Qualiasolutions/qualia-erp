@@ -56,11 +56,11 @@ function StatusIcon({ status }: { status: string | null }) {
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-lg border border-border bg-card px-3.5 py-3">
       <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </div>
-      <div className="mt-2 text-[26px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
+      <div className="mt-2 text-xl font-semibold tabular-nums leading-none tracking-tight text-foreground">
         {value}
       </div>
       {sub && <div className="mt-1 text-[11px] text-muted-foreground/80">{sub}</div>}
@@ -127,7 +127,7 @@ export function FrameworkReportsTab({ focusId }: { focusId?: string | null }) {
     <div className="space-y-4">
       {/* Stats row */}
       {stats && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 xl:grid-cols-7">
           <StatCard label="Total Reports" value={stats.totalReports} sub="last 2000" />
           <StatCard label="Last 7d" value={stats.reportsLast7d} />
           <StatCard label="Last 30d" value={stats.reportsLast30d} />
@@ -139,7 +139,7 @@ export function FrameworkReportsTab({ focusId }: { focusId?: string | null }) {
       )}
 
       {/* Filters row */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
         <Select value={filterProject} onValueChange={setFilterProject}>
           <SelectTrigger className="h-9 w-[220px]">
             <SelectValue placeholder="All projects" />

@@ -57,7 +57,7 @@ export function useIdleDetection({
   // Stable refs so timers/handlers don't close over stale values
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const graceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastActivityRef = useRef<number>(Date.now());
+  const lastActivityRef = useRef<number>(0);
   const isIdleRef = useRef(false);
   const onIdleRef = useRef(onIdle);
   const onAutoCloseRef = useRef(onAutoClose);

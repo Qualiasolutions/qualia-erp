@@ -204,7 +204,7 @@ export default async function PortalLayout({ children }: { children: React.React
 
           <main
             id="main-content"
-            className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden scroll-smooth"
+            className="portal-main min-w-0 flex-1 overflow-y-auto overflow-x-hidden scroll-smooth"
           >
             <PageTransition>{children}</PageTransition>
           </main>

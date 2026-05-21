@@ -3,7 +3,8 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 import { syncPlanningFromGitHubWithServiceRole } from '@/lib/planning-sync-core';
-import type { ActionResult } from './shared';
+import { isUserAdmin, type ActionResult } from './shared';
+import { isStaffOnProject } from '@/lib/auth/is-staff-on-project';
 
 interface SyncResult {
   milestonesFound: number;
@@ -37,8 +38,13 @@ export async function syncPlanningFromGitHub(
 
   if (!project) return { success: false, error: 'Project not found' };
 
+  const allowed = (await isUserAdmin(user.id)) || (await isStaffOnProject(user.id, projectId));
+  if (!allowed) {
+    return { success: false, error: 'Not authorized' };
+  }
+
   // Use admin client for sync — workspace_integrations token is RLS-restricted
-  // but sync should work for any authenticated team member
+  // but sync should work for assigned staff without exposing the token.
   const adminClient = createAdminClient();
   const result = await syncPlanningFromGitHubWithServiceRole(
     adminClient,

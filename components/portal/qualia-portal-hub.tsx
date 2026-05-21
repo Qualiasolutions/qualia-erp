@@ -116,6 +116,18 @@ export function QualiaPortalHub({
   const clientName = companyName ?? displayName ?? 'Client';
 
   const greeting = useMemo(() => getGreeting(new Date().getHours()), []);
+  const todayLabel = useMemo(
+    () =>
+      new Intl.DateTimeFormat('en-GB', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+      }).format(new Date()),
+    []
+  );
+  const projectSummary = isLoading
+    ? 'Loading workspace'
+    : `${stats?.projectCount ?? 0} active ${(stats?.projectCount ?? 0) === 1 ? 'project' : 'projects'}`;
 
   // Clients have no /messages route — staff messaging is internal only,
   // and clients reach the conversation via the floating ClientChatWidget
@@ -153,37 +165,40 @@ export function QualiaPortalHub({
         } as React.CSSProperties
       }
     >
-      {/* Aurora wash — subtle accent ambience, no hard edge */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] opacity-[0.55] dark:opacity-[0.32]"
-        style={{
-          background: `radial-gradient(ellipse 80% 60% at 20% 0%, ${accentSoft} 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 100% 0%, ${accentSoft} 0%, transparent 65%)`,
-        }}
-      />
-
       {/* Header */}
-      <header className="relative px-[clamp(1.5rem,4vw,2.5rem)] pb-8 pt-12 md:pt-14">
-        <div className="flex items-baseline gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-          <span
-            className="inline-block size-1.5 rounded-full"
-            style={{ background: accentColor }}
-            aria-hidden
-          />
-          <span>{greeting},</span>
-          <span className="text-foreground">{firstName}</span>
+      <header className="relative border-b border-border bg-card px-[clamp(1rem,4vw,2rem)] py-4 md:px-[clamp(1.5rem,4vw,2.5rem)]">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+              <span
+                className="inline-block size-1.5 rounded-full"
+                style={{ background: accentColor }}
+                aria-hidden
+              />
+              <span>{todayLabel}</span>
+              <span aria-hidden>·</span>
+              <span>
+                {greeting}, <span className="text-foreground">{firstName}</span>
+              </span>
+            </div>
+            <h1 className="mt-1 truncate text-xl font-semibold leading-tight tracking-tight text-foreground md:text-2xl">
+              {clientName}
+            </h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground md:justify-end">
+            <span
+              className="rounded-md px-2 py-1 font-medium"
+              style={{ background: accentSoft, color: accentColor }}
+            >
+              {projectSummary}
+            </span>
+            <span className="rounded-md bg-muted/60 px-2 py-1">Requests, billing and meetings</span>
+          </div>
         </div>
-        <h1 className="mt-3 text-[clamp(1.75rem,1.1rem+2.4vw,2.625rem)] font-semibold leading-[1.05] tracking-tight text-foreground">
-          {clientName}
-        </h1>
-        <p className="mt-3 max-w-[560px] text-[14.5px] leading-relaxed text-muted-foreground">
-          Your projects, invoices, and conversations — the full picture of what we&apos;re building
-          for you.
-        </p>
       </header>
 
-      {/* Stat strip — flat, separator-divided, sits on the wash */}
-      <section className="relative border-y border-border/70 bg-card/40 backdrop-blur-[2px]">
+      {/* Stat strip — flat and separator-divided for a dense cockpit read. */}
+      <section className="relative border-b border-border bg-card">
         <div className="grid grid-cols-2 divide-x divide-border/70 md:grid-cols-4">
           <PulseMetric
             label="Active projects"
@@ -212,10 +227,10 @@ export function QualiaPortalHub({
       </section>
 
       {/* Body */}
-      <div className="relative px-[clamp(1.5rem,4vw,2.5rem)] pb-16 pt-10">
-        <div className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-[2fr_1fr]">
+      <div className="relative px-[clamp(1.25rem,4vw,2rem)] pb-12 pt-6">
+        <div className="grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-[2fr_1fr]">
           <EngagementsSection projects={projects} accentColor={accentColor} isLoading={isLoading} />
-          <aside className="flex flex-col gap-8">
+          <aside className="flex flex-col gap-6">
             <MeetingsSidebar meetings={upcomingMeetings} accentColor={accentColor} />
             <InvoicesSidebar
               unpaidCount={stats?.unpaidInvoiceCount ?? 0}
@@ -441,10 +456,10 @@ function MeetingsSidebar({
           Meetings
         </span>
       </div>
-      <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex items-start gap-3">
           <div
-            className="flex size-9 shrink-0 items-center justify-center rounded-xl text-white"
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white"
             style={{ background: accentColor }}
             aria-hidden
           >
@@ -462,7 +477,7 @@ function MeetingsSidebar({
           type="button"
           onClick={() => setMeetingModalOpen(true)}
           className={cn(
-            'mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl',
+            'mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg',
             'text-sm font-medium text-white shadow-sm transition-all duration-150',
             'hover:translate-y-[-1px] hover:shadow-md',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
@@ -480,7 +495,7 @@ function MeetingsSidebar({
           {meetings.length > 0 ? (
             <ul className="space-y-3">
               {meetings.map((meeting) => (
-                <li key={meeting.id} className="rounded-xl bg-muted/35 p-3">
+                <li key={meeting.id} className="rounded-lg bg-muted/35 p-3">
                   <div className="text-sm font-medium leading-snug text-foreground">
                     {meeting.title}
                   </div>
@@ -542,7 +557,7 @@ function InvoicesSidebar({
           Recent invoices
         </span>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
           <div className="min-w-0">
             <div className="text-sm font-medium text-foreground">
@@ -592,14 +607,14 @@ function ThreadCard({
           Open a {appLabel}
         </span>
       </div>
-      <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="rounded-xl border border-border bg-card p-4">
         <p className="text-sm leading-relaxed text-muted-foreground">
           Questions, feedback, a new idea? Drop a note — we typically reply within the hour.
         </p>
         <Link
           href={destination}
           className={cn(
-            'mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl',
+            'mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg',
             'text-sm font-medium text-white shadow-sm transition-all duration-150',
             'hover:translate-y-[-1px] hover:shadow-md',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'

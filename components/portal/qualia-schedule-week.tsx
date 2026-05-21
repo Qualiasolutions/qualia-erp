@@ -253,19 +253,19 @@ export function QualiaScheduleWeek({
   });
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden p-6 lg:p-8">
+    <div className="flex flex-1 flex-col overflow-hidden p-4 md:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-4 flex flex-shrink-0 flex-wrap items-center justify-between gap-3">
-        <div className="animate-fade-in">
-          <div className="mb-1 flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <CalendarIcon className="h-4 w-4 text-primary" />
-            </div>
-            <h1 className="text-2xl font-semibold tracking-tight">Schedule</h1>
+      <div className="mb-4 flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-4">
+        <div className="flex min-w-0 animate-fade-in items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <CalendarIcon className="h-4 w-4 text-primary" />
           </div>
-          <p className="ml-11 text-sm uppercase tracking-wider text-muted-foreground">
-            {headerLabel}
-          </p>
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Calendar
+            </p>
+            <p className="truncate text-sm font-medium text-foreground">{headerLabel}</p>
+          </div>
         </div>
 
         <div className="flex animate-fade-in flex-wrap items-center gap-3">
@@ -274,7 +274,7 @@ export function QualiaScheduleWeek({
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Nicosia</p>
               <p className="font-mono font-semibold tabular-nums">{nicosiaTime}</p>
             </div>
-            <div className="rounded-xl bg-primary/10 px-4 py-2 text-center">
+            <div className="rounded-lg border border-primary/15 bg-primary/[0.06] px-3 py-1.5 text-center">
               <p className="text-[10px] uppercase tracking-wider text-primary">Amman</p>
               <p className="font-mono font-semibold tabular-nums text-primary">{ammanTime}</p>
             </div>
@@ -359,7 +359,7 @@ export function QualiaScheduleWeek({
 
       {/* Detail dialog */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="gap-0 rounded-2xl border-border bg-card p-0 sm:max-w-[480px]">
+        <DialogContent className="gap-0 rounded-xl border-border bg-card p-0 sm:max-w-[480px]">
           {selected && (
             <>
               <DialogHeader className="p-6 pb-4">
@@ -564,7 +564,7 @@ function WeekGrid({
   }, [events]);
 
   return (
-    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-xl border border-border bg-card">
       <div
         className="grid flex-shrink-0 border-b border-border"
         style={{ gridTemplateColumns: '50px repeat(7, 1fr)' }}
@@ -736,7 +736,7 @@ function DayGrid({
   /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
-    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-xl border border-border bg-card">
       <div
         className="grid flex-shrink-0 border-b border-border"
         style={{ gridTemplateColumns: '56px 1fr' }}
@@ -918,7 +918,7 @@ function MonthGrid({
   }, [meetings]);
 
   return (
-    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-xl border border-border bg-card">
       {/* Day-of-week header */}
       <div
         className="grid flex-shrink-0 border-b border-border"

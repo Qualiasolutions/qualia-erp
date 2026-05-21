@@ -34,18 +34,23 @@ async function ClientListLoader() {
 
 function ClientTableSkeleton() {
   return (
-    <div className="flex h-full flex-col gap-4 p-6 lg:p-8">
-      <div className="flex items-center gap-2">
-        {[64, 80, 80].map((w, i) => (
-          <Skeleton key={i} className="h-8 rounded-lg" style={{ width: `${w}px` }} />
-        ))}
-      </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Skeleton className="h-11 w-full sm:max-w-sm sm:flex-1" />
-        <Skeleton className="h-11 w-32" />
-        <Skeleton className="h-11 w-36" />
-      </div>
-      <div className="elevation-1 overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="flex h-full flex-col gap-4 p-4 lg:p-6">
+      <header className="rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="mr-2 flex min-w-[160px] items-center gap-2">
+            <Skeleton className="h-8 w-8 rounded-lg bg-muted/50" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-20 bg-muted/50" />
+              <Skeleton className="h-3 w-24 bg-muted/40" />
+            </div>
+          </div>
+          <Skeleton className="h-9 min-w-[220px] flex-1 rounded-lg bg-muted/45" />
+          <Skeleton className="h-9 w-32 rounded-lg bg-muted/45" />
+          <Skeleton className="h-9 w-36 rounded-lg bg-muted/45" />
+          <Skeleton className="ml-auto h-9 w-28 rounded-lg bg-muted/50" />
+        </div>
+      </header>
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center border-b border-border/40 bg-muted/30 px-4 py-3">
           <Skeleton className="mr-4 h-3 w-6" />
           <Skeleton className="h-3 w-24" />

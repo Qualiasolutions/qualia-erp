@@ -132,7 +132,7 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
   const zohoIntegration = getIntegration('zoho');
 
   return (
-    <div className="space-y-4">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
       <IntegrationCard
         provider="github"
         title="GitHub"

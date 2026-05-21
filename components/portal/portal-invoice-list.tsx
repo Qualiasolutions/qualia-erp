@@ -74,7 +74,7 @@ const InvoiceRow = React.memo(function InvoiceRow({
       role="listitem"
       aria-label={`Invoice ${invoice.invoice_number}, ${formatCurrency(invoice.amount, invoice.currency)}, ${invoice.status}`}
       className={cn(
-        'border-b border-border/50 px-5 py-4 transition-colors last:border-b-0 hover:bg-muted/20',
+        'border-b border-border/50 px-4 py-3.5 transition-colors last:border-b-0 hover:bg-muted/20 sm:px-5',
         'animate-fade-in fill-mode-both'
       )}
       style={index < 10 ? { animationDelay: `${index * 30}ms` } : undefined}
@@ -204,19 +204,17 @@ function formatCurrency(amount: number, currency: string) {
 export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
   if (invoices.length === 0) {
     return (
-      <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/40 px-4 py-16 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60">
-          <Receipt className="h-5 w-5 text-muted-foreground" />
+      <div className="flex min-h-[280px] flex-col items-center justify-center rounded-xl border border-border bg-card px-5 py-12 text-center">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/[0.08] text-primary ring-1 ring-primary/15">
+          <Receipt className="h-4 w-4" />
         </div>
-        <h3 className="mt-5 text-base font-semibold tracking-tight text-foreground">
-          No invoices yet
-        </h3>
+        <h3 className="mt-4 text-base font-semibold tracking-tight text-foreground">No invoices</h3>
         <p className="mt-1.5 max-w-xs text-sm text-muted-foreground">
           Your invoices will appear here once your first project milestone is complete.
         </p>
         <a
           href="mailto:support@qualiasolutions.net"
-          className="mt-6 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="mt-5 inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/[0.04] hover:text-foreground"
         >
           Contact support
         </a>
@@ -238,7 +236,7 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
         </span>
       </div>
       <div
-        className="overflow-hidden rounded-2xl border border-border bg-card"
+        className="overflow-hidden rounded-xl border border-border bg-card"
         role="list"
         aria-label="Invoices"
       >

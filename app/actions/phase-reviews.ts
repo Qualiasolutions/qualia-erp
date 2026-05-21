@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { ActionResult } from './shared';
 import { isUserAdmin } from './shared';
 import { completePhase } from './phases';
+import { isStaffOnProject } from '@/lib/auth/is-staff-on-project';
 import {
   notifyPhaseSubmitted,
   notifyPhaseApproved,
@@ -71,12 +72,32 @@ export async function submitPhaseForReview(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
+  const [canSubmit, phaseResult] = await Promise.all([
+    isStaffOnProject(user.id, projectId),
+    supabase
+      .from('project_phases')
+      .select('id, name')
+      .eq('id', phaseId)
+      .eq('project_id', projectId)
+      .maybeSingle(),
+  ]);
+
+  if (!canSubmit) {
+    return { success: false, error: 'Access denied' };
+  }
+
+  if (phaseResult.error || !phaseResult.data) {
+    return { success: false, error: 'Phase not found for this project' };
+  }
+
+  const safePhaseName = phaseResult.data.name || phaseName;
+
   // Upsert -- if a previous review was rejected, allow resubmission
   const { error } = await supabase.from('phase_reviews').upsert(
     {
       project_id: projectId,
       phase_id: phaseId,
-      phase_name: phaseName,
+      phase_name: safePhaseName,
       submitted_by: user.id,
       submitted_at: new Date().toISOString(),
       status: 'pending',
@@ -97,7 +118,7 @@ export async function submitPhaseForReview(
     project_id: projectId,
     action_type: 'phase_submitted',
     actor_id: user.id,
-    action_data: { phase_name: phaseName, phase_id: phaseId },
+    action_data: { phase_name: safePhaseName, phase_id: phaseId },
     is_client_visible: true,
   });
 
@@ -118,7 +139,7 @@ export async function submitPhaseForReview(
     await notifyPhaseSubmitted(
       projectId,
       project.name,
-      phaseName,
+      safePhaseName,
       profile.full_name || 'Team member'
     );
   }
@@ -156,7 +177,8 @@ export async function approvePhaseReview(
       reviewed_at: new Date().toISOString(),
     })
     .eq('id', reviewId)
-    .select('id')
+    .eq('project_id', projectId)
+    .select('id, phase_name, phase_id, submitted_by')
     .single();
 
   if (error) {
@@ -165,25 +187,19 @@ export async function approvePhaseReview(
   }
   if (!approved) return { success: false, error: 'Not found or permission denied' };
 
-  // Get review details for activity log + phase completion
-  const { data: review } = await supabase
-    .from('phase_reviews')
-    .select('phase_name, phase_id')
-    .eq('id', reviewId)
-    .single();
-
-  if (review) {
+  // Log approval + complete the reviewed phase.
+  if (approved) {
     // Log the approval
     await supabase.from('activity_log').insert({
       project_id: projectId,
       action_type: 'phase_approved',
       actor_id: user.id,
-      action_data: { phase_name: review.phase_name, phase_id: review.phase_id },
+      action_data: { phase_name: approved.phase_name, phase_id: approved.phase_id },
       is_client_visible: true,
     });
 
     // Complete the phase and unlock the next one
-    await completePhase(review.phase_id);
+    await completePhase(approved.phase_id);
 
     // Send email notification to trainee
     const { data: reviewer } = await supabase
@@ -192,24 +208,18 @@ export async function approvePhaseReview(
       .eq('id', user.id)
       .single();
 
-    const { data: submitter } = await supabase
-      .from('phase_reviews')
-      .select('submitted_by')
-      .eq('id', reviewId)
-      .single();
-
     const { data: project } = await supabase
       .from('projects')
       .select('name')
       .eq('id', projectId)
       .single();
 
-    if (reviewer && submitter && project) {
+    if (reviewer && project) {
       await notifyPhaseApproved(
         projectId,
         project.name,
-        review.phase_name,
-        submitter.submitted_by,
+        approved.phase_name,
+        approved.submitted_by,
         reviewer.full_name || 'Admin'
       );
     }
@@ -250,7 +260,8 @@ export async function requestPhaseChanges(
       feedback,
     })
     .eq('id', reviewId)
-    .select('id')
+    .eq('project_id', projectId)
+    .select('id, phase_name, phase_id, submitted_by')
     .single();
 
   if (error) {
@@ -259,19 +270,13 @@ export async function requestPhaseChanges(
   }
   if (!updated) return { success: false, error: 'Not found or permission denied' };
 
-  // Get review details for activity log
-  const { data: review } = await supabase
-    .from('phase_reviews')
-    .select('phase_name, phase_id')
-    .eq('id', reviewId)
-    .single();
-
-  if (review) {
+  // Log review feedback.
+  if (updated) {
     await supabase.from('activity_log').insert({
       project_id: projectId,
       action_type: 'phase_changes_requested',
       actor_id: user.id,
-      action_data: { phase_name: review.phase_name, phase_id: review.phase_id, feedback },
+      action_data: { phase_name: updated.phase_name, phase_id: updated.phase_id, feedback },
       is_client_visible: false,
     });
 
@@ -282,24 +287,18 @@ export async function requestPhaseChanges(
       .eq('id', user.id)
       .single();
 
-    const { data: submitter } = await supabase
-      .from('phase_reviews')
-      .select('submitted_by')
-      .eq('id', reviewId)
-      .single();
-
     const { data: project } = await supabase
       .from('projects')
       .select('name')
       .eq('id', projectId)
       .single();
 
-    if (reviewer && submitter && project) {
+    if (reviewer && project) {
       await notifyPhaseChangesRequested(
         projectId,
         project.name,
-        review.phase_name,
-        submitter.submitted_by,
+        updated.phase_name,
+        updated.submitted_by,
         reviewer.full_name || 'Admin',
         feedback
       );

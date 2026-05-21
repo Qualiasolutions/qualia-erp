@@ -59,16 +59,14 @@ export default async function NotificationSettingsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="mb-6 border-b border-border pb-4">
-        <h1 className="text-[clamp(1.25rem,1.1rem+0.75vw,1.625rem)] font-semibold tracking-tight text-foreground">
-          Notification Preferences
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Control which notifications you receive and how they&apos;re delivered.
-        </p>
-      </div>
-
+    <div className="space-y-4 px-4 pb-8 pt-16 md:px-6 md:pt-6">
+      <header className="rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex items-center gap-2">
+          <h1 className="text-base font-semibold tracking-tight text-foreground">Notifications</h1>
+          <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+          <p className="truncate text-sm text-muted-foreground">Delivery and alert preferences</p>
+        </div>
+      </header>
       {preferences && (
         <NotificationPreferencesForm
           initialPreferences={preferences}

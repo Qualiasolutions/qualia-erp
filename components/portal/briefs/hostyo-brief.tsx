@@ -384,11 +384,11 @@ export function HostyoBrief({
     return (
       <div
         className={cn(
-          'mx-auto flex max-w-2xl flex-col items-center justify-center gap-4 rounded-2xl border border-primary/20 bg-primary/[0.04] px-8 py-12 text-center',
+          'mx-auto flex max-w-2xl flex-col gap-4 rounded-xl border border-border bg-card p-6 text-left shadow-elevation-1 sm:flex-row sm:items-center',
           className
         )}
       >
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/[0.08] text-primary ring-1 ring-primary/15">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -401,7 +401,7 @@ export function HostyoBrief({
         </div>
         <div>
           <h3 className="text-lg font-semibold tracking-tight text-foreground">Brief received</h3>
-          <p className="mt-1.5 text-sm text-muted-foreground">
+          <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
             We have everything we need. Expect a proposal in your inbox within 24 hours.
           </p>
         </div>
@@ -414,11 +414,11 @@ export function HostyoBrief({
   return (
     <div
       className={cn(
-        'mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card/40 backdrop-blur-sm',
+        'mx-auto w-full max-w-2xl overflow-hidden rounded-xl border border-border bg-card shadow-elevation-1',
         className
       )}
     >
-      <div className="border-b border-border bg-gradient-to-b from-primary/[0.04] to-transparent px-7 pb-5 pt-6">
+      <div className="border-b border-border px-5 py-4">
         <div className="flex items-baseline justify-between">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/85">
             {step.eyebrow} of {STEPS.length}
@@ -427,13 +427,13 @@ export function HostyoBrief({
             Hostyo AI Sales Agent · {step.shortLabel}
           </p>
         </div>
-        <div className="bg-muted-foreground/12 mt-3 h-[3px] w-full overflow-hidden rounded-full">
+        <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-border/50">
           <div
-            className="duration-[420ms] ease-[cubic-bezier(0.19,1,0.22,1)] h-full rounded-full bg-gradient-to-r from-primary/70 to-primary shadow-[0_0_12px_hsl(var(--primary)/0.6)] transition-[width]"
+            className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
             style={{ width: `${progressPct}%` }}
           />
         </div>
-        <h2 className="mt-5 text-[20px] font-semibold leading-tight tracking-tight text-foreground sm:text-[22px]">
+        <h2 className="mt-4 text-lg font-semibold leading-tight tracking-tight text-foreground">
           {step.title}
         </h2>
         {step.hint && (
@@ -441,12 +441,9 @@ export function HostyoBrief({
         )}
       </div>
 
-      <div
-        key={stepIndex}
-        className="animate-[stepIn_320ms_cubic-bezier(0.19,1,0.22,1)_both] space-y-5 px-7 py-7"
-      >
+      <div key={stepIndex} className="animate-[stepIn_240ms_ease-out_both] space-y-4 px-5 py-5">
         {step.kind === 'multi' && step.options && (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {step.options.map((opt) => {
               const raw = state[step.key as keyof FormState];
               const selected = Array.isArray(raw) && (raw as string[]).includes(opt.value);
@@ -456,10 +453,10 @@ export function HostyoBrief({
                   type="button"
                   onClick={() => toggleMulti(step.key as keyof FormState, opt.value)}
                   className={cn(
-                    'group relative flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13.5px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    'group relative flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-3 py-2 text-[13px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     selected
-                      ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.6),0_8px_24px_-6px_hsl(var(--primary)/0.45)]'
-                      : 'border-border bg-card/50 text-muted-foreground hover:border-primary/40 hover:bg-primary/[0.04] hover:text-foreground'
+                      ? 'border-primary/40 bg-primary/[0.08] text-foreground shadow-sm'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-primary/[0.04] hover:text-foreground'
                   )}
                 >
                   {opt.label}
@@ -483,7 +480,7 @@ export function HostyoBrief({
         )}
 
         {step.kind === 'single' && step.options && (
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {step.options.map((opt) => {
               const selected = state[step.key as keyof FormState] === opt.value;
               return (
@@ -492,10 +489,10 @@ export function HostyoBrief({
                   type="button"
                   onClick={() => setSingle(step.key as keyof FormState, opt.value)}
                   className={cn(
-                    'group relative flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13.5px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    'group relative flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-3 py-2 text-[13px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     selected
-                      ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.6),0_8px_24px_-6px_hsl(var(--primary)/0.45)]'
-                      : 'border-border bg-card/50 text-muted-foreground hover:border-primary/40 hover:bg-primary/[0.04] hover:text-foreground'
+                      ? 'border-primary/40 bg-primary/[0.08] text-foreground shadow-sm'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-primary/[0.04] hover:text-foreground'
                   )}
                 >
                   {opt.label}
@@ -541,15 +538,15 @@ export function HostyoBrief({
                 setState((prev) => ({ ...prev, budget: [v[0], v[1]] as [number, number] }))
               }
             >
-              <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-muted">
-                <SliderPrimitive.Range className="absolute h-full rounded-full bg-gradient-to-r from-primary/70 to-primary shadow-[0_0_12px_hsl(var(--primary)/0.5)]" />
+              <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-border/50">
+                <SliderPrimitive.Range className="absolute h-full rounded-full bg-primary" />
               </SliderPrimitive.Track>
               <SliderPrimitive.Thumb
-                className="block h-5 w-5 cursor-grab rounded-full border-2 border-primary bg-card shadow-[0_2px_8px_hsl(var(--primary)/0.45)] transition-transform hover:scale-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 active:cursor-grabbing"
+                className="block h-5 w-5 cursor-grab rounded-full border-2 border-primary bg-card shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 active:cursor-grabbing"
                 aria-label="Minimum budget"
               />
               <SliderPrimitive.Thumb
-                className="block h-5 w-5 cursor-grab rounded-full border-2 border-primary bg-card shadow-[0_2px_8px_hsl(var(--primary)/0.45)] transition-transform hover:scale-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 active:cursor-grabbing"
+                className="block h-5 w-5 cursor-grab rounded-full border-2 border-primary bg-card shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 active:cursor-grabbing"
                 aria-label="Maximum budget"
               />
             </SliderPrimitive.Root>
@@ -567,13 +564,13 @@ export function HostyoBrief({
             value={state.notes}
             onChange={(e) => setState((prev) => ({ ...prev, notes: e.target.value }))}
             placeholder={step.notePlaceholder}
-            className="min-h-[140px] resize-none rounded-xl text-[14px] leading-relaxed"
+            className="min-h-[140px] resize-none rounded-lg text-sm leading-relaxed"
             autoFocus
           />
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/20 px-7 py-4">
+      <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/20 px-5 py-3">
         <div className="flex items-center gap-3">
           {!isFirst ? (
             <button
@@ -594,7 +591,7 @@ export function HostyoBrief({
         <Button
           onClick={goNext}
           disabled={submitting}
-          className="group h-10 min-w-[130px] gap-1.5 rounded-xl px-5 text-[12.5px] font-medium shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.45)] transition-all duration-200 hover:shadow-[0_8px_28px_-4px_hsl(var(--primary)/0.55)] hover:brightness-110"
+          className="group h-10 min-w-[130px] gap-1.5 rounded-lg px-5 text-[12.5px] font-medium shadow-sm transition-all duration-200 hover:shadow-md"
         >
           {submitting ? (
             'Sending…'

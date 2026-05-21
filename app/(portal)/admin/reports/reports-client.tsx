@@ -243,17 +243,15 @@ export function AdminReportsClient() {
 
   return (
     <div className="flex flex-col">
-      <header className="border-b border-border bg-muted/30 px-6 pt-8 lg:px-8">
-        <div>
-          <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            Admin console
-          </div>
-          <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight">
-                Reports
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">{activeTabMeta.desc}</p>
+      <header className="border-b border-border bg-background/80 px-4 py-3 backdrop-blur-xl lg:px-6">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-semibold tracking-tight text-foreground">Reports</h1>
+                <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+                <p className="truncate text-sm text-muted-foreground">{activeTabMeta.desc}</p>
+              </div>
             </div>
             <Popover>
               <PopoverTrigger asChild>
@@ -302,7 +300,7 @@ export function AdminReportsClient() {
           <nav
             role="tablist"
             aria-label="Reports tabs"
-            className="mt-6 flex items-center gap-6 overflow-x-auto"
+            className="flex items-center gap-5 overflow-x-auto"
           >
             {TABS.map((t) => (
               <button
@@ -328,7 +326,7 @@ export function AdminReportsClient() {
         role="tabpanel"
         id={`report-panel-${tab}`}
         aria-labelledby={`report-tab-${tab}`}
-        className="w-full p-6 lg:p-8"
+        className="w-full p-4 lg:p-6"
       >
         {tab === 'framework' ? (
           <FrameworkReportsTab focusId={searchParams.get('id')} />
@@ -342,7 +340,7 @@ export function AdminReportsClient() {
           <EmptyState message="No data available." />
         ) : (
           <div>
-            <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="mb-5 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
               <StatCard
                 label="Total Hours"
                 value={`${report.totalHours}h`}
@@ -535,7 +533,7 @@ function StatCard({
   valueClassName?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-lg border border-border bg-card px-3.5 py-3">
       <div className="flex items-center justify-between">
         <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
           {label}
@@ -544,7 +542,7 @@ function StatCard({
       </div>
       <div
         className={cn(
-          'mt-2 text-[26px] font-semibold tabular-nums leading-none tracking-tight text-foreground',
+          'mt-2 text-xl font-semibold tabular-nums leading-none tracking-tight text-foreground',
           valueClassName
         )}
       >

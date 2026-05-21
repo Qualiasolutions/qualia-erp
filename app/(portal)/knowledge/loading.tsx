@@ -3,13 +3,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function KnowledgeLoading() {
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* Header skeleton */}
-      <div className="flex items-center justify-between border-b border-border px-6 py-4 sm:px-8">
-        <div className="flex items-center gap-2.5">
+      {/* Header skeleton — mobile route context, desktop actions only. */}
+      <div className="flex items-center justify-between border-b border-border bg-card/80 px-4 py-3 backdrop-blur-xl sm:px-6 md:min-h-14 md:justify-end md:px-6 md:py-2">
+        <div className="flex items-center gap-2.5 md:sr-only md:absolute md:h-px md:w-px md:overflow-hidden">
           <Skeleton className="h-7 w-7 rounded-lg" />
           <Skeleton className="h-5 w-32" />
         </div>
-        <Skeleton className="h-7 w-20" />
+        <Skeleton className="h-8 w-24 rounded-lg" />
       </div>
 
       <div className="flex-1 overflow-y-auto">

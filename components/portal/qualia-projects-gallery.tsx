@@ -557,7 +557,7 @@ const ProjectCardTile = memo(function ProjectCardTile({
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
           'cursor-pointer',
           clientView
-            ? 'gap-4 rounded-2xl px-5 py-4 shadow-[0_1px_2px_0_hsl(var(--border)/0.5)]'
+            ? 'gap-4 rounded-xl px-5 py-4 shadow-[0_1px_0_hsl(var(--border)/0.45)]'
             : 'gap-3 rounded-lg px-3 py-2.5'
         )}
       >
@@ -854,7 +854,7 @@ export function QualiaProjectsGallery({
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+          <div className="overflow-x-auto rounded-xl border border-border bg-card">
             <div
               className="sticky top-0 grid min-w-[600px] items-center gap-3 border-b border-border bg-muted/20 px-4 py-2.5"
               style={{ gridTemplateColumns: '24px 1.5fr 1fr 120px 100px 80px' }}
@@ -941,7 +941,7 @@ function StageColumn({
       className={cn(
         'flex min-h-0 flex-col overflow-hidden border border-border/60 bg-muted/10',
         clientView
-          ? 'rounded-2xl bg-card/50 shadow-[0_1px_0_0_hsl(var(--border)/0.4)]'
+          ? 'rounded-xl bg-card/50 shadow-[0_1px_0_0_hsl(var(--border)/0.4)]'
           : 'rounded-xl'
       )}
     >

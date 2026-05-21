@@ -148,22 +148,22 @@ export function IntegrationCard({
 
   return (
     <>
-      <div className="rounded-xl border border-border bg-card p-5 transition-all duration-200">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', iconColor)}>
-              <Icon className="h-5 w-5 text-white" />
+      <div className="border-b border-border bg-card p-4 transition-colors duration-150 last:border-b-0 hover:bg-muted/20 md:p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg', iconColor)}>
+              <Icon className="h-4 w-4 text-white" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-medium text-foreground">{title}</h3>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-semibold tracking-tight text-foreground">{title}</h3>
                 {isConnected ? (
-                  <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
                     <CheckCircle2 className="h-3 w-3" />
                     Connected
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                     <XCircle className="h-3 w-3" />
                     Not connected
                   </span>
@@ -178,7 +178,7 @@ export function IntegrationCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 md:justify-end">
             {isConnected ? (
               <>
                 <Button
@@ -222,12 +222,7 @@ export function IntegrationCard({
                 </Button>
               </>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsConnectDialogOpen(true)}
-                className="gap-1.5"
-              >
+              <Button variant="outline" size="sm" onClick={() => setIsConnectDialogOpen(true)}>
                 Connect
               </Button>
             )}

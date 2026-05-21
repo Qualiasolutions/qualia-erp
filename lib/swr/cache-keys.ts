@@ -37,6 +37,7 @@ export const cacheKeys = {
   ownerUpdates: (workspaceId: string, unreadOnly?: boolean) =>
     `owner-updates-${workspaceId}-${unreadOnly ? 'unread' : 'all'}`,
   teamStatus: (wsId: string) => ['team-status', wsId] as const,
+  myAdminHomeProjects: (userId: string) => ['my-admin-home-projects', userId] as const,
   plannedLogout: (wsId: string) => ['planned-logout', wsId] as const,
   messageChannels: (userId: string) => `message-channels-${userId}`,
   channelMessages: (projectId: string) => `channel-messages-${projectId}`,

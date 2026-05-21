@@ -17,6 +17,7 @@ export async function createFeatureRequest(input: {
   title: string;
   description?: string;
   priority?: string;
+  brief_data?: unknown;
 }): Promise<ActionResult> {
   try {
     const imp = await assertNotImpersonating();
@@ -56,6 +57,7 @@ export async function createFeatureRequest(input: {
         title: safeInput.title.trim(),
         description: safeInput.description?.trim() || null,
         priority: safeInput.priority || 'medium',
+        brief_data: safeInput.brief_data ?? null,
       })
       .select()
       .single();
@@ -146,7 +148,9 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
       .eq('id', user.id)
       .single();
 
-    let query = supabase
+    const readClient = !isAdmin && profile?.role === 'employee' ? createAdminClient() : supabase;
+
+    let query = readClient
       .from('client_feature_requests')
       .select(
         `
@@ -162,7 +166,7 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
         assigned_to,
         created_at,
         updated_at,
-        project:projects(id, name),
+        project:projects(id, name, logo_url, client:clients(id, display_name, logo_url)),
         assignee:profiles!client_feature_requests_assigned_to_fkey(id, full_name, avatar_url)
       `
       )
@@ -182,18 +186,61 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
     const { data, error } = await query;
     if (error) return { success: false, error: error.message || 'Failed to get requests' };
 
+    const clientIds = Array.from(new Set((data || []).map((r) => r.client_id).filter(Boolean)));
+    const clientProfiles = new Map<
+      string,
+      { id: string; full_name: string | null; email: string | null; avatar_url: string | null }
+    >();
+    if (clientIds.length > 0) {
+      const { data: profiles } = await readClient
+        .from('profiles')
+        .select('id, full_name, email, avatar_url')
+        .in('id', clientIds);
+      for (const profile of profiles || []) {
+        clientProfiles.set(profile.id, profile);
+      }
+    }
+
     // Normalize FK arrays
     const normalized = (data || []).map((r) => {
       const rec = r as typeof r & {
         assigned_to?: string | null;
+        client_id: string;
+        project?:
+          | {
+              id: string;
+              name: string;
+              logo_url: string | null;
+              client:
+                | { id: string; display_name: string | null; logo_url: string | null }
+                | { id: string; display_name: string | null; logo_url: string | null }[]
+                | null;
+            }
+          | Array<{
+              id: string;
+              name: string;
+              logo_url: string | null;
+              client:
+                | { id: string; display_name: string | null; logo_url: string | null }
+                | { id: string; display_name: string | null; logo_url: string | null }[]
+                | null;
+            }>
+          | null;
         assignee?:
           | { id: string; full_name: string | null; avatar_url: string | null }
           | { id: string; full_name: string | null; avatar_url: string | null }[]
           | null;
       };
+      const project = Array.isArray(rec.project) ? rec.project[0] || null : rec.project;
+      const crmClient = project?.client
+        ? Array.isArray(project.client)
+          ? project.client[0] || null
+          : project.client
+        : null;
       return {
         ...rec,
-        project: Array.isArray(rec.project) ? rec.project[0] || null : rec.project,
+        project: project ? { ...project, client: crmClient } : null,
+        client: clientProfiles.get(rec.client_id) ?? null,
         assignee: Array.isArray(rec.assignee) ? rec.assignee[0] || null : (rec.assignee ?? null),
       };
     });
@@ -204,6 +251,89 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get requests',
+    };
+  }
+}
+
+/**
+ * Return submitted project briefs (intake-form feature requests) for a project.
+ * Internal-only — admin or employee assigned to the project. Client role gets
+ * back an access-denied error since this is the staff-facing readout.
+ *
+ * Returns rows ordered newest-first. Each row carries the structured
+ * `brief_data` when present; the viewer falls back to parsing `description`
+ * for older briefs that pre-date the brief_data column.
+ */
+export async function getProjectBriefs(projectId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const isAdmin = await isUserAdmin(user.id);
+    if (!isAdmin) {
+      const staff = await isStaffOnProject(user.id, projectId);
+      if (!staff) return { success: false, error: 'Access denied' };
+    }
+
+    const readClient = createAdminClient();
+
+    const { data, error } = await readClient
+      .from('client_feature_requests')
+      .select(
+        `
+        id,
+        client_id,
+        project_id,
+        title,
+        description,
+        priority,
+        status,
+        brief_data,
+        attachments,
+        created_at
+      `
+      )
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
+
+    if (error) return { success: false, error: error.message || 'Failed to load briefs' };
+
+    const briefRows = (data ?? []).filter(
+      (row) => row.title.startsWith('Project brief —') || row.brief_data
+    );
+
+    // The client_id FK on client_feature_requests targets auth.users, not
+    // profiles, so PostgREST can't embed the submitter. Fetch profiles in a
+    // second query keyed by the distinct client_ids.
+    const rows = briefRows;
+    const submitterIds = Array.from(new Set(rows.map((r) => r.client_id).filter(Boolean)));
+    const submittersById = new Map<
+      string,
+      { id: string; full_name: string | null; avatar_url: string | null }
+    >();
+    if (submitterIds.length > 0) {
+      const { data: profiles } = await readClient
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', submitterIds);
+      for (const p of profiles ?? []) submittersById.set(p.id, p);
+    }
+
+    const normalized = rows.map((r) => ({
+      ...r,
+      attachments: Array.isArray(r.attachments) ? (r.attachments as RequestAttachment[]) : [],
+      submitter: submittersById.get(r.client_id) ?? null,
+    }));
+
+    return { success: true, data: normalized };
+  } catch (error) {
+    console.error('[getProjectBriefs] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to load briefs',
     };
   }
 }
@@ -556,7 +686,7 @@ export async function deleteFeatureRequest(requestId: string): Promise<ActionRes
       await adminClient.storage.from('project-files').remove(storagePaths);
     }
 
-    const { data: deletedComments, error: commentsError } = await adminClient
+    const { error: commentsError } = await adminClient
       .from('request_comments')
       .delete()
       .eq('request_id', requestId)
