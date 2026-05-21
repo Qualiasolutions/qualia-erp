@@ -1,6 +1,13 @@
 'use client';
 
-import { memo, useState, useMemo, useTransition } from 'react';
+import {
+  forwardRef,
+  memo,
+  useState,
+  useMemo,
+  useTransition,
+  type ComponentPropsWithoutRef,
+} from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -1064,27 +1071,30 @@ function FinishedRow({
  *  StageDropdown that pipeline cards use, so admins can move terminated
  *  projects to ANY state (or delete) instead of being stuck with a single
  *  "back to Building" hammer. */
-function ProjectMenuTrigger({ project }: { project: GalleryProject }) {
+const ProjectMenuTrigger = forwardRef<
+  HTMLButtonElement,
+  ComponentPropsWithoutRef<'button'> & { project: GalleryProject }
+>(function ProjectMenuTrigger({ project, className, ...props }, ref) {
   return (
     <button
+      ref={ref}
       type="button"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
+      {...props}
       title={`Move "${project.name}"`}
       aria-label={`Move ${project.name}`}
       className={cn(
         'inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md',
         'bg-muted/70 text-muted-foreground transition-colors duration-150',
         'hover:bg-primary/15 hover:text-primary',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+        className
       )}
     >
       <MoreHorizontal className="h-3.5 w-3.5" />
     </button>
   );
-}
+});
+ProjectMenuTrigger.displayName = 'ProjectMenuTrigger';
 
 function FinishedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmin?: boolean }) {
   const typeLabel = getTypeLabel(project.project_type);
@@ -1124,7 +1134,7 @@ function FinishedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
         </span>
       </Link>
       {isAdmin && (
-        <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+        <div className="absolute right-1.5 top-1/2 z-20 -translate-y-1/2">
           <StageDropdown project={project} trigger={<ProjectMenuTrigger project={project} />} />
         </div>
       )}
@@ -1222,7 +1232,7 @@ function ArchivedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
         </span>
       </Link>
       {isAdmin && (
-        <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+        <div className="absolute right-1.5 top-1/2 z-20 -translate-y-1/2">
           <StageDropdown project={project} trigger={<ProjectMenuTrigger project={project} />} />
         </div>
       )}
