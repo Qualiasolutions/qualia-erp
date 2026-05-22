@@ -38,13 +38,13 @@ const OWNER_WAITING_ITEMS = [
   { status: 'Waiting on requirements', item: 'SHSO' },
   { status: 'Waiting on requirements', item: 'Kronospan' },
   { status: 'Waiting on requirements', item: 'Velicor' },
-  { status: 'Waiting on forms', item: '7Buddas' },
-  { status: 'Waiting on forms', item: 'AI Expo' },
-  { status: 'Waiting on forms', item: 'Geo' },
+  { status: 'Reply / forms', item: '7Buddas - ask him to refill the form' },
+  { status: 'Website remake', item: 'AI Expo / Maxim - remake the Health AI Expo website' },
+  { status: 'Close-off', item: 'Geo - close off officially what is happening' },
   { status: 'Waiting on demo', item: 'Moayad demo' },
   { status: 'Waiting on decision', item: 'Sanad Dispatcher' },
   { status: 'Waiting on decision', item: 'Fotini' },
-  { status: 'Proposal to send', item: 'VivaP' },
+  { status: 'Proposal to create', item: 'Cellas - create proposal' },
 ] as const;
 
 type OwnerWaitingItem = (typeof OWNER_WAITING_ITEMS)[number];
@@ -335,9 +335,14 @@ function OwnerWaitingListCard() {
             </div>
             <ul className="mt-3 space-y-2">
               {items.map((entry) => (
-                <li key={`${entry.status}-${entry.item}`} className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
-                  <span className="min-w-0 truncate text-sm text-foreground">{entry.item}</span>
+                <li key={`${entry.status}-${entry.item}`} className="flex items-start gap-2">
+                  <span
+                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
+                    aria-hidden
+                  />
+                  <span className="min-w-0 break-words text-sm leading-snug text-foreground">
+                    {entry.item}
+                  </span>
                 </li>
               ))}
             </ul>
