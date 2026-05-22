@@ -5,6 +5,7 @@ export type QIconName =
   | 'home'
   | 'tasks'
   | 'projects'
+  | 'files'
   | 'clients'
   | 'agent'
   | 'calendar'
@@ -76,6 +77,13 @@ export function QIcon({ name, size = 16, className, ...rest }: QIconProps) {
         <svg {...base}>
           <rect x="3" y="4" width="14" height="12" rx="1.5" />
           <path d="M3 8h14M8 4v12" />
+        </svg>
+      );
+    case 'files':
+      return (
+        <svg {...base}>
+          <path d="M4 3h5l2 2h5a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 16 17H4a1.5 1.5 0 0 1-1.5-1.5v-11A1.5 1.5 0 0 1 4 3z" />
+          <path d="M2.5 7h15" />
         </svg>
       );
     case 'clients':
