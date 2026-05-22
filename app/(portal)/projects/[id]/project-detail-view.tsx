@@ -430,6 +430,7 @@ export function ProjectDetailView({
               <ProjectResources
                 projectId={project.id}
                 initialResources={project.metadata?.resources || []}
+                canManage={isAdmin}
                 className="h-full rounded-none border-0"
               />
             </div>
@@ -687,6 +688,7 @@ export function ProjectDetailView({
               <ProjectResources
                 projectId={project.id}
                 initialResources={project.metadata?.resources || []}
+                canManage={isAdmin}
                 className="h-full rounded-none border-0"
               />
             </TabsContent>
