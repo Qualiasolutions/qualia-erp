@@ -192,7 +192,8 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     data.id,
     formattedStart,
     formattedEnd,
-    clientName
+    clientName,
+    wsId
   ).catch((err) => console.error('[createMeeting] Failed to send email notification:', err));
 
   if (custom_client_name && finalClientId) {

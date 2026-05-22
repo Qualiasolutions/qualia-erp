@@ -1,7 +1,7 @@
 'use server';
 
 import { Resend } from 'resend';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 // Lazy initialization to avoid errors when API key is missing
 let resend: Resend | null = null;
@@ -88,6 +88,41 @@ export async function getOtherTeamMembers(excludeUserId: string): Promise<AdminU
 }
 
 /**
+ * Get internal members for one workspace. Calendar additions are workspace
+ * events, so those emails should go to the whole internal workspace team,
+ * including the creator.
+ */
+async function getWorkspaceTeamMembers(workspaceId: string): Promise<AdminUser[]> {
+  const supabase = createAdminClient();
+
+  const { data: memberships, error: memberError } = await supabase
+    .from('workspace_members')
+    .select('profile_id')
+    .eq('workspace_id', workspaceId);
+
+  if (memberError) {
+    console.error('[getWorkspaceTeamMembers] Error fetching memberships:', memberError);
+    return [];
+  }
+
+  const profileIds = Array.from(new Set((memberships || []).map((row) => row.profile_id)));
+  if (profileIds.length === 0) return [];
+
+  const { data: members, error } = await supabase
+    .from('profiles')
+    .select('id, email, full_name')
+    .in('id', profileIds)
+    .in('role', ['admin', 'employee']);
+
+  if (error) {
+    console.error('[getWorkspaceTeamMembers] Error fetching profiles:', error);
+    return [];
+  }
+
+  return (members || []).filter((member): member is AdminUser => !!member.email);
+}
+
+/**
  * Get user profile by ID
  */
 export async function getUserProfile(userId: string): Promise<AdminUser | null> {
@@ -128,7 +163,9 @@ function generateEmailHtml(data: NotificationData, recipientName: string): strin
   };
 
   const entityLabel = entityTypeLabels[data.entityType] || data.entityType;
-  const entityUrl = `${APP_URL}/${entityTypeUrls[data.entityType]}/${data.entityId}`;
+  const entityBaseUrl = `${APP_URL}/${entityTypeUrls[data.entityType]}`;
+  const entityUrl =
+    data.entityType === 'meeting' ? entityBaseUrl : `${entityBaseUrl}/${data.entityId}`;
 
   let additionalInfoHtml = '';
   if (data.additionalInfo) {
@@ -201,7 +238,9 @@ function generateEmailText(data: NotificationData, recipientName: string): strin
   };
 
   const entityLabel = entityTypeLabels[data.entityType] || data.entityType;
-  const entityUrl = `${APP_URL}/${entityTypeUrls[data.entityType]}/${data.entityId}`;
+  const entityBaseUrl = `${APP_URL}/${entityTypeUrls[data.entityType]}`;
+  const entityUrl =
+    data.entityType === 'meeting' ? entityBaseUrl : `${entityBaseUrl}/${data.entityId}`;
 
   let additionalInfo = '';
   if (data.additionalInfo) {
@@ -349,14 +388,65 @@ export async function notifyMeetingCreated(
   meetingId: string,
   startTime?: string,
   endTime?: string,
-  clientName?: string
+  clientName?: string,
+  workspaceId?: string | null
 ): Promise<{ success: boolean; error?: string }> {
-  const additionalInfo: Record<string, string> = {};
-  if (startTime) additionalInfo['Start Time'] = startTime;
-  if (endTime) additionalInfo['End Time'] = endTime;
-  if (clientName) additionalInfo['Client'] = clientName;
+  try {
+    const creator = await getUserProfile(creatorId);
+    if (!creator) return { success: false, error: 'Creator profile not found' };
 
-  return notifyAdminsOfCreation(creatorId, 'meeting', meetingTitle, meetingId, additionalInfo);
+    const recipients = workspaceId
+      ? await getWorkspaceTeamMembers(workspaceId)
+      : await getOtherTeamMembers(creatorId);
+
+    if (recipients.length === 0) return { success: true };
+
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyMeetingCreated] Resend not configured, skipping');
+      return { success: true };
+    }
+
+    const additionalInfo: Record<string, string> = {
+      'Created by': creator.full_name || creator.email || 'A team member',
+    };
+    if (startTime) additionalInfo['Start Time'] = startTime;
+    if (endTime) additionalInfo['End Time'] = endTime;
+    if (clientName) additionalInfo['Client'] = clientName;
+
+    const notificationData: NotificationData = {
+      creatorName: creator.full_name || creator.email || 'A team member',
+      creatorEmail: creator.email || '',
+      entityType: 'meeting',
+      entityName: meetingTitle,
+      entityId: meetingId,
+      additionalInfo,
+    };
+
+    const subject = `Calendar event added: ${meetingTitle}`;
+    const uniqueRecipients = Array.from(new Map(recipients.map((r) => [r.email, r])).values());
+
+    await Promise.all(
+      uniqueRecipients.map(async (recipient) => {
+        const { error } = await resendClient.emails.send({
+          from: FROM_EMAIL,
+          to: recipient.email,
+          subject,
+          html: generateEmailHtml(notificationData, recipient.full_name || ''),
+          text: generateEmailText(notificationData, recipient.full_name || ''),
+        });
+
+        if (error) {
+          console.error(`[notifyMeetingCreated] Failed to send to ${recipient.email}:`, error);
+        }
+      })
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyMeetingCreated] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
 }
 
 export async function notifyClientCreated(
