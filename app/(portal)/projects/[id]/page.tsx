@@ -5,6 +5,10 @@ import { getProfiles, getCurrentUserProfile, getClients } from '@/app/actions';
 import { getCachedProjectById, getCachedProjectIntegrationStatus } from '@/lib/cached-reads';
 import { getPortalAuthUser } from '@/lib/portal-cache';
 import { createClient } from '@/lib/supabase/server';
+import {
+  getProjectClientSubmissions,
+  type ProjectClientSubmission,
+} from '@/app/actions/client-requests';
 import { ProjectDetailView } from './project-detail-view';
 
 function ProjectDetailSkeleton() {
@@ -67,11 +71,12 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
     }
   }
 
-  const [project, profiles, integrationStatus, clientsRaw] = await Promise.all([
+  const [project, profiles, integrationStatus, clientsRaw, submissionsResult] = await Promise.all([
     getCachedProjectById(id),
     isAdmin ? getProfiles() : Promise.resolve([]),
     isClient ? Promise.resolve(undefined) : getCachedProjectIntegrationStatus(id),
     isAdmin ? getClients() : Promise.resolve([]),
+    getProjectClientSubmissions(id),
   ]);
 
   const clients = (clientsRaw || []).map((c) => ({
@@ -102,6 +107,11 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
       clients={isClient ? [] : clients}
       userRole={userProfile?.role || 'employee'}
       integrationStatus={isClient ? undefined : integrationStatus}
+      clientSubmissions={
+        submissionsResult.success
+          ? ((submissionsResult.data || []) as ProjectClientSubmission[])
+          : []
+      }
     />
   );
 }

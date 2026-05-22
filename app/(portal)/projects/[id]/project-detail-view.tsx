@@ -24,6 +24,7 @@ import {
   LineChart,
   CalendarClock,
   CheckCircle2,
+  MessageSquare,
 } from 'lucide-react';
 import { useProjectAssignments, invalidateProjectAssignments } from '@/lib/swr';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -64,8 +65,10 @@ import { ProjectFilesPanel } from '@/components/project-files-panel';
 import { LogoUpload } from '@/components/logo-upload';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { ProjectIntegrationsDisplay } from '@/components/project-integrations-display';
+import { ProjectClientSubmissionsPanel } from '@/components/portal/project-client-submissions-panel';
 import type { ProjectType, ProjectGroup } from '@/types/database';
 import type { IntegrationStatus } from '@/lib/integration-utils';
+import type { ProjectClientSubmission } from '@/app/actions/client-requests';
 
 const PROJECT_TYPES: {
   value: ProjectType;
@@ -145,6 +148,7 @@ interface ProjectDetailViewProps {
   clients: ClientOption[];
   userRole?: 'admin' | 'employee' | 'client';
   integrationStatus?: IntegrationStatus;
+  clientSubmissions?: ProjectClientSubmission[];
 }
 
 export function ProjectDetailView({
@@ -152,6 +156,7 @@ export function ProjectDetailView({
   profiles,
   clients,
   userRole = 'employee',
+  clientSubmissions = [],
 }: ProjectDetailViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -404,6 +409,14 @@ export function ProjectDetailView({
               </div>
             )}
 
+            <div className="min-h-[220px] shrink-0 border-b border-border p-4">
+              <ProjectClientSubmissionsPanel
+                projectId={project.id}
+                submissions={clientSubmissions}
+                className="h-full rounded-lg"
+              />
+            </div>
+
             {/* Resources — links to live docs/deploys; visible to clients */}
             <div className="min-h-0 flex-1 border-b border-border">
               <ProjectResources
@@ -637,10 +650,14 @@ export function ProjectDetailView({
             <SheetTitle>Project Info</SheetTitle>
           </SheetHeader>
 
-          <Tabs defaultValue="resources" className="flex min-h-0 flex-1 flex-col">
+          <Tabs defaultValue="submissions" className="flex min-h-0 flex-1 flex-col">
             <TabsList
-              className={cn('mx-4 mt-3 grid w-auto', isClient ? 'grid-cols-1' : 'grid-cols-2')}
+              className={cn('mx-4 mt-3 grid w-auto', isClient ? 'grid-cols-2' : 'grid-cols-3')}
             >
+              <TabsTrigger value="submissions" className="gap-1.5 text-xs">
+                <MessageSquare className="h-3.5 w-3.5" />
+                Submissions
+              </TabsTrigger>
               <TabsTrigger value="resources" className="gap-1.5 text-xs">
                 <LinkIcon className="h-3.5 w-3.5" />
                 Resources
@@ -652,6 +669,13 @@ export function ProjectDetailView({
                 </TabsTrigger>
               )}
             </TabsList>
+            <TabsContent value="submissions" className="mt-0 min-h-0 flex-1 p-4">
+              <ProjectClientSubmissionsPanel
+                projectId={project.id}
+                submissions={clientSubmissions}
+                className="h-full"
+              />
+            </TabsContent>
             <TabsContent value="resources" className="mt-0 min-h-0 flex-1">
               <ProjectResources
                 projectId={project.id}

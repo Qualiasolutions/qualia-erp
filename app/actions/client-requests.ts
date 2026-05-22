@@ -9,6 +9,28 @@ import { getEmployeeProjectIds } from '@/lib/auth/is-staff-on-project';
 import { FeatureRequestCreateSchema, UpdateFeatureRequestSchema } from '@/lib/validation';
 import { assertNotImpersonating } from '@/lib/portal-utils';
 
+export interface ProjectClientSubmission {
+  id: string;
+  title: string;
+  description: string | null;
+  priority: string;
+  status: string;
+  admin_response: string | null;
+  created_at: string;
+  attachments: Array<{
+    name: string;
+    path: string;
+    size: number;
+    type: string;
+    uploaded_at: string;
+  }>;
+  client: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+  } | null;
+}
+
 /**
  * Create a feature request from a client
  */
@@ -189,6 +211,108 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get requests',
+    };
+  }
+}
+
+/**
+ * Get client submissions for one project.
+ *
+ * RLS intentionally keeps client_feature_requests admin/client-owned. This
+ * helper uses the admin client only after proving the caller is an admin, the
+ * assigned employee on this project, or a linked client for this project.
+ */
+export async function getProjectClientSubmissions(projectId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const isAdmin = await isUserAdmin(user.id);
+    let canView = isAdmin;
+
+    if (!canView && profile?.role === 'employee') {
+      const { data: assignment } = await supabase
+        .from('project_assignments')
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('employee_id', user.id)
+        .is('removed_at', null)
+        .maybeSingle();
+      canView = Boolean(assignment);
+    }
+
+    if (!canView && profile?.role === 'client') {
+      const { data: link } = await supabase
+        .from('client_projects')
+        .select('project_id')
+        .eq('project_id', projectId)
+        .eq('client_id', user.id)
+        .maybeSingle();
+      canView = Boolean(link);
+    }
+
+    if (!canView) return { success: false, error: 'Project not found or access denied' };
+
+    const adminClient = createAdminClient();
+    let query = adminClient
+      .from('client_feature_requests')
+      .select(
+        'id, client_id, title, description, priority, status, admin_response, attachments, created_at'
+      )
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
+
+    if (profile?.role === 'client' && !isAdmin) {
+      query = query.eq('client_id', user.id);
+    }
+
+    const { data: requests, error } = await query.limit(12);
+    if (error) throw error;
+
+    const clientIds = Array.from(new Set((requests || []).map((r) => r.client_id).filter(Boolean)));
+    const clientMap = new Map<
+      string,
+      { id: string; full_name: string | null; email: string | null }
+    >();
+
+    if (clientIds.length > 0) {
+      const { data: clients } = await adminClient
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', clientIds);
+
+      for (const client of clients || []) {
+        clientMap.set(client.id, client);
+      }
+    }
+
+    const normalized = (requests || []).map((request) => ({
+      id: request.id,
+      title: request.title,
+      description: request.description,
+      priority: request.priority,
+      status: request.status,
+      admin_response: request.admin_response,
+      created_at: request.created_at,
+      attachments: Array.isArray(request.attachments) ? request.attachments : [],
+      client: request.client_id ? clientMap.get(request.client_id) || null : null,
+    }));
+
+    return { success: true, data: normalized };
+  } catch (error) {
+    console.error('[getProjectClientSubmissions] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get project submissions',
     };
   }
 }
