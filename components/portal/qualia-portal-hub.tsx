@@ -94,6 +94,12 @@ function getGreeting(hour: number): string {
   return 'Still up';
 }
 
+function progressPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  const percent = value <= 1 ? value * 100 : value;
+  return Math.max(0, Math.min(100, Math.round(percent)));
+}
+
 /* ======================================================================
    QualiaPortalHub — calm client cockpit
    ====================================================================== */
@@ -359,7 +365,7 @@ const EngagementRow = memo(function EngagementRow({
   accentColor: string;
 }) {
   const status = getStatusMeta(project.status);
-  const pct = Math.round(project.progress * 100);
+  const pct = progressPercent(project.progress);
   const phaseText = project.currentPhase
     ? `${project.currentPhase} · ${project.completedPhases}/${project.totalPhases} phases`
     : `${project.completedPhases}/${project.totalPhases} phases`;
