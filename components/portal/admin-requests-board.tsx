@@ -24,6 +24,11 @@ import { RequestDetailSheet } from './request-detail-sheet';
 
 type RequestStatus = 'pending' | 'in_progress' | 'completed';
 
+interface ProjectOption {
+  id: string;
+  name: string;
+}
+
 interface FeatureRequest {
   id: string;
   title: string;
@@ -63,6 +68,8 @@ interface AdminRequestsBoardProps {
   currentUserId: string;
   userRole: string;
   staffOptions?: StaffOption[];
+  projects?: ProjectOption[];
+  initialProjectId?: string | null;
 }
 
 const COLUMNS: { key: RequestStatus; label: string; eyebrow: string }[] = [
@@ -88,10 +95,17 @@ export function AdminRequestsBoard({
   currentUserId,
   userRole,
   staffOptions = [],
+  projects = [],
+  initialProjectId = null,
 }: AdminRequestsBoardProps) {
   const router = useRouter();
   const isClient = userRole === 'client';
   const [scope, setScope] = useState<'all' | 'mine'>('all');
+  const [projectFilter, setProjectFilter] = useState<string>(
+    initialProjectId && projects.some((project) => project.id === initialProjectId)
+      ? initialProjectId
+      : 'all'
+  );
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
   const [query, setQuery] = useState('');
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -113,6 +127,7 @@ export function AdminRequestsBoard({
     return requests.filter((r) => {
       const uiStatus = r.id in optimisticStatus ? optimisticStatus[r.id] : toUiStatus(r.status);
       if (uiStatus === 'archived') return false;
+      if (projectFilter !== 'all' && r.project?.id !== projectFilter) return false;
       if (!isClient && scope === 'mine' && r.assigned_to !== currentUserId) return false;
       if (priorityFilter !== 'all' && r.priority !== priorityFilter) return false;
       if (q) {
@@ -122,7 +137,16 @@ export function AdminRequestsBoard({
       }
       return true;
     });
-  }, [requests, optimisticStatus, scope, currentUserId, priorityFilter, query, isClient]);
+  }, [
+    requests,
+    optimisticStatus,
+    projectFilter,
+    scope,
+    currentUserId,
+    priorityFilter,
+    query,
+    isClient,
+  ]);
 
   const grouped = useMemo(() => {
     const groups: Record<RequestStatus, FeatureRequest[]> = {
@@ -193,7 +217,11 @@ export function AdminRequestsBoard({
     return s !== 'archived';
   }).length;
   const hasActiveFilter =
-    priorityFilter !== 'all' || query.trim().length > 0 || (!isClient && scope === 'mine');
+    projectFilter !== 'all' ||
+    priorityFilter !== 'all' ||
+    query.trim().length > 0 ||
+    (!isClient && scope === 'mine');
+  const showProjectFilter = projects.length > 1 || projectFilter !== 'all';
 
   const PRIORITIES: { value: PriorityFilter; label: string }[] = [
     { value: 'all', label: 'All' },
@@ -236,8 +264,27 @@ export function AdminRequestsBoard({
   return (
     <div className="flex h-full flex-col gap-3">
       {/* Toolbar: scope · search · priority · count */}
-      {(showStaffControls || showSearch) && (
+      {(showStaffControls || showSearch || showProjectFilter) && (
         <div className="flex flex-wrap items-center gap-2">
+          {showProjectFilter && (
+            <select
+              value={projectFilter}
+              onChange={(e) => setProjectFilter(e.target.value)}
+              aria-label="Filter by project"
+              className={cn(
+                'h-9 max-w-full rounded-md border border-border bg-card px-3 text-sm text-foreground',
+                'focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20'
+              )}
+            >
+              <option value="all">All projects</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          )}
+
           {showStaffControls && (
             <div className="flex gap-1 rounded-md bg-muted/30 p-1">
               <button
@@ -326,6 +373,7 @@ export function AdminRequestsBoard({
                 onClick={() => {
                   setPriorityFilter('all');
                   setQuery('');
+                  setProjectFilter('all');
                   if (!isClient) setScope('all');
                 }}
                 className="cursor-pointer rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"

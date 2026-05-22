@@ -26,7 +26,12 @@ const AdminRequestsBoard = dynamic(
 
 export const metadata: Metadata = { title: 'Requests' };
 
-export default async function PortalRequestsPage() {
+interface PageProps {
+  searchParams: Promise<{ project?: string }>;
+}
+
+export default async function PortalRequestsPage({ searchParams }: PageProps) {
+  const { project: requestedProjectId } = await searchParams;
   const user = await getPortalAuthUser();
 
   if (!user) {
@@ -117,6 +122,9 @@ export default async function PortalRequestsPage() {
   }>;
 
   const projects = projectsData;
+  const initialProjectId = projects.some((project) => project.id === requestedProjectId)
+    ? requestedProjectId
+    : undefined;
   // Comment counts surface as a chip on each kanban card for every role.
   const commentCounts =
     requests.length > 0 ? await getRequestCommentCounts(requests.map((r) => r.id)) : {};
@@ -165,6 +173,8 @@ export default async function PortalRequestsPage() {
         currentUserId={user.id}
         userRole={isAdmin ? 'admin' : isEmployee ? 'employee' : 'client'}
         staffOptions={staffOptions}
+        projects={projects}
+        initialProjectId={initialProjectId}
       />
     </div>
   );
