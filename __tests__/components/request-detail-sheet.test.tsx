@@ -80,12 +80,14 @@ describe('RequestDetailSheet', () => {
     });
 
     expect(screen.getByRole('button', { name: /move to in progress/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /mark as done/i })).toBeInTheDocument();
   });
 
   it('keeps unassigned employee-visible requests read-only for status changes', () => {
     renderSheet();
 
     expect(screen.queryByRole('button', { name: /move to in progress/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /mark as done/i })).not.toBeInTheDocument();
     expect(screen.getByText(/status is editable by the assigned owner/i)).toBeInTheDocument();
   });
 });

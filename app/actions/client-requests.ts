@@ -1134,8 +1134,23 @@ export async function markFeatureRequestDone(
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    // Authorization: admin always allowed; employee only if assigned to the request's project
+    // Authorization: admin always allowed; employees must be the assigned owner.
+    // Use the service role for the request read/write after enforcing that gate
+    // in application code; the normal RLS policy does not allow employee status
+    // writes even when the UI permits assigned owners to manage the request.
     const isAdmin = await isUserAdmin(user.id);
+    const adminClient = createAdminClient();
+
+    const { data: request, error: fetchError } = await adminClient
+      .from('client_feature_requests')
+      .select('id, title, status, project_id, client_id, assigned_to')
+      .eq('id', requestId)
+      .maybeSingle();
+
+    if (fetchError || !request) {
+      return { success: false, error: 'Request not found' };
+    }
+
     if (!isAdmin) {
       const { data: profile } = await supabase
         .from('profiles')
@@ -1147,32 +1162,9 @@ export async function markFeatureRequestDone(
         return { success: false, error: 'Not authorized' };
       }
 
-      // Employee must be assigned to the request's project
-      const { data: req } = await supabase
-        .from('client_feature_requests')
-        .select('project_id')
-        .eq('id', requestId)
-        .single();
-
-      if (!req?.project_id) {
+      if (request.assigned_to !== user.id) {
         return { success: false, error: 'Not authorized' };
       }
-
-      const staffOnProject = await isStaffOnProject(user.id, req.project_id);
-      if (!staffOnProject) {
-        return { success: false, error: 'Not authorized' };
-      }
-    }
-
-    // Fetch request with client profile for the email
-    const { data: request, error: fetchError } = await supabase
-      .from('client_feature_requests')
-      .select('id, title, status, project_id, client_id')
-      .eq('id', requestId)
-      .single();
-
-    if (fetchError || !request) {
-      return { success: false, error: 'Request not found' };
     }
 
     if (['completed', 'declined'].includes(request.status)) {
@@ -1180,19 +1172,23 @@ export async function markFeatureRequestDone(
     }
 
     // Fetch client email + name
-    const { data: clientProfile } = await supabase
+    const { data: clientProfile } = await adminClient
       .from('profiles')
       .select('email, full_name')
       .eq('id', request.client_id)
-      .single();
+      .maybeSingle();
 
     // Update status to completed
-    const { data: updatedRequest, error: updateError } = await supabase
+    let updateQuery = adminClient
       .from('client_feature_requests')
       .update({ status: 'completed', updated_at: new Date().toISOString() })
-      .eq('id', requestId)
-      .select('id')
-      .single();
+      .eq('id', requestId);
+
+    if (!isAdmin) {
+      updateQuery = updateQuery.eq('assigned_to', user.id);
+    }
+
+    const { data: updatedRequest, error: updateError } = await updateQuery.select('id').single();
 
     if (updateError)
       return { success: false, error: updateError.message || 'Failed to mark request as done' };
@@ -1209,7 +1205,7 @@ export async function markFeatureRequestDone(
     const commentBody = `Marked done by ${staffName}${doneNote?.trim() ? ' — ' + doneNote.trim() : ''}`;
 
     // Post system comment
-    await supabase.from('request_comments').insert({
+    await adminClient.from('request_comments').insert({
       request_id: requestId,
       author_id: user.id,
       content: commentBody,

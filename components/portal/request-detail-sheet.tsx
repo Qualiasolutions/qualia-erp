@@ -411,7 +411,7 @@ export function RequestDetailSheet({
                           </Button>
                         )
                       )}
-                    {isAdmin && (
+                    {canManageStatus && (
                       <Button
                         variant="default"
                         size="sm"
