@@ -99,6 +99,7 @@ export async function processNonStreamingAI(options: ProcessOptions) {
     user: options.user,
     mode: options.mode,
     userContext: options.userContext,
+    enrichedContext: options.enrichedContext,
   });
 
   const tools = createAgentTools(supabase, options.workspaceId, options.user);
