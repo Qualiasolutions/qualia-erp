@@ -49,7 +49,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { getProjectById, updateProject, deleteProject } from '@/app/actions/projects';
@@ -332,6 +338,7 @@ export function ProjectDetailView({
               variant="ghost"
               size="icon"
               onClick={() => setPanelSheetOpen(true)}
+              aria-label="Open project info"
               className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground xl:hidden"
             >
               <PanelRightOpen className="h-4 w-4" />
@@ -657,15 +664,22 @@ export function ProjectDetailView({
         <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-[420px]">
           <SheetHeader className="border-b border-border px-4 py-3">
             <SheetTitle>Project Info</SheetTitle>
+            <SheetDescription className="sr-only">
+              Project resources, files, requests, briefs, and reports.
+            </SheetDescription>
           </SheetHeader>
 
           <Tabs defaultValue="resources" className="flex min-h-0 flex-1 flex-col">
             <TabsList
-              className={cn('mx-4 mt-3 grid w-auto', isClient ? 'grid-cols-2' : 'grid-cols-4')}
+              className={cn('mx-4 mt-3 grid w-auto', isClient ? 'grid-cols-3' : 'grid-cols-5')}
             >
               <TabsTrigger value="resources" className="gap-1.5 text-xs">
                 <LinkIcon className="h-3.5 w-3.5" />
                 Resources
+              </TabsTrigger>
+              <TabsTrigger value="files" className="gap-1.5 text-xs">
+                <Folder className="h-3.5 w-3.5" />
+                Files
               </TabsTrigger>
               <TabsTrigger value="requests" className="gap-1.5 text-xs">
                 <MessageSquareText className="h-3.5 w-3.5" />
@@ -689,6 +703,14 @@ export function ProjectDetailView({
                 projectId={project.id}
                 initialResources={project.metadata?.resources || []}
                 canManage={isAdmin}
+                className="h-full rounded-none border-0"
+              />
+            </TabsContent>
+            <TabsContent value="files" className="mt-0 min-h-0 flex-1">
+              <ProjectFilesPanel
+                projectId={project.id}
+                isClient={isClient}
+                isAdmin={isAdmin}
                 className="h-full rounded-none border-0"
               />
             </TabsContent>
