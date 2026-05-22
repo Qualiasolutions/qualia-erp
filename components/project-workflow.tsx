@@ -557,7 +557,7 @@ export function ProjectWorkflow({
   userRole,
   className,
 }: ProjectWorkflowProps) {
-  const canMutate = userRole !== 'client';
+  const canMutate = userRole === 'admin';
 
   const [phases, setPhases] = useState<Phase[]>([]);
   const [lastReport, setLastReport] = useState<LastReportMeta | null>(null);
@@ -1037,7 +1037,7 @@ export function ProjectWorkflow({
               Sync
             </button>
           )}
-          {/* Add phase — staff only */}
+          {/* Add/edit/delete phase — admin-only; assigned staff can sync but not mutate roadmap shape */}
           {canMutate &&
             (showNewPhase ? (
               <div className="flex items-center gap-1.5">
