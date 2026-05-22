@@ -81,4 +81,39 @@ describe('QualiaPortalHub', () => {
 
     expect(screen.getByText('42')).toBeInTheDocument();
   });
+
+  it('hides billing and request shortcuts when those client apps are disabled', () => {
+    render(
+      <QualiaPortalHub
+        {...baseProps}
+        enabledApps={['home', 'projects', 'files', 'settings']}
+        projects={[]}
+      />
+    );
+
+    expect(screen.queryByText(/open requests/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/unpaid invoices/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/outstanding/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /view all/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /start a conversation/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /book a meeting/i })).toBeInTheDocument();
+  });
+
+  it('keeps billing and request shortcuts when those client apps are enabled', () => {
+    render(
+      <QualiaPortalHub
+        {...baseProps}
+        enabledApps={['home', 'projects', 'requests', 'billing', 'settings']}
+        projects={[]}
+      />
+    );
+
+    expect(screen.getByText(/open requests/i)).toBeInTheDocument();
+    expect(screen.getByText(/unpaid invoices/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /view all/i })).toHaveAttribute('href', '/billing');
+    expect(screen.getByRole('link', { name: /start a conversation/i })).toHaveAttribute(
+      'href',
+      '/requests'
+    );
+  });
 });
