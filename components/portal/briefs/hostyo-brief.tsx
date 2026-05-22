@@ -7,6 +7,7 @@ import { createFeatureRequest } from '@/app/actions/client-requests';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import type { BriefData, BriefSection } from '@/lib/validation';
 
 type StepKind = 'multi' | 'single' | 'budget' | 'notes';
 
@@ -305,6 +306,43 @@ function buildDescription(state: FormState): string {
   return lines.join('\n\n');
 }
 
+function buildBriefData(state: FormState): BriefData {
+  const sections: BriefSection[] = [];
+
+  const pushValues = (key: string, label: string, values: string[]) => {
+    if (values.length === 0) return;
+    sections.push({ key, label, values });
+  };
+
+  const pushText = (key: string, label: string, value: string) => {
+    if (!value.trim()) return;
+    sections.push({ key, label, value: value.trim() });
+  };
+
+  pushValues('lead_sources', 'Lead sources', state.leadSources);
+  pushText('daily_volume', 'Daily volume', state.volume);
+  pushText('channel_cadence', 'Channel cadence', state.cadence);
+  pushValues('qualification_questions', 'Qualification questions', state.qualification);
+  pushValues('languages', 'Languages', state.languages);
+  pushText('operating_hours', 'Operating hours', state.hours);
+  pushText('model_deployment', 'Model deployment', state.deployment);
+  pushValues('agent_roles', 'Agent roles', state.agents);
+  pushValues('integrations', 'Integrations', state.integrations);
+  sections.push({
+    key: 'budget_range',
+    label: 'Budget range',
+    value: `${eur(state.budget[0])} - ${eur(state.budget[1])}`,
+  });
+  pushText('timeline', 'Timeline', state.timeline);
+  pushText('notes', 'Notes', state.notes);
+
+  return {
+    variant: 'hostyo',
+    submitted_at: new Date().toISOString(),
+    sections,
+  };
+}
+
 export function HostyoBrief({
   projectId,
   projectName,
@@ -370,6 +408,7 @@ export function HostyoBrief({
       title: `Project brief — ${projectName}`,
       description: buildDescription(state),
       priority: 'medium',
+      brief_data: buildBriefData(state),
     });
     setSubmitting(false);
     if (result.success) {
