@@ -89,6 +89,14 @@ function toUiStatus(dbStatus: string): RequestStatus | 'archived' {
 
 type PriorityFilter = 'all' | 'urgent' | 'high' | 'medium' | 'low';
 
+function canManageRequestStatus(
+  request: FeatureRequest,
+  userRole: string,
+  currentUserId: string
+): boolean {
+  return userRole === 'admin' || (userRole === 'employee' && request.assigned_to === currentUserId);
+}
+
 export function AdminRequestsBoard({
   requests,
   commentCounts = {},
@@ -177,6 +185,10 @@ export function AdminRequestsBoard({
 
       const sourceRequest = requests.find((r) => r.id === requestId);
       if (!sourceRequest) return;
+      if (!canManageRequestStatus(sourceRequest, userRole, currentUserId)) {
+        toast.error('Only the assigned owner can move this request');
+        return;
+      }
       const currentUiStatus = optimisticStatus[requestId] ?? toUiStatus(sourceRequest.status);
       if (currentUiStatus === newStatus) return;
 
@@ -198,7 +210,7 @@ export function AdminRequestsBoard({
       toast.success(`Moved to ${COLUMNS.find((c) => c.key === newStatus)?.label ?? newStatus}`);
       router.refresh();
     },
-    [requests, optimisticStatus, router]
+    [requests, optimisticStatus, router, userRole, currentUserId]
   );
 
   const activeRequest = activeDragId
@@ -423,6 +435,9 @@ export function AdminRequestsBoard({
                 requests={grouped[col.key]}
                 commentCounts={commentCounts}
                 onCardClick={handleCardClick}
+                canDragRequest={(request) =>
+                  canManageRequestStatus(request, userRole, currentUserId)
+                }
               />
             ))}
           </div>
@@ -463,6 +478,7 @@ function KanbanColumn({
   onCardClick,
   readOnly = false,
   isClient = false,
+  canDragRequest,
 }: {
   status: RequestStatus;
   label: string;
@@ -473,6 +489,7 @@ function KanbanColumn({
   onCardClick: (id: string) => void;
   readOnly?: boolean;
   isClient?: boolean;
+  canDragRequest?: (request: FeatureRequest) => boolean;
 }) {
   return readOnly ? (
     <StaticColumn label={label} eyebrow={eyebrow} count={count}>
@@ -499,6 +516,7 @@ function KanbanColumn({
       requests={requests}
       commentCounts={commentCounts}
       onCardClick={onCardClick}
+      canDragRequest={canDragRequest}
     />
   );
 }
@@ -511,6 +529,7 @@ function DroppableColumn({
   requests,
   commentCounts,
   onCardClick,
+  canDragRequest,
 }: {
   status: RequestStatus;
   label: string;
@@ -519,6 +538,7 @@ function DroppableColumn({
   requests: FeatureRequest[];
   commentCounts: Record<string, number>;
   onCardClick: (id: string) => void;
+  canDragRequest?: (request: FeatureRequest) => boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   return (
@@ -562,14 +582,23 @@ function DroppableColumn({
             </span>
           </div>
         ) : (
-          requests.map((r) => (
-            <DraggableCard
-              key={r.id}
-              request={r}
-              commentCount={commentCounts[r.id] ?? 0}
-              onClick={() => onCardClick(r.id)}
-            />
-          ))
+          requests.map((r) =>
+            (canDragRequest?.(r) ?? true) ? (
+              <DraggableCard
+                key={r.id}
+                request={r}
+                commentCount={commentCounts[r.id] ?? 0}
+                onClick={() => onCardClick(r.id)}
+              />
+            ) : (
+              <ClickableCard
+                key={r.id}
+                request={r}
+                commentCount={commentCounts[r.id] ?? 0}
+                onClick={() => onCardClick(r.id)}
+              />
+            )
+          )
         )}
       </div>
     </div>

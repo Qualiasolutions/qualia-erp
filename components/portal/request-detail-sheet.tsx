@@ -233,6 +233,8 @@ export function RequestDetailSheet({
 
   const currentStatus = toUiStatus(request.status);
   const isClosed = currentStatus === 'completed' || currentStatus === 'declined';
+  const canManageStatus =
+    isAdmin || (userRole === 'employee' && request.assigned_to === currentUserId);
   const attachmentCount = request.attachments?.length ?? 0;
   const clientName =
     request.project?.client?.display_name ||
@@ -390,11 +392,11 @@ export function RequestDetailSheet({
               )}
 
               {/* Actions */}
-              {(isStaff || isClient) && !isClosed && (
+              {(canManageStatus || isClient) && !isClosed && (
                 <section>
                   <SectionHeading>Actions</SectionHeading>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    {isStaff &&
+                    {canManageStatus &&
                       PIPELINE.filter((p) => p.key !== currentStatus && p.key !== 'completed').map(
                         (p) => (
                           <Button
@@ -452,6 +454,16 @@ export function RequestDetailSheet({
                       Updating…
                     </p>
                   )}
+                </section>
+              )}
+
+              {userRole === 'employee' && !canManageStatus && !isClosed && (
+                <section>
+                  <SectionHeading>Actions</SectionHeading>
+                  <p className="mt-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                    Status is editable by the assigned owner. You can still read the request and
+                    keep the conversation moving in comments.
+                  </p>
                 </section>
               )}
 
