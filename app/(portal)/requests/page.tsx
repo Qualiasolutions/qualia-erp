@@ -163,7 +163,9 @@ export default async function PortalRequestsPage({ searchParams }: PageProps) {
               </p>
             </div>
           </div>
-          {!isEmployee && <PortalRequestDialog projects={projects} />}
+          {!isEmployee && (
+            <PortalRequestDialog projects={projects} initialProjectId={initialProjectId} />
+          )}
         </div>
       </header>
 
