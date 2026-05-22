@@ -249,6 +249,21 @@ describe('phase actions', () => {
     // Note: phases.ts does not call revalidatePath (removed project-wide for SWR).
   });
 
+  // ============ loadQualiaFrameworkPipeline ============
+  describe('loadQualiaFrameworkPipeline', () => {
+    it('rejects non-admin users before loading roadmap phases', async () => {
+      const { loadQualiaFrameworkPipeline } = await import('@/app/actions/phases');
+      const { isUserAdmin } = jest.requireMock('@/app/actions/shared');
+      setupMockClient(null, null);
+      (isUserAdmin as jest.Mock).mockResolvedValue(false);
+
+      const result = await loadQualiaFrameworkPipeline(PROJECT_ID);
+
+      expect(result).toEqual({ success: false, error: 'Not authorized' });
+      expect(mockSupabase.from).not.toHaveBeenCalled();
+    });
+  });
+
   // ============ deleteProjectPhase ============
   describe('deleteProjectPhase', () => {
     it('deletes phase successfully', async () => {

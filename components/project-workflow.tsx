@@ -849,7 +849,9 @@ export function ProjectWorkflow({
           <FolderPlus className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
           <h3 className="mb-1 text-lg font-semibold text-foreground">No phases yet</h3>
           <p className="text-sm text-muted-foreground">
-            Sync from GitHub, load the Qualia Framework, or create phases manually.
+            {canMutate
+              ? 'Sync from GitHub, load the Qualia Framework, or create phases manually.'
+              : 'Sync the latest roadmap from GitHub when planning is ready.'}
           </p>
         </div>
         <div className="flex flex-col items-center gap-3">
@@ -868,33 +870,42 @@ export function ProjectWorkflow({
             )}
             Sync from GitHub
           </Button>
-          <Button onClick={handleLoadFramework} disabled={isPending} className="gap-2" size="sm">
-            {isPending ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Zap className="h-3.5 w-3.5" />
-            )}
-            Load Qualia Framework
-          </Button>
-          <div className="flex items-center gap-2">
-            <Input
-              value={newPhaseName}
-              onChange={(e) => setNewPhaseName(e.target.value)}
-              placeholder="Or create a phase..."
-              onKeyDown={(e) => e.key === 'Enter' && handleAddPhase()}
-              disabled={isPending}
-              className="h-8 w-56 text-sm"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddPhase}
-              disabled={isPending || !newPhaseName.trim()}
-              className="h-8"
-            >
-              Create
-            </Button>
-          </div>
+          {canMutate && (
+            <>
+              <Button
+                onClick={handleLoadFramework}
+                disabled={isPending}
+                className="gap-2"
+                size="sm"
+              >
+                {isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Zap className="h-3.5 w-3.5" />
+                )}
+                Load Qualia Framework
+              </Button>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={newPhaseName}
+                  onChange={(e) => setNewPhaseName(e.target.value)}
+                  placeholder="Or create a phase..."
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddPhase()}
+                  disabled={isPending}
+                  className="h-8 w-56 text-sm"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddPhase}
+                  disabled={isPending || !newPhaseName.trim()}
+                  className="h-8"
+                >
+                  Create
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
