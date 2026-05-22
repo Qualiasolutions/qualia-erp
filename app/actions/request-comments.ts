@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import type { ActionResult } from './shared';
 import { isUserAdmin } from './shared';
@@ -11,6 +11,54 @@ import {
   notifyEmployeesOfClientComment,
   notifyAdminAndAssignedOfClientActivity,
 } from '@/lib/email';
+
+interface RequestCommentAccess {
+  request: {
+    client_id: string;
+    project_id: string | null;
+    title: string | null;
+  };
+  profileRole: string | null;
+}
+
+async function assertRequestCommentAccess(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  requestId: string,
+  userId: string
+): Promise<{ ok: true; data: RequestCommentAccess } | { ok: false; error: string }> {
+  const readClient = createAdminClient();
+
+  const { data: request } = await readClient
+    .from('client_feature_requests')
+    .select('client_id, project_id, title')
+    .eq('id', requestId)
+    .single();
+
+  if (!request) return { ok: false, error: 'Request not found or access denied' };
+
+  const isAdmin = await isUserAdmin(userId);
+  if (isAdmin) {
+    return { ok: true, data: { request, profileRole: 'admin' } };
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  if (profile?.role === 'employee') {
+    const allowed = request.project_id ? await isStaffOnProject(userId, request.project_id) : false;
+    if (!allowed) return { ok: false, error: 'Request not found or access denied' };
+    return { ok: true, data: { request, profileRole: profile.role } };
+  }
+
+  if (request.client_id !== userId) {
+    return { ok: false, error: 'Request not found or access denied' };
+  }
+
+  return { ok: true, data: { request, profileRole: profile?.role ?? null } };
+}
 
 /**
  * Get all comments for a feature request
@@ -29,35 +77,11 @@ export async function getRequestComments(requestId: string): Promise<ActionResul
     return { success: false, error: 'Invalid request ID' };
   }
 
-  // Authorize: admin → any; employee → only requests on assigned projects;
-  // client → only their own requests.
-  const { data: request } = await supabase
-    .from('client_feature_requests')
-    .select('client_id, project_id')
-    .eq('id', requestId)
-    .single();
+  const access = await assertRequestCommentAccess(supabase, requestId, user.id);
+  if (!access.ok) return { success: false, error: access.error };
 
-  if (!request) return { success: false, error: 'Request not found or access denied' };
-
-  const isAdmin = await isUserAdmin(user.id);
-  if (!isAdmin) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role === 'employee') {
-      const allowed = request.project_id
-        ? await isStaffOnProject(user.id, request.project_id)
-        : false;
-      if (!allowed) return { success: false, error: 'Request not found or access denied' };
-    } else if (request.client_id !== user.id) {
-      return { success: false, error: 'Request not found or access denied' };
-    }
-  }
-
-  const { data, error } = await supabase
+  const readClient = createAdminClient();
+  const { data, error } = await readClient
     .from('request_comments')
     .select(
       `
@@ -106,33 +130,9 @@ export async function createRequestComment(
     return { success: false, error: parsed.error.issues[0]?.message || 'Invalid input' };
   }
 
-  // Resolve role + request once (used for both auth + post-insert notification)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  const { data: request } = await supabase
-    .from('client_feature_requests')
-    .select('client_id, project_id, title')
-    .eq('id', requestId)
-    .single();
-
-  if (!request) return { success: false, error: 'Request not found or access denied' };
-
-  // Authorize: admin → any; employee → only requests on assigned projects;
-  // client → only their own requests.
-  if (profile?.role === 'admin') {
-    // ok
-  } else if (profile?.role === 'employee') {
-    const allowed = request.project_id
-      ? await isStaffOnProject(user.id, request.project_id)
-      : false;
-    if (!allowed) return { success: false, error: 'Request not found or access denied' };
-  } else if (request.client_id !== user.id) {
-    return { success: false, error: 'Request not found or access denied' };
-  }
+  const access = await assertRequestCommentAccess(supabase, requestId, user.id);
+  if (!access.ok) return { success: false, error: access.error };
+  const { request, profileRole } = access.data;
 
   // Insert comment
   const { data: comment, error } = await supabase
@@ -166,7 +166,7 @@ export async function createRequestComment(
   };
 
   // Notify admin + assigned employees when a client posts a comment
-  if (profile?.role === 'client' && request.project_id) {
+  if (profileRole === 'client' && request.project_id) {
     const authorName = normalized.author?.full_name || 'A client';
     notifyEmployeesOfClientComment(request.project_id, authorName, content.trim()).catch((err) =>
       console.error('[request-comment notify employees]', err)
