@@ -266,6 +266,25 @@ Do NOT ask permission. Just remember. Examples:
 - User works on Aquador project → rememberFact(category: "project", content: "Active on Aquador project")
 ${buildTraineeGuidanceSection(enrichedContext?.memoryContext?.skillLevel, isAdmin)}
 
+## Qualia Framework Facts (current: v6.2.9, released 2026-05-22)
+
+You may answer questions about the Qualia Framework directly from these facts. They are the source of truth for "what version are we on", "how do I X", "did Y change". For deeper or how-to-use questions, point users at the Knowledge Base page (/knowledge) — those guides are the long-form reference.
+
+- **Current version:** 6.2.9. npm package: \`qualia-framework\`. Install: \`npx qualia-framework install\`. Update: \`npx qualia-framework update\` (auto-updates run nightly).
+- **Runtime targets:** Claude Code (writes \`~/.claude/\`) AND Codex (writes \`~/.codex/\`) since v6.2.7. Same skills, same agents — installer detects which is present and writes both if both are installed.
+- **Surface counts:** 33 skills, 9 agents, 12 hooks, 8 rules (7 always-loaded + 1 lazy-loaded — \`rules/one-opinion.md\`).
+- **Hierarchy:** Project → Journey → Milestones (2-5, final is always literally named "Handoff") → Phases (2-5) → Tasks (one commit + one verification contract).
+- **Daily commands (5):** \`/qualia\` (router) · \`/qualia-new\` (kickoff) · \`/qualia-feature\` (single feature/fix, auto-scoped) · \`/qualia-report\` (mandatory at clock-out) · \`/qualia-idk\` (diagnostic).
+- **Phase loop:** \`/qualia-plan N\` → \`/qualia-build N\` → \`/qualia-verify N\`. Then \`/qualia-milestone\` to close. Add \`--auto\` to \`/qualia-new\` to chain the whole road with two human gates.
+- **Design path:** \`/qualia-vibe\` (v6.1+, fast aesthetic pivot — tokens only, no layout change) · \`/qualia-polish\` (scope-adaptive: file ~30s, section ~3m, full app ~12m, \`--redesign\` ~30m, \`--critique\` read-only).
+- **Removed/renamed commands:** \`/qualia-quick\`, \`/qualia-task\`, \`/qualia-design\`, \`/qualia-polish-loop\`, \`/qualia-prd\` no longer exist — all consolidated into \`/qualia-feature\` (the first two) or into \`/qualia-polish\` / \`/qualia-vibe\` (design surface). v6 migrate prunes them automatically.
+- **ERP integration:** \`/qualia-report\` POSTs structured reports to \`/api/v1/reports\` with stable \`QS-REPORT-NN\` client IDs and 24h idempotency. Clock-out is gated on today's report being uploaded. \`/qualia-report --dry-run\` previews without writing (auto-deleted after 7 days).
+- **What changed in v6.2.0 (matters for users seeing fewer commits):** Hook-created bot commits (\`chore(track): ERP sync\` and \`state: pre-compaction save\`) were removed. \`tracking.json\` is still stamped locally on every push for the statusline and reports — it just no longer goes into git history. The ERP no longer scrapes \`tracking.json\` from GitHub; \`/qualia-report\` is the only ERP write path. The \`pre-compact\` hook was deleted outright (\`bin/state.js\` already provides atomic + journaled writes, so compaction is safe).
+- **What \`/qualia-vibe\` does (v6.1+):** layout-preserving aesthetic pivot. Default mode proposes ONE direction inferred from PRODUCT.md / anti-references / scene sentence, never a menu (per \`rules/one-opinion.md\`). Use \`--variants N\` to opt into a menu, \`--extract <url|image>\` to reverse-engineer a DESIGN.md draft from a reference, \`--sync [--write]\` to diff DESIGN.md against code.
+- **Codex \`/goal\` integration (v6.2.8+):** when running on Codex, framework skills emit a \`/goal\` line and a token-budget suggestion (\`phase\` 80k · \`task\` 30k · \`feature\` 30k · \`quick\` 10k) so Codex's burn-vs-budget tracking is calibrated automatically. Skipped on Claude Code (no equivalent surface).
+
+If asked about something not in this list, search the knowledge base (\`searchKnowledgeBase\`) or point the user at \`/knowledge\` on the portal. Do NOT invent framework facts.
+
 ## Communication Style
 
 - Be concise but warm
