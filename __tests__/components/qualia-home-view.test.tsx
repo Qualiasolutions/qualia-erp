@@ -13,6 +13,14 @@ jest.mock('@/components/portal/assignment-focus-card', () => ({
   AssignmentFocusCard: () => null,
 }));
 
+jest.mock('@/app/actions/dashboard-notes', () => ({
+  getDashboardNotes: jest.fn(async () => []),
+  createDashboardNote: jest.fn(async () => ({ success: true })),
+  updateDashboardNote: jest.fn(async () => ({ success: true })),
+  deleteDashboardNote: jest.fn(async () => ({ success: true })),
+  togglePinNote: jest.fn(async () => ({ success: true })),
+}));
+
 jest.mock('@/lib/swr', () => ({
   useTodaysMeetings: () => ({ meetings: [] }),
   useEmployeeAssignments: () => ({ data: [] }),

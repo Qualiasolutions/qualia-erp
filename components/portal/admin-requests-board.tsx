@@ -13,7 +13,18 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { Building2, Inbox, Paperclip, MessageSquare, GripVertical, Search, X } from 'lucide-react';
+import {
+  Building2,
+  CheckCircle2,
+  Flame,
+  GripVertical,
+  Inbox,
+  MessageSquare,
+  Paperclip,
+  Search,
+  TimerReset,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -228,6 +239,9 @@ export function AdminRequestsBoard({
     const s = r.id in optimisticStatus ? optimisticStatus[r.id] : toUiStatus(r.status);
     return s !== 'archived';
   }).length;
+  const urgentVisible = visibleRequests.filter(
+    (request) => request.priority === 'urgent' || request.priority === 'high'
+  ).length;
   const hasActiveFilter =
     projectFilter !== 'all' ||
     priorityFilter !== 'all' ||
@@ -275,6 +289,14 @@ export function AdminRequestsBoard({
 
   return (
     <div className="flex h-full flex-col gap-3">
+      <RequestBoardSummary
+        total={totalVisible}
+        pending={grouped.pending.length}
+        inProgress={grouped.in_progress.length}
+        completed={grouped.completed.length}
+        urgent={urgentVisible}
+      />
+
       {/* Toolbar: scope · search · priority · count */}
       {(showStaffControls || showSearch || showProjectFilter) && (
         <div className="flex flex-wrap items-center gap-2">
@@ -466,6 +488,79 @@ export function AdminRequestsBoard({
   );
 }
 
+function RequestBoardSummary({
+  total,
+  pending,
+  inProgress,
+  completed,
+  urgent,
+}: {
+  total: number;
+  pending: number;
+  inProgress: number;
+  completed: number;
+  urgent: number;
+}) {
+  const items = [
+    {
+      label: 'Pending',
+      value: pending,
+      caption: `${total} visible`,
+      icon: Inbox,
+      className: 'border-sky-500/20 bg-sky-500/[0.06] text-sky-700 dark:text-sky-300',
+    },
+    {
+      label: 'High signal',
+      value: urgent,
+      icon: Flame,
+      className: 'border-rose-500/20 bg-rose-500/[0.06] text-rose-700 dark:text-rose-300',
+    },
+    {
+      label: 'In progress',
+      value: inProgress,
+      icon: TimerReset,
+      className: 'border-amber-500/20 bg-amber-500/[0.07] text-amber-700 dark:text-amber-300',
+    },
+    {
+      label: 'Completed',
+      value: completed,
+      icon: CheckCircle2,
+      className:
+        'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-700 dark:text-emerald-300',
+    },
+  ] as const;
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      {items.map((item) => {
+        const Icon = item.icon;
+        return (
+          <div
+            key={item.label}
+            className={cn(
+              'rounded-lg border px-3 py-2.5 shadow-[0_1px_0_hsl(var(--border)/0.35)]',
+              item.className
+            )}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] opacity-75">
+                {item.label}
+              </span>
+              <Icon className="size-3.5 opacity-75" aria-hidden />
+            </div>
+            <div className="mt-1 text-xl font-semibold tabular-nums tracking-tight">
+              {item.value}
+            </div>
+            {'caption' in item && (
+              <div className="mt-0.5 text-[10px] font-medium opacity-70">{item.caption}</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ─── Column ───────────────────────────────────────────────────────────── */
 
 function KanbanColumn({
@@ -545,7 +640,7 @@ function DroppableColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        'flex w-[280px] shrink-0 snap-start flex-col rounded-xl border border-border bg-card/60 p-2.5 transition-colors sm:w-[300px] md:w-auto md:min-w-0 md:shrink',
+        'flex w-[280px] shrink-0 snap-start flex-col rounded-xl border border-border/70 bg-card/80 p-2.5 shadow-[0_1px_0_hsl(var(--border)/0.35)] transition-colors sm:w-[300px] md:w-auto md:min-w-0 md:shrink',
         isOver && 'border-primary/40 bg-primary/[0.04]'
       )}
     >
@@ -619,7 +714,7 @@ function StaticColumn({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex w-[280px] shrink-0 snap-start flex-col rounded-xl border border-border bg-card/60 p-2.5 sm:w-[300px] md:w-auto md:min-w-0 md:shrink">
+    <div className="flex w-[280px] shrink-0 snap-start flex-col rounded-xl border border-border/70 bg-card/80 p-2.5 shadow-[0_1px_0_hsl(var(--border)/0.35)] sm:w-[300px] md:w-auto md:min-w-0 md:shrink">
       <header className="mb-2 flex items-center justify-between gap-2 px-1">
         <div className="min-w-0">
           <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/80">
@@ -748,12 +843,16 @@ const RequestCard = memo(function RequestCard({
   return (
     <article
       className={cn(
-        'group rounded-xl border bg-card p-3 transition-colors',
+        'group relative overflow-hidden rounded-xl border bg-card p-3 transition-colors',
         isDragOverlay
           ? 'border-primary/60 shadow-elevation-3 ring-1 ring-primary/20'
           : 'border-border/70 hover:border-primary/30 hover:bg-card/70'
       )}
     >
+      <span
+        aria-hidden
+        className={cn('absolute inset-x-0 top-0 h-0.5', priorityAccentClass(request.priority))}
+      />
       <div className="flex items-start gap-2">
         {draggable && (
           <GripVertical
@@ -805,6 +904,11 @@ const RequestCard = memo(function RequestCard({
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <PriorityBadge priority={request.priority} />
           </div>
+          {request.description && (
+            <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+              {request.description}
+            </p>
+          )}
           <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-muted-foreground/70">
             <div className="flex min-w-0 items-center gap-2">
               <span className="tabular-nums">
@@ -832,6 +936,13 @@ const RequestCard = memo(function RequestCard({
     </article>
   );
 });
+
+function priorityAccentClass(priority: string): string {
+  if (priority === 'urgent') return 'bg-rose-500';
+  if (priority === 'high') return 'bg-orange-500';
+  if (priority === 'medium') return 'bg-sky-500';
+  return 'bg-slate-400';
+}
 
 function getRequestClientName(request: FeatureRequest): string {
   return (

@@ -54,7 +54,7 @@ jest.mock('@/lib/swr', () => ({
 }));
 
 jest.mock('@/components/portal/briefs', () => ({
-  ProjectBriefForm: () => null,
+  ProjectBriefForm: () => <div>Client brief form</div>,
 }));
 
 jest.mock('@/components/phase-comments', () => ({
@@ -157,5 +157,21 @@ describe('ProjectWorkflow', () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/or create a phase/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^create$/i })).not.toBeInTheDocument();
+  });
+
+  it('forces the client brief form when the form link is opened', async () => {
+    render(
+      <ProjectWorkflow
+        projectId="project-1"
+        projectName="7 Buddhas"
+        projectType="voice_agent"
+        workspaceId="workspace-1"
+        userRole="client"
+        forceBrief
+      />
+    );
+
+    await waitFor(() => expect(screen.getByText('Client brief form')).toBeInTheDocument());
+    expect(screen.queryByText('Discovery')).not.toBeInTheDocument();
   });
 });

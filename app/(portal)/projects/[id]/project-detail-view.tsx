@@ -157,6 +157,7 @@ interface ProjectDetailViewProps {
   userRole?: 'admin' | 'employee' | 'client';
   integrationStatus?: IntegrationStatus;
   clientSubmissions?: ProjectClientSubmission[];
+  forceBrief?: boolean;
 }
 
 export function ProjectDetailView({
@@ -165,6 +166,7 @@ export function ProjectDetailView({
   clients,
   userRole = 'employee',
   clientSubmissions = [],
+  forceBrief = false,
 }: ProjectDetailViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -373,6 +375,7 @@ export function ProjectDetailView({
               projectType={project.project_type}
               workspaceId={project.workspace_id}
               userRole={userRole}
+              forceBrief={forceBrief}
               className="h-full"
             />
           </div>

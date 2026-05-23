@@ -29,9 +29,10 @@ function ProjectDetailSkeleton() {
 
 interface ProjectLoaderProps {
   id: string;
+  forceBrief: boolean;
 }
 
-async function ProjectLoader({ id }: ProjectLoaderProps) {
+async function ProjectLoader({ id, forceBrief }: ProjectLoaderProps) {
   await connection();
 
   const user = await getPortalAuthUser();
@@ -112,20 +113,24 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
           ? ((submissionsResult.data || []) as ProjectClientSubmission[])
           : []
       }
+      forceBrief={forceBrief}
     />
   );
 }
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ brief?: string }>;
 }
 
-export default async function ProjectDetailPage({ params }: PageProps) {
+export default async function ProjectDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const { brief } = await searchParams;
+  const forceBrief = brief === '1' || brief === 'true';
 
   return (
     <Suspense fallback={<ProjectDetailSkeleton />}>
-      <ProjectLoader id={id} />
+      <ProjectLoader id={id} forceBrief={forceBrief} />
     </Suspense>
   );
 }

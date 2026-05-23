@@ -67,6 +67,7 @@ interface ProjectWorkflowProps {
   projectType: string | null;
   workspaceId: string;
   userRole?: string;
+  forceBrief?: boolean;
   className?: string;
 }
 
@@ -555,6 +556,7 @@ export function ProjectWorkflow({
   projectId,
   projectName,
   userRole,
+  forceBrief = false,
   className,
 }: ProjectWorkflowProps) {
   const canMutate = userRole === 'admin';
@@ -823,6 +825,19 @@ export function ProjectWorkflow({
     return (
       <div className={cn('flex items-center justify-center', className)}>
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (userRole === 'client' && forceBrief) {
+    return (
+      <div
+        className={cn(
+          'flex h-full items-start justify-center overflow-y-auto px-4 py-10',
+          className
+        )}
+      >
+        <ProjectBriefForm projectId={projectId} projectName={projectName} />
       </div>
     );
   }

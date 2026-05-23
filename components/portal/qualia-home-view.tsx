@@ -1,19 +1,28 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
   Calendar,
   ExternalLink,
+  Loader2,
   Lock,
   MessageSquare,
+  Pencil,
+  Pin,
+  Plus,
+  Save,
   Sparkles,
   Target,
+  Trash2,
+  X,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import {
   useTodaysMeetings,
@@ -31,6 +40,14 @@ import {
   type AssignmentFocusItem,
 } from '@/components/portal/assignment-focus-card';
 import { EmployeeDailyTasks } from '@/components/portal/employee-daily-tasks';
+import {
+  createDashboardNote,
+  deleteDashboardNote,
+  getDashboardNotes,
+  togglePinNote,
+  updateDashboardNote,
+  type DashboardNote,
+} from '@/app/actions/dashboard-notes';
 
 export type QualiaHomeRole = 'admin' | 'employee';
 
@@ -292,8 +309,9 @@ function AdminMainGrid({
 }) {
   return (
     <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto lg:grid-cols-3">
-      <div className="stagger-2 animate-fade-in lg:col-span-2">
+      <div className="stagger-2 animate-fade-in space-y-6 lg:col-span-2">
         <OwnerWaitingListCard />
+        <OwnerDashboardNotesCard />
       </div>
 
       <div className="stagger-3 animate-fade-in space-y-6">
@@ -348,6 +366,246 @@ function OwnerWaitingListCard() {
             </ul>
           </section>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function OwnerDashboardNotesCard() {
+  const [notes, setNotes] = useState<DashboardNote[]>([]);
+  const [draft, setDraft] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPending, startTransition] = useTransition();
+
+  const refreshNotes = useCallback(async () => {
+    try {
+      const data = await getDashboardNotes();
+      setNotes(data);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to load dashboard notes');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getDashboardNotes();
+        if (!cancelled) setNotes(data);
+      } catch (error) {
+        if (!cancelled) {
+          toast.error(error instanceof Error ? error.message : 'Failed to load dashboard notes');
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleCreate = () => {
+    const content = draft.trim();
+    if (!content) return;
+
+    startTransition(async () => {
+      const result = await createDashboardNote(content);
+      if (!result.success) {
+        toast.error(result.error || 'Failed to add note');
+        return;
+      }
+      setDraft('');
+      await refreshNotes();
+      toast.success('Added to dashboard');
+    });
+  };
+
+  const handleUpdate = (noteId: string) => {
+    const content = editingContent.trim();
+    if (!content) return;
+
+    startTransition(async () => {
+      const result = await updateDashboardNote(noteId, content);
+      if (!result.success) {
+        toast.error(result.error || 'Failed to update note');
+        return;
+      }
+      setEditingId(null);
+      setEditingContent('');
+      await refreshNotes();
+      toast.success('Dashboard note updated');
+    });
+  };
+
+  const handleDelete = (noteId: string) => {
+    startTransition(async () => {
+      const result = await deleteDashboardNote(noteId);
+      if (!result.success) {
+        toast.error(result.error || 'Failed to delete note');
+        return;
+      }
+      await refreshNotes();
+      toast.success('Removed from dashboard');
+    });
+  };
+
+  const handleTogglePin = (note: DashboardNote) => {
+    startTransition(async () => {
+      const result = await togglePinNote(note.id, !note.pinned);
+      if (!result.success) {
+        toast.error(result.error || 'Failed to update pin');
+        return;
+      }
+      await refreshNotes();
+    });
+  };
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <div className="min-w-0">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Dynamic dashboard
+          </p>
+          <h2 className="mt-0.5 text-base font-semibold tracking-tight">Pinned notes</h2>
+        </div>
+        <Badge variant="secondary" className="px-2 py-0.5 text-xs">
+          {notes.filter((note) => note.pinned).length}/{notes.length}
+        </Badge>
+      </div>
+
+      <div className="space-y-4 p-5">
+        <div className="rounded-lg border border-border bg-background/60 p-3">
+          <Textarea
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Keep a client follow-up, decision, or proposal in front of you..."
+            className="min-h-20 resize-none border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+          />
+          <div className="mt-3 flex justify-end">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleCreate}
+              disabled={!draft.trim() || isPending}
+              className="gap-2"
+            >
+              {isPending ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Plus className="size-3.5" />
+              )}
+              Add note
+            </Button>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex min-h-28 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" />
+          </div>
+        ) : notes.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+            No dynamic notes yet.
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {notes.map((note) => {
+              const editing = editingId === note.id;
+              return (
+                <li
+                  key={note.id}
+                  className={cn(
+                    'rounded-lg border p-3 transition-colors',
+                    note.pinned
+                      ? 'border-primary/30 bg-primary/[0.04]'
+                      : 'border-border bg-background/60'
+                  )}
+                >
+                  {editing ? (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={editingContent}
+                        onChange={(event) => setEditingContent(event.target.value)}
+                        className="min-h-24 resize-none"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingId(null);
+                            setEditingContent('');
+                          }}
+                          className="gap-2"
+                        >
+                          <X className="size-3.5" />
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={!editingContent.trim() || isPending}
+                          onClick={() => handleUpdate(note.id)}
+                          className="gap-2"
+                        >
+                          <Save className="size-3.5" />
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePin(note)}
+                        aria-label={note.pinned ? 'Unpin note' : 'Pin note'}
+                        className={cn(
+                          'mt-0.5 flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors',
+                          note.pinned
+                            ? 'border-primary/30 bg-primary/10 text-primary'
+                            : 'border-border text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        <Pin className="size-3.5" />
+                      </button>
+                      <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
+                        {note.content}
+                      </p>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingId(note.id);
+                            setEditingContent(note.content);
+                          }}
+                          aria-label="Edit note"
+                          className="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          <Pencil className="size-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(note.id)}
+                          aria-label="Delete note"
+                          className="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );

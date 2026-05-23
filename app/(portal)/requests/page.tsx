@@ -9,6 +9,7 @@ import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import dynamic from 'next/dynamic';
 import { PortalRequestDialog } from '@/components/portal/portal-request-dialog';
+import { AdminClientFormLinkDialog } from '@/components/portal/admin-client-form-link-dialog';
 
 const AdminRequestsBoard = dynamic(
   () =>
@@ -163,9 +164,12 @@ export default async function PortalRequestsPage({ searchParams }: PageProps) {
               </p>
             </div>
           </div>
-          {!isEmployee && (
-            <PortalRequestDialog projects={projects} initialProjectId={initialProjectId} />
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {isAdmin && <AdminClientFormLinkDialog projects={projects} />}
+            {!isEmployee && (
+              <PortalRequestDialog projects={projects} initialProjectId={initialProjectId} />
+            )}
+          </div>
         </div>
       </header>
 
