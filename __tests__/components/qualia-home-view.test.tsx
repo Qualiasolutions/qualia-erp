@@ -1,5 +1,6 @@
 import { QualiaHomeView } from '@/components/portal/qualia-home-view';
-import { render, screen } from '../utils/render';
+import { getDashboardNotes } from '@/app/actions/dashboard-notes';
+import { render, screen, waitFor } from '../utils/render';
 
 jest.mock('@/components/clock-gate-provider', () => ({
   useClockGate: () => ({ isGated: false, session: null, isLoading: false, workspaceId: null }),
@@ -53,6 +54,10 @@ beforeAll(() => {
 });
 
 describe('QualiaHomeView', () => {
+  beforeEach(() => {
+    (getDashboardNotes as jest.Mock).mockResolvedValue([]);
+  });
+
   it('shows the current owner waiting-list follow-ups', () => {
     render(<QualiaHomeView role="admin" displayName="Fawzi Goussous" userId="owner-1" />);
 
@@ -62,5 +67,26 @@ describe('QualiaHomeView', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Geo - close off officially what is happening')).toBeInTheDocument();
     expect(screen.getByText('Cellas - create proposal')).toBeInTheDocument();
+  });
+
+  it('loads dynamic owner dashboard notes', async () => {
+    (getDashboardNotes as jest.Mock).mockResolvedValueOnce([
+      {
+        id: 'note-1',
+        content: 'Keep Cellas proposal in front of me',
+        author_id: 'owner-1',
+        pinned: true,
+        created_at: '2026-05-23T12:00:00.000Z',
+        updated_at: '2026-05-23T12:00:00.000Z',
+        author: null,
+      },
+    ]);
+
+    render(<QualiaHomeView role="admin" displayName="Fawzi Goussous" userId="owner-1" />);
+
+    await waitFor(() =>
+      expect(screen.getByText('Keep Cellas proposal in front of me')).toBeInTheDocument()
+    );
+    expect(screen.getByRole('button', { name: /unpin note/i })).toBeInTheDocument();
   });
 });
