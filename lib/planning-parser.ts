@@ -100,11 +100,23 @@ export function parseRoadmap(content: string): ParsedMilestone[] {
 
   // Extract milestone name from metadata (e.g., "**Milestone:** v5" or "**Milestone**: v5")
   let metadataMilestoneName: string | null = null;
+  let metadataMilestoneNumber: number | null = null;
+  const titleMsMatch = content.match(/^#\s+Roadmap\s+·\s+Milestone\s+(\d+)\s+·\s*(.+)$/m);
+  if (titleMsMatch) {
+    metadataMilestoneNumber = parseInt(titleMsMatch[1], 10);
+    metadataMilestoneName = titleMsMatch[2].trim();
+  }
   const metaMsMatch = content.match(/\*\*Milestone:?\*\*:?\s*(.+)/);
-  if (metaMsMatch) metadataMilestoneName = metaMsMatch[1].trim();
+  if (metaMsMatch) {
+    const rawMilestone = metaMsMatch[1].trim();
+    const numericMilestone = rawMilestone.match(/^(\d+)(?:\b|$)/);
+    if (numericMilestone) metadataMilestoneNumber = parseInt(numericMilestone[1], 10);
+    if (!metadataMilestoneName || !numericMilestone) metadataMilestoneName = rawMilestone;
+  }
 
   // Track journey-arc table parsing (e.g. JOURNEY.md's `| # | Name | Phases | Status | ... |`)
   let inArcTable = false;
+  let inRoadmapPhaseTable = false;
 
   const stripMd = (s: string) => s.replace(/\*\*/g, '').replace(/`/g, '').trim();
   const normalizeArcStatus = (raw: string): string => {
@@ -127,6 +139,16 @@ export function parseRoadmap(content: string): ParsedMilestone[] {
     }
     milestones.push(m);
     return m;
+  };
+  const ensureRoadmapMilestone = () => {
+    if (currentMilestone) return currentMilestone;
+    currentMilestone = upsertMilestone({
+      number: metadataMilestoneNumber ?? 1,
+      name: metadataMilestoneName || 'Roadmap',
+      status: 'in_progress',
+      phases: [],
+    });
+    return currentMilestone;
   };
 
   for (const line of lines) {
@@ -209,6 +231,43 @@ export function parseRoadmap(content: string): ParsedMilestone[] {
             status: normalizeArcStatus(cells[3]),
             phases: [],
           });
+        }
+        continue;
+      }
+    }
+
+    // ── Current ROADMAP.md phase table ──
+    // Matches modern Qualia roadmap tables:
+    //   | # | Phase | Goal | Status |
+    //   | 1 | Subscription teardown | Strip tier UI | setup |
+    const phaseTableHeader = line.match(/^\|\s*#\s*\|\s*phase\s*\|\s*goal\s*\|\s*status\s*\|\s*$/i);
+    if (phaseTableHeader) {
+      inRoadmapPhaseTable = true;
+      ensureRoadmapMilestone();
+      continue;
+    }
+    if (inRoadmapPhaseTable) {
+      if (/^\|[\s\-:|]+\|\s*$/.test(line)) continue;
+      if (!line.trim().startsWith('|')) {
+        inRoadmapPhaseTable = false;
+      } else {
+        const row = line.match(/^\|\s*(\d+)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/);
+        if (row) {
+          const milestone = ensureRoadmapMilestone();
+          const phaseNumber = row[1];
+          if (!milestone.phases.some((p) => p.phaseNumber === phaseNumber)) {
+            milestone.phases.push({
+              milestoneNumber: milestone.number,
+              phaseNumber,
+              name: stripMd(row[2]),
+              description: stripMd(row[3]) || null,
+              status: normalizeStatus(stripMd(row[4])),
+              planCount: 0,
+              plansCompleted: 0,
+              startedAt: null,
+              completedAt: null,
+            });
+          }
         }
         continue;
       }
@@ -430,7 +489,10 @@ export function normalizeStatus(raw: string): string {
     s.includes('done') ||
     s.includes('verified') ||
     s.includes('shipped') ||
-    s.includes('executed')
+    s.includes('executed') ||
+    s.includes('polished') ||
+    s.includes('handoff') ||
+    s.includes('handed_off')
   )
     return 'completed';
   if (s.includes('progress')) return 'in_progress';
