@@ -14,6 +14,17 @@ jest.mock('@/components/portal/assignment-focus-card', () => ({
   AssignmentFocusCard: () => null,
 }));
 
+const removeChannel = jest.fn();
+jest.mock('@/lib/supabase/client', () => ({
+  createClient: () => ({
+    channel: jest.fn(() => ({
+      on: jest.fn().mockReturnThis(),
+      subscribe: jest.fn(),
+    })),
+    removeChannel,
+  }),
+}));
+
 jest.mock('@/app/actions/dashboard-notes', () => ({
   getDashboardNotes: jest.fn(async () => []),
   createDashboardNote: jest.fn(async () => ({ success: true })),
@@ -55,10 +66,11 @@ beforeAll(() => {
 
 describe('QualiaHomeView', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     (getDashboardNotes as jest.Mock).mockResolvedValue([]);
   });
 
-  it('shows the current owner waiting-list follow-ups', () => {
+  it('shows the current owner waiting-list follow-ups', async () => {
     render(<QualiaHomeView role="admin" displayName="Fawzi Goussous" userId="owner-1" />);
 
     expect(screen.getByText('7Buddas - ask him to refill the form')).toBeInTheDocument();
@@ -67,6 +79,7 @@ describe('QualiaHomeView', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Geo - close off officially what is happening')).toBeInTheDocument();
     expect(screen.getByText('Cellas - create proposal')).toBeInTheDocument();
+    await waitFor(() => expect(getDashboardNotes).toHaveBeenCalled());
   });
 
   it('loads dynamic owner dashboard notes', async () => {

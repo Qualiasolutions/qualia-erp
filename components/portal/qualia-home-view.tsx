@@ -40,6 +40,7 @@ import {
   type AssignmentFocusItem,
 } from '@/components/portal/assignment-focus-card';
 import { EmployeeDailyTasks } from '@/components/portal/employee-daily-tasks';
+import { createClient } from '@/lib/supabase/client';
 import {
   createDashboardNote,
   deleteDashboardNote,
@@ -408,6 +409,28 @@ function OwnerDashboardNotesCard() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel('owner-dashboard-notes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'dashboard_notes',
+        },
+        () => {
+          void refreshNotes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refreshNotes]);
 
   const handleCreate = () => {
     const content = draft.trim();

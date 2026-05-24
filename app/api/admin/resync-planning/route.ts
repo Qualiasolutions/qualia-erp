@@ -10,7 +10,8 @@ export const maxDuration = 300;
 /**
  * POST /api/admin/resync-planning
  *
- * Bulk re-trigger of planning sync for every project with a GitHub integration.
+ * Re-trigger planning sync for every project with a GitHub integration, or for
+ * one project when called with `{ "projectId": "..." }`.
  * Auth: admin session cookie OR `Authorization: Bearer ${CRON_SECRET}`.
  * Runs sequentially to respect GitHub API rate limits.
  */
@@ -40,20 +41,35 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient();
+  let requestedProjectId: string | null = null;
+  try {
+    const body = (await request.json()) as { projectId?: unknown };
+    requestedProjectId = typeof body.projectId === 'string' ? body.projectId : null;
+  } catch {
+    requestedProjectId = null;
+  }
 
-  const { data: projects, error: projErr } = await admin
+  let projectsQuery = admin
     .from('projects')
     .select('id, name, workspace_id')
     .not('workspace_id', 'is', null);
+  if (requestedProjectId) {
+    projectsQuery = projectsQuery.eq('id', requestedProjectId);
+  }
+  const { data: projects, error: projErr } = await projectsQuery;
 
   if (projErr) {
     return NextResponse.json({ ok: false, error: projErr.message }, { status: 500 });
   }
 
-  const { data: ghIntegrations, error: intErr } = await admin
+  let integrationsQuery = admin
     .from('project_integrations')
     .select('project_id')
     .eq('service_type', 'github');
+  if (requestedProjectId) {
+    integrationsQuery = integrationsQuery.eq('project_id', requestedProjectId);
+  }
+  const { data: ghIntegrations, error: intErr } = await integrationsQuery;
 
   if (intErr) {
     return NextResponse.json({ ok: false, error: intErr.message }, { status: 500 });
