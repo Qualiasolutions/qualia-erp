@@ -63,6 +63,8 @@ export async function proxy(request: NextRequest) {
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
+    url.search = '';
+    url.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(url);
   }
 
@@ -131,7 +133,14 @@ export async function proxy(request: NextRequest) {
     // (`/` is already handled at the top of this function.)
     if (pathname === '/auth/login' || pathname === '/auth/signup') {
       const url = request.nextUrl.clone();
-      url.pathname = '/dashboard';
+      const next = request.nextUrl.searchParams.get('next');
+      if (next && next.startsWith('/') && !next.startsWith('//')) {
+        url.pathname = next.split('?')[0] || '/dashboard';
+        url.search = next.includes('?') ? `?${next.split('?').slice(1).join('?')}` : '';
+      } else {
+        url.pathname = '/dashboard';
+        url.search = '';
+      }
       return NextResponse.redirect(url);
     }
   }

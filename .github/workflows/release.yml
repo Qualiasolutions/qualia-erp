@@ -1,10 +1,6 @@
 name: Release Management
 
 on:
-  push:
-    branches:
-      - main
-      - master
   workflow_dispatch:
     inputs:
       version:

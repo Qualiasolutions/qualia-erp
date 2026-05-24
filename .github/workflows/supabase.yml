@@ -1,15 +1,6 @@
 name: Supabase Pipeline
 
 on:
-  push:
-    paths:
-      - 'supabase/**'
-      - 'types/database.ts'
-    branches: [master, main, develop]
-  pull_request:
-    paths:
-      - 'supabase/**'
-      - 'types/database.ts'
   workflow_dispatch:
     inputs:
       action:

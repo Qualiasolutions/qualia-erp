@@ -13,7 +13,11 @@ import { loginAction } from '@/app/actions/auth';
 const REMEMBER_KEY = 'qualia.login.remember';
 const EMAIL_KEY = 'qualia.login.email';
 
-export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+export function LoginForm({
+  className,
+  redirectTo = '/dashboard',
+  ...props
+}: React.ComponentPropsWithoutRef<'div'> & { redirectTo?: string }) {
   const [state, formAction, isPending] = useActionState(loginAction, {
     success: false,
     error: null,
@@ -48,9 +52,9 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 
   useEffect(() => {
     if (state.success) {
-      window.location.href = '/dashboard';
+      window.location.href = redirectTo;
     }
-  }, [state.success]);
+  }, [redirectTo, state.success]);
 
   return (
     <div className={cn('flex flex-col', className)} {...props}>
