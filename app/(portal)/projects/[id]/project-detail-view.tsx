@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   FileText,
   MessageSquareText,
+  ShieldCheck,
 } from 'lucide-react';
 import { useProjectAssignments, invalidateProjectAssignments } from '@/lib/swr';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -328,6 +329,15 @@ export function ProjectDetailView({
           </div>
 
           <div className="flex items-center gap-1.5">
+            {!isClient && (
+              <Button variant="outline" size="sm" className="hidden h-9 gap-1.5 sm:flex" asChild>
+                <Link href={`/projects/${project.id}/mission`}>
+                  <ShieldCheck className="h-4 w-4" />
+                  Mission
+                </Link>
+              </Button>
+            )}
+
             {/* Integration links — admin tooling, hidden from clients; only show when connected */}
             {!isClient && (
               <div className="hidden items-center gap-1.5 sm:flex">
@@ -896,6 +906,13 @@ function AssignedEmployeesList({
                   {deadlineState.label} {formatDate(assignment.deadline_date, 'MMM d')}
                 </span>
               </div>
+              <Link
+                href={`/projects/${projectId}/mission`}
+                className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
+              >
+                Open mission
+                <ArrowLeft className="h-3 w-3 rotate-180" />
+              </Link>
               {assignment.completion_note && (
                 <p className="mt-1 line-clamp-2 text-[10px] text-muted-foreground">
                   {assignment.completion_note}

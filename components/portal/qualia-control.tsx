@@ -6,6 +6,7 @@ import { Activity, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react'
 
 import type {
   ControlTab,
+  DeliveryPayload,
   OverviewPayload,
   TeamPayload,
   FinancePayload,
@@ -14,6 +15,7 @@ import type {
 import type { BillableClient } from '@/app/actions/invoice-generation';
 
 import { ControlTeam } from './control-team';
+import { ControlDelivery } from './control-delivery';
 import { ControlFinance } from './control-finance';
 import { ControlSystem } from './control-system';
 import { ControlOverviewTab } from './control-overview';
@@ -24,6 +26,7 @@ import { ControlOverviewTab } from './control-overview';
 
 export interface QualiaControlData {
   overview?: OverviewPayload;
+  delivery?: DeliveryPayload;
   team?: TeamPayload;
   finance?: FinancePayload;
   system?: SystemPayload;
@@ -42,6 +45,11 @@ const SECTION_META: Record<ControlTab, { eyebrow: string; title: string; desc: s
     eyebrow: 'Admin console',
     title: 'Dashboard',
     desc: 'What needs your attention right now.',
+  },
+  delivery: {
+    eyebrow: 'Delivery control',
+    title: 'Delivery',
+    desc: 'Deadlines, work packets, proof, and review queues.',
   },
   team: {
     eyebrow: 'Admin console',
@@ -116,6 +124,7 @@ export function QualiaControl({ initialTab, data, canViewFinance = false }: Qual
         {tab === 'overview' && (
           <ControlOverview data={data.overview} billableClients={data.billableClients} />
         )}
+        {tab === 'delivery' && <ControlDelivery data={data.delivery} />}
         {tab === 'team' && <ControlTeam data={data.team} />}
         {tab === 'finance' && <ControlFinance data={data.finance} />}
         {tab === 'system' && (

@@ -65,7 +65,7 @@ const SUGGESTED_QUESTIONS = [
   'When should I use /qualia-test --tdd?',
   'How does the Milestone → Phase → Task hierarchy work?',
   'How do I clock out and submit my session report?',
-  'When should I use /qualia-debug vs /qualia-idk?',
+  'When should I use /qualia-fix vs /qualia-feature?',
   'What is the Qualia Brain?',
 ];
 
@@ -824,16 +824,6 @@ const COMMAND_GROUPS: Array<{ label: string; tint: string; commands: CommandEntr
         when: 'Open of day, when you forget where you left off, between phases.',
       },
       {
-        cmd: '/qualia-resume',
-        what: 'Restore context from .continue-here.md or STATE.md.',
-        when: 'After a break or a fresh session.',
-      },
-      {
-        cmd: '/qualia-pause',
-        what: 'Save session context for handoff to a future session.',
-        when: 'End of day, before /clear, before switching focus.',
-      },
-      {
         cmd: '/qualia-report',
         what: 'Generate session report and post it to the ERP.',
         when: 'Mandatory before clock-out. No exceptions.',
@@ -894,19 +884,14 @@ const COMMAND_GROUPS: Array<{ label: string; tint: string; commands: CommandEntr
     tint: 'text-amber-500',
     commands: [
       {
-        cmd: '/qualia-debug',
-        what: 'Investigative debugging — root cause, minimal fix, DEBUG report.',
+        cmd: '/qualia-fix',
+        what: 'Repair broken existing behavior with root-cause evidence.',
         when: 'Something broken, weird behavior, layout issue, slow page.',
       },
       {
-        cmd: '/qualia-quick',
-        what: 'Skip planning for a small task — bug fix, tweak, hot fix.',
-        when: 'One-line change or a clearly scoped tiny task.',
-      },
-      {
-        cmd: '/qualia-idk',
-        what: 'Diagnostic. Reads .planning + codebase, explains in plain language.',
-        when: '"I don\'t know what\'s going on" / "something feels off".',
+        cmd: '/qualia-feature',
+        what: 'Build one scoped feature without turning it into a phase.',
+        when: 'A clear small feature, component, route, or API addition.',
       },
       {
         cmd: '/qualia-postmortem',
@@ -1168,7 +1153,7 @@ const PLAYBOOK: PlaybookSegment[] = [
       'Clock in from the ERP top-right toggle.',
       'Open /tasks — admin sees the workspace; employees see their inbox.',
       'Run `/qualia` in your project to figure out the next command.',
-      'Run `/qualia-resume` if you paused yesterday.',
+      'Open the ERP mission page for the assigned project.',
     ],
   },
   {
@@ -1179,7 +1164,7 @@ const PLAYBOOK: PlaybookSegment[] = [
     bgTint: 'bg-violet-500/10',
     steps: [
       'Move tasks Todo → In Progress → Done as you work.',
-      'Use `/qualia-quick` for tweaks, `/qualia-debug` for broken things.',
+      'Use `/qualia-feature` for scoped additions, `/qualia-fix` for broken things.',
       'Save lessons with `/qualia-learn` the moment you spot one.',
       'Drop quick questions to the Knowledge assistant on this page.',
     ],
@@ -1191,7 +1176,7 @@ const PLAYBOOK: PlaybookSegment[] = [
     tint: 'text-emerald-500',
     bgTint: 'bg-emerald-500/10',
     steps: [
-      'Run `/qualia-pause` so tomorrow-you picks up cold.',
+      'Run `/qualia` before stopping so the next command is clear.',
       'Run `/qualia-report` — this is mandatory and posts to the ERP.',
       'Clock out from the same toggle you used at start of day.',
       'Close the laptop. The framework will not page you.',
