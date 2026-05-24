@@ -67,6 +67,7 @@ interface ProjectWorkflowProps {
   projectType: string | null;
   workspaceId: string;
   userRole?: string;
+  forceBrief?: boolean;
   className?: string;
 }
 
@@ -182,9 +183,16 @@ function formatShortDate(dateStr: string | null): string {
 // ─── Progress Summary ───────────────────────────────────────────────────────
 
 function ProgressSummary({ phases: allPhases }: { phases: Phase[] }) {
-  // Only count actual phases (not milestone headers) in progress
-  const phases = allPhases.filter((p) => p.phase_type !== 'milestone');
+  const hasSyncedNumberedRoadmap = allPhases.some(
+    (p) => p.github_synced_at && p.milestone_number != null
+  );
+  // Only count actual phases (not milestone headers). Once a GitHub roadmap is
+  // synced, ignore older unnumbered legacy rows so the summary matches the tree.
+  const phases = allPhases.filter(
+    (p) => p.phase_type !== 'milestone' && (!hasSyncedNumberedRoadmap || p.milestone_number != null)
+  );
   const milestones = allPhases.filter((p) => p.phase_type === 'milestone');
+  const progressRecords = [...phases, ...milestones];
   const isComplete = (s: string | null | undefined): boolean => {
     const lower = (s || '').toLowerCase();
     return lower.includes('complete') || lower.includes('done');
@@ -206,7 +214,8 @@ function ProgressSummary({ phases: allPhases }: { phases: Phase[] }) {
   const nextMilestone = [...milestones]
     .sort((a, b) => (a.milestone_number ?? 99) - (b.milestone_number ?? 99))
     .find((p) => !isComplete(p.status));
-  const everythingComplete = allPhases.length > 0 && allPhases.every((p) => isComplete(p.status));
+  const everythingComplete =
+    progressRecords.length > 0 && progressRecords.every((p) => isComplete(p.status));
 
   const activePhase = inProgressPhase ?? inProgressMilestone ?? nextPhase ?? nextMilestone ?? null;
   const currentHeader =
@@ -555,9 +564,10 @@ export function ProjectWorkflow({
   projectId,
   projectName,
   userRole,
+  forceBrief = false,
   className,
 }: ProjectWorkflowProps) {
-  const canMutate = userRole !== 'client';
+  const canMutate = userRole === 'admin';
 
   const [phases, setPhases] = useState<Phase[]>([]);
   const [lastReport, setLastReport] = useState<LastReportMeta | null>(null);
@@ -827,6 +837,19 @@ export function ProjectWorkflow({
     );
   }
 
+  if (userRole === 'client' && forceBrief) {
+    return (
+      <div
+        className={cn(
+          'flex h-full items-start justify-center overflow-y-auto px-4 py-10',
+          className
+        )}
+      >
+        <ProjectBriefForm projectId={projectId} projectName={projectName} />
+      </div>
+    );
+  }
+
   // ─── Empty State ──────────────────────────────────────────────────────────
 
   if (phases.length === 0) {
@@ -849,7 +872,9 @@ export function ProjectWorkflow({
           <FolderPlus className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
           <h3 className="mb-1 text-lg font-semibold text-foreground">No phases yet</h3>
           <p className="text-sm text-muted-foreground">
-            Sync from GitHub, load the Qualia Framework, or create phases manually.
+            {canMutate
+              ? 'Sync from GitHub, load the Qualia Framework, or create phases manually.'
+              : 'Sync the latest roadmap from GitHub when planning is ready.'}
           </p>
         </div>
         <div className="flex flex-col items-center gap-3">
@@ -868,33 +893,42 @@ export function ProjectWorkflow({
             )}
             Sync from GitHub
           </Button>
-          <Button onClick={handleLoadFramework} disabled={isPending} className="gap-2" size="sm">
-            {isPending ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Zap className="h-3.5 w-3.5" />
-            )}
-            Load Qualia Framework
-          </Button>
-          <div className="flex items-center gap-2">
-            <Input
-              value={newPhaseName}
-              onChange={(e) => setNewPhaseName(e.target.value)}
-              placeholder="Or create a phase..."
-              onKeyDown={(e) => e.key === 'Enter' && handleAddPhase()}
-              disabled={isPending}
-              className="h-8 w-56 text-sm"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddPhase}
-              disabled={isPending || !newPhaseName.trim()}
-              className="h-8"
-            >
-              Create
-            </Button>
-          </div>
+          {canMutate && (
+            <>
+              <Button
+                onClick={handleLoadFramework}
+                disabled={isPending}
+                className="gap-2"
+                size="sm"
+              >
+                {isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Zap className="h-3.5 w-3.5" />
+                )}
+                Load Qualia Framework
+              </Button>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={newPhaseName}
+                  onChange={(e) => setNewPhaseName(e.target.value)}
+                  placeholder="Or create a phase..."
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddPhase()}
+                  disabled={isPending}
+                  className="h-8 w-56 text-sm"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddPhase}
+                  disabled={isPending || !newPhaseName.trim()}
+                  className="h-8"
+                >
+                  Create
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
@@ -1037,7 +1071,7 @@ export function ProjectWorkflow({
               Sync
             </button>
           )}
-          {/* Add phase — staff only */}
+          {/* Add/edit/delete phase — admin-only; assigned staff can sync but not mutate roadmap shape */}
           {canMutate &&
             (showNewPhase ? (
               <div className="flex items-center gap-1.5">

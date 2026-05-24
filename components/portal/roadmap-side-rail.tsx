@@ -218,6 +218,7 @@ export function RoadmapSideRail({
         <ProjectResources
           projectId={projectId}
           initialResources={[]}
+          canManage={userRole === 'admin'}
           className="h-full rounded-none border-0"
         />
       </section>

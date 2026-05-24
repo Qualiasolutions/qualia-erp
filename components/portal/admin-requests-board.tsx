@@ -13,7 +13,18 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { Building2, Inbox, Paperclip, MessageSquare, GripVertical, Search, X } from 'lucide-react';
+import {
+  Building2,
+  CheckCircle2,
+  Flame,
+  GripVertical,
+  Inbox,
+  MessageSquare,
+  Paperclip,
+  Search,
+  TimerReset,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +34,11 @@ import { updateFeatureRequest } from '@/app/actions/client-requests';
 import { RequestDetailSheet } from './request-detail-sheet';
 
 type RequestStatus = 'pending' | 'in_progress' | 'completed';
+
+interface ProjectOption {
+  id: string;
+  name: string;
+}
 
 interface FeatureRequest {
   id: string;
@@ -63,6 +79,8 @@ interface AdminRequestsBoardProps {
   currentUserId: string;
   userRole: string;
   staffOptions?: StaffOption[];
+  projects?: ProjectOption[];
+  initialProjectId?: string | null;
 }
 
 const COLUMNS: { key: RequestStatus; label: string; eyebrow: string }[] = [
@@ -82,16 +100,31 @@ function toUiStatus(dbStatus: string): RequestStatus | 'archived' {
 
 type PriorityFilter = 'all' | 'urgent' | 'high' | 'medium' | 'low';
 
+function canManageRequestStatus(
+  request: FeatureRequest,
+  userRole: string,
+  currentUserId: string
+): boolean {
+  return userRole === 'admin' || (userRole === 'employee' && request.assigned_to === currentUserId);
+}
+
 export function AdminRequestsBoard({
   requests,
   commentCounts = {},
   currentUserId,
   userRole,
   staffOptions = [],
+  projects = [],
+  initialProjectId = null,
 }: AdminRequestsBoardProps) {
   const router = useRouter();
   const isClient = userRole === 'client';
   const [scope, setScope] = useState<'all' | 'mine'>('all');
+  const [projectFilter, setProjectFilter] = useState<string>(
+    initialProjectId && projects.some((project) => project.id === initialProjectId)
+      ? initialProjectId
+      : 'all'
+  );
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
   const [query, setQuery] = useState('');
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -113,6 +146,7 @@ export function AdminRequestsBoard({
     return requests.filter((r) => {
       const uiStatus = r.id in optimisticStatus ? optimisticStatus[r.id] : toUiStatus(r.status);
       if (uiStatus === 'archived') return false;
+      if (projectFilter !== 'all' && r.project?.id !== projectFilter) return false;
       if (!isClient && scope === 'mine' && r.assigned_to !== currentUserId) return false;
       if (priorityFilter !== 'all' && r.priority !== priorityFilter) return false;
       if (q) {
@@ -122,7 +156,16 @@ export function AdminRequestsBoard({
       }
       return true;
     });
-  }, [requests, optimisticStatus, scope, currentUserId, priorityFilter, query, isClient]);
+  }, [
+    requests,
+    optimisticStatus,
+    projectFilter,
+    scope,
+    currentUserId,
+    priorityFilter,
+    query,
+    isClient,
+  ]);
 
   const grouped = useMemo(() => {
     const groups: Record<RequestStatus, FeatureRequest[]> = {
@@ -153,6 +196,10 @@ export function AdminRequestsBoard({
 
       const sourceRequest = requests.find((r) => r.id === requestId);
       if (!sourceRequest) return;
+      if (!canManageRequestStatus(sourceRequest, userRole, currentUserId)) {
+        toast.error('Only the assigned owner can move this request');
+        return;
+      }
       const currentUiStatus = optimisticStatus[requestId] ?? toUiStatus(sourceRequest.status);
       if (currentUiStatus === newStatus) return;
 
@@ -174,7 +221,7 @@ export function AdminRequestsBoard({
       toast.success(`Moved to ${COLUMNS.find((c) => c.key === newStatus)?.label ?? newStatus}`);
       router.refresh();
     },
-    [requests, optimisticStatus, router]
+    [requests, optimisticStatus, router, userRole, currentUserId]
   );
 
   const activeRequest = activeDragId
@@ -192,8 +239,15 @@ export function AdminRequestsBoard({
     const s = r.id in optimisticStatus ? optimisticStatus[r.id] : toUiStatus(r.status);
     return s !== 'archived';
   }).length;
+  const urgentVisible = visibleRequests.filter(
+    (request) => request.priority === 'urgent' || request.priority === 'high'
+  ).length;
   const hasActiveFilter =
-    priorityFilter !== 'all' || query.trim().length > 0 || (!isClient && scope === 'mine');
+    projectFilter !== 'all' ||
+    priorityFilter !== 'all' ||
+    query.trim().length > 0 ||
+    (!isClient && scope === 'mine');
+  const showProjectFilter = projects.length > 1 || projectFilter !== 'all';
 
   const PRIORITIES: { value: PriorityFilter; label: string }[] = [
     { value: 'all', label: 'All' },
@@ -235,9 +289,36 @@ export function AdminRequestsBoard({
 
   return (
     <div className="flex h-full flex-col gap-3">
+      <RequestBoardSummary
+        total={totalVisible}
+        pending={grouped.pending.length}
+        inProgress={grouped.in_progress.length}
+        completed={grouped.completed.length}
+        urgent={urgentVisible}
+      />
+
       {/* Toolbar: scope · search · priority · count */}
-      {(showStaffControls || showSearch) && (
+      {(showStaffControls || showSearch || showProjectFilter) && (
         <div className="flex flex-wrap items-center gap-2">
+          {showProjectFilter && (
+            <select
+              value={projectFilter}
+              onChange={(e) => setProjectFilter(e.target.value)}
+              aria-label="Filter by project"
+              className={cn(
+                'h-9 max-w-full rounded-md border border-border bg-card px-3 text-sm text-foreground',
+                'focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20'
+              )}
+            >
+              <option value="all">All projects</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          )}
+
           {showStaffControls && (
             <div className="flex gap-1 rounded-md bg-muted/30 p-1">
               <button
@@ -326,6 +407,7 @@ export function AdminRequestsBoard({
                 onClick={() => {
                   setPriorityFilter('all');
                   setQuery('');
+                  setProjectFilter('all');
                   if (!isClient) setScope('all');
                 }}
                 className="cursor-pointer rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -375,6 +457,9 @@ export function AdminRequestsBoard({
                 requests={grouped[col.key]}
                 commentCounts={commentCounts}
                 onCardClick={handleCardClick}
+                canDragRequest={(request) =>
+                  canManageRequestStatus(request, userRole, currentUserId)
+                }
               />
             ))}
           </div>
@@ -403,6 +488,79 @@ export function AdminRequestsBoard({
   );
 }
 
+function RequestBoardSummary({
+  total,
+  pending,
+  inProgress,
+  completed,
+  urgent,
+}: {
+  total: number;
+  pending: number;
+  inProgress: number;
+  completed: number;
+  urgent: number;
+}) {
+  const items = [
+    {
+      label: 'Pending',
+      value: pending,
+      caption: `${total} visible`,
+      icon: Inbox,
+      className: 'border-sky-500/20 bg-sky-500/[0.06] text-sky-700 dark:text-sky-300',
+    },
+    {
+      label: 'High signal',
+      value: urgent,
+      icon: Flame,
+      className: 'border-rose-500/20 bg-rose-500/[0.06] text-rose-700 dark:text-rose-300',
+    },
+    {
+      label: 'In progress',
+      value: inProgress,
+      icon: TimerReset,
+      className: 'border-amber-500/20 bg-amber-500/[0.07] text-amber-700 dark:text-amber-300',
+    },
+    {
+      label: 'Completed',
+      value: completed,
+      icon: CheckCircle2,
+      className:
+        'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-700 dark:text-emerald-300',
+    },
+  ] as const;
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      {items.map((item) => {
+        const Icon = item.icon;
+        return (
+          <div
+            key={item.label}
+            className={cn(
+              'rounded-lg border px-3 py-2.5 shadow-[0_1px_0_hsl(var(--border)/0.35)]',
+              item.className
+            )}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] opacity-75">
+                {item.label}
+              </span>
+              <Icon className="size-3.5 opacity-75" aria-hidden />
+            </div>
+            <div className="mt-1 text-xl font-semibold tabular-nums tracking-tight">
+              {item.value}
+            </div>
+            {'caption' in item && (
+              <div className="mt-0.5 text-[10px] font-medium opacity-70">{item.caption}</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ─── Column ───────────────────────────────────────────────────────────── */
 
 function KanbanColumn({
@@ -415,6 +573,7 @@ function KanbanColumn({
   onCardClick,
   readOnly = false,
   isClient = false,
+  canDragRequest,
 }: {
   status: RequestStatus;
   label: string;
@@ -425,6 +584,7 @@ function KanbanColumn({
   onCardClick: (id: string) => void;
   readOnly?: boolean;
   isClient?: boolean;
+  canDragRequest?: (request: FeatureRequest) => boolean;
 }) {
   return readOnly ? (
     <StaticColumn label={label} eyebrow={eyebrow} count={count}>
@@ -451,6 +611,7 @@ function KanbanColumn({
       requests={requests}
       commentCounts={commentCounts}
       onCardClick={onCardClick}
+      canDragRequest={canDragRequest}
     />
   );
 }
@@ -463,6 +624,7 @@ function DroppableColumn({
   requests,
   commentCounts,
   onCardClick,
+  canDragRequest,
 }: {
   status: RequestStatus;
   label: string;
@@ -471,13 +633,14 @@ function DroppableColumn({
   requests: FeatureRequest[];
   commentCounts: Record<string, number>;
   onCardClick: (id: string) => void;
+  canDragRequest?: (request: FeatureRequest) => boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        'flex w-[280px] shrink-0 snap-start flex-col rounded-xl border border-border bg-card/60 p-2.5 transition-colors sm:w-[300px] md:w-auto md:min-w-0 md:shrink',
+        'flex w-[280px] shrink-0 snap-start flex-col rounded-xl border border-border/70 bg-card/80 p-2.5 shadow-[0_1px_0_hsl(var(--border)/0.35)] transition-colors sm:w-[300px] md:w-auto md:min-w-0 md:shrink',
         isOver && 'border-primary/40 bg-primary/[0.04]'
       )}
     >
@@ -514,14 +677,23 @@ function DroppableColumn({
             </span>
           </div>
         ) : (
-          requests.map((r) => (
-            <DraggableCard
-              key={r.id}
-              request={r}
-              commentCount={commentCounts[r.id] ?? 0}
-              onClick={() => onCardClick(r.id)}
-            />
-          ))
+          requests.map((r) =>
+            (canDragRequest?.(r) ?? true) ? (
+              <DraggableCard
+                key={r.id}
+                request={r}
+                commentCount={commentCounts[r.id] ?? 0}
+                onClick={() => onCardClick(r.id)}
+              />
+            ) : (
+              <ClickableCard
+                key={r.id}
+                request={r}
+                commentCount={commentCounts[r.id] ?? 0}
+                onClick={() => onCardClick(r.id)}
+              />
+            )
+          )
         )}
       </div>
     </div>
@@ -542,7 +714,7 @@ function StaticColumn({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex w-[280px] shrink-0 snap-start flex-col rounded-xl border border-border bg-card/60 p-2.5 sm:w-[300px] md:w-auto md:min-w-0 md:shrink">
+    <div className="flex w-[280px] shrink-0 snap-start flex-col rounded-xl border border-border/70 bg-card/80 p-2.5 shadow-[0_1px_0_hsl(var(--border)/0.35)] sm:w-[300px] md:w-auto md:min-w-0 md:shrink">
       <header className="mb-2 flex items-center justify-between gap-2 px-1">
         <div className="min-w-0">
           <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/80">
@@ -671,12 +843,16 @@ const RequestCard = memo(function RequestCard({
   return (
     <article
       className={cn(
-        'group rounded-xl border bg-card p-3 transition-colors',
+        'group relative overflow-hidden rounded-xl border bg-card p-3 transition-colors',
         isDragOverlay
           ? 'border-primary/60 shadow-elevation-3 ring-1 ring-primary/20'
           : 'border-border/70 hover:border-primary/30 hover:bg-card/70'
       )}
     >
+      <span
+        aria-hidden
+        className={cn('absolute inset-x-0 top-0 h-0.5', priorityAccentClass(request.priority))}
+      />
       <div className="flex items-start gap-2">
         {draggable && (
           <GripVertical
@@ -728,6 +904,11 @@ const RequestCard = memo(function RequestCard({
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <PriorityBadge priority={request.priority} />
           </div>
+          {request.description && (
+            <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+              {request.description}
+            </p>
+          )}
           <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-muted-foreground/70">
             <div className="flex min-w-0 items-center gap-2">
               <span className="tabular-nums">
@@ -755,6 +936,13 @@ const RequestCard = memo(function RequestCard({
     </article>
   );
 });
+
+function priorityAccentClass(priority: string): string {
+  if (priority === 'urgent') return 'bg-rose-500';
+  if (priority === 'high') return 'bg-orange-500';
+  if (priority === 'medium') return 'bg-sky-500';
+  return 'bg-slate-400';
+}
 
 function getRequestClientName(request: FeatureRequest): string {
   return (

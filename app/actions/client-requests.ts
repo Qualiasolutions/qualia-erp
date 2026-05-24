@@ -9,6 +9,27 @@ import { getEmployeeProjectIds, isStaffOnProject } from '@/lib/auth/is-staff-on-
 import { FeatureRequestCreateSchema, UpdateFeatureRequestSchema } from '@/lib/validation';
 import { assertNotImpersonating } from '@/lib/portal-utils';
 
+export interface ProjectClientSubmission {
+  id: string;
+  title: string;
+  description: string | null;
+  priority: string;
+  status: string;
+  admin_response: string | null;
+  created_at: string;
+  attachments: RequestAttachment[];
+  client: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  } | null;
+}
+
+function isBriefRequest(row: { title: string; brief_data?: unknown | null }): boolean {
+  return Boolean(row.brief_data) || row.title.toLowerCase().includes('brief');
+}
+
 /**
  * Create a feature request from a client
  */
@@ -301,9 +322,7 @@ export async function getProjectBriefs(projectId: string): Promise<ActionResult>
 
     if (error) return { success: false, error: error.message || 'Failed to load briefs' };
 
-    const briefRows = (data ?? []).filter(
-      (row) => row.title.startsWith('Project brief —') || row.brief_data
-    );
+    const briefRows = (data ?? []).filter(isBriefRequest);
 
     // The client_id FK on client_feature_requests targets auth.users, not
     // profiles, so PostgREST can't embed the submitter. Fetch profiles in a
@@ -334,6 +353,108 @@ export async function getProjectBriefs(projectId: string): Promise<ActionResult>
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to load briefs',
+    };
+  }
+}
+
+/**
+ * Return non-brief client requests for one project so the project page shows
+ * operational client submissions without duplicating the dedicated brief panel.
+ *
+ * Admins and assigned employees see all requests on the project; linked
+ * clients only see requests they submitted.
+ */
+export async function getProjectClientSubmissions(projectId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const isAdmin = await isUserAdmin(user.id);
+    let canView = isAdmin;
+
+    if (!canView && profile?.role === 'employee') {
+      canView = await isStaffOnProject(user.id, projectId);
+    }
+
+    if (!canView && profile?.role === 'client') {
+      const { data: link } = await supabase
+        .from('client_projects')
+        .select('project_id')
+        .eq('project_id', projectId)
+        .eq('client_id', user.id)
+        .maybeSingle();
+      canView = Boolean(link);
+    }
+
+    if (!canView) return { success: false, error: 'Project not found or access denied' };
+
+    const readClient = createAdminClient();
+    let query = readClient
+      .from('client_feature_requests')
+      .select(
+        'id, client_id, title, description, priority, status, admin_response, attachments, brief_data, created_at'
+      )
+      .eq('project_id', projectId)
+      .is('brief_data', null)
+      .not('title', 'ilike', '%brief%')
+      .order('created_at', { ascending: false });
+
+    if (profile?.role === 'client' && !isAdmin) {
+      query = query.eq('client_id', user.id);
+    }
+
+    const { data: requests, error } = await query.limit(20);
+    if (error) return { success: false, error: error.message || 'Failed to load submissions' };
+
+    const visibleRequests = (requests ?? []).filter((request) => !isBriefRequest(request));
+    const clientIds = Array.from(
+      new Set(visibleRequests.map((request) => request.client_id).filter(Boolean))
+    );
+    const clientMap = new Map<
+      string,
+      { id: string; full_name: string | null; email: string | null; avatar_url: string | null }
+    >();
+
+    if (clientIds.length > 0) {
+      const { data: clients } = await readClient
+        .from('profiles')
+        .select('id, full_name, email, avatar_url')
+        .in('id', clientIds);
+
+      for (const client of clients || []) {
+        clientMap.set(client.id, client);
+      }
+    }
+
+    const normalized: ProjectClientSubmission[] = visibleRequests.map((request) => ({
+      id: request.id,
+      title: request.title,
+      description: request.description,
+      priority: request.priority,
+      status: request.status,
+      admin_response: request.admin_response,
+      created_at: request.created_at,
+      attachments: Array.isArray(request.attachments)
+        ? (request.attachments as RequestAttachment[])
+        : [],
+      client: request.client_id ? clientMap.get(request.client_id) || null : null,
+    }));
+
+    return { success: true, data: normalized };
+  } catch (error) {
+    console.error('[getProjectClientSubmissions] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to load project submissions',
     };
   }
 }
@@ -790,6 +911,45 @@ async function assertRequestOwnership(
   };
 }
 
+async function assertRequestReadAccess(
+  requestId: string,
+  userId: string
+): Promise<
+  | {
+      ok: true;
+      request: {
+        id: string;
+        client_id: string;
+        project_id: string | null;
+        attachments: RequestAttachment[];
+      };
+    }
+  | { ok: false; error: string }
+> {
+  const supabase = await createClient();
+  const isAdmin = await isUserAdmin(userId);
+  const { data, error } = await supabase
+    .from('client_feature_requests')
+    .select('id, client_id, project_id, attachments')
+    .eq('id', requestId)
+    .maybeSingle();
+  if (error || !data) return { ok: false, error: 'Request not found' };
+  if (!isAdmin && data.client_id !== userId) {
+    if (!data.project_id) return { ok: false, error: 'Access denied' };
+    const staff = await isStaffOnProject(userId, data.project_id);
+    if (!staff) return { ok: false, error: 'Access denied' };
+  }
+  return {
+    ok: true,
+    request: {
+      id: data.id,
+      client_id: data.client_id,
+      project_id: data.project_id,
+      attachments: Array.isArray(data.attachments) ? (data.attachments as RequestAttachment[]) : [],
+    },
+  };
+}
+
 /**
  * Upload a file attachment to a feature request.
  * Stored in the `project-files` storage bucket under
@@ -887,7 +1047,7 @@ export async function getRequestAttachmentUrl(
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    const auth = await assertRequestOwnership(requestId, user.id);
+    const auth = await assertRequestReadAccess(requestId, user.id);
     if (!auth.ok) return { success: false, error: auth.error };
 
     const match = auth.request.attachments.find((a) => a.path === attachmentPath);
@@ -974,8 +1134,23 @@ export async function markFeatureRequestDone(
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    // Authorization: admin always allowed; employee only if assigned to the request's project
+    // Authorization: admin always allowed; employees must be the assigned owner.
+    // Use the service role for the request read/write after enforcing that gate
+    // in application code; the normal RLS policy does not allow employee status
+    // writes even when the UI permits assigned owners to manage the request.
     const isAdmin = await isUserAdmin(user.id);
+    const adminClient = createAdminClient();
+
+    const { data: request, error: fetchError } = await adminClient
+      .from('client_feature_requests')
+      .select('id, title, status, project_id, client_id, assigned_to')
+      .eq('id', requestId)
+      .maybeSingle();
+
+    if (fetchError || !request) {
+      return { success: false, error: 'Request not found' };
+    }
+
     if (!isAdmin) {
       const { data: profile } = await supabase
         .from('profiles')
@@ -987,32 +1162,9 @@ export async function markFeatureRequestDone(
         return { success: false, error: 'Not authorized' };
       }
 
-      // Employee must be assigned to the request's project
-      const { data: req } = await supabase
-        .from('client_feature_requests')
-        .select('project_id')
-        .eq('id', requestId)
-        .single();
-
-      if (!req?.project_id) {
+      if (request.assigned_to !== user.id) {
         return { success: false, error: 'Not authorized' };
       }
-
-      const staffOnProject = await isStaffOnProject(user.id, req.project_id);
-      if (!staffOnProject) {
-        return { success: false, error: 'Not authorized' };
-      }
-    }
-
-    // Fetch request with client profile for the email
-    const { data: request, error: fetchError } = await supabase
-      .from('client_feature_requests')
-      .select('id, title, status, project_id, client_id')
-      .eq('id', requestId)
-      .single();
-
-    if (fetchError || !request) {
-      return { success: false, error: 'Request not found' };
     }
 
     if (['completed', 'declined'].includes(request.status)) {
@@ -1020,19 +1172,23 @@ export async function markFeatureRequestDone(
     }
 
     // Fetch client email + name
-    const { data: clientProfile } = await supabase
+    const { data: clientProfile } = await adminClient
       .from('profiles')
       .select('email, full_name')
       .eq('id', request.client_id)
-      .single();
+      .maybeSingle();
 
     // Update status to completed
-    const { data: updatedRequest, error: updateError } = await supabase
+    let updateQuery = adminClient
       .from('client_feature_requests')
       .update({ status: 'completed', updated_at: new Date().toISOString() })
-      .eq('id', requestId)
-      .select('id')
-      .single();
+      .eq('id', requestId);
+
+    if (!isAdmin) {
+      updateQuery = updateQuery.eq('assigned_to', user.id);
+    }
+
+    const { data: updatedRequest, error: updateError } = await updateQuery.select('id').single();
 
     if (updateError)
       return { success: false, error: updateError.message || 'Failed to mark request as done' };
@@ -1049,7 +1205,7 @@ export async function markFeatureRequestDone(
     const commentBody = `Marked done by ${staffName}${doneNote?.trim() ? ' — ' + doneNote.trim() : ''}`;
 
     // Post system comment
-    await supabase.from('request_comments').insert({
+    await adminClient.from('request_comments').insert({
       request_id: requestId,
       author_id: user.id,
       content: commentBody,

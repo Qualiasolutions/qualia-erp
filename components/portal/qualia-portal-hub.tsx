@@ -94,6 +94,23 @@ function getGreeting(hour: number): string {
   return 'Still up';
 }
 
+function progressPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  const percent = value <= 1 ? value * 100 : value;
+  return Math.max(0, Math.min(100, Math.round(percent)));
+}
+
+function appEnabled(enabledApps: string[] | undefined, appKey: string): boolean {
+  return !enabledApps || enabledApps.includes(appKey);
+}
+
+function metricGridClass(count: number): string {
+  if (count <= 1) return 'grid-cols-1';
+  if (count === 2) return 'grid-cols-2';
+  if (count === 3) return 'grid-cols-2 md:grid-cols-3';
+  return 'grid-cols-2 md:grid-cols-4';
+}
+
 /* ======================================================================
    QualiaPortalHub — calm client cockpit
    ====================================================================== */
@@ -107,6 +124,7 @@ export function QualiaPortalHub({
   clientId,
   displayName,
   companyName,
+  enabledApps,
   upcomingMeetings = [],
 }: QualiaPortalHubProps) {
   const hue = useMemo(() => hueFromId(clientId), [clientId]);
@@ -128,6 +146,48 @@ export function QualiaPortalHub({
   const projectSummary = isLoading
     ? 'Loading workspace'
     : `${stats?.projectCount ?? 0} active ${(stats?.projectCount ?? 0) === 1 ? 'project' : 'projects'}`;
+  const canUseRequests = appEnabled(enabledApps, 'requests');
+  const canUseBilling = appEnabled(enabledApps, 'billing');
+  const toolLabels = [
+    canUseRequests ? 'requests' : null,
+    canUseBilling ? 'billing' : null,
+    'meetings',
+  ].filter(Boolean);
+  const metrics = [
+    {
+      label: 'Active projects',
+      value: stats?.projectCount ?? (isLoading ? '—' : 0),
+      hint: !isLoading && (stats?.projectCount ?? 0) === 0 ? 'no active work' : undefined,
+    },
+    ...(canUseRequests
+      ? [
+          {
+            label: 'Open requests',
+            value: stats?.pendingRequests ?? (isLoading ? '—' : 0),
+            hint: !isLoading && (stats?.pendingRequests ?? 0) === 0 ? 'inbox zero' : undefined,
+          },
+        ]
+      : []),
+    ...(canUseBilling
+      ? [
+          {
+            label: 'Unpaid invoices',
+            value: stats?.unpaidInvoiceCount ?? (isLoading ? '—' : 0),
+            hint: !isLoading && (stats?.unpaidInvoiceCount ?? 0) === 0 ? 'all clear' : undefined,
+          },
+          {
+            label: 'Outstanding',
+            value: isLoading
+              ? '—'
+              : stats?.unpaidTotal
+                ? formatEURCompact(stats.unpaidTotal)
+                : '€0',
+            hint: !isLoading && !stats?.unpaidTotal ? 'nothing due' : undefined,
+            emphasized: !!stats?.unpaidTotal,
+          },
+        ]
+      : []),
+  ];
 
   // Clients have no /messages route — staff messaging is internal only,
   // and clients reach the conversation via the floating ClientChatWidget
@@ -192,37 +252,23 @@ export function QualiaPortalHub({
             >
               {projectSummary}
             </span>
-            <span className="rounded-md bg-muted/60 px-2 py-1">Requests, billing and meetings</span>
+            <span className="rounded-md bg-muted/60 px-2 py-1">{toolLabels.join(', ')}</span>
           </div>
         </div>
       </header>
 
       {/* Stat strip — flat and separator-divided for a dense cockpit read. */}
       <section className="relative border-b border-border bg-card">
-        <div className="grid grid-cols-2 divide-x divide-border/70 md:grid-cols-4">
-          <PulseMetric
-            label="Active projects"
-            value={stats?.projectCount ?? (isLoading ? '—' : 0)}
-            hint={!isLoading && (stats?.projectCount ?? 0) === 0 ? 'no active work' : undefined}
-          />
-          <PulseMetric
-            label="Open requests"
-            value={stats?.pendingRequests ?? (isLoading ? '—' : 0)}
-            hint={!isLoading && (stats?.pendingRequests ?? 0) === 0 ? 'inbox zero' : undefined}
-          />
-          <PulseMetric
-            label="Unpaid invoices"
-            value={stats?.unpaidInvoiceCount ?? (isLoading ? '—' : 0)}
-            hint={!isLoading && (stats?.unpaidInvoiceCount ?? 0) === 0 ? 'all clear' : undefined}
-          />
-          <PulseMetric
-            label="Outstanding"
-            value={
-              isLoading ? '—' : stats?.unpaidTotal ? formatEURCompact(stats.unpaidTotal) : '€0'
-            }
-            hint={!isLoading && !stats?.unpaidTotal ? 'nothing due' : undefined}
-            emphasized={!!stats?.unpaidTotal}
-          />
+        <div className={cn('grid divide-x divide-border/70', metricGridClass(metrics.length))}>
+          {metrics.map((metric) => (
+            <PulseMetric
+              key={metric.label}
+              label={metric.label}
+              value={metric.value}
+              hint={metric.hint}
+              emphasized={metric.emphasized}
+            />
+          ))}
         </div>
       </section>
 
@@ -232,15 +278,19 @@ export function QualiaPortalHub({
           <EngagementsSection projects={projects} accentColor={accentColor} isLoading={isLoading} />
           <aside className="flex flex-col gap-6">
             <MeetingsSidebar meetings={upcomingMeetings} accentColor={accentColor} />
-            <InvoicesSidebar
-              unpaidCount={stats?.unpaidInvoiceCount ?? 0}
-              unpaidTotal={stats?.unpaidTotal ?? 0}
-            />
-            <ThreadCard
-              destination={threadDestination}
-              appLabel={threadAppLabel}
-              accentColor={accentColor}
-            />
+            {canUseBilling ? (
+              <InvoicesSidebar
+                unpaidCount={stats?.unpaidInvoiceCount ?? 0}
+                unpaidTotal={stats?.unpaidTotal ?? 0}
+              />
+            ) : null}
+            {canUseRequests ? (
+              <ThreadCard
+                destination={threadDestination}
+                appLabel={threadAppLabel}
+                accentColor={accentColor}
+              />
+            ) : null}
           </aside>
         </div>
       </div>
@@ -359,7 +409,7 @@ const EngagementRow = memo(function EngagementRow({
   accentColor: string;
 }) {
   const status = getStatusMeta(project.status);
-  const pct = Math.round(project.progress * 100);
+  const pct = progressPercent(project.progress);
   const phaseText = project.currentPhase
     ? `${project.currentPhase} · ${project.completedPhases}/${project.totalPhases} phases`
     : `${project.completedPhases}/${project.totalPhases} phases`;

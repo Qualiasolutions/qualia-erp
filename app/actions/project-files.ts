@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import type { Tables } from '@/types/database';
 
@@ -380,8 +380,13 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
     return { success: false, error: 'You do not have access to this project' };
   }
 
-  // Get project to retrieve workspace_id
-  const { data: project, error: projectError } = await supabase
+  const adminClient = createAdminClient();
+
+  // Get project to retrieve workspace_id. Use the service role after the
+  // strict client-project access check above; clients are not workspace
+  // members, so normal RLS can hide the project/file rows they are allowed to
+  // contribute to through the portal.
+  const { data: project, error: projectError } = await adminClient
     .from('projects')
     .select('id, workspace_id')
     .eq('id', projectId)
@@ -397,7 +402,7 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
   const storagePath = `${projectId}/client-uploads/${timestamp}_${sanitizedName}`;
 
   // Upload to storage
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await adminClient.storage
     .from('project-files')
     .upload(storagePath, file, {
       cacheControl: '3600',
@@ -410,7 +415,7 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
   }
 
   // Create database record with is_client_upload=true
-  const { data: fileRecord, error: dbError } = await supabase
+  const { data: fileRecord, error: dbError } = await adminClient
     .from('project_files')
     .insert({
       project_id: projectId,
@@ -431,7 +436,7 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
   if (dbError) {
     console.error('[uploadClientFile] DB error:', dbError);
     // Try to clean up the uploaded file
-    await supabase.storage.from('project-files').remove([storagePath]);
+    await adminClient.storage.from('project-files').remove([storagePath]);
     return { success: false, error: 'Failed to save file record' };
   }
 

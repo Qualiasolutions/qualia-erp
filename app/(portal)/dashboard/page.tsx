@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { isPortalAdminRole } from '@/lib/portal-utils';
+import { getClientWorkspaceId, isPortalAdminRole } from '@/lib/portal-utils';
 import {
   getPortalAuthUser,
   getPortalProfile,
@@ -11,6 +11,15 @@ import {
 import { PortalDashboardContent } from '../portal-dashboard-content';
 import { EmployeeDashboardContent } from '../employee-dashboard-content';
 import { AdminDashboardContent } from '../admin-dashboard-content';
+import { getEnabledAppsForClient } from '@/app/actions/portal-admin';
+
+async function getDashboardEnabledApps(workspaceId: string | null, clientId: string | null) {
+  if (!workspaceId || !clientId) return undefined;
+  const appsResult = await getEnabledAppsForClient(workspaceId, clientId);
+  return appsResult.success && Array.isArray(appsResult.data)
+    ? (appsResult.data as string[])
+    : undefined;
+}
 
 export default async function PortalDashboard({
   searchParams,
@@ -112,13 +121,17 @@ export default async function PortalDashboard({
 
     const clientId = portalUserId || workspaceId;
     const companyName = client?.name || null;
-    const logoUrl = await getWorkspaceClientLogo(workspaceId);
+    const [logoUrl, enabledApps] = await Promise.all([
+      getWorkspaceClientLogo(workspaceId),
+      getDashboardEnabledApps(workspaceId, portalUserId),
+    ]);
 
     return (
       <PortalDashboardContent
         clientId={clientId}
         displayName={displayName}
         companyName={companyName}
+        enabledApps={enabledApps}
         logoUrl={logoUrl}
         showWelcomeTour={false}
       />
@@ -136,7 +149,11 @@ export default async function PortalDashboard({
   // legal entity ("Alecci Media") that doesn't match the user's actual brand.
   // profiles.full_name is the curated, user-facing display name.
   const companyName = displayName;
-  const logoUrl = await getClientPrimaryLogo(effectiveUserId);
+  const [logoUrl, clientWorkspaceId] = await Promise.all([
+    getClientPrimaryLogo(effectiveUserId),
+    getClientWorkspaceId(effectiveUserId),
+  ]);
+  const enabledApps = await getDashboardEnabledApps(clientWorkspaceId, effectiveUserId);
 
   // Client: show their dashboard. Welcome tour is gated to:
   //   - the real user (not admin impersonating)
@@ -151,6 +168,7 @@ export default async function PortalDashboard({
       clientId={effectiveUserId}
       displayName={displayName}
       companyName={companyName}
+      enabledApps={enabledApps}
       logoUrl={logoUrl}
       showWelcomeTour={realRole === 'client' && !tourCompleted}
     />

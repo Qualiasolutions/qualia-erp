@@ -22,6 +22,7 @@ import {
   deleteProjectFile,
   getFileDownloadUrl,
   getProjectFiles,
+  uploadClientFile,
   uploadProjectFile,
   type ProjectFileWithUploader,
 } from '@/app/actions/project-files';
@@ -29,8 +30,8 @@ import {
 interface ProjectFilesPanelProps {
   projectId: string;
   isClient: boolean;
-  /** When true, show upload + delete controls. Wire this from the caller
-   *  based on the current user's role. Clients never get admin controls. */
+  /** When true, show admin upload + delete controls. Clients get their own
+   *  upload path via uploadClientFile and never get delete/admin controls. */
   isAdmin?: boolean;
   className?: string;
 }
@@ -120,7 +121,7 @@ export function ProjectFilesPanel({
       const fd = new FormData();
       fd.set('file', file);
       fd.set('project_id', projectId);
-      const result = await uploadProjectFile(fd);
+      const result = isClient ? await uploadClientFile(fd) : await uploadProjectFile(fd);
       if (!result.success) {
         toast.error(result.error || 'Upload failed');
         return;
@@ -165,7 +166,7 @@ export function ProjectFilesPanel({
           <h3 className="font-medium">Files</h3>
           {!loading && <span className="text-xs text-muted-foreground">({list.length})</span>}
         </div>
-        {isAdmin && (
+        {(isAdmin || isClient) && (
           <>
             <input
               ref={fileInputRef}
@@ -181,7 +182,7 @@ export function ProjectFilesPanel({
               className="h-7 gap-1 text-xs"
               disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
-              aria-label="Upload project file"
+              aria-label={isClient ? 'Upload client file' : 'Upload project file'}
             >
               {uploading ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -203,7 +204,11 @@ export function ProjectFilesPanel({
           <div className="flex h-full flex-col items-center justify-center py-8 text-center">
             <FolderOpen className="mb-2 h-8 w-8 text-muted-foreground/30" />
             <p className="text-sm text-muted-foreground">No files yet</p>
-            {!isClient && (
+            {isClient ? (
+              <p className="text-xs text-muted-foreground/70">
+                Upload files you want the team to review
+              </p>
+            ) : (
               <p className="text-xs text-muted-foreground/70">
                 Upload briefs, deliverables, invoices
               </p>

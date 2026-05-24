@@ -25,6 +25,7 @@ import {
   CalendarClock,
   CheckCircle2,
   FileText,
+  MessageSquareText,
 } from 'lucide-react';
 import { useProjectAssignments, invalidateProjectAssignments } from '@/lib/swr';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -48,7 +49,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { getProjectById, updateProject, deleteProject } from '@/app/actions/projects';
@@ -63,11 +70,13 @@ import { ProjectReportsPanel } from '@/components/project-reports-panel';
 import { ProjectResources } from '@/components/project-resources';
 import { ProjectFilesPanel } from '@/components/project-files-panel';
 import { ProjectBriefViewer } from '@/components/project-brief-viewer';
+import { ProjectClientSubmissionsPanel } from '@/components/portal/project-client-submissions-panel';
 import { LogoUpload } from '@/components/logo-upload';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { ProjectIntegrationsDisplay } from '@/components/project-integrations-display';
 import type { ProjectType, ProjectGroup } from '@/types/database';
 import type { IntegrationStatus } from '@/lib/integration-utils';
+import type { ProjectClientSubmission } from '@/app/actions/client-requests';
 
 const PROJECT_TYPES: {
   value: ProjectType;
@@ -147,6 +156,8 @@ interface ProjectDetailViewProps {
   clients: ClientOption[];
   userRole?: 'admin' | 'employee' | 'client';
   integrationStatus?: IntegrationStatus;
+  clientSubmissions?: ProjectClientSubmission[];
+  forceBrief?: boolean;
 }
 
 export function ProjectDetailView({
@@ -154,6 +165,8 @@ export function ProjectDetailView({
   profiles,
   clients,
   userRole = 'employee',
+  clientSubmissions = [],
+  forceBrief = false,
 }: ProjectDetailViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -327,6 +340,7 @@ export function ProjectDetailView({
               variant="ghost"
               size="icon"
               onClick={() => setPanelSheetOpen(true)}
+              aria-label="Open project info"
               className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground xl:hidden"
             >
               <PanelRightOpen className="h-4 w-4" />
@@ -361,6 +375,7 @@ export function ProjectDetailView({
               projectType={project.project_type}
               workspaceId={project.workspace_id}
               userRole={userRole}
+              forceBrief={forceBrief}
               className="h-full"
             />
           </div>
@@ -413,11 +428,19 @@ export function ProjectDetailView({
               </div>
             )}
 
+            <div className="shrink-0 border-b border-border">
+              <ProjectClientSubmissionsPanel
+                projectId={project.id}
+                submissions={clientSubmissions}
+              />
+            </div>
+
             {/* Resources — links to live docs/deploys; visible to clients */}
             <div className="min-h-0 flex-1 border-b border-border">
               <ProjectResources
                 projectId={project.id}
                 initialResources={project.metadata?.resources || []}
+                canManage={isAdmin}
                 className="h-full rounded-none border-0"
               />
             </div>
@@ -644,15 +667,26 @@ export function ProjectDetailView({
         <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-[420px]">
           <SheetHeader className="border-b border-border px-4 py-3">
             <SheetTitle>Project Info</SheetTitle>
+            <SheetDescription className="sr-only">
+              Project resources, files, requests, briefs, and reports.
+            </SheetDescription>
           </SheetHeader>
 
           <Tabs defaultValue="resources" className="flex min-h-0 flex-1 flex-col">
             <TabsList
-              className={cn('mx-4 mt-3 grid w-auto', isClient ? 'grid-cols-1' : 'grid-cols-3')}
+              className={cn('mx-4 mt-3 grid w-auto', isClient ? 'grid-cols-3' : 'grid-cols-5')}
             >
               <TabsTrigger value="resources" className="gap-1.5 text-xs">
                 <LinkIcon className="h-3.5 w-3.5" />
                 Resources
+              </TabsTrigger>
+              <TabsTrigger value="files" className="gap-1.5 text-xs">
+                <Folder className="h-3.5 w-3.5" />
+                Files
+              </TabsTrigger>
+              <TabsTrigger value="requests" className="gap-1.5 text-xs">
+                <MessageSquareText className="h-3.5 w-3.5" />
+                Requests
               </TabsTrigger>
               {!isClient && (
                 <>
@@ -671,7 +705,22 @@ export function ProjectDetailView({
               <ProjectResources
                 projectId={project.id}
                 initialResources={project.metadata?.resources || []}
+                canManage={isAdmin}
                 className="h-full rounded-none border-0"
+              />
+            </TabsContent>
+            <TabsContent value="files" className="mt-0 min-h-0 flex-1">
+              <ProjectFilesPanel
+                projectId={project.id}
+                isClient={isClient}
+                isAdmin={isAdmin}
+                className="h-full rounded-none border-0"
+              />
+            </TabsContent>
+            <TabsContent value="requests" className="mt-0 min-h-0 flex-1 overflow-y-auto">
+              <ProjectClientSubmissionsPanel
+                projectId={project.id}
+                submissions={clientSubmissions}
               />
             </TabsContent>
             {!isClient && (

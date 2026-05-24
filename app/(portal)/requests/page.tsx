@@ -9,6 +9,7 @@ import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import dynamic from 'next/dynamic';
 import { PortalRequestDialog } from '@/components/portal/portal-request-dialog';
+import { AdminClientFormLinkDialog } from '@/components/portal/admin-client-form-link-dialog';
 
 const AdminRequestsBoard = dynamic(
   () =>
@@ -26,7 +27,12 @@ const AdminRequestsBoard = dynamic(
 
 export const metadata: Metadata = { title: 'Requests' };
 
-export default async function PortalRequestsPage() {
+interface PageProps {
+  searchParams: Promise<{ project?: string }>;
+}
+
+export default async function PortalRequestsPage({ searchParams }: PageProps) {
+  const { project: requestedProjectId } = await searchParams;
   const user = await getPortalAuthUser();
 
   if (!user) {
@@ -117,6 +123,9 @@ export default async function PortalRequestsPage() {
   }>;
 
   const projects = projectsData;
+  const initialProjectId = projects.some((project) => project.id === requestedProjectId)
+    ? requestedProjectId
+    : undefined;
   // Comment counts surface as a chip on each kanban card for every role.
   const commentCounts =
     requests.length > 0 ? await getRequestCommentCounts(requests.map((r) => r.id)) : {};
@@ -155,7 +164,12 @@ export default async function PortalRequestsPage() {
               </p>
             </div>
           </div>
-          {!isEmployee && <PortalRequestDialog projects={projects} />}
+          <div className="flex flex-wrap items-center gap-2">
+            {isAdmin && <AdminClientFormLinkDialog projects={projects} />}
+            {!isEmployee && (
+              <PortalRequestDialog projects={projects} initialProjectId={initialProjectId} />
+            )}
+          </div>
         </div>
       </header>
 
@@ -165,6 +179,8 @@ export default async function PortalRequestsPage() {
         currentUserId={user.id}
         userRole={isAdmin ? 'admin' : isEmployee ? 'employee' : 'client'}
         staffOptions={staffOptions}
+        projects={projects}
+        initialProjectId={initialProjectId}
       />
     </div>
   );
