@@ -183,9 +183,16 @@ function formatShortDate(dateStr: string | null): string {
 // ─── Progress Summary ───────────────────────────────────────────────────────
 
 function ProgressSummary({ phases: allPhases }: { phases: Phase[] }) {
-  // Only count actual phases (not milestone headers) in progress
-  const phases = allPhases.filter((p) => p.phase_type !== 'milestone');
+  const hasSyncedNumberedRoadmap = allPhases.some(
+    (p) => p.github_synced_at && p.milestone_number != null
+  );
+  // Only count actual phases (not milestone headers). Once a GitHub roadmap is
+  // synced, ignore older unnumbered legacy rows so the summary matches the tree.
+  const phases = allPhases.filter(
+    (p) => p.phase_type !== 'milestone' && (!hasSyncedNumberedRoadmap || p.milestone_number != null)
+  );
   const milestones = allPhases.filter((p) => p.phase_type === 'milestone');
+  const progressRecords = [...phases, ...milestones];
   const isComplete = (s: string | null | undefined): boolean => {
     const lower = (s || '').toLowerCase();
     return lower.includes('complete') || lower.includes('done');
@@ -207,7 +214,8 @@ function ProgressSummary({ phases: allPhases }: { phases: Phase[] }) {
   const nextMilestone = [...milestones]
     .sort((a, b) => (a.milestone_number ?? 99) - (b.milestone_number ?? 99))
     .find((p) => !isComplete(p.status));
-  const everythingComplete = allPhases.length > 0 && allPhases.every((p) => isComplete(p.status));
+  const everythingComplete =
+    progressRecords.length > 0 && progressRecords.every((p) => isComplete(p.status));
 
   const activePhase = inProgressPhase ?? inProgressMilestone ?? nextPhase ?? nextMilestone ?? null;
   const currentHeader =
