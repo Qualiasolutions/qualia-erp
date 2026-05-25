@@ -9,6 +9,7 @@ import { normalizeFKResponse } from '@/lib/server-utils';
 import { syncPlanningFromGitHubWithServiceRole } from '@/lib/planning-sync-core';
 import { assertNotImpersonating } from '@/lib/portal-utils';
 import { sendProjectAssignmentNotification } from '@/lib/email';
+import { upsertWorkPacketForAssignment } from './work-packets';
 
 // Debounce window for auto-sync on assign: skip if a phase was synced within this many seconds.
 // Prevents spam when an admin assigns multiple people to the same project in quick succession.
@@ -206,6 +207,11 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
     'assignEmployeeToProject'
   );
 
+  const packetResult = await upsertWorkPacketForAssignment(supabase, assignment.id, user.id);
+  if (!packetResult.success) {
+    console.warn('[assignEmployeeToProject] work packet generation failed:', packetResult.error);
+  }
+
   // Fire-and-forget assignment notification email.
   if (employee.email) {
     const projectLead = normalizeFKResponse(project.lead) as { full_name: string | null } | null;
@@ -383,6 +389,17 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
     'reassignEmployee'
   );
 
+  await supabase
+    .from('project_work_packets')
+    .update({ status: 'superseded', updated_at: new Date().toISOString() })
+    .eq('assignment_id', assignment_id)
+    .in('status', ['active', 'blocked', 'review_requested']);
+
+  const packetResult = await upsertWorkPacketForAssignment(supabase, newAssignment.id, user.id);
+  if (!packetResult.success) {
+    console.warn('[reassignEmployee] work packet generation failed:', packetResult.error);
+  }
+
   const { data: employeeProfile } = await supabase
     .from('profiles')
     .select('full_name, email')
@@ -467,6 +484,12 @@ export async function removeAssignment(assignmentId: string): Promise<ActionResu
   }
   if (!removedRow) return { success: false, error: 'Not found or permission denied' };
 
+  await supabase
+    .from('project_work_packets')
+    .update({ status: 'superseded', updated_at: new Date().toISOString() })
+    .eq('assignment_id', assignmentId)
+    .in('status', ['active', 'blocked', 'review_requested']);
+
   // Cancel the unassigned employee's open tasks on this project so it stops
   // showing up in their inbox and in overdue_task daily-brief items. The
   // intent of unassignment is "this person is off the project" — any work
@@ -507,6 +530,11 @@ export async function removeAssignment(assignmentId: string): Promise<ActionResu
     },
     { action: 'employee_removed' }
   );
+
+  const packetResult = await upsertWorkPacketForAssignment(supabase, assignmentId, user.id);
+  if (!packetResult.success) {
+    console.warn('[requestAssignmentCompletion] work packet update failed:', packetResult.error);
+  }
 
   revalidatePath('/');
   revalidatePath('/tasks');
@@ -835,6 +863,11 @@ export async function requestAssignmentCompletion(
       promised_delivery_date: trimmedDate,
     }
   );
+
+  const packetResult = await upsertWorkPacketForAssignment(supabase, assignmentId, user.id);
+  if (!packetResult.success) {
+    console.warn('[completeProjectAssignment] work packet update failed:', packetResult.error);
+  }
 
   revalidatePath('/');
   revalidatePath('/tasks');

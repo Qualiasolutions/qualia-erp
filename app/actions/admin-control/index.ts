@@ -27,6 +27,13 @@ export {
   type TeamWorkloadPerson,
 } from './team';
 export {
+  loadDeliveryControl,
+  type DeliveryPayload,
+  type DeliveryQueue,
+  type DeliveryExceptionRow,
+  type DeliverySeverity,
+} from './delivery';
+export {
   loadFinanceTab,
   type FinancePayload,
   type FinanceKpi,
@@ -71,9 +78,9 @@ export {
   type ReportFlag,
 } from './reports-perf';
 
-export type ControlTab = 'overview' | 'team' | 'finance' | 'system';
+export type ControlTab = 'overview' | 'delivery' | 'team' | 'finance' | 'system';
 
-const VALID_TABS = new Set<ControlTab>(['team', 'finance', 'system']);
+const VALID_TABS = new Set<ControlTab>(['delivery', 'team', 'finance', 'system']);
 
 export function resolveControlTab(value: string | undefined): ControlTab {
   if (value && VALID_TABS.has(value as ControlTab)) {

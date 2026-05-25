@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/server';
 import { authenticateRequest, hasScope } from '@/lib/api-auth';
 import { apiRateLimiter } from '@/lib/rate-limit';
+import { refreshActiveWorkPacketsForProject } from '@/app/actions/work-packets';
 
 /**
  * POST /api/v1/project-snapshots
@@ -19,6 +20,9 @@ const snapshotIdentifiersSchema = z.object({
   erp_project_id: z.string().uuid().optional(),
   client_id: z.string().uuid().optional(),
   workspace_id: z.string().uuid().optional(),
+  work_packet_id: z.string().uuid().optional(),
+  assignment_id: z.string().uuid().optional(),
+  assignment_deadline: z.string().date().optional(),
 });
 
 const snapshotSchema = z.object({
@@ -301,6 +305,11 @@ export async function POST(request: NextRequest) {
       error: 'UPDATE_FAILED',
       message: updateError.message,
     });
+  }
+
+  const packetRefresh = await refreshActiveWorkPacketsForProject(supabase, project.id);
+  if (!packetRefresh.success) {
+    console.warn('[api/v1/project-snapshots] Work packet refresh failed:', packetRefresh.error);
   }
 
   return NextResponse.json({

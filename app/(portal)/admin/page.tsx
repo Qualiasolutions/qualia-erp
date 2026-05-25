@@ -6,11 +6,13 @@ import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { isUserAdmin } from '@/app/actions/shared';
 import {
   loadOverviewTab,
+  loadDeliveryControl,
   loadTeamTab,
   loadFinanceTab,
   loadSystemTab,
   resolveControlTab,
   type ControlTab,
+  type DeliveryPayload,
   type TeamPayload,
   type FinancePayload,
   type SystemPayload,
@@ -73,6 +75,11 @@ async function ControlLoader({ tab }: { tab: ControlTab }) {
     case 'team': {
       const team: TeamPayload = await loadTeamTab();
       data.team = team;
+      break;
+    }
+    case 'delivery': {
+      const delivery: DeliveryPayload = await loadDeliveryControl();
+      data.delivery = delivery;
       break;
     }
     case 'finance': {

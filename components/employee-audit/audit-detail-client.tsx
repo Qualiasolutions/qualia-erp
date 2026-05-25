@@ -61,17 +61,15 @@ const FRAMEWORK_COMMANDS: Array<{ key: string; label: string; help: string }> = 
   { key: 'qualia-ship', label: '/qualia-ship', help: 'deploy + post-deploy verify' },
   { key: 'qualia-handoff', label: '/qualia-handoff', help: 'archive phase · update STATE' },
   { key: 'qualia-report', label: '/qualia-report', help: 'clock-out + ERP sync' },
-  { key: 'qualia-debug', label: '/qualia-debug', help: 'investigative debugging' },
-  { key: 'qualia-quick', label: '/qualia-quick', help: 'small fixes / tweaks' },
-  { key: 'qualia-task', label: '/qualia-task', help: 'single focused task' },
+  { key: 'qualia-fix', label: '/qualia-fix', help: 'repair broken existing behavior' },
+  { key: 'qualia-feature', label: '/qualia-feature', help: 'single scoped feature' },
   { key: 'qualia-test', label: '/qualia-test', help: 'tests + TDD loop' },
   { key: 'qualia-review', label: '/qualia-review', help: 'production audit' },
   { key: 'qualia-optimize', label: '/qualia-optimize', help: 'deep optimization pass' },
   { key: 'qualia-discuss', label: '/qualia-discuss', help: 'alignment interview before plan' },
   { key: 'qualia-research', label: '/qualia-research', help: 'deep research a domain' },
   { key: 'qualia-milestone', label: '/qualia-milestone', help: 'close + open milestones' },
-  { key: 'qualia-pause', label: '/qualia-pause', help: 'save context + handoff' },
-  { key: 'qualia-resume', label: '/qualia-resume', help: 'restore prior session context' },
+  { key: 'qualia-road', label: '/qualia-road', help: 'terminal workflow map' },
 ];
 
 const PROJECT_TYPES: Array<{ key: string; label: string; help: string }> = [
@@ -131,7 +129,7 @@ const SHIPPED_SOLO_CHOICES: RadioChoice<SoloCount>[] = [
 ];
 
 const DEBUG_COMFORT_CHOICES: RadioChoice<Frequency4>[] = [
-  { value: 'always', label: 'Full — I open /qualia-debug and root-cause it' },
+  { value: 'always', label: 'Full — I open /qualia-fix and root-cause it' },
   { value: 'usually', label: 'Usually — I get there with one or two prompts' },
   { value: 'sometimes', label: 'Sometimes — depends on the bug' },
   { value: 'no', label: 'I escalate before debugging' },
@@ -152,7 +150,7 @@ const UNCLEAR_OR_BROKEN_CHOICES: RadioChoice<string>[] = [
   { value: 'verify-gap', label: '/qualia-verify gap-cycle limit triggers too early' },
   { value: 'plan-verbose', label: '/qualia-plan output is too verbose' },
   { value: 'build-context', label: '/qualia-build subagents lose context mid-wave' },
-  { value: 'polish-loop', label: '/qualia-polish-loop iterates too long before stopping' },
+  { value: 'polish-loop', label: '/qualia-polish --loop iterates too long before stopping' },
   { value: 'discuss-long', label: '/qualia-discuss interview is too long for small phases' },
   { value: 'nothing', label: 'Nothing major — it works for me' },
 ];
@@ -169,8 +167,8 @@ const YES_GIVE_ME_SOLO_CHOICES: RadioChoice<string>[] = [
 ];
 
 const SCENARIO_INHERIT_CHOICES: RadioChoice<string>[] = [
-  { value: 'map-state-resume', label: '/qualia-map → /qualia → /qualia-resume' },
-  { value: 'state-resume-plan', label: '/qualia → /qualia-resume → /qualia-plan' },
+  { value: 'map-state-resume', label: '/qualia-map → /qualia' },
+  { value: 'state-resume-plan', label: '/qualia → /qualia-plan' },
   { value: 'plan-build-verify', label: '/qualia-plan → /qualia-build → /qualia-verify' },
   { value: 'review-map-state', label: '/qualia-review → /qualia-map → /qualia' },
   { value: 'just-read', label: 'No commands — I just read the code first' },

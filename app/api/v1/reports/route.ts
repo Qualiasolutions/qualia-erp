@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/server';
 import { authenticateRequest, hasScope } from '@/lib/api-auth';
 import { apiRateLimiter } from '@/lib/rate-limit';
+import { refreshActiveWorkPacketsForProject } from '@/app/actions/work-packets';
 
 /**
  * POST /api/v1/reports
@@ -95,6 +96,11 @@ const payloadSchema = z.object({
   erp_project_id: z.string().uuid().optional(),
   client_id: z.string().uuid().optional(),
   framework_version: z.string().optional(),
+  // v6.3+ — ERP work-packet traceability. These are optional because older
+  // Framework installs do not know about ERP mission packets.
+  work_packet_id: z.string().uuid().optional(),
+  assignment_id: z.string().uuid().optional(),
+  assignment_deadline: z.string().date().optional(),
 });
 
 type Payload = z.infer<typeof payloadSchema>;
@@ -521,6 +527,9 @@ export async function POST(request: NextRequest) {
     client_id: reportClientId,
     erp_project_id: erpProjectId,
     framework_version: body.framework_version || null,
+    work_packet_id: body.work_packet_id || null,
+    assignment_id: body.assignment_id || null,
+    assignment_deadline: body.assignment_deadline || null,
     idempotency_key: idempotencyKey,
     token_id: auth.tokenId,
     auth_method: auth.method,
@@ -582,6 +591,13 @@ export async function POST(request: NextRequest) {
     responseReportId,
     erpProjectId,
   });
+
+  if (erpProjectId) {
+    const packetRefresh = await refreshActiveWorkPacketsForProject(supabase, erpProjectId);
+    if (!packetRefresh.success) {
+      console.warn('[api/v1/reports] Work packet refresh failed:', packetRefresh.error);
+    }
+  }
 
   return NextResponse.json({
     ok: true,
