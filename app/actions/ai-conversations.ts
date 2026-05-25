@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { getAssistantRequestContext } from '@/lib/ai/ai-core';
 
 import type { ActionResult } from './shared';
 
@@ -51,22 +52,13 @@ async function getCurrentWorkspaceId(): Promise<string | null> {
  * Ordered by updated_at DESC, limited to 50
  */
 export async function getConversations(): Promise<Conversation[]> {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  const context = await getAssistantRequestContext();
+  if (!context) {
     console.error('[getConversations] No authenticated user');
     return [];
   }
 
-  const workspaceId = await getCurrentWorkspaceId();
-  if (!workspaceId) {
-    console.error('[getConversations] No workspace ID available');
-    return [];
-  }
+  const { supabase, user, workspaceId } = context;
 
   // Item 16: List query only needs id + title + timestamps
   const { data: conversations, error } = await supabase
@@ -167,15 +159,12 @@ export async function createConversation(title?: string): Promise<ActionResult> 
  * Delete a conversation (cascades to messages via FK)
  */
 export async function deleteConversation(id: string): Promise<ActionResult> {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  const context = await getAssistantRequestContext();
+  if (!context) {
     return { success: false, error: 'Not authenticated' };
   }
+
+  const { supabase, user } = context;
 
   // Verify ownership before deleting
   const { data: conversation } = await supabase
@@ -276,16 +265,13 @@ export async function saveMessage(
  * Get all messages for a conversation, ordered by created_at ASC
  */
 export async function getMessages(conversationId: string): Promise<Message[]> {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  const context = await getAssistantRequestContext();
+  if (!context) {
     console.error('[getMessages] No authenticated user');
     return [];
   }
+
+  const { supabase, user } = context;
 
   // Verify conversation ownership
   const { data: conversation } = await supabase

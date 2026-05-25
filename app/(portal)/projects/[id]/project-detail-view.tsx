@@ -451,6 +451,7 @@ export function ProjectDetailView({
                 projectId={project.id}
                 isClient={isClient}
                 isAdmin={isAdmin}
+                canManage={!isClient}
                 className="h-full rounded-none border-0"
               />
             </div>
@@ -672,7 +673,7 @@ export function ProjectDetailView({
             </SheetDescription>
           </SheetHeader>
 
-          <Tabs defaultValue="resources" className="flex min-h-0 flex-1 flex-col">
+          <Tabs defaultValue="files" className="flex min-h-0 flex-1 flex-col">
             <TabsList
               className={cn('mx-4 mt-3 grid w-auto', isClient ? 'grid-cols-3' : 'grid-cols-5')}
             >
@@ -714,6 +715,7 @@ export function ProjectDetailView({
                 projectId={project.id}
                 isClient={isClient}
                 isAdmin={isAdmin}
+                canManage={!isClient}
                 className="h-full rounded-none border-0"
               />
             </TabsContent>

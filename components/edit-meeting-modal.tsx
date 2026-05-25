@@ -419,10 +419,10 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
                 )}
                 <input
                   type="url"
-                  placeholder="Meeting link (optional)"
+                  placeholder="Google Meet link (automatic)"
                   value={meetingLink}
-                  onChange={(e) => setMeetingLink(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-9 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  readOnly
+                  className="h-10 w-full rounded-lg border border-border bg-muted/30 pl-9 pr-9 text-sm placeholder:text-muted-foreground/60 focus:outline-none"
                 />
               </div>
             </div>

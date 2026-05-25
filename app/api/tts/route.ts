@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getAssistantRequestContext } from '@/lib/ai/ai-core';
 import { ttsRateLimiter } from '@/lib/rate-limit';
 
 export const maxDuration = 15;
@@ -8,24 +8,15 @@ const DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
 
 export async function POST(req: Request) {
   try {
-    // Auth check
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    const assistantContext = await getAssistantRequestContext();
+    if (!assistantContext) {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    // Role guard — block client accounts from TTS
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    const { user } = assistantContext;
 
-    if (profile?.role === 'client') {
+    // Role guard — block client accounts from TTS
+    if (user.role === 'client') {
       return new Response(JSON.stringify({ error: 'Access denied' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' },

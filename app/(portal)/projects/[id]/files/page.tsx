@@ -102,7 +102,7 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
               {clientFiles.length}
             </span>
           </div>
-          <FileList files={clientFiles} />
+          <FileList files={clientFiles} isAdmin={profile.role === 'admin'} />
         </section>
       )}
 
@@ -114,7 +114,7 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
             Internal files
           </span>
         </div>
-        <FileList files={internalFiles} />
+        <FileList files={internalFiles} isAdmin={profile.role === 'admin'} />
       </section>
     </div>
   );

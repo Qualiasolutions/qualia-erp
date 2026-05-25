@@ -7,8 +7,13 @@ import { streamText, generateText, stepCountIs } from 'ai';
 import { geminiModel } from './gemini-client';
 import { createAgentTools, type UserInfo } from './tools';
 import { buildSystemPrompt, type EnrichedContext } from './system-prompt';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 import type { UserContext } from '@/lib/voice-assistant-intelligence';
+import { getOwnerAssistantContext } from '@/lib/owner-assistant-auth';
+
+export type AssistantSupabaseClient =
+  | Awaited<ReturnType<typeof createClient>>
+  | ReturnType<typeof createAdminClient>;
 
 export interface ProcessOptions {
   messages: Array<{ role: 'user' | 'assistant'; content: string }>;
@@ -17,6 +22,14 @@ export interface ProcessOptions {
   mode: 'chat' | 'voice';
   userContext?: UserContext;
   enrichedContext?: EnrichedContext;
+  supabaseClient?: AssistantSupabaseClient;
+}
+
+export interface AssistantRequestContext {
+  user: UserInfo;
+  workspaceId: string;
+  supabase: AssistantSupabaseClient;
+  source: 'supabase' | 'owner-code';
 }
 
 /**
@@ -54,11 +67,40 @@ export async function getWorkspaceId(userId: string): Promise<string | null> {
   return membership?.workspace_id || null;
 }
 
+export async function getAssistantRequestContext(): Promise<AssistantRequestContext | null> {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  if (authUser) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, role, skill_level')
+      .eq('id', authUser.id)
+      .single();
+
+    if (!profile) return null;
+
+    const workspaceId = await getWorkspaceId(profile.id);
+    if (!workspaceId) return null;
+
+    return {
+      user: profile,
+      workspaceId,
+      supabase,
+      source: 'supabase',
+    };
+  }
+
+  return getOwnerAssistantContext();
+}
+
 /**
  * Process AI request with streaming (for chat)
  */
 export async function processStreamingAI(options: ProcessOptions) {
-  const supabase = await createClient();
+  const supabase = options.supabaseClient || (await createClient());
 
   const systemPrompt = buildSystemPrompt({
     user: options.user,
@@ -93,7 +135,7 @@ export async function processStreamingAI(options: ProcessOptions) {
  * Returns complete response faster for TTS
  */
 export async function processNonStreamingAI(options: ProcessOptions) {
-  const supabase = await createClient();
+  const supabase = options.supabaseClient || (await createClient());
 
   const systemPrompt = buildSystemPrompt({
     user: options.user,

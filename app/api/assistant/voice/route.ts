@@ -1,7 +1,10 @@
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
 import { chatRateLimiter } from '@/lib/rate-limit';
-import { processNonStreamingAI, getUserInfo, getWorkspaceId } from '@/lib/ai/ai-core';
+import {
+  getAssistantRequestContext,
+  processNonStreamingAI,
+  type AssistantSupabaseClient,
+} from '@/lib/ai/ai-core';
 import {
   getOrCreateUserAIContext,
   markNotesDelivered,
@@ -36,7 +39,7 @@ function logBackgroundError(label: string, error: unknown) {
 }
 
 async function buildEnrichedContext(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: AssistantSupabaseClient,
   userId: string,
   workspaceId: string
 ): Promise<{ context: EnrichedContext | undefined; hasUndeliveredNotes: boolean }> {
@@ -91,10 +94,12 @@ export async function POST(req: Request) {
       return jsonResponse({ error: 'AI service not configured. Contact support.' }, 500);
     }
 
-    const user = await getUserInfo();
-    if (!user) {
+    const assistantContext = await getAssistantRequestContext();
+    if (!assistantContext) {
       return jsonResponse({ error: 'Please sign in to use Qualia.' }, 401);
     }
+
+    const { user, workspaceId, supabase } = assistantContext;
 
     if (user.role === 'client') {
       return jsonResponse({ error: 'Qualia voice is not available for client accounts.' }, 403);
@@ -143,12 +148,6 @@ export async function POST(req: Request) {
       return jsonResponse({ error: 'The latest voice message must come from the user.' }, 400);
     }
 
-    const workspaceId = await getWorkspaceId(user.id);
-    if (!workspaceId) {
-      return jsonResponse({ error: 'No workspace is available for this account.' }, 403);
-    }
-
-    const supabase = await createClient();
     const { context: enrichedContext, hasUndeliveredNotes } = await buildEnrichedContext(
       supabase,
       user.id,
@@ -216,6 +215,7 @@ export async function POST(req: Request) {
         preferences: { language: 'mixed', formality: 'casual' },
       },
       enrichedContext,
+      supabaseClient: supabase,
     });
 
     const responseText =
