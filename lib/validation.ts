@@ -668,6 +668,15 @@ export const dashboardNoteContentSchema = z
   .min(1, 'Note content is required')
   .max(5000, 'Note content too long');
 
+export const dashboardNotePayloadSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(160, 'Title too long'),
+  content: dashboardNoteContentSchema,
+  status: z.string().min(1, 'Status is required').max(80, 'Status too long'),
+  kind: z.enum(['manual', 'automatic']).default('manual'),
+});
+
+export type DashboardNotePayload = z.infer<typeof dashboardNotePayloadSchema>;
+
 // =====================
 // Owner Update Schemas
 // =====================
