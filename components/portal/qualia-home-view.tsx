@@ -56,13 +56,9 @@ const OWNER_WAITING_ITEMS = [
   { status: 'Waiting on requirements', item: 'SHSO' },
   { status: 'Waiting on requirements', item: 'Kronospan' },
   { status: 'Waiting on requirements', item: 'Velicor' },
-  { status: 'Reply / forms', item: '7Buddas - ask him to refill the form' },
   { status: 'Website remake', item: 'AI Expo / Maxim - remake the Health AI Expo website' },
   { status: 'Close-off', item: 'Geo - close off officially what is happening' },
   { status: 'Waiting on demo', item: 'Moayad demo' },
-  { status: 'Waiting on decision', item: 'Sanad Dispatcher' },
-  { status: 'Waiting on decision', item: 'Fotini' },
-  { status: 'Proposal to create', item: 'Cellas - create proposal' },
 ] as const;
 
 type OwnerWaitingItem = (typeof OWNER_WAITING_ITEMS)[number];
