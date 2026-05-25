@@ -5,9 +5,8 @@
  * Enriched with cross-session context (admin notes, summaries, work context)
  */
 
-import { processStreamingAI, getUserInfo, getWorkspaceId } from '@/lib/ai/ai-core';
+import { getAssistantRequestContext, processStreamingAI } from '@/lib/ai/ai-core';
 import { chatRateLimiter } from '@/lib/rate-limit';
-import { createClient } from '@/lib/supabase/server';
 import { generateSimpleResponse } from '@/lib/ai/ai-core';
 import {
   getOrCreateUserAIContext,
@@ -81,11 +80,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get authenticated user
-    const user = await getUserInfo();
-    if (!user) {
+    // Get authenticated user or the private owner-assistant session
+    const assistantContext = await getAssistantRequestContext();
+    if (!assistantContext) {
       return jsonError('Please sign in to use the AI assistant', 401);
     }
+
+    const { user, workspaceId, supabase } = assistantContext;
 
     // Role guard — block client accounts from AI assistant
     if (user.role === 'client') {
@@ -142,13 +143,6 @@ export async function POST(req: Request) {
     if (messages[messages.length - 1]?.role !== 'user') {
       return jsonError('The latest chat message must come from the user.', 400);
     }
-
-    // Get workspace
-    const workspaceId = await getWorkspaceId(user.id);
-    if (!workspaceId) {
-      return jsonError('No workspace is available for this account.', 403);
-    }
-    const supabase = await createClient();
 
     // Fetch enriched context (admin notes, summaries, work context)
     let enrichedContext: EnrichedContext | undefined;
@@ -303,6 +297,7 @@ export async function POST(req: Request) {
         workspaceId,
         mode: 'chat',
         enrichedContext,
+        supabaseClient: supabase,
       });
 
       // Build response with conversation ID header

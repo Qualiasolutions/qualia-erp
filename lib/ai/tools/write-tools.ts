@@ -12,6 +12,7 @@ import {
   sendZohoEmail,
   getZohoContacts,
 } from '@/lib/integrations/zoho';
+import { createGoogleMeetCalendarEvent } from '@/lib/google-calendar';
 
 interface UserInfo {
   id: string;
@@ -368,6 +369,24 @@ export function createWriteTools(
         // Default end time to 1 hour after start
         const startDate = new Date(start_time);
         const defaultEnd = end_time || new Date(startDate.getTime() + 60 * 60 * 1000).toISOString();
+        let googleMeeting;
+        try {
+          googleMeeting = await createGoogleMeetCalendarEvent({
+            title,
+            description: description || null,
+            startTime: start_time,
+            endTime: defaultEnd,
+            timezone: 'Europe/Nicosia',
+            attendees: user.email ? [{ email: user.email, displayName: user.full_name }] : [],
+          });
+        } catch (error) {
+          return {
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to create automatic Google Meet link for this meeting',
+          };
+        }
 
         const { data, error } = await supabase
           .from('meetings')
@@ -380,8 +399,11 @@ export function createWriteTools(
             project_id: project_id || null,
             created_by: user.id,
             workspace_id: workspaceId,
+            meeting_link: googleMeeting.meetingLink,
+            google_calendar_event_id: googleMeeting.eventId,
+            google_calendar_html_link: googleMeeting.htmlLink,
           })
-          .select('id, title, start_time')
+          .select('id, title, start_time, meeting_link')
           .single();
 
         if (error) return { error: error.message };

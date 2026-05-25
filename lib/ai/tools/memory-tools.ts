@@ -134,7 +134,7 @@ export function createMemoryTools(
         const { data: tasks } = await supabase
           .from('tasks')
           .select('title, status, priority, updated_at, project:projects(name)')
-          .eq('assigned_to', targetId)
+          .eq('assignee_id', targetId)
           .order('updated_at', { ascending: false })
           .limit(10);
 

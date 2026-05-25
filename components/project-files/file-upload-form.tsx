@@ -23,13 +23,16 @@ import {
   FileText,
   FileVideo,
   FolderUp,
+  Link as LinkIcon,
   Loader2,
+  Plus,
   Upload,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { uploadProjectFile } from '@/app/actions/project-files';
+import { createProjectFileLink, uploadProjectFile } from '@/app/actions/project-files';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -44,6 +47,24 @@ import { cn } from '@/lib/utils';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_PARALLEL_UPLOADS = 3;
+const ACCEPTED_FILE_TYPES = [
+  'image/*',
+  'application/pdf',
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.ppt',
+  '.pptx',
+  '.txt',
+  '.csv',
+  '.md',
+  '.json',
+  '.zip',
+  '.rar',
+  'video/*',
+  'audio/*',
+].join(',');
 
 type UploadState = 'queued' | 'uploading' | 'success' | 'error';
 
@@ -113,6 +134,9 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
   const [selectedPhase, setSelectedPhase] = useState<string>('none');
   const [isClientVisible, setIsClientVisible] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [linkTitle, setLinkTitle] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [isAddingLink, setIsAddingLink] = useState(false);
 
   const queued = useMemo(() => items.filter((i) => i.state === 'queued'), [items]);
   const hasItems = items.length > 0;
@@ -263,6 +287,33 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
     }
   };
 
+  const handleAddLink = async () => {
+    if (!linkUrl.trim() || isAddingLink) return;
+    setIsAddingLink(true);
+    try {
+      const formData = new FormData();
+      formData.set('project_id', projectId);
+      formData.set('title', linkTitle.trim() || linkUrl.trim());
+      formData.set('url', linkUrl.trim());
+      if (description) formData.set('description', description);
+      formData.set('is_client_visible', String(isClientVisible));
+
+      const result = await createProjectFileLink(formData);
+      if (!result.success) {
+        toast.error(result.error || 'Failed to add link');
+        return;
+      }
+
+      toast.success('Link added');
+      setLinkTitle('');
+      setLinkUrl('');
+      router.refresh();
+      onUploadComplete?.();
+    } finally {
+      setIsAddingLink(false);
+    }
+  };
+
   return (
     <div className="rounded-xl border border-border bg-card">
       {/* Dropzone */}
@@ -336,6 +387,7 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
             id={inputId}
             type="file"
             multiple
+            accept={ACCEPTED_FILE_TYPES}
             className="hidden"
             onChange={handlePick}
             disabled={isUploading}
@@ -344,6 +396,7 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
             ref={folderInputRef}
             type="file"
             multiple
+            accept={ACCEPTED_FILE_TYPES}
             className="hidden"
             onChange={handleFolderPick}
             disabled={isUploading}
@@ -351,6 +404,40 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
             // a TS error since `webkitdirectory` isn't in React's type defs.
             {...({ webkitdirectory: '', directory: '' } as Record<string, string>)}
           />
+        </div>
+
+        <div className="mt-3 grid gap-2 rounded-lg border border-border bg-background/60 p-3 sm:grid-cols-[1fr_1.4fr_auto]">
+          <Input
+            value={linkTitle}
+            onChange={(e) => setLinkTitle(e.target.value)}
+            placeholder="Link title"
+            disabled={isAddingLink}
+            className="h-9"
+          />
+          <Input
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder="https://..."
+            type="url"
+            disabled={isAddingLink}
+            className="h-9"
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-9 gap-1.5"
+            onClick={handleAddLink}
+            disabled={isAddingLink || !linkUrl.trim()}
+            aria-label="Add project link"
+          >
+            {isAddingLink ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Plus className="h-3.5 w-3.5" />
+            )}
+            <LinkIcon className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
 

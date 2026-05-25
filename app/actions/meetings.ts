@@ -9,6 +9,7 @@ import {
   updateMeetingSchema,
 } from '@/lib/validation';
 import { notifyMeetingCreated } from '@/lib/email';
+import { createGoogleMeetCalendarEvent, isGoogleMeetLink } from '@/lib/google-calendar';
 import { getCurrentWorkspaceId } from './workspace';
 import { logClientActivity } from './clients';
 import {
@@ -43,6 +44,47 @@ type MeetingResponse = {
     profile: FKResponse<ProfileRef>;
   }>;
 };
+
+type MeetingForGoogleMeet = {
+  id: string;
+  title: string;
+  description: string | null;
+  start_time: string;
+  end_time: string;
+  meeting_link: string | null;
+  attendees?: Array<{
+    profile?:
+      | { full_name: string | null; email: string | null }
+      | { full_name: string | null; email: string | null }[]
+      | null;
+  }>;
+  external_attendees?: Array<{
+    name: string | null;
+    email: string;
+  }>;
+};
+
+function googleCalendarAttendeesForMeeting(meeting: MeetingForGoogleMeet) {
+  const recipients = new Map<string, { email: string; displayName?: string | null }>();
+
+  for (const attendee of meeting.attendees || []) {
+    const profile = Array.isArray(attendee.profile) ? attendee.profile[0] : attendee.profile;
+    if (!profile?.email) continue;
+    recipients.set(profile.email.toLowerCase(), {
+      email: profile.email,
+      displayName: profile.full_name,
+    });
+  }
+
+  for (const attendee of meeting.external_attendees || []) {
+    recipients.set(attendee.email.toLowerCase(), {
+      email: attendee.email,
+      displayName: attendee.name,
+    });
+  }
+
+  return [...recipients.values()];
+}
 
 // ============ MEETING ACTIONS ============
 
@@ -105,6 +147,60 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     finalClientId = newClient.id;
   }
 
+  const attendeeIds = formData.getAll('attendee_ids') as string[];
+  const internalAttendees =
+    attendeeIds.length > 0
+      ? (await supabase.from('profiles').select('id, full_name, email').in('id', attendeeIds))
+          .data || []
+      : [];
+
+  const clientAttendees =
+    finalClientId && wsId
+      ? (
+          await supabase
+            .from('client_contacts')
+            .select('name, email')
+            .eq('client_id', finalClientId)
+            .not('email', 'is', null)
+            .order('is_primary', { ascending: false })
+            .limit(3)
+        ).data || []
+      : [];
+
+  let googleMeeting;
+  try {
+    googleMeeting = await createGoogleMeetCalendarEvent({
+      title: title.trim(),
+      description: description?.trim() || null,
+      startTime: start_time,
+      endTime: end_time,
+      timezone: 'Europe/Nicosia',
+      attendees: [
+        ...internalAttendees
+          .filter((attendee) => attendee.email)
+          .map((attendee) => ({
+            email: attendee.email as string,
+            displayName: attendee.full_name,
+          })),
+        ...clientAttendees
+          .filter((attendee) => attendee.email)
+          .map((attendee) => ({
+            email: attendee.email as string,
+            displayName: attendee.name,
+          })),
+      ],
+    });
+  } catch (error) {
+    console.error('[createMeeting] Google Meet creation failed:', error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to create automatic Google Meet link for this meeting',
+    };
+  }
+
   const { data, error } = await supabase
     .from('meetings')
     .insert({
@@ -116,7 +212,9 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
       client_id: finalClientId || null,
       created_by: user.id,
       workspace_id: wsId,
-      meeting_link: meeting_link || null,
+      meeting_link: googleMeeting.meetingLink || meeting_link || null,
+      google_calendar_event_id: googleMeeting.eventId,
+      google_calendar_html_link: googleMeeting.htmlLink,
     })
     .select()
     .single();
@@ -127,7 +225,6 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
   }
 
   // Batch-insert attendees if any were selected
-  const attendeeIds = formData.getAll('attendee_ids') as string[];
   if (attendeeIds.length > 0) {
     const attendeeRows = attendeeIds.map((profileId) => ({
       meeting_id: data.id,
@@ -422,6 +519,28 @@ export async function updateMeeting(data: {
     return { success: false, error: 'You do not have permission to update this meeting' };
   }
 
+  const { data: existingMeeting, error: existingMeetingError } = await supabase
+    .from('meetings')
+    .select(
+      `
+        id,
+        title,
+        description,
+        start_time,
+        end_time,
+        meeting_link,
+        attendees:meeting_attendees(profile:profiles(full_name, email)),
+        external_attendees:meeting_external_attendees(name, email)
+      `
+    )
+    .eq('id', id)
+    .single();
+
+  if (existingMeetingError || !existingMeeting) {
+    console.error('Error loading meeting before update:', existingMeetingError);
+    return { success: false, error: existingMeetingError?.message || 'Meeting not found' };
+  }
+
   // Build update object, only including defined fields
   // Convert empty strings to null for nullable/timestamp columns
   const updates: Record<string, unknown> = {};
@@ -438,6 +557,47 @@ export async function updateMeeting(data: {
     updates.client_id = updateData.client_id === '' ? null : updateData.client_id;
   if (updateData.meeting_link !== undefined)
     updates.meeting_link = updateData.meeting_link === '' ? null : updateData.meeting_link;
+
+  const mergedMeeting: MeetingForGoogleMeet = {
+    ...((existingMeeting as unknown as MeetingForGoogleMeet) || {}),
+    title: (updates.title as string | undefined) || existingMeeting.title,
+    description:
+      updates.description !== undefined
+        ? (updates.description as string | null)
+        : existingMeeting.description,
+    start_time: (updates.start_time as string | undefined) || existingMeeting.start_time,
+    end_time: (updates.end_time as string | undefined) || existingMeeting.end_time,
+    meeting_link:
+      updates.meeting_link !== undefined
+        ? (updates.meeting_link as string | null)
+        : existingMeeting.meeting_link,
+  };
+
+  if (!isGoogleMeetLink(mergedMeeting.meeting_link)) {
+    try {
+      const googleMeeting = await createGoogleMeetCalendarEvent({
+        title: mergedMeeting.title,
+        description: mergedMeeting.description,
+        startTime: mergedMeeting.start_time,
+        endTime: mergedMeeting.end_time,
+        timezone: 'Europe/Nicosia',
+        attendees: googleCalendarAttendeesForMeeting(mergedMeeting),
+      });
+
+      updates.meeting_link = googleMeeting.meetingLink;
+      updates.google_calendar_event_id = googleMeeting.eventId;
+      updates.google_calendar_html_link = googleMeeting.htmlLink;
+    } catch (error) {
+      console.error('[updateMeeting] Google Meet creation failed:', error);
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to create automatic Google Meet link for this meeting',
+      };
+    }
+  }
   updates.updated_at = new Date().toISOString();
 
   const { data: updatedMeeting, error } = await supabase
@@ -517,6 +677,27 @@ export async function createInstantMeeting(title?: string): Promise<ActionResult
     title ||
     `Quick Meeting - ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
 
+  let googleMeeting;
+  try {
+    googleMeeting = await createGoogleMeetCalendarEvent({
+      title: meetingTitle,
+      description: 'Instant meeting created from dashboard',
+      startTime: now.toISOString(),
+      endTime: endTime.toISOString(),
+      timezone: 'Europe/Nicosia',
+      attendees: user.email ? [{ email: user.email }] : [],
+    });
+  } catch (error) {
+    console.error('[createInstantMeeting] Google Meet creation failed:', error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to create automatic Google Meet link for this meeting',
+    };
+  }
+
   const { data, error } = await supabase
     .from('meetings')
     .insert({
@@ -526,7 +707,9 @@ export async function createInstantMeeting(title?: string): Promise<ActionResult
       end_time: endTime.toISOString(),
       workspace_id: wsId,
       created_by: user.id,
-      meeting_link: null, // Will be updated when host pastes the link
+      meeting_link: googleMeeting.meetingLink,
+      google_calendar_event_id: googleMeeting.eventId,
+      google_calendar_html_link: googleMeeting.htmlLink,
     })
     .select()
     .single();
