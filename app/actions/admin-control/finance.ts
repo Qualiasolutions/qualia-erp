@@ -41,6 +41,7 @@ export type FinanceRecurringRow = {
   client_id: string | null;
   client_name: string | null;
   category: string | null;
+  day_of_month: number;
   start_date: string | null;
   end_date: string | null;
   is_active: boolean;
@@ -89,6 +90,9 @@ export type FinancePayload = {
   clientHealth: FinanceClientHealthRow[];
   agingBands: FinanceAgingBand[];
   totalOverdue: number;
+  overdueCount: number;
+  monthlyOutgoing: number;
+  monthlyNet: number;
   recurringSharePct: number | null;
   oneOffThisMonth: number;
   lastSyncedAt: string | null;
@@ -96,11 +100,6 @@ export type FinancePayload = {
   billableClients: BillableClient[];
 };
 
-const fmt = new Intl.NumberFormat('en-GB', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-});
 const fmt2 = new Intl.NumberFormat('en-GB', {
   style: 'currency',
   currency: 'EUR',
@@ -118,6 +117,7 @@ function toRow(r: RecurringPaymentRow): FinanceRecurringRow {
     client_id: r.client_id,
     client_name: r.client_name,
     category: r.category,
+    day_of_month: r.day_of_month,
     start_date: r.start_date,
     end_date: r.end_date,
     is_active: r.is_active,
@@ -172,7 +172,17 @@ export async function loadFinanceTab(): Promise<FinancePayload> {
   const recurringSharePct =
     mrr.expectedThisMonth > 0 ? Math.round((mrr.mrrCurrent / mrr.expectedThisMonth) * 100) : null;
 
-  // KPI A — MRR + Expected this month always render, even when Zoho summary is empty.
+  // Monthly outgoing — sum of active outgoing recurring payments normalized to monthly.
+  const monthlyOutgoing = recurring
+    .filter((r) => r.is_active && r.type === 'outgoing')
+    .reduce((sum, r) => {
+      if (r.frequency === 'monthly') return sum + r.amount;
+      if (r.frequency === 'yearly') return sum + r.amount / 12;
+      return sum;
+    }, 0);
+  const monthlyNet = mrr.mrrCurrent - monthlyOutgoing;
+
+  // KPI strip — owner cashflow first; Zoho-collected lives on /billing.
   const mrrDeltaPct =
     mrr.mrrCurrent > 0 ? ((mrr.mrrNextMonth - mrr.mrrCurrent) / mrr.mrrCurrent) * 100 : null;
   const kpis: FinanceKpi[] = [
@@ -192,28 +202,19 @@ export async function loadFinanceTab(): Promise<FinancePayload> {
         oneOffsThisMonth > 0 ? `incl. ${fmt2.format(oneOffsThisMonth)} one-off` : 'recurring only',
       deltaPct: null,
     },
+    {
+      label: 'Monthly expenses',
+      value: fmt2.format(monthlyOutgoing),
+      sub: 'salaries + rent + subs',
+      deltaPct: null,
+    },
+    {
+      label: 'Net monthly',
+      value: fmt2.format(monthlyNet),
+      sub: monthlyNet >= 0 ? 'in the black' : 'cover the gap',
+      deltaPct: null,
+    },
   ];
-
-  if (summary) {
-    const deltaThisMonth = summary.thisMonthCollected - summary.lastMonthCollected;
-    const deltaSign = deltaThisMonth >= 0 ? '+' : '';
-    const collectedDeltaPct =
-      summary.lastMonthCollected > 0 ? (deltaThisMonth / summary.lastMonthCollected) * 100 : null;
-    kpis.push(
-      {
-        label: 'Collected this month',
-        value: fmt.format(summary.thisMonthCollected),
-        sub: `${deltaSign}${fmt.format(Math.round(deltaThisMonth))} vs last`,
-        deltaPct: collectedDeltaPct,
-      },
-      {
-        label: 'Outstanding',
-        value: fmt.format(summary.totalOutstanding),
-        sub: `${summary.overdueInvoices.length} overdue`,
-        deltaPct: null,
-      }
-    );
-  }
 
   const recentPayments: FinancePaymentRow[] = summary
     ? summary.allPayments.slice(0, 10).map((p) => ({
@@ -346,6 +347,9 @@ export async function loadFinanceTab(): Promise<FinancePayload> {
       agingBand('90d+', 91, Number.POSITIVE_INFINITY),
     ],
     totalOverdue: summary?.totalOverdue ?? 0,
+    overdueCount: summary?.overdueInvoices.length ?? 0,
+    monthlyOutgoing,
+    monthlyNet,
     recurringSharePct,
     oneOffThisMonth: Math.max(0, mrr.expectedThisMonth - mrr.mrrCurrent),
     lastSyncedAt: summary?.lastSyncedAt ?? null,

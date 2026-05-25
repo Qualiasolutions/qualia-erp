@@ -41,6 +41,13 @@ const LINKS: SectionLink[] = [
     match: (p, tab) => p === '/admin' && tab === 'team',
   },
   {
+    href: '/admin?tab=delivery',
+    label: 'Delivery',
+    group: 'Command',
+    icon: ClipboardCheck,
+    match: (p, tab) => p === '/admin' && tab === 'delivery',
+  },
+  {
     href: '/admin?tab=finance',
     label: 'Finance',
     group: 'Command',
