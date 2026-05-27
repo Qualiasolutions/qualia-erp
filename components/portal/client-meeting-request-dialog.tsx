@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarIcon, Clock, Loader2, Send } from 'lucide-react';
+import { Clock, Loader2, Send } from 'lucide-react';
 import { addMinutes, format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -177,7 +176,7 @@ export function ClientMeetingRequestDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="overflow-hidden p-0 sm:max-w-[560px]">
+      <DialogContent className="overflow-hidden p-0 sm:max-w-[760px]">
         <div className="border-b border-border bg-card/40 px-6 pb-5 pt-6">
           <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
             <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
@@ -233,94 +232,82 @@ export function ClientMeetingRequestDialog({
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Date picker */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[auto_1fr]">
+            {/* Date picker — inline calendar */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      'h-11 w-full justify-start gap-2 rounded-xl font-normal',
-                      !selectedDate && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="h-4 w-4 text-primary" />
-                    {selectedDate ? format(selectedDate, 'PPP') : 'Choose a date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto border-border bg-card/95 p-0 backdrop-blur-xl"
-                  align="start"
-                >
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    disabled={(date) => date < today}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="rounded-xl border border-border bg-card/50 p-3">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  disabled={(date) => date < today}
+                />
+              </div>
+              <p className="min-h-[16px] text-xs text-muted-foreground" aria-live="polite">
+                {selectedDate
+                  ? format(selectedDate, 'EEEE, MMMM d, yyyy')
+                  : 'Pick a date to continue'}
+              </p>
             </div>
 
-            {/* Duration */}
-            <div className="space-y-2">
-              <Label htmlFor="meeting-request-duration" className="text-sm font-medium">
-                Duration
-              </Label>
-              <Select
-                value={String(duration)}
-                onValueChange={(value) => setDuration(Number(value))}
-              >
-                <SelectTrigger
-                  id="meeting-request-duration"
-                  className="h-11 rounded-xl text-[14px]"
+            {/* Right column: duration + time slots */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="meeting-request-duration" className="text-sm font-medium">
+                  Duration
+                </Label>
+                <Select
+                  value={String(duration)}
+                  onValueChange={(value) => setDuration(Number(value))}
                 >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DURATION_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={String(opt.value)}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Time slots — 30-min grid 9 AM to 6 PM */}
-          <div className="space-y-2.5">
-            <div className="flex items-center gap-2">
-              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-              <Label className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                Time
-              </Label>
-            </div>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {TIME_SLOTS.map((slot) => {
-                const active = selectedTime === slot.value;
-                return (
-                  <button
-                    key={slot.value}
-                    type="button"
-                    onClick={() => setSelectedTime(slot.value)}
-                    aria-pressed={active}
-                    className={cn(
-                      'rounded-xl border px-2 py-2 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors duration-150',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-                      active
-                        ? 'border-primary/40 bg-primary/[0.08] text-foreground'
-                        : 'border-border bg-card text-muted-foreground hover:border-primary/25 hover:text-foreground'
-                    )}
+                  <SelectTrigger
+                    id="meeting-request-duration"
+                    className="h-11 rounded-xl text-[14px]"
                   >
-                    {slot.label}
-                  </button>
-                );
-              })}
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DURATION_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={String(opt.value)}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Time slots — 30-min grid 9 AM to 6 PM */}
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Label className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    Time
+                  </Label>
+                </div>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {TIME_SLOTS.map((slot) => {
+                    const active = selectedTime === slot.value;
+                    return (
+                      <button
+                        key={slot.value}
+                        type="button"
+                        onClick={() => setSelectedTime(slot.value)}
+                        aria-pressed={active}
+                        className={cn(
+                          'rounded-xl border px-2 py-2 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors duration-150',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                          active
+                            ? 'border-primary/40 bg-primary/[0.08] text-foreground'
+                            : 'border-border bg-card text-muted-foreground hover:border-primary/25 hover:text-foreground'
+                        )}
+                      >
+                        {slot.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 
