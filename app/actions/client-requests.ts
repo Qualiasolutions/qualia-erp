@@ -5,7 +5,11 @@ import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { type ActionResult, isUserAdmin } from './shared';
 import { notifyAdminsAndAssignedEmployees } from '@/lib/notifications';
 import { notifyAdminAndAssignedOfClientActivity, sendRequestCompletedEmail } from '@/lib/email';
-import { getEmployeeProjectIds, isStaffOnProject } from '@/lib/auth/is-staff-on-project';
+import {
+  getClientSharedProjectIds,
+  getEmployeeProjectIds,
+  isStaffOnProject,
+} from '@/lib/auth/is-staff-on-project';
 import { FeatureRequestCreateSchema, UpdateFeatureRequestSchema } from '@/lib/validation';
 import { assertNotImpersonating } from '@/lib/portal-utils';
 
@@ -174,8 +178,14 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
         if (projectIds.length === 0) return { success: true, data: [] };
         query = query.in('project_id', projectIds);
       } else {
-        // Clients only see their own (RLS enforces this too)
-        query = query.eq('client_id', user.id);
+        // Clients see every request on a project they share via
+        // client_projects (RLS enforces the same boundary). If they have no
+        // shared projects, short-circuit to an empty list — querying with
+        // an empty .in() would return everything they can read which is
+        // not what we want here.
+        const sharedProjectIds = await getClientSharedProjectIds(user.id);
+        if (sharedProjectIds.length === 0) return { success: true, data: [] };
+        query = query.in('project_id', sharedProjectIds);
       }
     }
 
@@ -1074,7 +1084,12 @@ export async function getOpenRequestsCount(): Promise<ActionResult> {
         if (projectIds.length === 0) return { success: true, data: 0 };
         query = query.in('project_id', projectIds);
       } else {
-        query = query.eq('client_id', user.id);
+        // Client: count every open request on a project they share. Matches
+        // the visibility surface in getClientFeatureRequests so the badge
+        // and the list stay in sync.
+        const sharedProjectIds = await getClientSharedProjectIds(user.id);
+        if (sharedProjectIds.length === 0) return { success: true, data: 0 };
+        query = query.in('project_id', sharedProjectIds);
       }
     }
 
