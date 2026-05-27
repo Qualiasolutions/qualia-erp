@@ -1,7 +1,7 @@
 'use client';
 
 import { usePortalDashboard } from '@/lib/swr';
-import { QualiaPortalHub } from '@/components/portal/qualia-portal-hub';
+import { QualiaPortalHub, type PortalUserRole } from '@/components/portal/qualia-portal-hub';
 import dynamic from 'next/dynamic';
 const PortalWelcomeTour = dynamic(
   () =>
@@ -18,6 +18,7 @@ interface PortalDashboardContentProps {
   enabledApps?: string[];
   logoUrl?: string | null;
   showWelcomeTour?: boolean;
+  userRole: PortalUserRole;
 }
 
 interface DashboardStats {
@@ -64,6 +65,7 @@ export function PortalDashboardContent({
   enabledApps,
   logoUrl,
   showWelcomeTour = true,
+  userRole,
 }: PortalDashboardContentProps) {
   const { data, isLoading, isError, revalidate } = usePortalDashboard(clientId);
 
@@ -108,6 +110,7 @@ export function PortalDashboardContent({
         enabledApps={enabledApps}
         upcomingMeetings={upcomingMeetings}
         upcomingInvoice={stats?.upcomingInvoice ?? null}
+        userRole={userRole}
       />
     </>
   );

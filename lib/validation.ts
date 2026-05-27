@@ -675,3 +675,28 @@ export const updateOwnerUpdateSchema = z.object({
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
   pinned: z.boolean().optional(),
 });
+
+// =====================
+// Client Meeting Request Schema
+// =====================
+// Submitted from the portal dashboard's "Book a meeting" dialog when the
+// signed-in user is a client. Distinct from `createMeetingSchema` because
+// clients do NOT pick attendees, do NOT supply a meeting_link, and do NOT
+// touch workspace_id directly (it's resolved server-side from the project).
+export const requestMeetingSchema = z
+  .object({
+    projectId: z.string().uuid('Invalid project ID'),
+    title: z
+      .string()
+      .min(1, 'Topic is required')
+      .max(200, 'Topic must be less than 200 characters'),
+    description: z.string().max(2000, 'Description too long').optional(),
+    startTime: z.string().min(1, 'Start time is required'),
+    endTime: z.string().min(1, 'End time is required'),
+  })
+  .refine((data) => new Date(data.endTime) > new Date(data.startTime), {
+    message: 'End time must be after start time',
+    path: ['endTime'],
+  });
+
+export type RequestMeetingInput = z.infer<typeof requestMeetingSchema>;

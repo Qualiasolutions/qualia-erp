@@ -16,7 +16,10 @@ import { cn } from '@/lib/utils';
 import { hueFromId, clientAccent } from '@/lib/color-constants';
 import { formatEURCompact } from '@/lib/currency';
 import { NewMeetingModalControlled } from '@/components/new-meeting-modal';
+import { ClientMeetingRequestDialog } from '@/components/portal/client-meeting-request-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
+
+export type PortalUserRole = 'admin' | 'employee' | 'client';
 
 /* ======================================================================
    Types
@@ -75,6 +78,7 @@ export interface QualiaPortalHubProps {
   enabledApps?: string[];
   upcomingMeetings?: HubMeeting[];
   upcomingInvoice: HubUpcomingInvoice | null;
+  userRole: PortalUserRole;
 }
 
 /* ======================================================================
@@ -115,6 +119,7 @@ export function QualiaPortalHub({
   companyName,
   upcomingMeetings = [],
   upcomingInvoice,
+  userRole,
 }: QualiaPortalHubProps) {
   const hue = useMemo(() => hueFromId(clientId), [clientId]);
   const accentColor = useMemo(() => clientAccent(hue), [hue]);
@@ -210,7 +215,12 @@ export function QualiaPortalHub({
         <div className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-[2fr_1fr]">
           <EngagementsSection projects={projects} accentColor={accentColor} isLoading={isLoading} />
           <aside className="flex flex-col gap-8">
-            <MeetingsSidebar meetings={upcomingMeetings} accentColor={accentColor} />
+            <MeetingsSidebar
+              meetings={upcomingMeetings}
+              accentColor={accentColor}
+              userRole={userRole}
+              clientId={clientId}
+            />
             <UpcomingInvoiceCard upcomingInvoice={upcomingInvoice} accentColor={accentColor} />
             <ThreadCard
               destination={threadDestination}
@@ -427,11 +437,16 @@ function formatMeetingDate(value: string) {
 function MeetingsSidebar({
   meetings,
   accentColor,
+  userRole,
+  clientId,
 }: {
   meetings: HubMeeting[];
   accentColor: string;
+  userRole: PortalUserRole;
+  clientId: string;
 }) {
   const [meetingModalOpen, setMeetingModalOpen] = useState(false);
+  const isClient = userRole === 'client';
 
   return (
     <section>
@@ -518,7 +533,15 @@ function MeetingsSidebar({
           )}
         </div>
       </div>
-      <NewMeetingModalControlled open={meetingModalOpen} onOpenChange={setMeetingModalOpen} />
+      {isClient ? (
+        <ClientMeetingRequestDialog
+          open={meetingModalOpen}
+          onOpenChange={setMeetingModalOpen}
+          clientId={clientId}
+        />
+      ) : (
+        <NewMeetingModalControlled open={meetingModalOpen} onOpenChange={setMeetingModalOpen} />
+      )}
     </section>
   );
 }

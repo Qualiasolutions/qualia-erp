@@ -34,6 +34,7 @@ type MeetingResponse = {
   created_at: string;
   project_id: string | null;
   created_by: string | null;
+  status: string;
   project: FKResponse<{ id: string; name: string }>;
   client: FKResponse<{ id: string; display_name: string; lead_status: string | null }>;
   creator: FKResponse<ProfileRef>;
@@ -246,6 +247,7 @@ export async function getMeetings(
             created_at,
             project_id,
             created_by,
+            status,
             read_ai_session_id,
             report_url,
             recording_url,
@@ -352,6 +354,7 @@ export async function getTodaysMeetings(workspaceId?: string | null) {
     .from('meetings')
     .select(
       `id, title, description, start_time, end_time, meeting_link, created_at,
+       status,
        read_ai_session_id, report_url, recording_url, summary, topics, action_items,
        key_questions, chapter_summaries, participants_meta, ingested_at,
        project:projects (id, name),

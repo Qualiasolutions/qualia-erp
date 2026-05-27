@@ -106,6 +106,7 @@ export default async function PortalDashboard({
           companyName={rawClient.name}
           logoUrl={logoUrl}
           showWelcomeTour={false}
+          userRole={effectiveRole as 'admin' | 'employee' | 'client'}
         />
       );
     }
@@ -136,6 +137,7 @@ export default async function PortalDashboard({
         companyName={companyName}
         logoUrl={logoUrl}
         showWelcomeTour={false}
+        userRole={effectiveRole as 'admin' | 'employee' | 'client'}
       />
     );
   }
@@ -163,6 +165,7 @@ export default async function PortalDashboard({
       companyName={companyName}
       logoUrl={logoUrl}
       showWelcomeTour={realRole === 'client'}
+      userRole={effectiveRole as 'admin' | 'employee' | 'client'}
     />
   );
 }
