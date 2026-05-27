@@ -404,23 +404,31 @@ export function ProjectDetailView({
               </div>
             )}
 
-            {/* Resources — links to live docs/deploys; visible to clients */}
-            <div className="min-h-0 flex-1 border-b border-border">
-              <ProjectResources
-                projectId={project.id}
-                initialResources={project.metadata?.resources || []}
-                className="h-full rounded-none border-0"
-              />
-            </div>
-
-            {/* Files — inline project documents panel */}
-            <div className="min-h-0 flex-1">
-              <ProjectFilesPanel
-                projectId={project.id}
-                isClient={isClient}
-                isAdmin={isAdmin}
-                className="h-full rounded-none border-0"
-              />
+            {/* Attachments — Resources (links) + Files (uploads) under one section */}
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="flex shrink-0 items-center gap-2 border-b border-border p-4">
+                <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-amber-500/10">
+                  <Folder className="h-3.5 w-3.5 text-amber-400" />
+                </div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Attachments
+                </p>
+              </div>
+              <div className="min-h-0 flex-1 border-b border-border">
+                <ProjectResources
+                  projectId={project.id}
+                  initialResources={project.metadata?.resources || []}
+                  className="h-full rounded-none border-0"
+                />
+              </div>
+              <div className="min-h-0 flex-1">
+                <ProjectFilesPanel
+                  projectId={project.id}
+                  isClient={isClient}
+                  isAdmin={isAdmin}
+                  className="h-full rounded-none border-0"
+                />
+              </div>
             </div>
           </aside>
         </div>
