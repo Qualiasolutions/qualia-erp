@@ -38,6 +38,32 @@ export function useTeamTodaySnapshot() {
   };
 }
 
+export function useMyAdminHomeProjects(userId?: string) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    userId ? cacheKeys.myAdminHomeProjects(userId) : null,
+    async () => {
+      const { getMyAdminHomeProjects } = await import('@/app/actions/admin-home');
+      return getMyAdminHomeProjects();
+    },
+    slowRefreshConfig
+  );
+
+  return {
+    projects: data ?? [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
 // ============================================================================
 // OWNER UPDATES HOOKS
 // ============================================================================

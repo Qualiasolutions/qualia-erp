@@ -14,19 +14,19 @@ interface AdminContentProps {
 
 export function AdminContent({ workspaceId }: AdminContentProps) {
   return (
-    <div className="space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
-      {/* Page header */}
-      <header>
-        <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight text-foreground">
-          Portal Administration
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage apps, branding, and client access
-        </p>
+    <div className="space-y-4 px-4 pb-6 pt-16 md:px-6 md:pt-6">
+      <header className="rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex items-center gap-2">
+          <h1 className="text-base font-semibold tracking-tight text-foreground">Portal admin</h1>
+          <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+          <p className="truncate text-sm text-muted-foreground">
+            Apps, branding, and client access
+          </p>
+        </div>
       </header>
 
       {/* Tabbed sections */}
-      <Tabs defaultValue="apps" className="space-y-6">
+      <Tabs defaultValue="apps" className="space-y-4">
         <TabsList>
           <TabsTrigger value="apps" className="gap-1.5">
             <LayoutGrid className="h-4 w-4" />

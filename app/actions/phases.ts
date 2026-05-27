@@ -539,11 +539,17 @@ export async function calculateProjectsProgress(
  * Creates 6 phases (SETUP→DISCUSS→PLAN→EXECUTE→VERIFY→SHIP) with type-specific tasks.
  */
 export async function loadQualiaFrameworkPipeline(projectId: string) {
+  const imp = await assertNotImpersonating();
+  if (!imp.ok) return { success: false, error: imp.error };
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
+
+  const isPriv = await isUserAdmin(user.id);
+  if (!isPriv) return { success: false, error: 'Not authorized' };
 
   // Get project to determine type
   const { data: project, error: projectError } = await supabase

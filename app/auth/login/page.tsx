@@ -8,7 +8,19 @@ export const metadata: Metadata = {
   description: 'Sign in to Qualia Suite — your project portal by Qualia Solutions.',
 };
 
-export default function Page() {
+interface PageProps {
+  searchParams: Promise<{ next?: string }>;
+}
+
+function safeNextPath(next?: string): string {
+  if (!next || !next.startsWith('/') || next.startsWith('//')) return '/dashboard';
+  return next;
+}
+
+export default async function Page({ searchParams }: PageProps) {
+  const { next } = await searchParams;
+  const redirectTo = safeNextPath(next);
+
   return (
     <div className="flex min-h-screen w-full">
       {/* Left Panel — Animated brand */}
@@ -39,7 +51,7 @@ export default function Page() {
               </p>
             </div>
 
-            <LoginForm />
+            <LoginForm redirectTo={redirectTo} />
 
             {/* Contact Link */}
             <div className="mt-10 text-center">

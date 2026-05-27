@@ -318,7 +318,7 @@ export function QualiaScheduleWeek({
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Nicosia</p>
               <p className="font-mono font-semibold tabular-nums">{nicosiaTime}</p>
             </div>
-            <div className="rounded-xl bg-primary/10 px-4 py-2 text-center">
+            <div className="rounded-lg border border-primary/15 bg-primary/[0.06] px-3 py-1.5 text-center">
               <p className="text-[10px] uppercase tracking-wider text-primary">Amman</p>
               <p className="font-mono font-semibold tabular-nums text-primary">{ammanTime}</p>
             </div>
@@ -420,7 +420,7 @@ export function QualiaScheduleWeek({
 
       {/* Detail dialog */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="gap-0 rounded-2xl border-border bg-card p-0 sm:max-w-[480px]">
+        <DialogContent className="gap-0 rounded-xl border-border bg-card p-0 sm:max-w-[480px]">
           {selected && (
             <>
               <DialogHeader className="p-6 pb-4">
@@ -657,7 +657,7 @@ function WeekGrid({
   }, [events]);
 
   return (
-    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-xl border border-border bg-card">
       <div
         className="grid flex-shrink-0 border-b border-border"
         style={{ gridTemplateColumns: '50px repeat(7, 1fr)' }}
@@ -843,7 +843,7 @@ function DayGrid({
   /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
-    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-xl border border-border bg-card">
       <div
         className="grid flex-shrink-0 border-b border-border"
         style={{ gridTemplateColumns: '56px 1fr' }}
@@ -1044,7 +1044,7 @@ function MonthGrid({
   }, [meetings]);
 
   return (
-    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="stagger-2 flex min-h-0 flex-1 animate-fade-in flex-col overflow-hidden rounded-xl border border-border bg-card">
       {/* Day-of-week header */}
       <div
         className="grid flex-shrink-0 border-b border-border"

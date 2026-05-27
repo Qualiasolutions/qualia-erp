@@ -26,31 +26,33 @@ export default async function AuditDeepPage({ params }: { params: Promise<{ id: 
   if (!audit) notFound();
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-8 md:py-12">
-      <header className="flex flex-col gap-2">
-        <Link
-          href="/admin/audit"
-          className="inline-flex w-fit items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          Back to all employees
-        </Link>
-        <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
-          Hidden surface · admin only
-        </span>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <h1 className="text-[clamp(1.75rem,1.4rem+1.7vw,2.5rem)] font-semibold tracking-tight">
-            {audit.overview.fullName ?? 'Employee'}
-          </h1>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+      <header className="rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/admin/audit"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background/60 px-3 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          >
+            <ArrowLeft className="size-3.5" />
+            Employees
+          </Link>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h1 className="truncate text-base font-semibold tracking-tight text-foreground">
+                {audit.overview.fullName ?? 'Employee'}
+              </h1>
+              <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+              <p className="truncate text-sm text-muted-foreground">{audit.overview.email}</p>
+            </div>
+          </div>
           <Link
             href={`/audit/${id}`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[12px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background/60 px-3 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
           >
             <ClipboardList className="size-3.5" />
-            Open the form
+            Form
           </Link>
         </div>
-        <p className="text-sm text-muted-foreground">{audit.overview.email}</p>
       </header>
 
       <AuditDeepView audit={audit} profileId={id} />

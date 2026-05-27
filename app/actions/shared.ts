@@ -206,38 +206,33 @@ export async function canAccessProject(userId: string, projectId: string): Promi
     return !!link;
   }
 
-  // Employee: check workspace membership (existing behavior)
+  // Employee: workspace members can access all workspace projects.
   const { data: membership } = await supabase
     .from('workspace_members')
     .select('id')
     .eq('workspace_id', project.workspace_id)
     .eq('profile_id', userId)
-    .single();
+    .maybeSingle();
 
-  return !!membership;
+  if (membership) return true;
+
+  // Project-assigned employees can access the projects they are assigned to,
+  // even if their workspace_members row is missing or delayed.
+  const { data: assignment } = await supabase
+    .from('project_assignments')
+    .select('id')
+    .eq('project_id', projectId)
+    .eq('employee_id', userId)
+    .is('removed_at', null)
+    .maybeSingle();
+
+  return !!assignment;
 }
 
-// Check if user can delete a project file (uploader, project lead, or admin)
+// Check if user can delete a project file/link. Product rule: admin only.
 export async function canDeleteProjectFile(userId: string, fileId: string): Promise<boolean> {
-  if (await isUserAdmin(userId)) return true;
-
-  const supabase = await createClient();
-  const { data: file } = await supabase
-    .from('project_files')
-    .select('uploaded_by, project:projects(lead_id)')
-    .eq('id', fileId)
-    .single();
-
-  if (!file) return false;
-
-  // Uploader can delete
-  if (file.uploaded_by === userId) return true;
-
-  // Project lead can delete
-  const project = Array.isArray(file.project) ? file.project[0] : file.project;
-  if (project?.lead_id === userId) return true;
-
-  return false;
+  void fileId;
+  return isUserAdmin(userId);
 }
 
 // ============ ACTIVITY LOGGING HELPERS ============

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { Activity } from 'lucide-react';
 import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { ActivityContent } from './activity-content';
@@ -19,7 +21,29 @@ export default async function PortalActivityPage() {
   // App Library guard: block clients if the "activity" app is disabled
   if (role === 'client') {
     const allowed = await assertAppEnabledForClient(user.id, 'activity', role);
-    if (!allowed) redirect('/dashboard');
+    if (!allowed) {
+      return (
+        <div className="flex h-full items-center justify-center p-4 md:p-6 lg:p-8">
+          <div className="shadow-subtle flex animate-fade-in flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-card/70 p-10 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted/50 ring-1 ring-border/60">
+              <Activity className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-medium text-foreground">Activity is not enabled</h3>
+              <p className="text-sm text-muted-foreground">
+                Your dashboard shows the tools available for this workspace.
+              </p>
+            </div>
+            <Link
+              href="/dashboard"
+              className="mt-2 inline-flex h-9 items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              Back to dashboard
+            </Link>
+          </div>
+        </div>
+      );
+    }
   }
 
   // Get all project IDs the user has access to
@@ -43,11 +67,23 @@ export default async function PortalActivityPage() {
   }
 
   return (
-    <div className="animate-fade-in-up space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Activity</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Recent updates across your projects</p>
-      </div>
+    <div className="animate-fade-in-up space-y-4 px-4 pb-6 pt-16 md:px-6 md:pt-6">
+      <header className="rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="mr-auto min-w-[180px]">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold tracking-tight text-foreground">Activity</h1>
+              <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+              <p className="truncate text-sm text-muted-foreground">
+                Recent updates across accessible projects
+              </p>
+            </div>
+          </div>
+          <span className="rounded-md border border-border bg-muted/40 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            {projectIds.length} project{projectIds.length === 1 ? '' : 's'}
+          </span>
+        </div>
+      </header>
       <ActivityContent projectIds={projectIds} />
     </div>
   );

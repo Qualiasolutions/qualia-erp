@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface ProjectReportsPanelProps {
+  projectId: string;
   projectName: string;
   className?: string;
 }
@@ -38,14 +39,18 @@ function StatusIcon({ status }: { status: string | null }) {
   return <Circle className="size-3.5 text-muted-foreground" />;
 }
 
-export function ProjectReportsPanel({ projectName, className }: ProjectReportsPanelProps) {
+export function ProjectReportsPanel({
+  projectId,
+  projectName,
+  className,
+}: ProjectReportsPanelProps) {
   const [reports, setReports] = useState<ProjectSessionReport[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const load = () => {
     startTransition(async () => {
-      const data = await getSessionReportsForProject(projectName, 20);
+      const data = await getSessionReportsForProject(projectName, 20, { projectId });
       setReports(data);
       setLoaded(true);
     });
@@ -54,7 +59,7 @@ export function ProjectReportsPanel({ projectName, className }: ProjectReportsPa
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectName]);
+  }, [projectId, projectName]);
 
   return (
     <div className={cn('flex h-full flex-col', className)}>

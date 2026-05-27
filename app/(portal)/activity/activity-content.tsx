@@ -177,15 +177,18 @@ export function ActivityContent({ projectIds }: ActivityContentProps) {
   /* ---- Loading state ---- */
   if (initialLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-5">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-3">
-            <div className="h-7 w-7 animate-pulse rounded-full bg-muted" />
+          <div
+            key={i}
+            className="flex items-center gap-3 rounded-lg border border-border/40 bg-card px-3 py-3"
+          >
+            <div className="h-7 w-7 animate-pulse rounded-full bg-muted/70" />
             <div className="min-w-0 flex-1 space-y-2">
-              <div className="h-3.5 w-48 animate-pulse rounded bg-muted" />
-              <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+              <div className="h-3.5 w-48 animate-pulse rounded bg-muted/70" />
+              <div className="h-3 w-24 animate-pulse rounded bg-muted/50" />
             </div>
-            <div className="h-3 w-12 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-12 animate-pulse rounded bg-muted/50" />
           </div>
         ))}
       </div>
@@ -195,13 +198,15 @@ export function ActivityContent({ projectIds }: ActivityContentProps) {
   /* ---- Empty state ---- */
   if (entries.length === 0) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
+      <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-border bg-card">
         <div className="max-w-md text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500/10 to-qualia-600/5 ring-1 ring-primary/10">
-            <Activity className="h-10 w-10 text-primary/60" />
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/[0.08] ring-1 ring-primary/15">
+            <Activity className="h-6 w-6 text-primary/70" />
           </div>
-          <h3 className="text-xl font-semibold tracking-tight text-foreground">No activity yet</h3>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground/80">
+          <h3 className="text-base font-semibold tracking-tight text-foreground">
+            No activity yet
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             Updates and milestones will appear here as your projects progress.
           </p>
         </div>
@@ -213,7 +218,7 @@ export function ActivityContent({ projectIds }: ActivityContentProps) {
     <div className="space-y-6">
       {/* Project filter */}
       {projectMap.size > 1 && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end gap-3">
           <label htmlFor="project-filter" className="sr-only">
             Filter by project
           </label>
@@ -241,7 +246,7 @@ export function ActivityContent({ projectIds }: ActivityContentProps) {
 
       {/* Date-grouped entries */}
       {Array.from(groupedEntries.entries()).map(([dateGroup, dateEntries]) => (
-        <div key={dateGroup}>
+        <section key={dateGroup}>
           {/* Date header */}
           <div className="mb-3 flex items-center gap-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -251,13 +256,14 @@ export function ActivityContent({ projectIds }: ActivityContentProps) {
           </div>
 
           {/* Entries */}
-          <div className="space-y-0.5">
-            {dateEntries.map((entry) => {
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
+            {dateEntries.map((entry, index) => {
               const content = (
                 <div
                   className={cn(
-                    'flex items-start gap-3 rounded-lg px-3 py-3 transition-colors duration-150',
-                    entry.project ? 'cursor-pointer hover:bg-muted/30' : ''
+                    'flex items-start gap-3 px-4 py-3.5 transition-colors duration-150',
+                    index < dateEntries.length - 1 ? 'border-b border-border/40' : '',
+                    entry.project ? 'cursor-pointer hover:bg-muted/35' : ''
                   )}
                 >
                   {/* Actor avatar */}
@@ -302,7 +308,7 @@ export function ActivityContent({ projectIds }: ActivityContentProps) {
               return <div key={entry.id}>{content}</div>;
             })}
           </div>
-        </div>
+        </section>
       ))}
 
       {/* Load more */}

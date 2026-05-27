@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import type { BriefData, BriefSection } from '@/lib/validation';
 
 type MultiKey = 'demoGoals' | 'channels' | 'languages' | 'handoffTriggers' | 'integrations';
 
@@ -131,6 +132,50 @@ function buildDescription(state: FormState, confidentialityAccepted: boolean): s
     .join('\n\n');
 }
 
+function buildBriefData(state: FormState, confidentialityAccepted: boolean): BriefData {
+  const sections: BriefSection[] = [];
+
+  const pushText = (key: string, label: string, value: string) => {
+    if (!value.trim()) return;
+    sections.push({ key, label, value: value.trim() });
+  };
+
+  const pushValues = (key: string, label: string, values: string[]) => {
+    if (values.length === 0) return;
+    sections.push({ key, label, values });
+  };
+
+  const contact = [
+    `Name: ${state.contactName}`,
+    `Email: ${state.contactEmail}`,
+    `Phone / WhatsApp: ${state.contactPhone || 'Not provided'}`,
+  ].join('\n');
+
+  pushText('contact', 'Contact', contact);
+  pushValues('demo_goals', 'What the demo should prove', state.demoGoals);
+  pushText('booking_setup', 'Booking setup we should understand', state.bookingDetails);
+  pushValues('integrations', 'Systems to connect or simulate', state.integrations);
+  pushValues('channels', 'Customer channels', state.channels);
+  pushValues('languages', 'Languages', state.languages);
+  pushValues('handoff_triggers', 'When the AI should hand off', state.handoffTriggers);
+  pushText('voice_tone', 'Preferred voice style', state.voiceTone);
+  pushText('timeline', 'Timeline', state.timeline);
+  pushText('budget', 'Budget range', state.budget);
+  pushText('success_criteria', 'What would make this demo successful', state.successCriteria);
+  pushText('notes', 'Additional notes', state.notes);
+  sections.push({
+    key: 'confidentiality',
+    label: 'Confidentiality acknowledged',
+    value: confidentialityAccepted ? 'Yes' : 'No',
+  });
+
+  return {
+    variant: 'seven-buddhas',
+    submitted_at: new Date().toISOString(),
+    sections,
+  };
+}
+
 function Chip({
   label,
   selected,
@@ -236,9 +281,10 @@ export function SevenBuddhasBrief({
     setSubmitting(true);
     const result = await createFeatureRequest({
       project_id: projectId,
-      title: `7 Buddhas AI front desk brief - ${projectName}`,
+      title: `Project brief — ${projectName}`,
       description: buildDescription(state, confidentialityAccepted),
       priority: 'high',
+      brief_data: buildBriefData(state, confidentialityAccepted),
     });
     setSubmitting(false);
 

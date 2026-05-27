@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import {
   Download,
+  ExternalLink,
   File as FileIcon,
   FileArchive,
   FileAudio,
@@ -10,18 +11,23 @@ import {
   FileText,
   FileVideo,
   FolderOpen,
+  Link as LinkIcon,
   Loader2,
+  Plus,
   Trash2,
   Upload,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
+  createProjectFileLink,
   deleteProjectFile,
   getFileDownloadUrl,
   getProjectFiles,
+  uploadClientFile,
   uploadProjectFile,
   type ProjectFileWithUploader,
 } from '@/app/actions/project-files';
@@ -29,13 +35,16 @@ import {
 interface ProjectFilesPanelProps {
   projectId: string;
   isClient: boolean;
-  /** When true, show upload + delete controls. Wire this from the caller
-   *  based on the current user's role. Clients never get admin controls. */
+  /** When true, show admin upload + delete controls. Clients get their own
+   *  upload path via uploadClientFile and never get delete/admin controls. */
   isAdmin?: boolean;
+  canManage?: boolean;
   className?: string;
 }
 
-function getFileIcon(mimeType: string | null) {
+function getFileIcon(file: ProjectFileWithUploader) {
+  if (file.file_kind === 'link') return <LinkIcon className="h-3.5 w-3.5 text-sky-400" />;
+  const mimeType = file.mime_type;
   if (!mimeType) return <FileIcon className="h-3.5 w-3.5 text-muted-foreground/70" />;
   if (mimeType.startsWith('image/')) return <FileImage className="h-3.5 w-3.5 text-blue-400" />;
   if (mimeType.startsWith('video/')) return <FileVideo className="h-3.5 w-3.5 text-purple-400" />;
@@ -59,12 +68,16 @@ export function ProjectFilesPanel({
   projectId,
   isClient,
   isAdmin = false,
+  canManage = isAdmin,
   className,
 }: ProjectFilesPanelProps) {
   const [files, setFiles] = useState<ProjectFileWithUploader[] | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [addingLink, setAddingLink] = useState(false);
+  const [linkTitle, setLinkTitle] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
   const [isPending, startTransition] = useTransition();
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -96,13 +109,17 @@ export function ProjectFilesPanel({
         return;
       }
       const data = result.data as { url: string };
-      const link = document.createElement('a');
-      link.href = data.url;
-      link.download = originalName;
-      link.rel = 'noopener';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      if (data.url.startsWith('http')) {
+        window.open(data.url, '_blank', 'noopener,noreferrer');
+      } else {
+        const link = document.createElement('a');
+        link.href = data.url;
+        link.download = originalName;
+        link.rel = 'noopener';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
     } catch {
       toast.error('Download failed');
     } finally {
@@ -120,7 +137,7 @@ export function ProjectFilesPanel({
       const fd = new FormData();
       fd.set('file', file);
       fd.set('project_id', projectId);
-      const result = await uploadProjectFile(fd);
+      const result = isClient ? await uploadClientFile(fd) : await uploadProjectFile(fd);
       if (!result.success) {
         toast.error(result.error || 'Upload failed');
         return;
@@ -129,6 +146,28 @@ export function ProjectFilesPanel({
       refresh();
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleAddLink = async () => {
+    if (!linkUrl.trim() || addingLink) return;
+    setAddingLink(true);
+    try {
+      const fd = new FormData();
+      fd.set('project_id', projectId);
+      fd.set('title', linkTitle.trim() || linkUrl.trim());
+      fd.set('url', linkUrl.trim());
+      const result = await createProjectFileLink(fd);
+      if (!result.success) {
+        toast.error(result.error || 'Add link failed');
+        return;
+      }
+      toast.success('Link added');
+      setLinkTitle('');
+      setLinkUrl('');
+      refresh();
+    } finally {
+      setAddingLink(false);
     }
   };
 
@@ -165,11 +204,12 @@ export function ProjectFilesPanel({
           <h3 className="font-medium">Files</h3>
           {!loading && <span className="text-xs text-muted-foreground">({list.length})</span>}
         </div>
-        {isAdmin && (
+        {(canManage || isClient) && (
           <>
             <input
               ref={fileInputRef}
               type="file"
+              multiple={false}
               className="hidden"
               onChange={handleFilePicked}
               aria-hidden
@@ -181,7 +221,7 @@ export function ProjectFilesPanel({
               className="h-7 gap-1 text-xs"
               disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
-              aria-label="Upload project file"
+              aria-label={isClient ? 'Upload client file' : 'Upload project file'}
             >
               {uploading ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -194,6 +234,42 @@ export function ProjectFilesPanel({
         )}
       </div>
 
+      {canManage && (
+        <div className="grid gap-2 border-b border-border px-3 py-2 sm:grid-cols-[1fr_1.25fr_auto]">
+          <Input
+            value={linkTitle}
+            onChange={(e) => setLinkTitle(e.target.value)}
+            placeholder="Link title"
+            disabled={addingLink}
+            className="h-8 text-xs"
+          />
+          <Input
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder="https://..."
+            type="url"
+            disabled={addingLink}
+            className="h-8 text-xs"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1"
+            disabled={addingLink || !linkUrl.trim()}
+            onClick={handleAddLink}
+            aria-label="Add project link"
+          >
+            {addingLink ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Plus className="h-3.5 w-3.5" />
+            )}
+            <LinkIcon className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto p-2">
         {loading ? (
           <div className="flex items-center justify-center py-8">
@@ -203,7 +279,11 @@ export function ProjectFilesPanel({
           <div className="flex h-full flex-col items-center justify-center py-8 text-center">
             <FolderOpen className="mb-2 h-8 w-8 text-muted-foreground/30" />
             <p className="text-sm text-muted-foreground">No files yet</p>
-            {!isClient && (
+            {isClient ? (
+              <p className="text-xs text-muted-foreground/70">
+                Upload files you want the team to review
+              </p>
+            ) : (
               <p className="text-xs text-muted-foreground/70">
                 Upload briefs, deliverables, invoices
               </p>
@@ -217,7 +297,7 @@ export function ProjectFilesPanel({
                 className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-muted/50"
               >
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted/50">
-                  {getFileIcon(file.mime_type)}
+                  {getFileIcon(file)}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p
@@ -227,7 +307,7 @@ export function ProjectFilesPanel({
                     {file.original_name}
                   </p>
                   <p className="truncate text-[11px] text-muted-foreground/70">
-                    {formatBytes(file.file_size)}
+                    {file.file_kind === 'link' ? 'Link' : formatBytes(file.file_size)}
                     {file.phase_name ? ` · ${file.phase_name}` : ''}
                   </p>
                 </div>
@@ -242,6 +322,8 @@ export function ProjectFilesPanel({
                 >
                   {downloadingId === file.id ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : file.file_kind === 'link' ? (
+                    <ExternalLink className="h-3.5 w-3.5" />
                   ) : (
                     <Download className="h-3.5 w-3.5" />
                   )}

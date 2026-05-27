@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import type { Tables } from '@/types/database';
 
@@ -19,8 +19,20 @@ const UploadFormSchema = z.object({
   relative_path: z.string().max(1024).nullable().optional(),
 });
 
+const LinkFormSchema = z.object({
+  project_id: z.string().uuid(),
+  title: z.string().trim().min(1, 'Title is required').max(160),
+  url: z.string().trim().url('Enter a valid URL').max(2048),
+  description: z.string().max(2000).nullable().optional(),
+  is_client_visible: z.enum(['true', 'false']).optional(),
+  link_type: z.enum(['github', 'vercel', 'supabase', 'railway', 'social', 'other']).optional(),
+});
+
 type ProjectFile = Tables<'project_files'>;
 export type ProjectFileWithUploader = ProjectFile & {
+  file_kind?: 'file' | 'link' | null;
+  link_url?: string | null;
+  link_type?: 'github' | 'vercel' | 'supabase' | 'railway' | 'social' | 'other' | null;
   uploader?: {
     id: string;
     full_name: string | null;
@@ -29,7 +41,12 @@ export type ProjectFileWithUploader = ProjectFile & {
   } | null;
   phase?: { id: string; phase_name: string | null } | null;
 };
-import { canAccessProject, canDeleteProjectFile, type ActionResult } from './shared';
+import {
+  canAccessProject,
+  canDeleteProjectFile,
+  getCachedUserRole,
+  type ActionResult,
+} from './shared';
 import { canAccessProjectStrict as canClientAccessProject } from '@/lib/portal-utils';
 import { createActivityLogEntry } from './activity-feed';
 import {
@@ -82,6 +99,54 @@ const ALLOWED_MIME_TYPES = [
   'audio/ogg',
 ];
 
+const MIME_BY_EXTENSION: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  avif: 'image/avif',
+  heic: 'image/heic',
+  heif: 'image/heif',
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  txt: 'text/plain',
+  csv: 'text/csv',
+  md: 'text/markdown',
+  html: 'text/html',
+  htm: 'text/html',
+  json: 'application/json',
+  zip: 'application/zip',
+  rar: 'application/x-rar-compressed',
+  mp4: 'video/mp4',
+  mov: 'video/quicktime',
+  webm: 'video/webm',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  ogg: 'audio/ogg',
+};
+
+function extensionForFile(fileName: string) {
+  return fileName.split('.').pop()?.toLowerCase() || '';
+}
+
+function resolveAllowedMimeType(file: File) {
+  if (ALLOWED_MIME_TYPES.includes(file.type)) return file.type;
+  const inferred = MIME_BY_EXTENSION[extensionForFile(file.name)];
+  return inferred && ALLOWED_MIME_TYPES.includes(inferred) ? inferred : null;
+}
+
+function unsupportedFileTypeMessage(file: File) {
+  const label = file.type || `.${extensionForFile(file.name) || 'unknown'}`;
+  return `File type ${label} is not allowed`;
+}
+
 /**
  * Get all files for a project
  * @param projectId - Project ID to fetch files for
@@ -130,6 +195,9 @@ export async function getProjectFiles(
       phase_name,
       is_client_visible,
       is_client_upload,
+      file_kind,
+      link_url,
+      link_type,
       uploader:profiles!project_files_uploaded_by_fkey (
         id,
         full_name,
@@ -207,9 +275,9 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     return { success: false, error: 'File size exceeds 50MB limit' };
   }
 
-  // Validate MIME type
-  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-    return { success: false, error: `File type ${file.type} is not allowed` };
+  const mimeType = resolveAllowedMimeType(file);
+  if (!mimeType) {
+    return { success: false, error: unsupportedFileTypeMessage(file) };
   }
 
   // Get project to verify workspace
@@ -223,7 +291,11 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     return { success: false, error: 'Project not found' };
   }
 
-  // Authorization: Only workspace members can upload to project
+  const role = await getCachedUserRole(user.id);
+  if (role !== 'admin' && role !== 'employee') {
+    return { success: false, error: 'Only employees and admins can upload project files' };
+  }
+
   const canAccess = await canAccessProject(user.id, projectId);
   if (!canAccess) {
     return { success: false, error: 'You do not have permission to upload to this project' };
@@ -252,6 +324,7 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     .from('project-files')
     .upload(storagePath, file, {
       cacheControl: '3600',
+      contentType: mimeType,
       upsert: false,
     });
 
@@ -270,11 +343,12 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
       original_name: displayOriginalName,
       storage_path: storagePath,
       file_size: file.size,
-      mime_type: file.type,
+      mime_type: mimeType,
       uploaded_by: user.id,
       description: description || null,
       phase_name: phaseId || null,
       is_client_visible: isClientVisible === 'true',
+      file_kind: 'file',
     })
     .select()
     .single();
@@ -331,6 +405,108 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
 }
 
 /**
+ * Add a link to a project's Files area.
+ */
+export async function createProjectFileLink(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const parsed = LinkFormSchema.safeParse({
+    project_id: formData.get('project_id') ?? undefined,
+    title: formData.get('title') ?? undefined,
+    url: formData.get('url') ?? undefined,
+    description: formData.get('description') ?? undefined,
+    is_client_visible: formData.get('is_client_visible') ?? undefined,
+    link_type: formData.get('link_type') ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || 'Invalid link form',
+    };
+  }
+
+  const {
+    project_id: projectId,
+    title,
+    url,
+    description,
+    is_client_visible: isClientVisible,
+    link_type: linkType,
+  } = parsed.data;
+
+  const role = await getCachedUserRole(user.id);
+  if (role !== 'admin' && role !== 'employee') {
+    return { success: false, error: 'Only employees and admins can add project links' };
+  }
+
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .select('id, workspace_id')
+    .eq('id', projectId)
+    .single();
+
+  if (projectError || !project) {
+    return { success: false, error: 'Project not found' };
+  }
+
+  const canAccess = await canAccessProject(user.id, projectId);
+  if (!canAccess) {
+    return { success: false, error: 'You do not have permission to add links to this project' };
+  }
+
+  const { data: linkRecord, error: dbError } = await supabase
+    .from('project_files')
+    .insert({
+      project_id: projectId,
+      workspace_id: project.workspace_id,
+      name: title,
+      original_name: title,
+      storage_path: `link:${projectId}:${crypto.randomUUID()}`,
+      file_size: 0,
+      mime_type: 'text/uri-list',
+      uploaded_by: user.id,
+      description: description || null,
+      is_client_visible: isClientVisible === 'true',
+      is_client_upload: false,
+      file_kind: 'link',
+      link_url: url,
+      link_type: linkType || 'other',
+    })
+    .select()
+    .single();
+
+  if (dbError) {
+    console.error('[createProjectFileLink] DB error:', dbError);
+    return { success: false, error: 'Failed to save link' };
+  }
+
+  await createActivityLogEntry({
+    projectId,
+    actionType: 'file_uploaded',
+    actionData: {
+      file_name: title,
+      link_url: url,
+      is_link: true,
+      is_client_visible: isClientVisible === 'true',
+    },
+    isClientVisible: isClientVisible === 'true',
+  });
+
+  revalidatePath('/projects/[id]/files', 'page');
+
+  return { success: true, data: linkRecord };
+}
+
+/**
  * Upload a file from a portal client to a project
  */
 export async function uploadClientFile(formData: FormData): Promise<ActionResult> {
@@ -369,9 +545,9 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
     return { success: false, error: 'File size exceeds 50MB limit' };
   }
 
-  // Validate MIME type
-  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-    return { success: false, error: `File type ${file.type} is not allowed` };
+  const mimeType = resolveAllowedMimeType(file);
+  if (!mimeType) {
+    return { success: false, error: unsupportedFileTypeMessage(file) };
   }
 
   // Verify client has access to this project
@@ -380,8 +556,13 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
     return { success: false, error: 'You do not have access to this project' };
   }
 
-  // Get project to retrieve workspace_id
-  const { data: project, error: projectError } = await supabase
+  const adminClient = createAdminClient();
+
+  // Get project to retrieve workspace_id. Use the service role after the
+  // strict client-project access check above; clients are not workspace
+  // members, so normal RLS can hide the project/file rows they are allowed to
+  // contribute to through the portal.
+  const { data: project, error: projectError } = await adminClient
     .from('projects')
     .select('id, workspace_id')
     .eq('id', projectId)
@@ -397,10 +578,11 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
   const storagePath = `${projectId}/client-uploads/${timestamp}_${sanitizedName}`;
 
   // Upload to storage
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await adminClient.storage
     .from('project-files')
     .upload(storagePath, file, {
       cacheControl: '3600',
+      contentType: mimeType,
       upsert: false,
     });
 
@@ -410,7 +592,7 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
   }
 
   // Create database record with is_client_upload=true
-  const { data: fileRecord, error: dbError } = await supabase
+  const { data: fileRecord, error: dbError } = await adminClient
     .from('project_files')
     .insert({
       project_id: projectId,
@@ -419,11 +601,12 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
       original_name: file.name,
       storage_path: storagePath,
       file_size: file.size,
-      mime_type: file.type,
+      mime_type: mimeType,
       uploaded_by: user.id,
       description: description || null,
       is_client_upload: true,
       is_client_visible: true,
+      file_kind: 'file',
     })
     .select()
     .single();
@@ -431,7 +614,7 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
   if (dbError) {
     console.error('[uploadClientFile] DB error:', dbError);
     // Try to clean up the uploaded file
-    await supabase.storage.from('project-files').remove([storagePath]);
+    await adminClient.storage.from('project-files').remove([storagePath]);
     return { success: false, error: 'Failed to save file record' };
   }
 
@@ -491,16 +674,16 @@ export async function deleteProjectFile(fileId: string): Promise<ActionResult> {
     return { success: false, error: 'Not authenticated' };
   }
 
-  // Authorization: Only uploader, project lead, or admin can delete
+  // Authorization: only admins can remove project files or links.
   const canDelete = await canDeleteProjectFile(user.id, fileId);
   if (!canDelete) {
-    return { success: false, error: 'You do not have permission to delete this file' };
+    return { success: false, error: 'Only admins can remove project files and links' };
   }
 
   // Get file record
   const { data: file, error: fetchError } = await supabase
     .from('project_files')
-    .select('id, project_id, storage_path')
+    .select('id, project_id, storage_path, file_kind')
     .eq('id', fileId)
     .single();
 
@@ -508,14 +691,15 @@ export async function deleteProjectFile(fileId: string): Promise<ActionResult> {
     return { success: false, error: 'File not found' };
   }
 
-  // Delete from storage
-  const { error: storageError } = await supabase.storage
-    .from('project-files')
-    .remove([file.storage_path]);
+  if (file.file_kind !== 'link') {
+    const { error: storageError } = await supabase.storage
+      .from('project-files')
+      .remove([file.storage_path]);
 
-  if (storageError) {
-    console.error('[deleteProjectFile] Storage error:', storageError);
-    // Continue anyway - file might already be deleted
+    if (storageError) {
+      console.error('[deleteProjectFile] Storage error:', storageError);
+      // Continue anyway - file might already be deleted
+    }
   }
 
   // Delete database record
@@ -552,7 +736,9 @@ export async function getFileDownloadUrl(fileId: string): Promise<ActionResult> 
   // Get file record with workspace info for authorization check
   const { data: file, error: fetchError } = await supabase
     .from('project_files')
-    .select('storage_path, original_name, workspace_id, project_id, is_client_visible')
+    .select(
+      'storage_path, original_name, workspace_id, project_id, is_client_visible, file_kind, link_url'
+    )
     .eq('id', fileId)
     .single();
 
@@ -560,18 +746,9 @@ export async function getFileDownloadUrl(fileId: string): Promise<ActionResult> 
     return { success: false, error: 'File not found' };
   }
 
-  // Authorization: Check if user is a workspace member OR a client with access to this file
-  const { data: membership } = await supabase
-    .from('workspace_members')
-    .select('id')
-    .eq('workspace_id', file.workspace_id)
-    .eq('profile_id', user.id)
-    .single();
+  // Authorization: workspace member/admin/assigned employee OR client-visible client access.
+  let hasAccess = await canAccessProject(user.id, file.project_id);
 
-  let hasAccess = !!membership;
-
-  // If not a workspace member, check if user is a client with access to this project
-  // AND the file is marked as client-visible
   if (!hasAccess && file.is_client_visible) {
     const { data: clientProject } = await supabase
       .from('client_projects')
@@ -585,6 +762,11 @@ export async function getFileDownloadUrl(fileId: string): Promise<ActionResult> 
 
   if (!hasAccess) {
     return { success: false, error: 'Access denied' };
+  }
+
+  if (file.file_kind === 'link') {
+    if (!file.link_url) return { success: false, error: 'Link URL is missing' };
+    return { success: true, data: { url: file.link_url, filename: file.original_name } };
   }
 
   // Generate signed URL (valid for 1 hour)

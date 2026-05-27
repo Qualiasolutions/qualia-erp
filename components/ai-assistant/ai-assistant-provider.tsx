@@ -12,7 +12,7 @@ import {
 import { getMessages } from '@/app/actions/ai-conversations';
 import { invalidateConversations } from '@/lib/swr';
 
-export type AssistantMode = 'chat' | 'voice' | 'document'; // 'voice' kept for backward compat with localStorage
+export type AssistantMode = 'chat' | 'voice' | 'document';
 export type GuidedTask = 'create-project' | 'create-client' | null;
 
 interface Message {
@@ -344,6 +344,35 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
             })),
             { role: 'user' as const, content: actualText },
           ];
+        }
+
+        if (mode === 'voice') {
+          const response = await fetch('/api/assistant/voice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: chatMessages, conversationId }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to send voice message');
+          }
+
+          const data = (await response.json()) as { text?: string; conversationId?: string };
+          if (data.conversationId && !conversationId) {
+            setConversationId(data.conversationId);
+          }
+
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `assistant-${Date.now()}`,
+              role: 'assistant',
+              content: data.text || 'I handled it, but no spoken response came back.',
+            },
+          ]);
+          invalidateConversations(true);
+          return;
         }
 
         const response = await fetch('/api/chat', {

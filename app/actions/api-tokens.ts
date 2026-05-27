@@ -16,6 +16,8 @@ import type { ActionResult } from './shared';
 const ALLOWED_SCOPES = [
   'reports:write',
   'reports:read',
+  'projects:read',
+  'projects:write',
   'mcp:read',
   'mcp:write',
   'admin',

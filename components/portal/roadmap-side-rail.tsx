@@ -3,9 +3,9 @@
 import { User, Building2, Users, AlertCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EntityAvatar } from '@/components/entity-avatar';
-import { ProjectResources } from '@/components/project-resources';
 import { ProjectFilesPanel } from '@/components/project-files-panel';
 import { ProjectNotes } from '@/components/project-notes';
+import { ProjectResources } from '@/components/project-resources';
 import { useProjectAssignments } from '@/lib/swr';
 import { cn } from '@/lib/utils';
 
@@ -218,15 +218,17 @@ export function RoadmapSideRail({
         <ProjectResources
           projectId={projectId}
           initialResources={[]}
+          canManage={userRole === 'admin'}
           className="h-full rounded-none border-0"
         />
       </section>
 
-      {/* Files */}
+      {/* Files, folders, and links */}
       <section aria-label="Project files" className="min-h-0 flex-1 border-b border-border">
         <ProjectFilesPanel
           projectId={projectId}
           isClient={isClient}
+          canManage={!isClient}
           className="h-full rounded-none border-0"
         />
       </section>

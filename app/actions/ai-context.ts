@@ -194,7 +194,7 @@ export async function clearAdminNotes(targetUserId: string): Promise<ActionResul
 
   if (profile?.role !== 'admin') return { success: false, error: 'Admin access required' };
 
-  const { data: updated, error } = await supabase
+  const { error } = await supabase
     .from('ai_user_context')
     .update({
       admin_notes: [],

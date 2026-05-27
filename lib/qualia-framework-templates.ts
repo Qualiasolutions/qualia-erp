@@ -23,7 +23,7 @@ export interface QualiaFrameworkPhaseTemplate {
   description: string;
   prompt: string; // "Perfect prompt" for this phase
   qualiaCommand: string; // e.g., '/qualia-discuss'
-  qualiaSkills: string[]; // e.g., ['/fd', '/fb']
+  qualiaSkills: string[]; // current Framework commands that support this phase
   tasks: QualiaFrameworkTask[];
 }
 
@@ -43,7 +43,7 @@ export const WEB_DESIGN_TEMPLATE: QualiaFrameworkProjectTemplate = {
       name: 'SETUP',
       description: 'Get everything ready before coding',
       qualiaCommand: '/qualia-new',
-      qualiaSkills: ['/sb'],
+      qualiaSkills: ['/qualia-build'],
       prompt: `You are setting up a new website project. Run:
 
 /qualia-new
@@ -51,7 +51,7 @@ export const WEB_DESIGN_TEMPLATE: QualiaFrameworkProjectTemplate = {
 Then ensure you have:
 1. Local folder created at ~/Desktop/Projects/websites/[project-name]
 2. GitHub repo initialized (gh repo create [name] --private --clone)
-3. Supabase project created if needed (use /sb)
+3. Supabase project created if needed (use /qualia-build)
 4. Vercel project linked (vercel link)
 5. All env vars configured (.env.local)
 
@@ -69,7 +69,8 @@ Get client requirements document and list 3-5 MVP features only.`,
         },
         {
           title: 'Create Supabase project (if needed)',
-          helperText: 'Use /sb command or create in Supabase dashboard. Get URL and anon key.',
+          helperText:
+            'Use /qualia-build command or create in Supabase dashboard. Get URL and anon key.',
           templateKey: 'web_setup_3',
         },
         {
@@ -173,16 +174,16 @@ Review the plan and ensure:
       name: 'EXECUTE',
       description: 'Build UI first, then backend',
       qualiaCommand: '/qualia-build',
-      qualiaSkills: ['/fd', '/fb', '/responsive', '/sb'],
+      qualiaSkills: ['/qualia-polish', '/qualia-build', '/qualia-polish', '/qualia-build'],
       prompt: `Build the website following this order:
 
 /qualia-build
 
 1. Design first:
-   /fd "[describe the main UI you want]"
+   /qualia-polish "[describe the main UI you want]"
 
 2. Build components:
-   /fb "[component name]" - Header, Hero, Cards, Footer, etc.
+   /qualia-build "[component name]" - Header, Hero, Cards, Footer, etc.
 
 3. Commit and push:
    Ask Claude: "Commit these changes with a descriptive message"
@@ -191,10 +192,10 @@ Review the plan and ensure:
    Run: vercel deploy
 
 5. Test responsive:
-   /responsive - Fix any mobile/tablet issues
+   /qualia-polish - Fix any mobile/tablet issues
 
 6. Add backend (if needed):
-   /sb - Create tables, auth, RLS policies
+   /qualia-build - Create tables, auth, RLS policies
 
 7. Connect frontend to backend:
    Fetch data, handle forms, add auth
@@ -204,12 +205,12 @@ Review the plan and ensure:
 Repeat until MVP is complete.`,
       tasks: [
         {
-          title: '/fd "[main UI]" - Design the look',
+          title: '/qualia-polish "[main UI]" - Design the look',
           helperText: 'Start with homepage or the most important page. Describe the vibe.',
           templateKey: 'web_execute_1',
         },
         {
-          title: '/fb "[component]" - Build each component',
+          title: '/qualia-build "[component]" - Build each component',
           helperText: 'Build one at a time: Header, Hero, Features, Testimonials, Footer',
           templateKey: 'web_execute_2',
         },
@@ -224,12 +225,12 @@ Repeat until MVP is complete.`,
           templateKey: 'web_execute_4',
         },
         {
-          title: '/responsive - Fix mobile issues',
+          title: '/qualia-polish - Fix mobile issues',
           helperText: 'Test on phone or use browser dev tools. Fix any broken layouts.',
           templateKey: 'web_execute_5',
         },
         {
-          title: '/sb - Add database (if needed)',
+          title: '/qualia-build - Add database (if needed)',
           helperText: 'Create tables, set up auth, add RLS policies for security',
           templateKey: 'web_execute_6',
         },
@@ -249,7 +250,7 @@ Repeat until MVP is complete.`,
       name: 'VERIFY',
       description: 'Test and review',
       qualiaCommand: '/qualia-verify',
-      qualiaSkills: ['/dd', '/sf'],
+      qualiaSkills: ['/qualia-fix', '/qualia-fix'],
       prompt: `Verify the website is production-ready.
 
 /qualia-verify
@@ -268,8 +269,8 @@ Repeat until MVP is complete.`,
    - Test page speed
 
 4. Fix any issues found:
-   /sf - Auto-fix simple issues
-   /dd - Deep debug complex problems
+   /qualia-fix - Auto-fix simple issues
+   /qualia-fix - Deep debug complex problems
 
 Do NOT proceed until all tests pass.`,
       tasks: [
@@ -290,7 +291,7 @@ Do NOT proceed until all tests pass.`,
         },
         {
           title: 'Fix issues found',
-          helperText: 'Use /sf for quick fixes, /dd for complex debugging',
+          helperText: 'Use /qualia-fix for quick fixes, /qualia-fix for complex debugging',
           templateKey: 'web_verify_4',
         },
       ],
@@ -373,7 +374,7 @@ export const AI_AGENT_TEMPLATE: QualiaFrameworkProjectTemplate = {
       name: 'SETUP',
       description: 'Define the agent and gather requirements',
       qualiaCommand: '/qualia-new',
-      qualiaSkills: ['/sb'],
+      qualiaSkills: ['/qualia-build'],
       prompt: `You are setting up a new AI agent project.
 
 /qualia-new
@@ -410,7 +411,7 @@ export const AI_AGENT_TEMPLATE: QualiaFrameworkProjectTemplate = {
         },
         {
           title: 'Setup Supabase for data storage',
-          helperText: 'Use /sb to create tables for conversations, users, logs',
+          helperText: 'Use /qualia-build to create tables for conversations, users, logs',
           templateKey: 'ai_setup_4',
         },
         {
@@ -505,7 +506,7 @@ Create atomic implementation tasks.`,
       name: 'EXECUTE',
       description: 'Build the agent',
       qualiaCommand: '/qualia-build',
-      qualiaSkills: ['/sb'],
+      qualiaSkills: ['/qualia-build'],
       prompt: `Build the AI agent.
 
 /qualia-build
@@ -516,7 +517,7 @@ Implementation order:
    - Tool definitions
    - Response handling
 
-2. Database layer (/sb):
+2. Database layer (/qualia-build):
    - Conversation storage
    - User management
    - Usage tracking
@@ -545,7 +546,7 @@ Commit frequently. Test each component before moving on.`,
         },
         {
           title: 'Build database schema',
-          helperText: 'Use /sb to create tables for conversations, messages, users',
+          helperText: 'Use /qualia-build to create tables for conversations, messages, users',
           templateKey: 'ai_execute_3',
         },
         {
@@ -574,7 +575,7 @@ Commit frequently. Test each component before moving on.`,
       name: 'VERIFY',
       description: 'Test agent thoroughly',
       qualiaCommand: '/qualia-verify',
-      qualiaSkills: ['/dd', '/sf'],
+      qualiaSkills: ['/qualia-fix', '/qualia-fix'],
       prompt: `Verify the AI agent works correctly.
 
 /qualia-verify
@@ -681,7 +682,7 @@ export const VOICE_AGENT_TEMPLATE: QualiaFrameworkProjectTemplate = {
       name: 'SETUP',
       description: 'Prepare voice infrastructure',
       qualiaCommand: '/qualia-new',
-      qualiaSkills: ['/va', '/sb'],
+      qualiaSkills: ['/qualia-build', '/qualia-build'],
       prompt: `You are setting up a new voice agent project.
 
 /qualia-new
@@ -723,7 +724,7 @@ export const VOICE_AGENT_TEMPLATE: QualiaFrameworkProjectTemplate = {
         },
         {
           title: 'Setup Supabase for call logs',
-          helperText: 'Use /sb to create tables for calls, transcripts, outcomes',
+          helperText: 'Use /qualia-build to create tables for calls, transcripts, outcomes',
           templateKey: 'voice_setup_5',
         },
       ],
@@ -811,14 +812,14 @@ Technical decisions:
       name: 'EXECUTE',
       description: 'Build and configure voice agent',
       qualiaCommand: '/qualia-build',
-      qualiaSkills: ['/va', '/sb'],
+      qualiaSkills: ['/qualia-build', '/qualia-build'],
       prompt: `Build the voice agent.
 
 /qualia-build
 
 Implementation:
 1. Create VAPI assistant:
-   /va "[describe your assistant]"
+   /qualia-build "[describe your assistant]"
 
 2. Configure assistant:
    - System prompt with conversation script
@@ -835,8 +836,8 @@ Implementation:
 5. Test with real calls`,
       tasks: [
         {
-          title: '/va - Create VAPI assistant',
-          helperText: 'Use /va command with your assistant requirements',
+          title: '/qualia-build - Create VAPI assistant',
+          helperText: 'Use /qualia-build command with your assistant requirements',
           templateKey: 'voice_execute_1',
         },
         {
@@ -870,7 +871,7 @@ Implementation:
       name: 'VERIFY',
       description: 'Test calls thoroughly',
       qualiaCommand: '/qualia-verify',
-      qualiaSkills: ['/dd'],
+      qualiaSkills: ['/qualia-fix'],
       prompt: `Test the voice agent with real calls.
 
 /qualia-verify

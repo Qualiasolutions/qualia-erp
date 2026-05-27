@@ -216,9 +216,10 @@ function ResearchPost({
             {expanded ? 'Show less' : 'Read more'}
             <ChevronDown
               className={cn(
-                'ease-[cubic-bezier(0.16,1,0.3,1)] h-3.5 w-3.5 transition-transform duration-200',
+                'h-3.5 w-3.5 transition-transform duration-200',
                 expanded && 'rotate-180'
               )}
+              style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
             />
           </button>
         )}

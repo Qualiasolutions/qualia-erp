@@ -1,6 +1,13 @@
 'use client';
 
-import { memo, useState, useMemo, useTransition } from 'react';
+import {
+  forwardRef,
+  memo,
+  useState,
+  useMemo,
+  useTransition,
+  type ComponentPropsWithoutRef,
+} from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -557,7 +564,7 @@ const ProjectCardTile = memo(function ProjectCardTile({
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
           'cursor-pointer',
           clientView
-            ? 'gap-4 rounded-2xl px-5 py-4 shadow-[0_1px_2px_0_hsl(var(--border)/0.5)]'
+            ? 'gap-4 rounded-xl px-5 py-4 shadow-[0_1px_0_hsl(var(--border)/0.45)]'
             : 'gap-3 rounded-lg px-3 py-2.5'
         )}
       >
@@ -854,7 +861,7 @@ export function QualiaProjectsGallery({
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+          <div className="overflow-x-auto rounded-xl border border-border bg-card">
             <div
               className="sticky top-0 grid min-w-[600px] items-center gap-3 border-b border-border bg-muted/20 px-4 py-2.5"
               style={{ gridTemplateColumns: '24px 1.5fr 1fr 120px 100px 80px' }}
@@ -941,7 +948,7 @@ function StageColumn({
       className={cn(
         'flex min-h-0 flex-col overflow-hidden border border-border/60 bg-muted/10',
         clientView
-          ? 'rounded-2xl bg-card/50 shadow-[0_1px_0_0_hsl(var(--border)/0.4)]'
+          ? 'rounded-xl bg-card/50 shadow-[0_1px_0_0_hsl(var(--border)/0.4)]'
           : 'rounded-xl'
       )}
     >
@@ -1064,27 +1071,30 @@ function FinishedRow({
  *  StageDropdown that pipeline cards use, so admins can move terminated
  *  projects to ANY state (or delete) instead of being stuck with a single
  *  "back to Building" hammer. */
-function ProjectMenuTrigger({ project }: { project: GalleryProject }) {
+const ProjectMenuTrigger = forwardRef<
+  HTMLButtonElement,
+  ComponentPropsWithoutRef<'button'> & { project: GalleryProject }
+>(function ProjectMenuTrigger({ project, className, ...props }, ref) {
   return (
     <button
+      ref={ref}
       type="button"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
+      {...props}
       title={`Move "${project.name}"`}
       aria-label={`Move ${project.name}`}
       className={cn(
         'inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md',
         'bg-muted/70 text-muted-foreground transition-colors duration-150',
         'hover:bg-primary/15 hover:text-primary',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+        className
       )}
     >
       <MoreHorizontal className="h-3.5 w-3.5" />
     </button>
   );
-}
+});
+ProjectMenuTrigger.displayName = 'ProjectMenuTrigger';
 
 function FinishedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmin?: boolean }) {
   const typeLabel = getTypeLabel(project.project_type);
@@ -1124,7 +1134,7 @@ function FinishedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
         </span>
       </Link>
       {isAdmin && (
-        <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+        <div className="absolute right-1.5 top-1/2 z-20 -translate-y-1/2">
           <StageDropdown project={project} trigger={<ProjectMenuTrigger project={project} />} />
         </div>
       )}
@@ -1222,7 +1232,7 @@ function ArchivedRowItem({ project, isAdmin }: { project: GalleryProject; isAdmi
         </span>
       </Link>
       {isAdmin && (
-        <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+        <div className="absolute right-1.5 top-1/2 z-20 -translate-y-1/2">
           <StageDropdown project={project} trigger={<ProjectMenuTrigger project={project} />} />
         </div>
       )}

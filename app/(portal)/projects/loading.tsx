@@ -4,8 +4,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function ProjectsLoading() {
   return (
     <div className="flex h-full flex-col">
-      {/* Header — matches PageHeader layout */}
-      <header className="flex items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
+      {/* Header — mobile keeps route context; desktop collapses to actions like PageHeader. */}
+      <header className="flex items-center justify-between border-b border-border bg-card/80 px-4 py-3 backdrop-blur-xl sm:px-6 md:min-h-14 md:justify-end md:px-6 md:py-2">
         <div className="flex items-center gap-2.5">
           {/* Hamburger placeholder on mobile */}
           <div className="mr-1 h-[44px] w-[44px] md:hidden" />
@@ -16,7 +16,7 @@ export default function ProjectsLoading() {
             Projects
           </span>
         </div>
-        <Skeleton className="h-9 w-28 rounded-md" />
+        <Skeleton className="hidden h-9 w-28 rounded-lg md:block" />
       </header>
 
       {/* Content area */}

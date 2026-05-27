@@ -42,7 +42,11 @@ export interface ProjectData {
   };
   roadmap_progress: number;
   is_pre_production: boolean;
-  metadata: { is_partnership?: boolean; partner_name?: string } | null;
+  metadata: {
+    is_partnership?: boolean;
+    partner_name?: string;
+    framework_progress_percent?: unknown;
+  } | null;
   sort_order: number;
   team?: ProjectTeamMember[];
   has_github: boolean;
@@ -50,6 +54,12 @@ export interface ProjectData {
 }
 
 type MissingProjectFilter = 'target_date' | 'phase_dates';
+
+function frameworkRoadmapProgress(metadata: ProjectData['metadata']): number | null {
+  const value = metadata?.framework_progress_percent;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return Math.max(0, Math.min(100, value)) / 100;
+}
 
 function resolveMissingProjectFilter(value: string | undefined): MissingProjectFilter | undefined {
   if (value === 'target_date' || value === 'phase_dates') return value;
@@ -133,37 +143,42 @@ async function ProjectListLoader({ missing }: { missing?: MissingProjectFilter }
     : new Set<string>();
 
   // Map RPC result to Project interface
-  const allProjects: ProjectData[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
-    id: p.id as string,
-    name: p.name as string,
-    status: p.status as string,
-    start_date: p.start_date as string | null,
-    target_date: p.target_date as string | null,
-    project_group: p.project_group as string | null,
-    project_type: p.project_type as ProjectType | null,
-    deployment_platform: p.deployment_platform as string | null,
-    client_id: p.client_id as string | null,
-    client_name: p.client_name as string | null,
-    logo_url: (p.logo_url as string | null) || null,
-    lead: p.lead_id
-      ? {
-          id: p.lead_id as string,
-          full_name: p.lead_full_name as string | null,
-          email: p.lead_email as string | null,
-        }
-      : null,
-    issue_stats: {
-      total: Number(p.total_issues),
-      done: Number(p.done_issues),
-    },
-    roadmap_progress: (p.roadmap_progress as number) || 0,
-    is_pre_production: (p.is_pre_production as boolean) || false,
-    metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
-    sort_order: (p.sort_order as number) || 0,
-    team: teamByProject.get(p.id as string) || [],
-    has_github: githubProjectIds.has(p.id as string),
-    is_assigned: isAdmin ? true : userAssignedIds.has(p.id as string),
-  }));
+  const allProjects: ProjectData[] = (rawProjects || []).map((p: Record<string, unknown>) => {
+    const projectMetadata = p.metadata as ProjectData['metadata'];
+    const frameworkProgress = frameworkRoadmapProgress(projectMetadata);
+
+    return {
+      id: p.id as string,
+      name: p.name as string,
+      status: p.status as string,
+      start_date: p.start_date as string | null,
+      target_date: p.target_date as string | null,
+      project_group: p.project_group as string | null,
+      project_type: p.project_type as ProjectType | null,
+      deployment_platform: p.deployment_platform as string | null,
+      client_id: p.client_id as string | null,
+      client_name: p.client_name as string | null,
+      logo_url: (p.logo_url as string | null) || null,
+      lead: p.lead_id
+        ? {
+            id: p.lead_id as string,
+            full_name: p.lead_full_name as string | null,
+            email: p.lead_email as string | null,
+          }
+        : null,
+      issue_stats: {
+        total: Number(p.total_issues),
+        done: Number(p.done_issues),
+      },
+      roadmap_progress: frameworkProgress ?? ((p.roadmap_progress as number) || 0),
+      is_pre_production: (p.is_pre_production as boolean) || false,
+      metadata: projectMetadata,
+      sort_order: (p.sort_order as number) || 0,
+      team: teamByProject.get(p.id as string) || [],
+      has_github: githubProjectIds.has(p.id as string),
+      is_assigned: isAdmin ? true : userAssignedIds.has(p.id as string),
+    };
+  });
 
   // Employees only see projects they're assigned to. Admins see everything.
   // Server-side filter — defense in depth on top of project_detail page's notFound() guard.
@@ -225,6 +240,7 @@ async function ClientProjectListLoader({ clientId }: { clientId: string }) {
         logo_url,
         is_pre_production,
         sort_order,
+        metadata,
         phases:project_phases(id, status, phase_type)
       )
     `
@@ -257,6 +273,7 @@ async function ClientProjectListLoader({ clientId }: { clientId: string }) {
     logo_url: string | null;
     is_pre_production: boolean | null;
     sort_order: number | null;
+    metadata: ProjectData['metadata'];
     phases: PhaseRow[] | null;
   };
   type LinkRow = { project: ClientProjectRow | ClientProjectRow[] | null };
@@ -274,6 +291,7 @@ async function ClientProjectListLoader({ clientId }: { clientId: string }) {
       ['completed', 'done'].includes(phase.status || '')
     ).length;
     const roadmapProgress = phases.length > 0 ? completed / phases.length : 0;
+    const frameworkProgress = frameworkRoadmapProgress(project.metadata);
 
     return {
       id: project.id,
@@ -289,9 +307,9 @@ async function ClientProjectListLoader({ clientId }: { clientId: string }) {
       logo_url: project.logo_url,
       lead: null,
       issue_stats: { total: phases.length, done: completed },
-      roadmap_progress: roadmapProgress,
+      roadmap_progress: frameworkProgress ?? roadmapProgress,
       is_pre_production: Boolean(project.is_pre_production),
-      metadata: null,
+      metadata: project.metadata,
       sort_order: project.sort_order || 0,
       team: [],
       has_github: false,

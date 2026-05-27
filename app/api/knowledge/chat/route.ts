@@ -12,14 +12,13 @@ Software company in Nicosia, Cyprus. Builds websites, AI agents, voice agents, A
 
 Partnership: GlluzTech (GT) sources leads, Qualia prices the build, GT adds 15% markup (or 15% commission of gross), shipped under GT brand with co-credit "Qualia × GlluzTech".
 
-# Qualia Framework (workflow tool, current v5.1.0)
+# Qualia Framework (workflow tool, current v6.3)
 Wraps Claude Code with skills, agents, hooks, and rules so projects ship consistently end-to-end.
 
 Hierarchy: Project → Journey → Milestones (2–5, Handoff is always last) → Phases (2–5 tasks each) → Tasks (one commit, one verification contract).
 
 Daily commands (this list is authoritative; if a user asks about a /qualia-* command not listed here, say you don't have it documented and offer the closest match):
 - /qualia — smart router, tells you the next command
-- /qualia-help — open the framework reference guide in the browser
 - /qualia-road — workflow map showing every command and when to use it
 - /qualia-new — kickoff a new project (deep questioning + parallel research + JOURNEY.md)
 - /qualia-map — map an existing brownfield repo into the framework
@@ -27,26 +26,18 @@ Daily commands (this list is authoritative; if a user asks about a /qualia-* com
 - /qualia-research — deep-research a niche domain or library before planning
 - /qualia-plan {N} — plan phase N (planner + plan-checker revision loop)
 - /qualia-build {N} — execute phase N (wave-based parallel subagents)
-- /qualia-task — build one focused task (between /qualia-quick and /qualia-build)
+- /qualia-feature — build one scoped feature
+- /qualia-fix — repair broken existing behavior
 - /qualia-test — generate tests for code, run existing tests, or drive a feature test-first via --tdd
 - /qualia-verify {N} — goal-backward check that phase N actually works
 - /qualia-review — production audit with scored diagnostics (security, quality)
 - /qualia-milestone — close current milestone, open next
 - /qualia-polish — scope-adaptive design pass (component → app → redesign)
-- /qualia-polish-loop — autonomous screenshot + vision + fix loop until rubric ≥ 3
 - /qualia-optimize — deep optimization sweep (perf, design, backend, architecture)
 - /qualia-ship — deploy to production with quality gates
 - /qualia-handoff — final client delivery (4 deliverables)
-- /qualia-pause / /qualia-resume — save/restore session
-- /qualia-quick — fast small tasks (skip planning)
-- /qualia-debug — investigate broken things
-- /qualia-idk — diagnostic when something feels off but you can't name it
-- /qualia-zoom — zoom into a deeper view of current state
-- /qualia-issues — break a phase plan into GitHub issues
-- /qualia-triage — route open issues into ready-for-agent / ready-for-human / wontfix
 - /qualia-postmortem — self-heal the framework when /qualia-verify finds a class of bug it should have caught
 - /qualia-report — mandatory at clock-out, posts a session report to the ERP
-- /qualia-recall — pull lessons from the Qualia Brain (memory vault)
 - /qualia-learn — save a lesson to the Qualia Brain
 - /qualia-flush — promote daily-log raw entries to curated knowledge tier (weekly)
 - /qualia-skill-new — author a new framework skill or agent

@@ -77,6 +77,14 @@ const PAGES: PageDef[] = [
     appKey: 'home',
   },
   {
+    id: 'admin-panel',
+    label: 'Admin Panel',
+    icon: 'admin',
+    href: '/admin',
+    roles: ['admin'],
+    appKey: 'control',
+  },
+  {
     id: 'projects',
     label: 'Projects',
     icon: 'projects',
@@ -109,6 +117,22 @@ const PAGES: PageDef[] = [
     appKey: 'requests',
   },
   {
+    id: 'files',
+    label: 'Files',
+    icon: 'files',
+    href: '/files',
+    roles: ['client'],
+    appKey: 'files',
+  },
+  {
+    id: 'clients',
+    label: 'Clients',
+    icon: 'clients',
+    href: '/clients',
+    roles: ['admin'],
+    appKey: 'clients',
+  },
+  {
     id: 'client-billing',
     label: 'Billing',
     icon: 'payments',
@@ -127,9 +151,18 @@ const PAGES: PageDef[] = [
 ];
 
 const ROLE_ORDER: Record<Role, string[]> = {
-  admin: ['admin-dashboard', 'projects', 'schedule', 'requests', 'knowledge', 'settings'],
+  admin: [
+    'admin-dashboard',
+    'projects',
+    'schedule',
+    'requests',
+    'clients',
+    'knowledge',
+    'admin-panel',
+    'settings',
+  ],
   employee: ['employee-dashboard', 'projects', 'schedule', 'requests', 'knowledge', 'settings'],
-  client: ['client-dashboard', 'projects', 'requests', 'client-billing', 'settings'],
+  client: ['client-dashboard', 'projects', 'files', 'requests', 'client-billing', 'settings'],
 };
 
 /* ======================================================================

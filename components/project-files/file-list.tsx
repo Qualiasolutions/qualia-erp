@@ -34,6 +34,7 @@ import {
   Download,
   Trash2,
   File,
+  ExternalLink,
   FileText,
   FileImage,
   FileVideo,
@@ -48,16 +49,19 @@ import { toastError } from '@/lib/toast-helpers';
 
 interface FileListProps {
   files: ProjectFileWithUploader[];
+  isAdmin?: boolean;
   onFileDeleted?: () => void;
 }
 
-export function FileList({ files, onFileDeleted }: FileListProps) {
+export function FileList({ files, isAdmin = false, onFileDeleted }: FileListProps) {
   const router = useRouter();
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   const [fileToDelete, setFileToDelete] = useState<ProjectFile | null>(null);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
 
-  const getFileIcon = (mimeType: string | null) => {
+  const getFileIcon = (file: ProjectFileWithUploader) => {
+    if (file.file_kind === 'link') return <ExternalLink className="h-5 w-5 text-sky-500" />;
+    const mimeType = file.mime_type;
     if (!mimeType) return <File className="h-5 w-5 text-muted-foreground/60" />;
 
     if (mimeType.startsWith('image/')) {
@@ -159,14 +163,16 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
             {files.map((file) => (
               <TableRow key={file.id}>
                 {/* File Icon */}
-                <TableCell>{getFileIcon(file.mime_type)}</TableCell>
+                <TableCell>{getFileIcon(file)}</TableCell>
 
                 {/* File Name */}
                 <TableCell className="font-medium">
                   <div className="flex flex-col">
                     <span className="truncate">{file.original_name}</span>
                     <span className="text-xs text-muted-foreground">
-                      {(file.file_size / 1024).toFixed(2)} KB
+                      {file.file_kind === 'link'
+                        ? 'Link'
+                        : `${(file.file_size / 1024).toFixed(2)} KB`}
                     </span>
                   </div>
                 </TableCell>
@@ -244,22 +250,26 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
                     >
                       {downloadingFileId === file.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : file.file_kind === 'link' ? (
+                        <ExternalLink className="h-4 w-4" />
                       ) : (
                         <Download className="h-4 w-4" />
                       )}
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setFileToDelete(file)}
-                      disabled={deletingFileId === file.id}
-                    >
-                      {deletingFileId === file.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      )}
-                    </Button>
+                    {isAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFileToDelete(file)}
+                        disabled={deletingFileId === file.id}
+                      >
+                        {deletingFileId === file.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

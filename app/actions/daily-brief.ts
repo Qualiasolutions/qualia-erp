@@ -97,7 +97,7 @@ export async function getDailyBrief(forDate?: string): Promise<DailyBriefRespons
     }
   }
 
-  const { data, error } = await supabase
+  const { data: todayRows, error } = await supabase
     .from('daily_brief_items')
     .select('*')
     .eq('owner_id', userId)
@@ -117,15 +117,34 @@ export async function getDailyBrief(forDate?: string): Promise<DailyBriefRespons
     };
   }
 
+  const resolvedSince = new Date(Date.now() - 86_400_000).toISOString();
   const { count: dismissedCount } = await supabase
     .from('daily_brief_items')
     .select('id', { count: 'exact', head: true })
     .eq('owner_id', userId)
-    .eq('for_date', date)
-    .not('dismissed_at', 'is', null);
+    .not('dismissed_at', 'is', null)
+    .gte('dismissed_at', resolvedSince);
+
+  // Manual memory rows are intentionally not date-bound. If Fawzi captures
+  // something today, it should stay visible tomorrow until he resolves it.
+  const { data: carriedMemoryRows, error: carriedMemoryError } = await supabase
+    .from('daily_brief_items')
+    .select('*')
+    .eq('owner_id', userId)
+    .lt('for_date', date)
+    .is('dismissed_at', null)
+    .in('source_type', ['manual', 'qualia_memory'])
+    .order('priority', { ascending: false })
+    .order('generated_at', { ascending: true });
+
+  if (carriedMemoryError) {
+    console.error('[getDailyBrief carried memory]', carriedMemoryError.message);
+  }
+
+  const activeRows = [...(todayRows ?? []), ...(carriedMemoryRows ?? [])];
 
   const grouped = new Map<string, BriefItem[]>();
-  for (const item of data ?? []) {
+  for (const item of activeRows) {
     const heading = SOURCE_HEADINGS[item.source_type] ?? item.source_type;
     if (!grouped.has(heading)) grouped.set(heading, []);
     grouped.get(heading)!.push(item);
@@ -135,7 +154,7 @@ export async function getDailyBrief(forDate?: string): Promise<DailyBriefRespons
     .sort((a, b) => ordering.indexOf(a[0]) - ordering.indexOf(b[0]))
     .map(([heading, items]) => ({ heading, items }));
 
-  const generatedAt = data?.[0]?.generated_at ?? null;
+  const generatedAt = todayRows?.[0]?.generated_at ?? carriedMemoryRows?.[0]?.generated_at ?? null;
 
   return {
     forDate: date,
@@ -143,7 +162,7 @@ export async function getDailyBrief(forDate?: string): Promise<DailyBriefRespons
     generatedAt,
     sections,
     totals: {
-      active: data?.length ?? 0,
+      active: activeRows.length,
       dismissed: dismissedCount ?? 0,
     },
   };

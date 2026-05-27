@@ -30,7 +30,7 @@ const QualiaScheduleWeek = dynamic(
             <div className="h-7 w-36 animate-pulse rounded bg-muted" />
           </div>
         </div>
-        <div className="flex-1 rounded-2xl border border-border bg-card" />
+        <div className="flex-1 rounded-xl border border-border bg-card" />
       </div>
     ),
   }
@@ -85,22 +85,14 @@ async function ScheduleLoader({
 }) {
   await connection();
 
+  let meetings;
   try {
     const anchor = parseISO(anchorISO);
     const range = rangeForView(anchor, view);
-    const meetings = await getMeetings(undefined, null, {
+    meetings = await getMeetings(undefined, null, {
       start: range.start.toISOString(),
       end: range.end.toISOString(),
     });
-
-    return (
-      <QualiaScheduleWeek
-        initialMeetings={meetings}
-        anchor={anchorISO}
-        view={view}
-        currentUserId={userId}
-      />
-    );
   } catch (error) {
     console.error('Failed to load schedule data:', error);
     return (
@@ -114,6 +106,15 @@ async function ScheduleLoader({
       </div>
     );
   }
+
+  return (
+    <QualiaScheduleWeek
+      initialMeetings={meetings}
+      anchor={anchorISO}
+      view={view}
+      currentUserId={userId}
+    />
+  );
 }
 
 function ScheduleSkeleton() {
@@ -125,11 +126,11 @@ function ScheduleSkeleton() {
           <div className="h-7 w-36 animate-pulse rounded bg-muted" />
         </div>
         <div className="flex gap-3">
-          <div className="h-11 w-32 animate-pulse rounded-xl bg-muted" />
-          <div className="h-11 w-24 animate-pulse rounded-xl bg-muted" />
+          <div className="h-11 w-32 animate-pulse rounded-lg bg-muted" />
+          <div className="h-11 w-24 animate-pulse rounded-lg bg-muted" />
         </div>
       </div>
-      <div className="flex-1 rounded-2xl border border-border bg-card">
+      <div className="flex-1 rounded-xl border border-border bg-card">
         <div className="grid grid-cols-8 gap-px border-b border-border bg-border/30">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="bg-muted/20 p-3">

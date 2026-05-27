@@ -1,12 +1,17 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { uuidParam, dashboardNoteContentSchema } from '@/lib/validation';
+import { uuidParam, dashboardNotePayloadSchema, type DashboardNotePayload } from '@/lib/validation';
 import { isUserAdmin, type ActionResult } from './shared';
+
+export type DashboardNoteKind = 'manual' | 'automatic';
 
 export type DashboardNote = {
   id: string;
+  title: string;
   content: string;
+  status: string;
+  kind: DashboardNoteKind;
   author_id: string;
   pinned: boolean;
   created_at: string;
@@ -18,6 +23,52 @@ export type DashboardNote = {
     role: string | null;
   } | null;
 };
+
+const DASHBOARD_NOTICE_PREFIX = '__dashboard_notice_v1__:';
+
+function parseDashboardNotice(
+  content: string
+): Pick<DashboardNote, 'title' | 'content' | 'status' | 'kind'> {
+  if (content.startsWith(DASHBOARD_NOTICE_PREFIX)) {
+    try {
+      const parsed = JSON.parse(content.slice(DASHBOARD_NOTICE_PREFIX.length)) as Partial<{
+        title: string;
+        content: string;
+        status: string;
+        kind: DashboardNoteKind;
+      }>;
+      return {
+        title: parsed.title?.trim() || 'Untitled notice',
+        content: parsed.content?.trim() || '',
+        status: parsed.status?.trim() || 'Notice',
+        kind: parsed.kind === 'automatic' ? 'automatic' : 'manual',
+      };
+    } catch {
+      // Fall through to legacy text handling.
+    }
+  }
+
+  const title = content
+    .split('\n')
+    .find((line) => line.trim())
+    ?.trim()
+    .slice(0, 120);
+  return {
+    title: title || 'Manual note',
+    content,
+    status: 'Notice',
+    kind: 'manual',
+  };
+}
+
+function serializeDashboardNotice(payload: DashboardNotePayload): string {
+  return `${DASHBOARD_NOTICE_PREFIX}${JSON.stringify({
+    title: payload.title.trim(),
+    content: payload.content.trim(),
+    status: payload.status.trim(),
+    kind: payload.kind,
+  })}`;
+}
 
 export async function getDashboardNotes(): Promise<DashboardNote[]> {
   const supabase = await createClient();
@@ -36,15 +87,20 @@ export async function getDashboardNotes(): Promise<DashboardNote[]> {
 
   if (error || !data) return [];
 
-  return data.map((note) => ({
-    ...note,
-    author: Array.isArray(note.author) ? note.author[0] || null : note.author,
-  }));
+  return data.map((note) => {
+    const parsed = parseDashboardNotice(note.content);
+    return {
+      ...note,
+      ...parsed,
+      author: Array.isArray(note.author) ? note.author[0] || null : note.author,
+    };
+  });
 }
 
-export async function createDashboardNote(content: string): Promise<ActionResult> {
-  const check = dashboardNoteContentSchema.safeParse(content);
+export async function createDashboardNote(input: DashboardNotePayload): Promise<ActionResult> {
+  const check = dashboardNotePayloadSchema.safeParse(input);
   if (!check.success) return { success: false, error: check.error.issues[0].message };
+  const payload = check.data;
 
   const supabase = await createClient();
   const {
@@ -57,7 +113,7 @@ export async function createDashboardNote(content: string): Promise<ActionResult
   }
 
   const { error } = await supabase.from('dashboard_notes').insert({
-    content: content.trim(),
+    content: serializeDashboardNotice(payload),
     author_id: user.id,
   });
 
@@ -66,11 +122,15 @@ export async function createDashboardNote(content: string): Promise<ActionResult
   return { success: true };
 }
 
-export async function updateDashboardNote(noteId: string, content: string): Promise<ActionResult> {
+export async function updateDashboardNote(
+  noteId: string,
+  input: DashboardNotePayload
+): Promise<ActionResult> {
   const idCheck = uuidParam.safeParse(noteId);
-  const contentCheck = dashboardNoteContentSchema.safeParse(content);
+  const payloadCheck = dashboardNotePayloadSchema.safeParse(input);
   if (!idCheck.success) return { success: false, error: 'Invalid note ID' };
-  if (!contentCheck.success) return { success: false, error: contentCheck.error.issues[0].message };
+  if (!payloadCheck.success) return { success: false, error: payloadCheck.error.issues[0].message };
+  const payload = payloadCheck.data;
 
   const supabase = await createClient();
   const {
@@ -93,7 +153,10 @@ export async function updateDashboardNote(noteId: string, content: string): Prom
 
   const { data, error } = await supabase
     .from('dashboard_notes')
-    .update({ content: content.trim(), updated_at: new Date().toISOString() })
+    .update({
+      content: serializeDashboardNotice(payload),
+      updated_at: new Date().toISOString(),
+    })
     .eq('id', noteId)
     .select('id')
     .single();

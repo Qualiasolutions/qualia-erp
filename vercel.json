@@ -38,6 +38,10 @@
     {
       "path": "/api/cron/daily-brief",
       "schedule": "15 3 * * *"
+    },
+    {
+      "path": "/api/cron/meeting-reminders",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

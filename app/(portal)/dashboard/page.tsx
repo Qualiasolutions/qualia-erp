@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { isPortalAdminRole } from '@/lib/portal-utils';
+import { getClientWorkspaceId, isPortalAdminRole } from '@/lib/portal-utils';
 import {
   getPortalAuthUser,
   getPortalProfile,
@@ -9,11 +9,17 @@ import {
   getWorkspaceClientLogo,
 } from '@/lib/portal-cache';
 import { PortalDashboardContent } from '../portal-dashboard-content';
-import { getClientWorkspaces } from '@/app/actions/portal-workspaces';
-import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
 import { EmployeeDashboardContent } from '../employee-dashboard-content';
 import { AdminDashboardContent } from '../admin-dashboard-content';
-import { getCurrentWorkspaceId } from '@/app/actions/workspace';
+import { getEnabledAppsForClient } from '@/app/actions/portal-admin';
+
+async function getDashboardEnabledApps(workspaceId: string | null, clientId: string | null) {
+  if (!workspaceId || !clientId) return undefined;
+  const appsResult = await getEnabledAppsForClient(workspaceId, clientId);
+  return appsResult.success && Array.isArray(appsResult.data)
+    ? (appsResult.data as string[])
+    : undefined;
+}
 
 export default async function PortalDashboard({
   searchParams,
@@ -59,19 +65,7 @@ export default async function PortalDashboard({
   if (isPortalAdminRole(effectiveRole)) {
     // No workspace selected -> show admin dashboard with workspace grid
     if (!workspaceId) {
-      const [result, currentWorkspaceId] = await Promise.all([
-        getClientWorkspaces(),
-        getCurrentWorkspaceId(),
-      ]);
-      const workspaces = (result.success ? result.data : []) as ClientWorkspace[];
-
-      return (
-        <AdminDashboardContent
-          workspaces={workspaces}
-          displayName={displayName}
-          workspaceId={currentWorkspaceId}
-        />
-      );
+      return <AdminDashboardContent displayName={displayName} userId={effectiveUserId} />;
     }
 
     // Workspace selected: resolve client + primary contact email in ONE query
@@ -128,13 +122,17 @@ export default async function PortalDashboard({
 
     const clientId = portalUserId || workspaceId;
     const companyName = client?.name || null;
-    const logoUrl = await getWorkspaceClientLogo(workspaceId);
+    const [logoUrl, enabledApps] = await Promise.all([
+      getWorkspaceClientLogo(workspaceId),
+      getDashboardEnabledApps(workspaceId, portalUserId),
+    ]);
 
     return (
       <PortalDashboardContent
         clientId={clientId}
         displayName={displayName}
         companyName={companyName}
+        enabledApps={enabledApps}
         logoUrl={logoUrl}
         showWelcomeTour={false}
         userRole={effectiveRole as 'admin' | 'employee' | 'client'}
@@ -153,18 +151,28 @@ export default async function PortalDashboard({
   // legal entity ("Alecci Media") that doesn't match the user's actual brand.
   // profiles.full_name is the curated, user-facing display name.
   const companyName = displayName;
-  const logoUrl = await getClientPrimaryLogo(effectiveUserId);
+  const [logoUrl, clientWorkspaceId] = await Promise.all([
+    getClientPrimaryLogo(effectiveUserId),
+    getClientWorkspaceId(effectiveUserId),
+  ]);
+  const enabledApps = await getDashboardEnabledApps(clientWorkspaceId, effectiveUserId);
 
-  // Client: show their dashboard. Welcome tour is gated to the real user
-  // (not admin impersonating), so it only triggers for actual clients on
-  // their first login in a given browser.
+  // Client: show their dashboard. Welcome tour is gated to:
+  //   - the real user (not admin impersonating)
+  //   - actual clients
+  //   - users who haven't completed the current tour version yet (DB-backed,
+  //     not just localStorage — so the tour stays dismissed across devices /
+  //     incognito / cache clears)
+  const TOUR_VERSION = 4;
+  const tourCompleted = (profile?.internal_onboarding_version ?? 0) >= TOUR_VERSION;
   return (
     <PortalDashboardContent
       clientId={effectiveUserId}
       displayName={displayName}
       companyName={companyName}
+      enabledApps={enabledApps}
       logoUrl={logoUrl}
-      showWelcomeTour={realRole === 'client'}
+      showWelcomeTour={realRole === 'client' && !tourCompleted}
       userRole={effectiveRole as 'admin' | 'employee' | 'client'}
     />
   );

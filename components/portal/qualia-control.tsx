@@ -6,6 +6,7 @@ import { Activity, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react'
 
 import type {
   ControlTab,
+  DeliveryPayload,
   OverviewPayload,
   TeamPayload,
   FinancePayload,
@@ -14,6 +15,7 @@ import type {
 import type { BillableClient } from '@/app/actions/invoice-generation';
 
 import { ControlTeam } from './control-team';
+import { ControlDelivery } from './control-delivery';
 import { ControlFinance } from './control-finance';
 import { ControlSystem } from './control-system';
 import { ControlOverviewTab } from './control-overview';
@@ -24,6 +26,7 @@ import { ControlOverviewTab } from './control-overview';
 
 export interface QualiaControlData {
   overview?: OverviewPayload;
+  delivery?: DeliveryPayload;
   team?: TeamPayload;
   finance?: FinancePayload;
   system?: SystemPayload;
@@ -37,13 +40,16 @@ interface QualiaControlProps {
   canViewFinance?: boolean;
 }
 
-// Heading per section so each sidebar destination lands with its own title
-// instead of the old monolithic 'Dashboard' + tab-row pattern.
 const SECTION_META: Record<ControlTab, { eyebrow: string; title: string; desc: string }> = {
   overview: {
     eyebrow: 'Admin console',
     title: 'Dashboard',
     desc: 'What needs your attention right now.',
+  },
+  delivery: {
+    eyebrow: 'Delivery control',
+    title: 'Delivery',
+    desc: 'Deadlines, work packets, proof, and review queues.',
   },
   team: {
     eyebrow: 'Admin console',
@@ -118,6 +124,7 @@ export function QualiaControl({ initialTab, data, canViewFinance = false }: Qual
         {tab === 'overview' && (
           <ControlOverview data={data.overview} billableClients={data.billableClients} />
         )}
+        {tab === 'delivery' && <ControlDelivery data={data.delivery} />}
         {tab === 'team' && <ControlTeam data={data.team} />}
         {tab === 'finance' && <ControlFinance data={data.finance} />}
         {tab === 'system' && (
@@ -204,15 +211,21 @@ function PlanningHealth({ data }: { data: OverviewPayload['planningHealth'] }) {
 
 function SectionHeader({ meta }: { meta: { eyebrow: string; title: string; desc: string } }) {
   return (
-    <header className="border-b border-border bg-muted/20 px-6 pb-6 pt-10 lg:px-8 lg:pt-12">
-      <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-        <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
-        <span>{meta.eyebrow}</span>
+    <header className="border-b border-border bg-card/45 px-4 py-3 backdrop-blur-xl lg:px-6">
+      <h1 className="sr-only">{meta.title}</h1>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+          <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            {meta.eyebrow}
+          </span>
+          <span className="hidden h-3 w-px bg-border sm:block" aria-hidden />
+          <p className="truncate text-sm font-medium text-foreground">{meta.desc}</p>
+        </div>
+        <span className="inline-flex w-fit items-center rounded-md border border-border bg-background/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+          {meta.title}
+        </span>
       </div>
-      <h1 className="mt-3 text-[clamp(1.5rem,1.1rem+1.5vw,2.125rem)] font-semibold leading-tight tracking-tight text-foreground">
-        {meta.title}
-      </h1>
-      <p className="mt-1.5 max-w-[560px] text-sm text-muted-foreground">{meta.desc}</p>
     </header>
   );
 }

@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { ArrowRight, Clock, Send } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CalendarClock, Clock, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -50,6 +50,46 @@ function formatDate(iso: string | null | undefined): string | null {
   });
 }
 
+function daysUntil(date: string): number {
+  const today = new Date(`${todayKey()}T00:00:00`);
+  const due = new Date(`${date}T00:00:00`);
+  return Math.round((due.getTime() - today.getTime()) / 86_400_000);
+}
+
+function deadlineCopy(deadlineDate: string, completionRequestedAt: string | null) {
+  const dueIn = daysUntil(deadlineDate);
+  const label = formatDate(deadlineDate) ?? deadlineDate;
+  if (completionRequestedAt) {
+    return {
+      text: `Review pending · deadline ${label}`,
+      className: 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300',
+      Icon: Clock,
+    };
+  }
+  if (dueIn < 0) {
+    return {
+      text: `${label} · ${Math.abs(dueIn)} day${Math.abs(dueIn) === 1 ? '' : 's'} late`,
+      className: 'border-destructive/35 bg-destructive/10 text-destructive',
+      Icon: AlertTriangle,
+    };
+  }
+  if (dueIn === 0) {
+    return {
+      text: `${label} · due today`,
+      className: 'border-amber-500/35 bg-amber-500/10 text-amber-800 dark:text-amber-300',
+      Icon: CalendarClock,
+    };
+  }
+  return {
+    text: `${label} · ${dueIn} day${dueIn === 1 ? '' : 's'} left`,
+    className:
+      dueIn <= 3
+        ? 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300'
+        : 'border-primary/25 bg-primary/[0.06] text-primary',
+    Icon: CalendarClock,
+  };
+}
+
 export function AssignmentFocusCard({
   assignments,
   employeeId,
@@ -75,10 +115,12 @@ export function AssignmentFocusCard({
         );
       })
       .sort((a, b) => {
-        // Awaiting review goes to the bottom; the rest stays in assigned-at order.
+        // Awaiting review goes to the bottom; open work is ordered by the nearest deadline.
         const aRequested = a.completion_requested_at ? 1 : 0;
         const bRequested = b.completion_requested_at ? 1 : 0;
         if (aRequested !== bRequested) return aRequested - bRequested;
+        const deadlineOrder = a.deadline_date.localeCompare(b.deadline_date);
+        if (deadlineOrder !== 0) return deadlineOrder;
         return a.assigned_at.localeCompare(b.assigned_at);
       });
   }, [assignments]);
@@ -88,7 +130,7 @@ export function AssignmentFocusCard({
   return (
     <section
       className={cn(
-        'rounded-2xl border border-primary/20 bg-primary/[0.035] p-4 shadow-sm md:p-5',
+        'rounded-xl border border-primary/15 bg-primary/[0.035] p-4 shadow-[0_1px_0_hsl(var(--border)/0.45)] md:p-5',
         compact ? 'mb-4' : 'mb-5',
         isGated && 'opacity-70',
         className
@@ -97,10 +139,10 @@ export function AssignmentFocusCard({
     >
       <header className="mb-3 flex items-center justify-between">
         <h2 className="text-[10px] font-semibold uppercase tracking-wider text-primary">
-          My assigned projects
+          Deadline focus
         </h2>
         <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-          {active.length}
+          {active.length} active
         </span>
       </header>
 
@@ -132,6 +174,8 @@ function AssignmentRow({
   const progress = Math.max(0, Math.min(100, project.progress ?? 0));
   const initials = project.name.slice(0, 2).toUpperCase();
   const promisedLabel = formatDate(assignment.promised_delivery_date ?? null);
+  const deadline = deadlineCopy(assignment.deadline_date, assignment.completion_requested_at);
+  const DeadlineIcon = deadline.Icon;
 
   return (
     <li className="rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/30 md:p-4">
@@ -159,6 +203,15 @@ function AssignmentRow({
                 <span> · You promised {promisedLabel}</span>
               ) : null}
             </p>
+            <div
+              className={cn(
+                'mt-2 inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-medium',
+                deadline.className
+              )}
+            >
+              <DeadlineIcon className="h-3 w-3 shrink-0" />
+              <span className="truncate">{deadline.text}</span>
+            </div>
             <div className="mt-2 flex items-center gap-2">
               <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/50">
                 <div
@@ -176,13 +229,13 @@ function AssignmentRow({
         <div className="flex shrink-0 flex-wrap gap-2">
           {isGated ? (
             <Button variant="outline" size="sm" className="h-8 gap-1.5" disabled>
-              Open roadmap
+              Open mission
               <ArrowRight className="h-3 w-3" />
             </Button>
           ) : (
             <Button variant="outline" size="sm" className="h-8 gap-1.5" asChild>
-              <Link href={`/projects/${project.id}/roadmap`}>
-                Open roadmap
+              <Link href={`/projects/${project.id}/mission`}>
+                Open mission
                 <ArrowRight className="h-3 w-3" />
               </Link>
             </Button>

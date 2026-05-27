@@ -205,11 +205,10 @@ export function ClientDetailView({
   }
 
   return (
-    <div className="p-6">
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-5">
+    <div className="p-4 md:p-6">
+      <div className="space-y-6">
+        <header className="rounded-xl border border-border bg-card p-4 shadow-elevation-1">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <LogoUpload
               entityType="client"
               entityId={client.id}
@@ -223,40 +222,48 @@ export function ClientDetailView({
                 setClient((prev) => ({ ...prev, logo_url: newUrl }));
               }}
             />
-            <div className="flex-1">
-              <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">
-                {client.display_name}
-              </h1>
-              <Badge
-                className={cn(status.bg, status.color, 'px-3 py-1 text-xs font-medium')}
-                variant="secondary"
-              >
-                {status.label}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setEditModalOpen(true)}
-                className="gap-2"
-              >
-                <Pencil className="h-4 w-4" />
-                Edit
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDeleteOpen(true)}
-                disabled={isDeleting}
-                className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete
-              </Button>
+            <div className="flex min-w-0 flex-1 flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  <span className="inline-block h-px w-5 bg-primary/60" aria-hidden />
+                  <span>Client record</span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <h1 className="truncate text-xl font-semibold tracking-tight text-foreground md:text-2xl">
+                    {client.display_name}
+                  </h1>
+                  <Badge
+                    className={cn(status.bg, status.color, 'px-2 py-0.5 text-[11px] font-medium')}
+                    variant="secondary"
+                  >
+                    {status.label}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditModalOpen(true)}
+                  className="gap-2"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDeleteOpen(true)}
+                  disabled={isDeleting}
+                  className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Client Details — structured finance-style layout */}
         <div className="overflow-hidden rounded-lg border border-border bg-card">

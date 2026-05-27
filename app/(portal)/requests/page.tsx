@@ -9,6 +9,7 @@ import { assertAppEnabledForClient } from '@/lib/portal-utils';
 import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import dynamic from 'next/dynamic';
 import { PortalRequestDialog } from '@/components/portal/portal-request-dialog';
+import { AdminClientFormLinkDialog } from '@/components/portal/admin-client-form-link-dialog';
 
 const AdminRequestsBoard = dynamic(
   () =>
@@ -26,7 +27,12 @@ const AdminRequestsBoard = dynamic(
 
 export const metadata: Metadata = { title: 'Requests' };
 
-export default async function PortalRequestsPage() {
+interface PageProps {
+  searchParams: Promise<{ project?: string }>;
+}
+
+export default async function PortalRequestsPage({ searchParams }: PageProps) {
+  const { project: requestedProjectId } = await searchParams;
   const user = await getPortalAuthUser();
 
   if (!user) {
@@ -100,14 +106,26 @@ export default async function PortalRequestsPage() {
       type: string;
       uploaded_at: string;
     }> | null;
-    project: { id: string; name: string } | null;
+    project: {
+      id: string;
+      name: string;
+      logo_url: string | null;
+      client: { id: string; display_name: string | null; logo_url: string | null } | null;
+    } | null;
+    client: {
+      id: string;
+      full_name: string | null;
+      email: string | null;
+      avatar_url: string | null;
+    } | null;
     assigned_to: string | null;
     assignee: { id: string; full_name: string | null; avatar_url: string | null } | null;
   }>;
 
   const projects = projectsData;
-  const isStaff = isAdmin || isEmployee;
-
+  const initialProjectId = projects.some((project) => project.id === requestedProjectId)
+    ? requestedProjectId
+    : undefined;
   // Comment counts surface as a chip on each kanban card for every role.
   const commentCounts =
     requests.length > 0 ? await getRequestCommentCounts(requests.map((r) => r.id)) : {};
@@ -130,25 +148,29 @@ export default async function PortalRequestsPage() {
   }
 
   return (
-    <div className="flex h-full animate-fade-in-up flex-col px-[clamp(0.75rem,2vw,1.5rem)] pb-[clamp(1rem,2vw,1.5rem)] pt-14 md:pt-[clamp(1.25rem,2vw,1.75rem)]">
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-            <span className="inline-block h-px w-5 bg-primary/60" aria-hidden />
-            <span>{isStaff ? 'Triage queue' : 'My requests'}</span>
+    <div className="flex h-full animate-fade-in-up flex-col px-[clamp(0.75rem,2vw,1.5rem)] pb-[clamp(1rem,2vw,1.5rem)] pt-14 md:pt-[clamp(1rem,2vw,1.25rem)]">
+      <header className="mb-4 rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold tracking-tight text-foreground">Requests</h1>
+              <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+              <p className="truncate text-sm text-muted-foreground">
+                {isAdmin
+                  ? `${requests.length} client request${requests.length === 1 ? '' : 's'}`
+                  : isEmployee
+                    ? 'Assigned project requests'
+                    : 'Your submitted requests'}
+              </p>
+            </div>
           </div>
-          <h1 className="mt-1.5 text-[clamp(1.25rem,0.9rem+1.2vw,1.75rem)] font-semibold leading-tight tracking-tight text-foreground">
-            Requests
-          </h1>
-          <p className="mt-1 hidden max-w-[560px] text-xs text-muted-foreground sm:block">
-            {isAdmin
-              ? `${requests.length} request${requests.length === 1 ? '' : 's'} across all clients — drag between columns to move through the pipeline.`
-              : isEmployee
-                ? 'Client requests on your assigned projects — drag between columns to move through the pipeline.'
-                : 'Ideas, changes, and questions — every thread you’ve opened with us, grouped by stage.'}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {isAdmin && <AdminClientFormLinkDialog projects={projects} />}
+            {!isEmployee && (
+              <PortalRequestDialog projects={projects} initialProjectId={initialProjectId} />
+            )}
+          </div>
         </div>
-        {!isEmployee && <PortalRequestDialog projects={projects} />}
       </header>
 
       <AdminRequestsBoard
@@ -157,6 +179,8 @@ export default async function PortalRequestsPage() {
         currentUserId={user.id}
         userRole={isAdmin ? 'admin' : isEmployee ? 'employee' : 'client'}
         staffOptions={staffOptions}
+        projects={projects}
+        initialProjectId={initialProjectId}
       />
     </div>
   );

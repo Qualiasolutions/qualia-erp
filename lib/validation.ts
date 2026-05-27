@@ -534,11 +534,31 @@ export const ClientProfileUpdateSchema = z.object({
   company: z.string().max(200).nullable().optional(),
 });
 
+// Structured intake-form payload stored on client_feature_requests.brief_data.
+// Mirrors the jsonb column shape — see migration 20260520102033.
+export const BriefSectionSchema = z.object({
+  key: z.string().min(1).max(64),
+  label: z.string().min(1).max(120),
+  values: z.array(z.string().max(500)).max(40).optional(),
+  value: z.string().max(2000).optional(),
+  note: z.string().max(2000).optional(),
+});
+
+export const BriefDataSchema = z.object({
+  variant: z.string().min(1).max(64),
+  submitted_at: z.string().datetime(),
+  sections: z.array(BriefSectionSchema).max(40),
+});
+
+export type BriefSection = z.infer<typeof BriefSectionSchema>;
+export type BriefData = z.infer<typeof BriefDataSchema>;
+
 export const FeatureRequestCreateSchema = z.object({
   project_id: z.string().uuid().optional(),
   title: z.string().min(1, 'Title is required').max(200),
   description: z.string().max(5000).optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  brief_data: BriefDataSchema.optional(),
 });
 
 export type ClientProfileUpdateInput = z.infer<typeof ClientProfileUpdateSchema>;
@@ -647,6 +667,15 @@ export const dashboardNoteContentSchema = z
   .string()
   .min(1, 'Note content is required')
   .max(5000, 'Note content too long');
+
+export const dashboardNotePayloadSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(160, 'Title too long'),
+  content: dashboardNoteContentSchema,
+  status: z.string().min(1, 'Status is required').max(80, 'Status too long'),
+  kind: z.enum(['manual', 'automatic']).default('manual'),
+});
+
+export type DashboardNotePayload = z.infer<typeof dashboardNotePayloadSchema>;
 
 // =====================
 // Owner Update Schemas

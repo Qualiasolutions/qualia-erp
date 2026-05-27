@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { createFeatureRequest } from '@/app/actions/client-requests';
-import { uploadProjectFile } from '@/app/actions/project-files';
+import { createFeatureRequest, uploadRequestAttachment } from '@/app/actions/client-requests';
+import type { BriefData, BriefSection } from '@/lib/validation';
 import { cn } from '@/lib/utils';
 import {
   AUDIENCE_OPTIONS,
@@ -20,14 +20,17 @@ import {
   TIMELINE_OPTIONS,
 } from './brief-types';
 
+// Aligned with uploadRequestAttachment limits in app/actions/client-requests.ts.
 const MAX_FILES = 8;
-const MAX_FILE_SIZE_MB = 50;
+const MAX_FILE_SIZE_MB = 20;
 
 interface ProjectBriefShellProps {
   projectId: string;
   projectName: string;
   formTitle: string;
   modulesStep: BriefModulesStep;
+  /** Identifies this variant in the structured brief_data payload. */
+  variant: string;
   className?: string;
 }
 
@@ -143,7 +146,7 @@ function buildSteps(modulesStep: BriefModulesStep): Step[] {
       eyebrow: 'Step 9',
       shortLabel: 'Files',
       title: 'Upload anything we should see',
-      hint: 'Logo, brief PDF, screenshots, references — up to 8 files, 50MB each.',
+      hint: 'Logo, brief PDF, screenshots, references — up to 8 files, 20MB each.',
       kind: 'files',
       optional: true,
     },
@@ -198,11 +201,53 @@ function buildDescription(
   return sections.join('\n\n');
 }
 
+function buildBriefData(variant: string, fields: BriefFields, modulesLabel: string): BriefData {
+  const sections: BriefSection[] = [];
+
+  const pushChips = (key: string, label: string, values: string[], note: string) => {
+    if (values.length === 0 && !note.trim()) return;
+    const section: BriefSection = { key, label };
+    if (values.length > 0) section.values = values;
+    if (note.trim()) section.note = note.trim();
+    sections.push(section);
+  };
+
+  const pushChip = (key: string, label: string, value: string, note: string) => {
+    if (!value && !note.trim()) return;
+    const section: BriefSection = { key, label };
+    if (value) section.value = value;
+    if (note.trim()) section.note = note.trim();
+    sections.push(section);
+  };
+
+  const pushText = (key: string, label: string, value: string) => {
+    if (!value.trim()) return;
+    sections.push({ key, label, value: value.trim() });
+  };
+
+  pushChips('goals', 'Goals', fields.goals, fields.goalsNote);
+  pushChips('audience', 'Audience', fields.audience, fields.audienceNote);
+  pushChips('modules', modulesLabel, fields.modules, fields.modulesNote);
+  pushChips('geography', 'Geography', fields.geography, fields.geographyNote);
+  pushChips('integrations', 'Integrations', fields.integrations, fields.integrationsNote);
+  pushText('references', 'References', fields.references);
+  pushChip('timeline', 'Timeline', fields.timeline, fields.timelineNote);
+  pushChip('budget', 'Budget', fields.budget, fields.budgetNote);
+  pushText('notes', 'Anything else', fields.notes);
+
+  return {
+    variant,
+    submitted_at: new Date().toISOString(),
+    sections,
+  };
+}
+
 export function ProjectBriefShell({
   projectId,
   projectName,
   formTitle,
   modulesStep,
+  variant,
   className,
 }: ProjectBriefShellProps) {
   const STEPS = buildSteps(modulesStep);
@@ -324,51 +369,55 @@ export function ProjectBriefShell({
 
     setSubmitting(true);
 
-    const uploaded: { name: string; size: number }[] = [];
-    for (const file of files) {
-      const fd = new FormData();
-      fd.set('file', file);
-      fd.set('project_id', projectId);
-      fd.set('description', `Project brief attachment — ${projectName}`);
-      fd.set('is_client_visible', 'true');
-      const res = await uploadProjectFile(fd);
-      if (res.success) {
-        uploaded.push({ name: file.name, size: file.size });
-      } else {
-        toast.error(`Could not upload ${file.name}: ${res.error}`);
-      }
-    }
-
-    const description = buildDescription(fields, uploaded);
+    // Create the request first so files attach to a known request_id. The
+    // markdown description carries the same data as brief_data for back-compat
+    // with the existing /requests detail view; brief_data drives the new
+    // structured viewer on the project page.
+    const briefData = buildBriefData(variant, fields, modulesStep.title);
+    const description = buildDescription(fields, []);
     const result = await createFeatureRequest({
       project_id: projectId,
       title: `Project brief — ${projectName}`,
       description,
       priority: 'medium',
+      brief_data: briefData,
     });
 
-    setSubmitting(false);
-
-    if (result.success) {
-      toast.success('Brief sent — we’ll review and get back to you');
-      setSubmitted(true);
-      setFields({ ...INITIAL_FIELDS, modules: modulesStep.defaults ?? [] });
-      setFiles([]);
-      setStepIndex(0);
-    } else {
+    if (!result.success || !result.data) {
+      setSubmitting(false);
       toast.error(result.error || 'Failed to send brief');
+      return;
     }
+
+    const requestId = (result.data as { id: string }).id;
+
+    for (const file of files) {
+      const fd = new FormData();
+      fd.set('file', file);
+      fd.set('request_id', requestId);
+      const res = await uploadRequestAttachment(fd);
+      if (!res.success) {
+        toast.error(`Could not upload ${file.name}: ${res.error}`);
+      }
+    }
+
+    setSubmitting(false);
+    toast.success('Brief sent — we’ll review and get back to you');
+    setSubmitted(true);
+    setFields({ ...INITIAL_FIELDS, modules: modulesStep.defaults ?? [] });
+    setFiles([]);
+    setStepIndex(0);
   }
 
   if (submitted) {
     return (
       <div
         className={cn(
-          'mx-auto flex max-w-2xl flex-col items-center justify-center gap-4 rounded-2xl border border-primary/20 bg-primary/[0.04] px-8 py-12 text-center',
+          'mx-auto flex max-w-2xl flex-col gap-4 rounded-xl border border-border bg-card p-6 text-left shadow-elevation-1 sm:flex-row sm:items-center',
           className
         )}
       >
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/[0.08] text-primary ring-1 ring-primary/15">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -381,7 +430,7 @@ export function ProjectBriefShell({
         </div>
         <div>
           <h3 className="text-lg font-semibold tracking-tight text-foreground">Brief received</h3>
-          <p className="mt-1.5 text-sm text-muted-foreground">
+          <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
             We&apos;ll review your input and reach out shortly. You can always add more via
             Requests.
           </p>
@@ -403,12 +452,12 @@ export function ProjectBriefShell({
   return (
     <div
       className={cn(
-        'mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card/40 backdrop-blur-sm',
+        'mx-auto w-full max-w-2xl overflow-hidden rounded-xl border border-border bg-card shadow-elevation-1',
         className
       )}
     >
       {/* Header */}
-      <div className="border-b border-border bg-gradient-to-b from-primary/[0.04] to-transparent px-7 pb-5 pt-6">
+      <div className="border-b border-border px-5 py-4">
         <div className="flex items-baseline justify-between">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/85">
             {step.eyebrow} of {STEPS.length}
@@ -418,14 +467,14 @@ export function ProjectBriefShell({
           </p>
         </div>
 
-        <div className="bg-muted-foreground/12 mt-3 h-[3px] w-full overflow-hidden rounded-full">
+        <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-border/50">
           <div
-            className="duration-[420ms] ease-[cubic-bezier(0.19,1,0.22,1)] h-full rounded-full bg-gradient-to-r from-primary/70 to-primary shadow-[0_0_12px_hsl(var(--primary)/0.6)] transition-[width]"
+            className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
             style={{ width: `${progressPct}%` }}
           />
         </div>
 
-        <h2 className="mt-5 text-[20px] font-semibold leading-tight tracking-tight text-foreground sm:text-[22px]">
+        <h2 className="mt-4 text-lg font-semibold leading-tight tracking-tight text-foreground">
           {step.title}
         </h2>
         {step.hint && (
@@ -434,12 +483,9 @@ export function ProjectBriefShell({
       </div>
 
       {/* Body */}
-      <div
-        key={stepIndex}
-        className="animate-[stepIn_320ms_cubic-bezier(0.19,1,0.22,1)_both] space-y-5 px-7 py-7"
-      >
+      <div key={stepIndex} className="animate-[stepIn_240ms_ease-out_both] space-y-4 px-5 py-5">
         {step.kind === 'chips' && step.options && (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {step.options.map((opt) => {
               const selected = value === opt.value;
               return (
@@ -448,10 +494,10 @@ export function ProjectBriefShell({
                   type="button"
                   onClick={() => update(step.key as keyof BriefFields, opt.value as never)}
                   className={cn(
-                    'group relative flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13.5px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    'group relative flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-3 py-2 text-[13px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     selected
-                      ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.6),0_8px_24px_-6px_hsl(var(--primary)/0.45)]'
-                      : 'border-border bg-card/50 text-muted-foreground hover:border-primary/40 hover:bg-primary/[0.04] hover:text-foreground'
+                      ? 'border-primary/40 bg-primary/[0.08] text-foreground shadow-sm'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-primary/[0.04] hover:text-foreground'
                   )}
                 >
                   {opt.label}
@@ -475,7 +521,7 @@ export function ProjectBriefShell({
         )}
 
         {step.kind === 'multi-chips' && step.options && (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {step.options.map((opt) => {
               const selected = Array.isArray(value) && value.includes(opt.value);
               return (
@@ -484,10 +530,10 @@ export function ProjectBriefShell({
                   type="button"
                   onClick={() => toggleMulti(step.key as keyof BriefFields, opt.value)}
                   className={cn(
-                    'group relative flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13.5px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    'group relative flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-3 py-2 text-[13px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     selected
-                      ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.6),0_8px_24px_-6px_hsl(var(--primary)/0.45)]'
-                      : 'border-border bg-card/50 text-muted-foreground hover:border-primary/40 hover:bg-primary/[0.04] hover:text-foreground'
+                      ? 'border-primary/40 bg-primary/[0.08] text-foreground shadow-sm'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-primary/[0.04] hover:text-foreground'
                   )}
                 >
                   {opt.label}
@@ -515,14 +561,14 @@ export function ProjectBriefShell({
             value={typeof value === 'string' ? value : ''}
             onChange={(e) => update(step.key as keyof BriefFields, e.target.value as never)}
             placeholder={step.placeholder}
-            className="min-h-[140px] resize-none rounded-xl text-[14px] leading-relaxed"
+            className="min-h-[140px] resize-none rounded-lg text-sm leading-relaxed"
             autoFocus
           />
         )}
 
         {step.kind === 'files' && (
           <div className="space-y-3">
-            <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-card/30 transition-colors hover:border-primary/50 hover:bg-primary/[0.03]">
+            <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/20 px-4 py-5 transition-colors hover:border-primary/40 hover:bg-primary/[0.03]">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -570,13 +616,13 @@ export function ProjectBriefShell({
             value={noteValue}
             onChange={(e) => update(step.noteKey as keyof BriefFields, e.target.value as never)}
             placeholder={step.notePlaceholder ?? 'Anything to add? (optional)'}
-            className="min-h-[80px] resize-none rounded-xl text-[13.5px] leading-relaxed text-foreground/90 placeholder:text-muted-foreground/55"
+            className="min-h-[80px] resize-none rounded-lg text-[13.5px] leading-relaxed text-foreground/90 placeholder:text-muted-foreground/55"
           />
         )}
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/20 px-7 py-4">
+      <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/20 px-5 py-3">
         <div className="flex items-center gap-3">
           {!isFirst ? (
             <button
@@ -606,7 +652,7 @@ export function ProjectBriefShell({
         <Button
           onClick={goNext}
           disabled={submitting || (!canAdvance && !step.optional)}
-          className="group h-10 min-w-[130px] gap-1.5 rounded-xl px-5 text-[12.5px] font-medium shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.45)] transition-all duration-200 hover:shadow-[0_8px_28px_-4px_hsl(var(--primary)/0.55)] hover:brightness-110"
+          className="group h-10 min-w-[130px] gap-1.5 rounded-lg px-5 text-[12.5px] font-medium shadow-sm transition-all duration-200 hover:shadow-md"
         >
           {submitting ? (
             'Sending…'

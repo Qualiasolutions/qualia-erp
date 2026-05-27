@@ -12,6 +12,8 @@ import {
   Trash2,
   Volume2,
   VolumeX,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAIAssistant } from './ai-assistant-provider';
@@ -26,6 +28,38 @@ const documentPrompts = [
   'Web development proposal',
   'Marketing services agreement',
 ];
+
+type SpeechRecognitionEventLike = Event & {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+};
+
+type SpeechRecognitionErrorEventLike = Event & {
+  error?: string;
+};
+
+type BrowserSpeechRecognition = EventTarget & {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+};
+
+type SpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
+
+function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | null {
+  if (typeof window === 'undefined') return null;
+  const speechWindow = window as typeof window & {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  };
+  return speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition || null;
+}
 
 // Typewriter component for smooth text reveal
 function TypewriterText({
@@ -128,8 +162,17 @@ function markdownToHtml(text: string): string {
 }
 
 export function AIAssistantChat() {
-  const { messages, isStreaming, mode, sendMessage, clearConversation, isAutoGreeting } =
-    useAIAssistant();
+  const {
+    messages,
+    isStreaming,
+    mode,
+    sendMessage,
+    clearConversation,
+    isAutoGreeting,
+    isListening,
+    setListening,
+    setError,
+  } = useAIAssistant();
 
   // Filter out auto-greeting user message from display
   const displayMessages = isAutoGreeting
@@ -145,31 +188,19 @@ export function AIAssistantChat() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const lastSpokenIdRef = useRef<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [voiceSupported, setVoiceSupported] = useState(() =>
+    Boolean(getSpeechRecognitionConstructor())
+  );
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const shouldSpeakResponses = ttsEnabled || mode === 'voice';
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [displayMessages]);
-
-  // Auto-speak assistant responses when TTS is enabled
-  useEffect(() => {
-    if (!ttsEnabled || isStreaming) return;
-
-    const lastMessage = displayMessages[displayMessages.length - 1];
-    if (
-      !lastMessage ||
-      lastMessage.role !== 'assistant' ||
-      lastMessage.id === lastSpokenIdRef.current ||
-      !lastMessage.content.trim()
-    )
-      return;
-
-    lastSpokenIdRef.current = lastMessage.id;
-    speakText(lastMessage.content);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayMessages, isStreaming, ttsEnabled]);
 
   const speakText = useCallback(async (text: string) => {
     // Stop any existing audio
@@ -218,6 +249,23 @@ export function AIAssistantChat() {
     }
   }, []);
 
+  // Auto-speak assistant responses when TTS is enabled
+  useEffect(() => {
+    if (!shouldSpeakResponses || isStreaming) return;
+
+    const lastMessage = displayMessages[displayMessages.length - 1];
+    if (
+      !lastMessage ||
+      lastMessage.role !== 'assistant' ||
+      lastMessage.id === lastSpokenIdRef.current ||
+      !lastMessage.content.trim()
+    )
+      return;
+
+    lastSpokenIdRef.current = lastMessage.id;
+    speakText(lastMessage.content);
+  }, [displayMessages, isStreaming, shouldSpeakResponses, speakText]);
+
   const toggleTts = useCallback(() => {
     setTtsEnabled((prev) => {
       const next = !prev;
@@ -243,6 +291,80 @@ export function AIAssistantChat() {
   const handleQuickAction = (action: string) => {
     sendMessage(action);
   };
+
+  const stopListening = useCallback(() => {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setListening(false);
+    setInterimTranscript('');
+  }, [setListening]);
+
+  const startListening = useCallback(() => {
+    const Recognition = getSpeechRecognitionConstructor();
+    if (!Recognition) {
+      setVoiceSupported(false);
+      setError(
+        'Voice input is not supported in this browser. Use Chrome or Edge for microphone dictation.'
+      );
+      return;
+    }
+
+    if (isListening) {
+      stopListening();
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    let finalTranscript = '';
+
+    recognition.onresult = (event) => {
+      let interim = '';
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        const transcript = result[0]?.transcript || '';
+        if (result.isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+
+      setInput((finalTranscript || interim).trimStart());
+      setInterimTranscript(interim.trim());
+    };
+
+    recognition.onerror = (event) => {
+      setListening(false);
+      setInterimTranscript('');
+      setError(event.error ? `Voice input failed: ${event.error}` : 'Voice input failed.');
+    };
+
+    recognition.onend = () => {
+      recognitionRef.current = null;
+      setListening(false);
+      setInterimTranscript('');
+      const text = finalTranscript.trim();
+      if (text) {
+        setInput('');
+        sendMessage(text);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    setListening(true);
+    setError(null);
+    recognition.start();
+  }, [isListening, sendMessage, setError, setListening, stopListening]);
+
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.abort();
+    };
+  }, []);
 
   const copyLastMessage = useCallback(() => {
     const lastAssistant = displayMessages.filter((m) => m.role === 'assistant').pop();
@@ -303,6 +425,7 @@ export function AIAssistantChat() {
   }, [displayMessages]);
 
   const prompts = mode === 'document' ? documentPrompts : quickActions;
+  const isVoiceMode = mode === 'voice';
   const hasMessages = displayMessages.length > 0;
   const hasAssistantMessage = displayMessages.some((m) => m.role === 'assistant');
 
@@ -316,12 +439,18 @@ export function AIAssistantChat() {
               <Sparkles className="h-6 w-6 text-primary/70" />
             </div>
             <h3 className="mb-1 text-sm font-medium text-foreground">
-              {mode === 'document' ? 'Document Drafting' : 'How can I help?'}
+              {mode === 'document'
+                ? 'Document Drafting'
+                : isVoiceMode
+                  ? 'Talk to Qualia'
+                  : 'How can I help?'}
             </h3>
             <p className="mb-4 text-center text-xs text-muted-foreground">
               {mode === 'document'
                 ? 'Describe the document you need'
-                : 'Ask about tasks, projects, or teams'}
+                : isVoiceMode
+                  ? 'Use the microphone or type a command'
+                  : 'Ask about tasks, projects, or teams'}
             </p>
 
             <div className="w-full space-y-1.5">
@@ -406,21 +535,30 @@ export function AIAssistantChat() {
               <Trash2 className="h-3 w-3" />
               Clear
             </button>
-            <button
-              onClick={toggleTts}
-              className={cn(
-                'flex items-center gap-1 text-[11px] transition-colors',
-                ttsEnabled ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-              )}
-              title={ttsEnabled ? 'Disable voice' : 'Enable voice'}
-            >
-              {ttsEnabled ? (
+            {mode === 'voice' ? (
+              <span className="flex items-center gap-1 text-[11px] text-primary">
                 <Volume2 className={cn('h-3 w-3', isSpeaking && 'animate-pulse')} />
-              ) : (
-                <VolumeX className="h-3 w-3" />
-              )}
-              {ttsEnabled ? 'Voice on' : 'Voice off'}
-            </button>
+                Voice mode
+              </span>
+            ) : (
+              <button
+                onClick={toggleTts}
+                className={cn(
+                  'flex items-center gap-1 text-[11px] transition-colors',
+                  shouldSpeakResponses
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                title={shouldSpeakResponses ? 'Disable voice' : 'Enable voice'}
+              >
+                {shouldSpeakResponses ? (
+                  <Volume2 className={cn('h-3 w-3', isSpeaking && 'animate-pulse')} />
+                ) : (
+                  <VolumeX className="h-3 w-3" />
+                )}
+                {shouldSpeakResponses ? 'Voice on' : 'Voice off'}
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {mode === 'document' && (
@@ -444,6 +582,29 @@ export function AIAssistantChat() {
       )}
 
       {/* Input Area */}
+      {isVoiceMode && (
+        <div className="border-t border-border bg-muted/20 px-3 py-2">
+          <button
+            type="button"
+            onClick={startListening}
+            disabled={!voiceSupported || isStreaming}
+            className={cn(
+              'flex min-h-10 w-full items-center justify-center gap-2 rounded-md text-xs font-medium transition-colors',
+              isListening
+                ? 'bg-primary text-primary-foreground'
+                : 'border border-border bg-background text-foreground hover:bg-muted',
+              (!voiceSupported || isStreaming) && 'cursor-not-allowed opacity-50'
+            )}
+          >
+            {isListening ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+            {isListening ? 'Listening...' : 'Speak to Qualia'}
+          </button>
+          {interimTranscript && (
+            <p className="mt-2 truncate text-[11px] text-muted-foreground">{interimTranscript}</p>
+          )}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="border-t border-border bg-background p-2">
         <div className="flex items-center gap-2">
           <input
@@ -451,7 +612,13 @@ export function AIAssistantChat() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={mode === 'document' ? 'Describe the document...' : 'Ask anything...'}
+            placeholder={
+              mode === 'document'
+                ? 'Describe the document...'
+                : isVoiceMode
+                  ? 'Type or use the microphone...'
+                  : 'Ask anything...'
+            }
             disabled={isStreaming}
             className={cn(
               'h-8 flex-1 rounded-md border border-border bg-background px-2.5 text-xs',

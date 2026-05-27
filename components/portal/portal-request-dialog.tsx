@@ -46,6 +46,7 @@ interface Project {
 
 interface PortalRequestDialogProps {
   projects: Project[];
+  initialProjectId?: string | null;
 }
 
 const REQUEST_CATEGORIES = [
@@ -113,13 +114,21 @@ function fileIcon(type: string) {
   return <FileText className="h-4 w-4 text-muted-foreground" />;
 }
 
-export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
+function resolveDefaultProjectId(projects: Project[], initialProjectId?: string | null): string {
+  if (initialProjectId && projects.some((project) => project.id === initialProjectId)) {
+    return initialProjectId;
+  }
+  return projects.length === 1 ? projects[0].id : '';
+}
+
+export function PortalRequestDialog({ projects, initialProjectId }: PortalRequestDialogProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const defaultProjectId = resolveDefaultProjectId(projects, initialProjectId);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [projectId, setProjectId] = useState<string>('');
+  const [projectId, setProjectId] = useState<string>(defaultProjectId);
   const [priority, setPriority] = useState<(typeof PRIORITIES)[number]['value']>('medium');
   const [category, setCategory] =
     useState<(typeof REQUEST_CATEGORIES)[number]['value']>('feature_request');
@@ -131,7 +140,7 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setProjectId('');
+    setProjectId(defaultProjectId);
     setPriority('medium');
     setCategory('feature_request');
     setFiles([]);

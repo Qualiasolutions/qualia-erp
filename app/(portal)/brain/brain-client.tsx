@@ -65,24 +65,22 @@ export function BrainView() {
   }, [result, filter]);
 
   return (
-    <div className="flex flex-col gap-6 px-4 py-6 md:px-8 md:py-10">
-      <header className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            Qualia Brain
-          </span>
+    <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+      <header className="rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="mr-auto min-w-[180px]">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold tracking-tight text-foreground">Brain</h1>
+              <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+              <p className="truncate text-sm text-muted-foreground">
+                Search reports, projects, and activity
+              </p>
+            </div>
+          </div>
           <span className="rounded-md bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-700 dark:text-amber-400">
             V1
           </span>
         </div>
-        <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight">
-          Ask the corpus
-        </h1>
-        <p className="max-w-prose text-sm text-muted-foreground">
-          Keyword search across session reports, project descriptions, and client activity. Press{' '}
-          <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd> anywhere to
-          focus this box. Semantic search and meeting transcripts coming next.
-        </p>
       </header>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-3">
@@ -99,7 +97,7 @@ export function BrainView() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="What did we promise Maison Maud about delivery?"
             autoFocus
-            className="h-12 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+            className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">

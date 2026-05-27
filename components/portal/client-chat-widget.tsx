@@ -24,6 +24,8 @@ interface ClientChatWidgetProps {
 }
 
 export function ClientChatWidget({ userId, userName, userRole }: ClientChatWidgetProps) {
+  void userName;
+
   const [isOpen, setIsOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);

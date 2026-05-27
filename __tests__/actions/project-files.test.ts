@@ -15,11 +15,13 @@ jest.mock('@/app/actions/activity-feed', () => ({
 
 jest.mock('@/lib/email', () => ({
   notifyEmployeesOfClientFileUpload: jest.fn().mockResolvedValue(undefined),
+  notifyAdminAndAssignedOfClientActivity: jest.fn().mockResolvedValue(undefined),
 }));
 
 // Permission mocks — default: allow
 const mockCanAccessProject = jest.fn().mockResolvedValue(true);
 const mockCanDeleteProjectFile = jest.fn().mockResolvedValue(true);
+const mockCanAccessProjectStrict = jest.fn().mockResolvedValue(true);
 
 jest.mock('@/app/actions/shared', () => ({
   canAccessProject: (...args: unknown[]) => mockCanAccessProject(...args),
@@ -27,7 +29,7 @@ jest.mock('@/app/actions/shared', () => ({
 }));
 
 jest.mock('@/lib/portal-utils', () => ({
-  canAccessProject: jest.fn().mockResolvedValue(false),
+  canAccessProjectStrict: (...args: unknown[]) => mockCanAccessProjectStrict(...args),
 }));
 
 const storageUpload = jest.fn().mockResolvedValue({ data: {}, error: null });
@@ -48,14 +50,27 @@ const supabase = {
   },
 };
 
+const adminSupabase = {
+  from: jest.fn() as jest.Mock,
+  storage: {
+    from: jest.fn().mockReturnValue({
+      upload: storageUpload,
+      remove: storageRemove,
+      createSignedUrl: storageCreateSignedUrl,
+    }),
+  },
+};
+
 jest.mock('@/lib/supabase/server', () => ({
   createClient: () => Promise.resolve(supabase),
+  createAdminClient: () => adminSupabase,
 }));
 
 // ---- Imports ----
 import {
   getProjectFiles,
   uploadProjectFile,
+  uploadClientFile,
   deleteProjectFile,
   getFileDownloadUrl,
 } from '@/app/actions/project-files';
@@ -111,6 +126,7 @@ beforeEach(() => {
   mockAuth();
   mockCanAccessProject.mockResolvedValue(true);
   mockCanDeleteProjectFile.mockResolvedValue(true);
+  mockCanAccessProjectStrict.mockResolvedValue(true);
 });
 
 // ---- Tests ----
@@ -202,6 +218,49 @@ describe('uploadProjectFile', () => {
     const result = await uploadProjectFile(makeFormData());
     expect(result.success).toBe(false);
     expect(result.error).toContain('permission');
+  });
+});
+
+describe('uploadClientFile', () => {
+  it('returns error when the client is not linked to the project', async () => {
+    mockCanAccessProjectStrict.mockResolvedValue(false);
+
+    const result = await uploadClientFile(makeFormData());
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('access');
+    expect(adminSupabase.from).not.toHaveBeenCalled();
+    expect(adminSupabase.storage.from).not.toHaveBeenCalled();
+  });
+
+  it('uploads through the service role after strict client project access is verified', async () => {
+    const projectChain = buildChain({
+      data: { id: PROJECT_ID, workspace_id: 'ws-1' },
+      error: null,
+    });
+    const insertChain = buildChain({
+      data: { id: FILE_ID, is_client_upload: true, is_client_visible: true },
+      error: null,
+    });
+    adminSupabase.from.mockImplementation((table: string) => {
+      if (table === 'projects') return projectChain;
+      if (table === 'project_files') return insertChain;
+      return buildChain();
+    });
+    supabase.from.mockReturnValue(buildChain({ data: { full_name: 'Client User' }, error: null }));
+
+    const result = await uploadClientFile(makeFormData());
+
+    expect(result.success).toBe(true);
+    expect(storageUpload).toHaveBeenCalled();
+    expect(insertChain.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        project_id: PROJECT_ID,
+        is_client_upload: true,
+        is_client_visible: true,
+        uploaded_by: USER_ID,
+      })
+    );
   });
 });
 

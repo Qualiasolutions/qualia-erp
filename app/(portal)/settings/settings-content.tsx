@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
-import { Loader2, User, Bell, Save, Lock, Plug, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { Loader2, User, Bell, Save, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -95,11 +94,11 @@ function PasswordChangeSection() {
 
   return (
     <section
-      className="animate-fade-in rounded-2xl border border-border bg-card p-6 fill-mode-both md:p-7"
+      className="animate-fade-in rounded-xl border border-border bg-card p-5 fill-mode-both md:p-6"
       style={{ animationDelay: '100ms' }}
     >
       <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/[0.08] dark:bg-primary/15">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
           <Lock className="h-4 w-4 text-primary" />
         </div>
         <div>
@@ -145,7 +144,7 @@ function PasswordChangeSection() {
           <Button
             type="submit"
             disabled={isPending || !newPassword || !confirmPassword}
-            className="min-h-[40px] cursor-pointer rounded-xl bg-primary text-primary-foreground"
+            className="min-h-[40px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
           >
             {isPending ? (
               <>
@@ -228,72 +227,22 @@ export function SettingsContent({
   };
 
   return (
-    <div className="animate-fade-in-up px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(2rem,4vw,3rem)] pt-16 md:pt-[clamp(2.5rem,4vw,3.5rem)]">
-      <header className="mb-8">
-        <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-          <span className="inline-block h-px w-6 bg-primary/60" aria-hidden />
-          <span>Account</span>
+    <div className="animate-fade-in-up px-4 pb-8 pt-16 md:px-6 md:pt-6">
+      <header className="mb-4 rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex items-center gap-2">
+          <h1 className="text-base font-semibold tracking-tight text-foreground">Settings</h1>
+          <span className="hidden h-1 w-1 rounded-full bg-border sm:block" />
+          <p className="truncate text-sm text-muted-foreground">
+            Profile, password, and notifications
+          </p>
         </div>
-        <h1 className="mt-3 text-[clamp(1.5rem,1rem+1.6vw,2rem)] font-semibold leading-tight tracking-tight text-foreground">
-          Settings
-        </h1>
-        <p className="mt-1.5 max-w-[480px] text-sm text-muted-foreground">
-          Profile, password, notifications. Tweak how the portal feels for you.
-        </p>
       </header>
 
-      <div className="space-y-6">
-        {/* Workspace & admin links — non-clients only */}
-        {userRole !== 'client' && (
-          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Link
-              href="/settings/integrations"
-              className="group flex items-start justify-between gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-card/70"
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/[0.08] dark:bg-primary/15">
-                  <Plug className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold tracking-tight text-foreground">
-                    Integrations
-                  </h2>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    GitHub, Vercel, Zoho — connect external services to projects.
-                  </p>
-                </div>
-              </div>
-              <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
-            </Link>
-
-            {userRole === 'admin' && (
-              <Link
-                href="/admin?tab=system"
-                className="group flex items-start justify-between gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-card/70"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/[0.08] dark:bg-primary/15">
-                    <ShieldCheck className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold tracking-tight text-foreground">
-                      Admin console
-                    </h2>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Workspace, team, finance, system health, API tokens.
-                    </p>
-                  </div>
-                </div>
-                <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
-              </Link>
-            )}
-          </section>
-        )}
-
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Profile Settings */}
-        <section className="animate-fade-in rounded-2xl border border-border bg-card p-6 fill-mode-both md:p-7">
+        <section className="animate-fade-in rounded-xl border border-border bg-card p-5 fill-mode-both md:p-6">
           <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/[0.08] dark:bg-primary/15">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
               <User className="h-4 w-4 text-primary" />
             </div>
             <div>
@@ -353,7 +302,7 @@ export function SettingsContent({
               <Button
                 type="submit"
                 disabled={profileSaving}
-                className="min-h-[40px] cursor-pointer rounded-xl bg-primary text-primary-foreground"
+                className="min-h-[40px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
               >
                 {profileSaving ? (
                   <>
@@ -376,12 +325,12 @@ export function SettingsContent({
 
         {/* Notification Preferences */}
         <section
-          className="animate-fade-in overflow-hidden rounded-2xl border border-border bg-card fill-mode-both"
+          className="animate-fade-in overflow-hidden rounded-xl border border-border bg-card fill-mode-both lg:col-span-2"
           style={{ animationDelay: '150ms' }}
         >
-          <div className="p-6 pb-0 md:p-7 md:pb-0">
+          <div className="p-5 pb-0 md:p-6 md:pb-0">
             <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/[0.1] dark:bg-amber-500/15">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/[0.1] dark:bg-amber-500/15">
                 <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
@@ -397,11 +346,11 @@ export function SettingsContent({
 
           <form onSubmit={handleNotificationSubmit}>
             {/* Notification Toggles */}
-            <div className="divide-y divide-border/50 px-1 md:px-2">
+            <div className="grid gap-px bg-border/50 p-px md:grid-cols-2">
               {filteredNotificationItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex min-h-[56px] items-center justify-between gap-4 px-5 py-4 md:px-5"
+                  className="flex min-h-[64px] items-center justify-between gap-4 bg-card px-4 py-4 md:px-5"
                 >
                   <div className="space-y-0.5">
                     <Label htmlFor={item.id} className="cursor-pointer text-sm font-medium">
@@ -468,7 +417,7 @@ export function SettingsContent({
               <Button
                 type="submit"
                 disabled={notificationsSaving}
-                className="min-h-[40px] cursor-pointer rounded-xl bg-primary text-primary-foreground"
+                className="min-h-[40px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
               >
                 {notificationsSaving ? (
                   <>

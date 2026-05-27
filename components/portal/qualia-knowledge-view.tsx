@@ -65,7 +65,7 @@ const SUGGESTED_QUESTIONS = [
   'When should I use /qualia-test --tdd?',
   'How does the Milestone → Phase → Task hierarchy work?',
   'How do I clock out and submit my session report?',
-  'When should I use /qualia-debug vs /qualia-idk?',
+  'When should I use /qualia-fix vs /qualia-feature?',
   'What is the Qualia Brain?',
 ];
 
@@ -278,7 +278,7 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
         {/* Messages or empty state */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto rounded-2xl border border-border bg-card/40 p-3 lg:p-4"
+          className="flex-1 overflow-y-auto rounded-xl border border-border bg-card/60 p-3 lg:p-4"
         >
           {!hasMessages ? (
             <EmptyChatState onPick={submit} />
@@ -311,7 +311,7 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
 
         {/* Composer */}
         <form onSubmit={handleSubmit} className="mt-2 flex-shrink-0">
-          <div className="relative rounded-2xl border border-border bg-card shadow-sm transition-colors focus-within:border-primary/50 focus-within:shadow-md">
+          <div className="relative rounded-xl border border-border bg-card shadow-sm transition-colors focus-within:border-primary/50 focus-within:shadow-md">
             <textarea
               ref={inputRef}
               rows={1}
@@ -320,7 +320,7 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
               onKeyDown={handleKeyDown}
               placeholder="Ask anything about Qualia…"
               disabled={isStreaming}
-              className="block max-h-32 min-h-[48px] w-full resize-none rounded-2xl bg-transparent px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed"
+              className="block max-h-32 min-h-[48px] w-full resize-none rounded-xl bg-transparent px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed"
             />
             <div className="absolute bottom-1.5 right-1.5">
               {isStreaming ? (
@@ -396,8 +396,8 @@ export function QualiaKnowledgeView({}: QualiaKnowledgeViewProps) {
 function EmptyChatState({ onPick }: { onPick: (q: string) => void }) {
   return (
     <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
-        <QualiaMark size={32} className="h-8 w-8" />
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/[0.08] ring-1 ring-primary/15">
+        <QualiaMark size={28} className="h-7 w-7" />
       </div>
       <h2 className="text-lg font-semibold text-foreground">Ask the Qualia Assistant</h2>
       <p className="mt-1 max-w-md text-sm text-muted-foreground">
@@ -681,19 +681,19 @@ function ResourceCard({ resource, onOpen }: { resource: ResourceMeta; onOpen: ()
       type="button"
       onClick={onOpen}
       className={cn(
-        'group relative flex w-full cursor-pointer items-start gap-3 overflow-hidden rounded-2xl border border-border bg-card p-4 text-left ring-2 ring-transparent transition-all duration-200',
-        'hover:-translate-y-0.5 hover:shadow-lg',
+        'group relative flex w-full cursor-pointer items-start gap-3 overflow-hidden rounded-xl border border-border bg-card p-3 text-left ring-2 ring-transparent transition-colors duration-150',
+        'hover:border-primary/25 hover:bg-muted/20',
         'focus-visible:outline-none focus-visible:ring-primary/40',
         resource.ringClass
       )}
     >
       <span
         className={cn(
-          'flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-muted/70 transition-transform duration-200 group-hover:scale-110',
+          'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-muted/70 transition-colors duration-150',
           resource.accent
         )}
       >
-        <Icon size={22} weight="duotone" />
+        <Icon size={19} weight="duotone" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold leading-tight text-foreground">{resource.title}</p>
@@ -736,36 +736,23 @@ function ResourceModal({ id, onClose }: { id: ResourceId; onClose: () => void })
       aria-modal="true"
       aria-label={meta.title}
       onClick={onClose}
-      className="qm-overlay fixed inset-0 z-modal flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm"
+      className="qm-overlay fixed inset-0 z-modal flex items-center justify-center bg-foreground/35 p-4 backdrop-blur-sm"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="qm-panel relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-2xl"
+        className="qm-panel relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-elevation-4"
       >
-        {/* Decorative gradient header */}
-        <div
-          className={cn(
-            'absolute inset-x-0 top-0 h-32 bg-gradient-to-b opacity-40',
-            id === 'commands' && 'from-emerald-500/30',
-            id === 'lifecycle' && 'from-blue-500/30',
-            id === 'playbook' && 'from-amber-500/30',
-            id === 'concepts' && 'from-violet-500/30',
-            id === 'design-integration' && 'from-rose-500/30'
-          )}
-          aria-hidden
-        />
-
-        <header className="relative flex flex-shrink-0 items-start gap-4 border-b border-border px-6 py-5">
+        <header className="relative flex flex-shrink-0 items-start gap-3 border-b border-border px-4 py-3">
           <span
             className={cn(
-              'flex h-12 w-12 items-center justify-center rounded-2xl bg-card ring-1 ring-border',
+              'flex h-9 w-9 items-center justify-center rounded-lg bg-muted/60 ring-1 ring-border',
               meta.accent
             )}
           >
-            <Icon size={26} weight="duotone" />
+            <Icon size={20} weight="duotone" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-semibold leading-tight tracking-tight text-foreground">
+            <h2 className="text-base font-semibold leading-tight tracking-tight text-foreground">
               {meta.title}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">{meta.subtitle}</p>
@@ -837,16 +824,6 @@ const COMMAND_GROUPS: Array<{ label: string; tint: string; commands: CommandEntr
         when: 'Open of day, when you forget where you left off, between phases.',
       },
       {
-        cmd: '/qualia-resume',
-        what: 'Restore context from .continue-here.md or STATE.md.',
-        when: 'After a break or a fresh session.',
-      },
-      {
-        cmd: '/qualia-pause',
-        what: 'Save session context for handoff to a future session.',
-        when: 'End of day, before /clear, before switching focus.',
-      },
-      {
         cmd: '/qualia-report',
         what: 'Generate session report and post it to the ERP.',
         when: 'Mandatory before clock-out. No exceptions.',
@@ -907,19 +884,14 @@ const COMMAND_GROUPS: Array<{ label: string; tint: string; commands: CommandEntr
     tint: 'text-amber-500',
     commands: [
       {
-        cmd: '/qualia-debug',
-        what: 'Investigative debugging — root cause, minimal fix, DEBUG report.',
+        cmd: '/qualia-fix',
+        what: 'Repair broken existing behavior with root-cause evidence.',
         when: 'Something broken, weird behavior, layout issue, slow page.',
       },
       {
-        cmd: '/qualia-quick',
-        what: 'Skip planning for a small task — bug fix, tweak, hot fix.',
-        when: 'One-line change or a clearly scoped tiny task.',
-      },
-      {
-        cmd: '/qualia-idk',
-        what: 'Diagnostic. Reads .planning + codebase, explains in plain language.',
-        when: '"I don\'t know what\'s going on" / "something feels off".',
+        cmd: '/qualia-feature',
+        what: 'Build one scoped feature without turning it into a phase.',
+        when: 'A clear small feature, component, route, or API addition.',
       },
       {
         cmd: '/qualia-postmortem',
@@ -1117,10 +1089,7 @@ function LifecycleContent() {
   return (
     <ol className="qm-stagger relative space-y-4 pl-3">
       {/* Vertical rail */}
-      <div
-        className="absolute bottom-3 left-[19px] top-3 w-px bg-gradient-to-b from-primary/40 via-border to-border"
-        aria-hidden
-      />
+      <div className="absolute bottom-3 left-[19px] top-3 w-px bg-border" aria-hidden />
       {LIFECYCLE.map((s) => {
         const Icon = s.icon;
         return (
@@ -1133,7 +1102,7 @@ function LifecycleContent() {
             >
               <Icon size={16} weight="duotone" />
             </span>
-            <div className="min-w-0 flex-1 rounded-2xl border border-border bg-muted/20 p-4 transition-colors hover:bg-muted/40">
+            <div className="min-w-0 flex-1 rounded-xl border border-border bg-muted/20 p-4 transition-colors hover:bg-muted/40">
               <div className="flex items-baseline gap-2">
                 <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Step {s.step}
@@ -1184,7 +1153,7 @@ const PLAYBOOK: PlaybookSegment[] = [
       'Clock in from the ERP top-right toggle.',
       'Open /tasks — admin sees the workspace; employees see their inbox.',
       'Run `/qualia` in your project to figure out the next command.',
-      'Run `/qualia-resume` if you paused yesterday.',
+      'Open the ERP mission page for the assigned project.',
     ],
   },
   {
@@ -1195,7 +1164,7 @@ const PLAYBOOK: PlaybookSegment[] = [
     bgTint: 'bg-violet-500/10',
     steps: [
       'Move tasks Todo → In Progress → Done as you work.',
-      'Use `/qualia-quick` for tweaks, `/qualia-debug` for broken things.',
+      'Use `/qualia-feature` for scoped additions, `/qualia-fix` for broken things.',
       'Save lessons with `/qualia-learn` the moment you spot one.',
       'Drop quick questions to the Knowledge assistant on this page.',
     ],
@@ -1207,7 +1176,7 @@ const PLAYBOOK: PlaybookSegment[] = [
     tint: 'text-emerald-500',
     bgTint: 'bg-emerald-500/10',
     steps: [
-      'Run `/qualia-pause` so tomorrow-you picks up cold.',
+      'Run `/qualia` before stopping so the next command is clear.',
       'Run `/qualia-report` — this is mandatory and posts to the ERP.',
       'Clock out from the same toggle you used at start of day.',
       'Close the laptop. The framework will not page you.',
@@ -1223,7 +1192,7 @@ function PlaybookContent() {
         return (
           <section
             key={seg.time}
-            className="overflow-hidden rounded-2xl border border-border bg-card"
+            className="overflow-hidden rounded-xl border border-border bg-card"
           >
             <header className={cn('flex items-center gap-3 px-4 py-3', seg.bgTint)}>
               <span
@@ -1364,7 +1333,7 @@ function ConceptsContent() {
         <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-foreground">
           The hierarchy
         </h3>
-        <div className="overflow-hidden rounded-2xl border border-border bg-muted/20">
+        <div className="overflow-hidden rounded-xl border border-border bg-muted/20">
           {HIERARCHY.map((h, i) => (
             <div
               key={h.name}

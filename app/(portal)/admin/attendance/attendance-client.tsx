@@ -169,83 +169,85 @@ export function AdminAttendanceClient() {
   const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
 
   return (
-    <div className="px-4 py-8 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Attendance Log</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {sessions.length} sessions · {totalHours}h total
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => downloadCsv(sessions)}
-          disabled={sessions.length === 0}
-        >
-          <Download className="mr-1.5 size-3.5" />
-          Export CSV
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        {/* Date range picker */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9 gap-1.5 font-normal">
-              <CalendarIcon className="size-3.5" />
-              {formatDateLabel(dateRange)}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <div className="flex gap-1 border-b border-border px-3 py-2">
-              {(['7d', 'week', 'month', '30d'] as const).map((p) => (
-                <Button
-                  key={p}
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => setPreset(p)}
-                >
-                  {p === '7d'
-                    ? 'Last 7d'
-                    : p === 'week'
-                      ? 'This week'
-                      : p === 'month'
-                        ? 'This month'
-                        : 'Last 30d'}
-                </Button>
-              ))}
+    <div className="px-4 py-4 sm:px-6 lg:px-6">
+      <div className="mb-4 rounded-xl border border-border bg-card px-3 py-3 shadow-[0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="mr-auto min-w-[180px]">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold tracking-tight">Sessions</h1>
+              <span className="h-1 w-1 rounded-full bg-border" />
+              <p className="text-sm text-muted-foreground">
+                {sessions.length} entries · {totalHours}h
+              </p>
             </div>
-            <Calendar
-              mode="range"
-              selected={dateRange}
-              onSelect={setDateRange}
-              numberOfMonths={2}
-              disabled={{ after: new Date() }}
-            />
-          </PopoverContent>
-        </Popover>
+          </div>
+          {/* Date range picker */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 gap-1.5 font-normal">
+                <CalendarIcon className="size-3.5" />
+                {formatDateLabel(dateRange)}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <div className="flex gap-1 border-b border-border px-3 py-2">
+                {(['7d', 'week', 'month', '30d'] as const).map((p) => (
+                  <Button
+                    key={p}
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setPreset(p)}
+                  >
+                    {p === '7d'
+                      ? 'Last 7d'
+                      : p === 'week'
+                        ? 'This week'
+                        : p === 'month'
+                          ? 'This month'
+                          : 'Last 30d'}
+                  </Button>
+                ))}
+              </div>
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                disabled={{ after: new Date() }}
+              />
+            </PopoverContent>
+          </Popover>
 
-        {/* Member filter */}
-        <Select value={filterProfile} onValueChange={setFilterProfile}>
-          <SelectTrigger className="h-9 w-[200px]">
-            <User className="mr-1.5 size-3.5" />
-            <SelectValue placeholder="Filter by member" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All members</SelectItem>
-            {members
-              .filter((m) => m.role !== 'admin')
-              .map((m) => (
-                <SelectItem key={m.id} value={m.id}>
-                  {m.full_name || m.email || 'Unknown'}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+          {/* Member filter */}
+          <Select value={filterProfile} onValueChange={setFilterProfile}>
+            <SelectTrigger className="h-9 w-[200px]">
+              <User className="mr-1.5 size-3.5" />
+              <SelectValue placeholder="Filter by member" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All members</SelectItem>
+              {members
+                .filter((m) => m.role !== 'admin')
+                .map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.full_name || m.email || 'Unknown'}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => downloadCsv(sessions)}
+            disabled={sessions.length === 0}
+            className="h-9"
+          >
+            <Download className="mr-1.5 size-3.5" />
+            CSV
+          </Button>
+        </div>
       </div>
 
       {loading ? (

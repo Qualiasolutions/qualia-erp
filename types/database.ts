@@ -689,6 +689,7 @@ export type Database = {
           admin_response: string | null;
           assigned_to: string | null;
           attachments: Json;
+          brief_data: Json | null;
           client_id: string;
           created_at: string | null;
           description: string | null;
@@ -703,6 +704,7 @@ export type Database = {
           admin_response?: string | null;
           assigned_to?: string | null;
           attachments?: Json;
+          brief_data?: Json | null;
           client_id: string;
           created_at?: string | null;
           description?: string | null;
@@ -717,6 +719,7 @@ export type Database = {
           admin_response?: string | null;
           assigned_to?: string | null;
           attachments?: Json;
+          brief_data?: Json | null;
           client_id?: string;
           created_at?: string | null;
           description?: string | null;
@@ -2902,6 +2905,123 @@ export type Database = {
           },
         ];
       };
+      project_work_packets: {
+        Row: {
+          assignment_id: string | null;
+          blockers: string[];
+          created_at: string;
+          created_by: string | null;
+          current_milestone: number | null;
+          current_milestone_name: string | null;
+          current_phase: number | null;
+          current_phase_name: string | null;
+          deadline_date: string;
+          definition_of_done: string | null;
+          employee_id: string | null;
+          framework_status: string | null;
+          id: string;
+          last_report_at: string | null;
+          metadata: Json;
+          next_command: string;
+          project_id: string;
+          repo_url: string | null;
+          snapshot_generated_at: string | null;
+          status: string;
+          updated_at: string;
+          vercel_url: string | null;
+          verification: string | null;
+          workspace_id: string;
+        };
+        Insert: {
+          assignment_id?: string | null;
+          blockers?: string[];
+          created_at?: string;
+          created_by?: string | null;
+          current_milestone?: number | null;
+          current_milestone_name?: string | null;
+          current_phase?: number | null;
+          current_phase_name?: string | null;
+          deadline_date: string;
+          definition_of_done?: string | null;
+          employee_id?: string | null;
+          framework_status?: string | null;
+          id?: string;
+          last_report_at?: string | null;
+          metadata?: Json;
+          next_command?: string;
+          project_id: string;
+          repo_url?: string | null;
+          snapshot_generated_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          vercel_url?: string | null;
+          verification?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          assignment_id?: string | null;
+          blockers?: string[];
+          created_at?: string;
+          created_by?: string | null;
+          current_milestone?: number | null;
+          current_milestone_name?: string | null;
+          current_phase?: number | null;
+          current_phase_name?: string | null;
+          deadline_date?: string;
+          definition_of_done?: string | null;
+          employee_id?: string | null;
+          framework_status?: string | null;
+          id?: string;
+          last_report_at?: string | null;
+          metadata?: Json;
+          next_command?: string;
+          project_id?: string;
+          repo_url?: string | null;
+          snapshot_generated_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          vercel_url?: string | null;
+          verification?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'project_work_packets_assignment_id_fkey';
+            columns: ['assignment_id'];
+            isOneToOne: false;
+            referencedRelation: 'project_assignments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_work_packets_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_work_packets_employee_id_fkey';
+            columns: ['employee_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_work_packets_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_work_packets_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       project_deployments: {
         Row: {
           branch: string | null;
@@ -3898,6 +4018,8 @@ export type Database = {
           idempotency_key: string | null;
           last_pushed_at: string | null;
           lifetime: Json | null;
+          assignment_deadline: string | null;
+          assignment_id: string | null;
           milestone: number | null;
           milestone_name: string | null;
           milestones: Json | null;
@@ -3915,6 +4037,7 @@ export type Database = {
           token_id: string | null;
           total_phases: number | null;
           verification: string | null;
+          work_packet_id: string | null;
         };
         Insert: {
           auth_method?: string | null;
@@ -3937,6 +4060,8 @@ export type Database = {
           idempotency_key?: string | null;
           last_pushed_at?: string | null;
           lifetime?: Json | null;
+          assignment_deadline?: string | null;
+          assignment_id?: string | null;
           milestone?: number | null;
           milestone_name?: string | null;
           milestones?: Json | null;
@@ -3954,6 +4079,7 @@ export type Database = {
           token_id?: string | null;
           total_phases?: number | null;
           verification?: string | null;
+          work_packet_id?: string | null;
         };
         Update: {
           auth_method?: string | null;
@@ -3976,6 +4102,8 @@ export type Database = {
           idempotency_key?: string | null;
           last_pushed_at?: string | null;
           lifetime?: Json | null;
+          assignment_deadline?: string | null;
+          assignment_id?: string | null;
           milestone?: number | null;
           milestone_name?: string | null;
           milestones?: Json | null;
@@ -3993,8 +4121,16 @@ export type Database = {
           token_id?: string | null;
           total_phases?: number | null;
           verification?: string | null;
+          work_packet_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'session_reports_assignment_id_fkey';
+            columns: ['assignment_id'];
+            isOneToOne: false;
+            referencedRelation: 'project_assignments';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'session_reports_client_id_fkey';
             columns: ['client_id'];
@@ -4014,6 +4150,13 @@ export type Database = {
             columns: ['token_id'];
             isOneToOne: false;
             referencedRelation: 'api_tokens';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'session_reports_work_packet_id_fkey';
+            columns: ['work_packet_id'];
+            isOneToOne: false;
+            referencedRelation: 'project_work_packets';
             referencedColumns: ['id'];
           },
         ];
@@ -5248,8 +5391,8 @@ export type Database = {
       match_documents: {
         Args: {
           filter_workspace_id?: string;
-          match_count: number;
-          match_threshold: number;
+          match_count?: number;
+          match_threshold?: number;
           query_embedding: string;
         };
         Returns: {
@@ -5521,6 +5664,7 @@ export const Constants = {
 export type Client = Tables<'clients'>;
 export type ProjectFile = Tables<'project_files'>;
 export type ProjectIntegration = Tables<'project_integrations'>;
+export type ProjectWorkPacket = Tables<'project_work_packets'>;
 export type ProjectType = Enums<'project_type'>;
 export type ProjectGroup = Enums<'project_group'>;
 export type DeploymentPlatform = Enums<'deployment_platform'>;

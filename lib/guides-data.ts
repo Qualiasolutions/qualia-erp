@@ -1,7 +1,10 @@
-// Knowledge Base — Qualia Framework v4.0.5 Workflow Guides
-// Updated 2026-04-20 against qualia-framework v4.0.5 (npm: qualia-framework).
-// v4 introduces the Full Journey: Projects → Journey → Milestones (2-5, Handoff last) →
-// Phases (2-5 tasks each) → Tasks (one commit, one verification contract).
+// Knowledge Base — Qualia Framework v6.2.9 Workflow Guides
+// Updated 2026-05-22 against qualia-framework v6.2.9 (npm: qualia-framework).
+// v4 introduced the Full Journey (Project → Journey → Milestones → Phases → Tasks).
+// v5 layered design substrate (PRODUCT.md, DESIGN.md, anti-slop scan) onto every road agent.
+// v6 audited and hardened the surface: removed hook-created bot commits, dropped pre-compact,
+//   added /qualia-vibe (aesthetic pivot without re-layout), shipped Codex runtime support, and
+//   tightened the ERP report contract (UUID guard, dry_run, QS-REPORT-NN client IDs).
 // Guides are written for employees, not engineers — plain language, real scenarios.
 
 export type GuideCategory = 'foundations' | 'lifecycle' | 'operations' | 'reference' | 'checklist';
@@ -51,7 +54,7 @@ export const guides: Guide[] = [
   {
     slug: 'getting-started',
     title: 'Getting Started with Qualia',
-    subtitle: 'Install v4, learn the five daily commands, start your first day',
+    subtitle: 'Install v6, learn the five daily commands, start your first day',
     category: 'foundations',
     projectType: 'workflow',
     steps: [
@@ -63,7 +66,7 @@ export const guides: Guide[] = [
         tips: [
           'Think of it as rails for Claude Code. It keeps the AI on track across long projects without losing quality.',
           'Everything lives in your terminal. Your project state is tracked automatically in .planning/ and git.',
-          'The current release is v4.0.5 — the "Full Journey" release. Every project is mapped end to end on day one.',
+          'The current release is v6.2.9. v4 introduced the Full Journey (every project mapped end to end on day one). v5 added the design substrate so design is loaded from kickoff, not bolted on at the end. v6 audited the surface, removed bot commits from your git history, added Codex runtime support alongside Claude Code, and introduced /qualia-vibe for fast aesthetic pivots.',
         ],
       },
       {
@@ -79,13 +82,14 @@ export const guides: Guide[] = [
         ],
         example:
           'Enter install code: QS-MOAYAD-03\n\n' +
-          'Installing Qualia Framework v4.0.5...\n\n' +
-          '  26 skills     ok\n' +
-          '  8 agents      ok\n' +
-          '  7 hooks       ok\n' +
-          '  5 rules       ok\n' +
-          '  knowledge     ok\n\n' +
-          'Done. Restart Claude Code to begin.',
+          'Installing Qualia Framework v6.2.9...\n\n' +
+          '  33 skills     ok\n' +
+          '  9 agents      ok\n' +
+          '  12 hooks      ok\n' +
+          '  8 rules       ok\n' +
+          '  knowledge     ok\n' +
+          '  codex         ok (writes ~/.codex/ if Codex is installed)\n\n' +
+          'Done. Restart Claude Code (or Codex) to begin.',
         exampleTitle: 'What you see during install',
       },
       {
@@ -108,11 +112,11 @@ export const guides: Guide[] = [
         id: 'gs-4',
         title: 'The Five Commands You Use Every Day',
         description:
-          'There are 26 skills available, but five cover almost all your daily work. Start with these and pick up the others as you need them.',
+          'There are 33 skills available, but five cover almost all your daily work. Start with these and pick up the others as you need them.',
         commands: [
           '/qualia          — What should I do next? Reads project state and routes you.',
           '/qualia-new      — Start a brand new project from scratch.',
-          '/qualia-quick    — Fast fix for something small (under 1 hour).',
+          '/qualia-feature  — Single feature or fix, auto-scoped (replaces the old /qualia-quick and /qualia-task).',
           '/qualia-report   — End-of-day report. MANDATORY before clock-out.',
           '/qualia-idk      — Diagnostic. Use when something feels off but /qualia cannot explain why.',
         ],
@@ -126,7 +130,7 @@ export const guides: Guide[] = [
         id: 'gs-5',
         title: 'Updating and Checking Your Version',
         description:
-          'The framework auto-updates in the background. You can also update manually or check your installed version at any time. If you are upgrading from v3 to v4, no migration is needed — projects on older versions keep working and new projects use v4.',
+          'The framework auto-updates in the background. You can also update manually or check your installed version at any time. v6 ships a migrate path: existing installs auto-prune deprecated skills (qualia-quick, qualia-task, qualia-polish-loop, qualia-design, qualia-prd) and orphaned hooks (pre-compact, three v5.0 hooks the older migrate path missed). No project-side migration needed — projects on older framework versions keep working.',
         commands: [
           'npx qualia-framework version   # Check your installed version + upstream',
           'npx qualia-framework update    # Manual update',
@@ -161,7 +165,7 @@ export const guides: Guide[] = [
         'Installed via npx qualia-framework install with team code from Fawzi',
         'Claude Code restarted after install',
         'Statusline visible when you open a project (⬢ Qualia · {name})',
-        'Knows the five daily commands: /qualia, /qualia-new, /qualia-quick, /qualia-report, /qualia-idk',
+        'Knows the five daily commands: /qualia, /qualia-new, /qualia-feature, /qualia-report, /qualia-idk',
         'Knows to type /qualia when lost and /qualia-idk when confused',
         'Ran erp-ping to confirm ERP connection',
         'Committed to running /qualia-report before every clock-out',
@@ -171,7 +175,7 @@ export const guides: Guide[] = [
 
   {
     slug: 'how-projects-work',
-    title: 'How Projects Work (v4 Full Journey)',
+    title: 'How Projects Work (Full Journey)',
     subtitle:
       'Journey → Milestones → Phases → Tasks. Two human gates. One command to chain it all.',
     category: 'foundations',
@@ -181,7 +185,7 @@ export const guides: Guide[] = [
         id: 'hp-1',
         title: 'The Hierarchy',
         description:
-          'v4 thinks in four layers. A Project has one Journey. The Journey contains 2-5 Milestones (the final one is always literally named "Handoff"). Each Milestone contains 2-5 Phases. Each Phase contains 2-5 Tasks. A task is one commit with one verification contract. This structure is visible from day one — you never have to improvise what comes next.',
+          'The framework thinks in four layers. A Project has one Journey. The Journey contains 2-5 Milestones (the final one is always literally named "Handoff"). Each Milestone contains 2-5 Phases. Each Phase contains 2-5 Tasks. A task is one commit with one verification contract. This structure is visible from day one — you never have to improvise what comes next.',
         example:
           'Project: aquador\n' +
           '└─ Journey (mapped upfront in /qualia-new)\n' +
@@ -265,18 +269,19 @@ export const guides: Guide[] = [
         ],
         tips: [
           'Always run /qualia-report before clocking out, even if you paused first. They are separate things.',
-          'If Claude Code compacts context mid-session, the pre-compact hook silently saves state — nothing is lost.',
+          "Mid-session context compaction is safe by default — bin/state.js does atomic + journaled writes on every mutation, so compaction (which is in-memory only) can't drop disk state. The old pre-compact bot-commit hook was removed in v6.2.0.",
         ],
       },
       {
         id: 'hp-6',
         title: 'The ERP Connection',
         description:
-          "Every push updates .planning/tracking.json via a bot commit (the pre-push hook does it automatically). The ERP reads that file from GitHub and renders your project status on the dashboard. At clock-out, /qualia-report POSTs a structured session report with a stable QS-REPORT-NN ID. The ERP refuses to clock you out without today's report.",
+          'How the ERP knows what you did: at clock-out, /qualia-report POSTs a structured session report with a stable QS-REPORT-NN client ID to /api/v1/reports. That endpoint is the single source of truth — the ERP no longer scrapes tracking.json from GitHub (v6.2.0 removed that path and the bot commit it relied on; the ERP never actually read it from GitHub anyway). tracking.json is still stamped locally on every push so your statusline, stop-session log, and next /qualia-report see fresh telemetry; it just stays out of git history now.',
         tips: [
-          'You never edit tracking.json manually. The hooks own it.',
-          'Reports get stable IDs (QS-REPORT-01, -02, …) that survive retries and network flakes.',
+          'You never edit tracking.json manually — the pre-push hook stamps it locally only.',
+          'Reports get stable IDs (QS-REPORT-01, -02, …) that survive retries and network flakes via 24h idempotency.',
           'Clock-out will not work without a report. Run /qualia-report before stopping, every day.',
+          '/qualia-report --dry-run lets you preview the payload without writing to the ERP (auto-deleted after 7 days).',
         ],
         warning:
           'No report, no clock-out. Run /qualia-report before ending your day — the ERP enforces this.',
@@ -458,7 +463,7 @@ export const guides: Guide[] = [
         id: 'bw-4',
         title: 'Close the Milestone, Open the Next',
         description:
-          'When every phase in a milestone is verified, run /qualia-milestone. It refuses to close if any phase is unverified or if the milestone has fewer than 2 phases (unless --force). It archives the milestone, updates tracking.json, and reads JOURNEY.md to pre-populate the next milestone name. This is the second kind of human gate.',
+          'When every phase in a milestone is verified, run /qualia-milestone. It refuses to close if any phase is unverified or if the milestone has fewer than 2 phases (unless --force). It archives the milestone, stamps tracking.json locally (no longer pushed via a bot commit since v6.2.0), and reads JOURNEY.md to pre-populate the next milestone name. This is the second kind of human gate.',
         commands: ['/qualia-milestone'],
         tips: [
           'Between milestones is the right time to demo to the client if needed.',
@@ -658,7 +663,7 @@ export const guides: Guide[] = [
           '/qualia-resume     # Pick up where you left off',
         ],
         tips: [
-          'The pre-compact hook also saves state silently if Claude Code compacts context mid-session.',
+          'Mid-session context compaction is handled by bin/state.js (atomic + journaled writes) — no separate hook needed since v6.2.0.',
           '/qualia-resume works even if you forgot to pause — it falls back to STATE.md.',
         ],
       },
@@ -741,16 +746,15 @@ export const guides: Guide[] = [
         id: 'dr-2',
         title: 'Pick the Right Tool',
         description:
-          'Not everything needs a full phase. Use the right command for the size of the work. Small fixes skip planning entirely. Focused single tasks get a fresh builder without a phase plan. Full features go through plan/build/verify.',
+          'Not everything needs a full phase. /qualia-feature auto-scopes: trivia stays inline (no planning), 1-5 file features get a fresh builder context with an atomic commit. Full multi-file phases still go through plan → build → verify.',
         commands: [
-          '/qualia-quick "fix button color on /about"   # Under 1 hour',
-          '/qualia-task "add contact form to /contact"   # 1-3 hours, one thing',
-          '/qualia-plan 3                                  # Full phase work',
+          '/qualia-feature "fix button color on /about"     # auto-routes to inline fix',
+          '/qualia-feature "add contact form to /contact"   # auto-spawns a fresh builder',
+          '/qualia-plan 3                                    # full phase work',
         ],
         tips: [
-          '/qualia-quick: typos, copy changes, small tweaks. Skips planning, commits directly.',
-          '/qualia-task: one feature or component. Fresh builder context, atomic commit, no phase plan.',
-          '/qualia-plan: full phase with multiple related tasks.',
+          '/qualia-feature replaces the old /qualia-quick and /qualia-task — same idea, one entrypoint, the framework chooses the depth.',
+          '/qualia-plan: full phase with multiple related tasks (wave-based parallel builders).',
         ],
       },
       {
@@ -766,7 +770,7 @@ export const guides: Guide[] = [
         ],
         tips: [
           'Gap cycles are the framework refusing to spin forever. Hitting the limit means something structural is wrong — stop and rethink.',
-          'Between phases, /qualia-quick for small fixes does not disrupt the phase flow.',
+          'Between phases, /qualia-feature for small fixes does not disrupt the phase flow.',
         ],
       },
       {
@@ -815,7 +819,7 @@ export const guides: Guide[] = [
       items: [
         'Clocked in on the ERP',
         'Opened Claude Code, ran /qualia-resume or /qualia',
-        'Used the right tool: /qualia-quick, /qualia-task, or /qualia-plan',
+        'Used the right tool: /qualia-feature (small) or /qualia-plan (phase)',
         'Asked for help after 30 minutes stuck (not 3 hours)',
         'Ran /qualia-report before stopping (mandatory)',
         'Clocked out on the ERP',
@@ -855,22 +859,34 @@ export const guides: Guide[] = [
       },
       {
         id: 'dq-3',
-        title: '/qualia-design — Quick Design Fix',
+        title: '/qualia-vibe — Fast Aesthetic Pivot (v6.1+)',
         description:
-          'Use /qualia-design when a page or component needs to look better right now. It reads DESIGN.md, critiques the current state, and fixes it in one pass. Good for mid-build touch-ups when something looks rough.',
+          'Client says "different vibe"? /qualia-vibe swaps tokens (color, type, depth, motion) without touching JSX, routing, or layout. By default it proposes ONE opinionated direction inferred from PRODUCT.md and asks ship-or-pivot — no menu of options. Use --variants 3 if you genuinely want choices, --extract <url|image> to reverse-engineer a DESIGN.md draft from a reference, or --sync to diff DESIGN.md against your code.',
         commands: [
-          '/qualia-design                 # Fix all frontend files',
-          '/qualia-design app/page.tsx    # Fix one specific file',
+          '/qualia-vibe                          # propose one direction, apply on approval',
+          '/qualia-vibe --variants 3             # opt-in menu of 3',
+          '/qualia-vibe --extract https://...    # extract DESIGN.md from a reference',
+          '/qualia-vibe --sync --write           # patch DESIGN.md to match code',
+        ],
+        tips: [
+          'Vibe is a 3-minute token swap. If a pivot needs structural change, vibe halts and routes to /qualia-polish --redesign.',
+          'Vibe never edits JSX, routes, or data flow. Only tokens + DESIGN.md sections.',
         ],
       },
       {
         id: 'dq-4',
-        title: '/qualia-polish — The Full Pass (Handoff Phase 1)',
+        title: '/qualia-polish — Scope-Adaptive Quality Pass',
         description:
-          '/qualia-polish is Phase 1 of the Handoff milestone — not something you run mid-project. It does a comprehensive design + quality pass covering typography, color, layout, interactive states, motion, accessibility, responsive design, and edge-case hardening (long text, empty data, slow connections, keyboard-only use).',
-        commands: ['/qualia-polish'],
+          '/qualia-polish is scope-adaptive: pass a file for a ~30s component fix, a folder for a ~3min section pass, or no argument for a full-app pass (~12min, the Handoff Phase 1 default). --redesign rebuilds from scratch (~30min) and --critique gives a read-only report. Covers typography, color, layout, interactive states, motion, accessibility, responsive design, and edge cases.',
+        commands: [
+          '/qualia-polish src/components/Button.tsx   # one component (~30s)',
+          '/qualia-polish app/dashboard               # one section (~3m)',
+          '/qualia-polish                              # full app (~12m, Handoff Phase 1)',
+          '/qualia-polish --redesign                   # full redesign (~30m)',
+          '/qualia-polish --critique                   # read-only report',
+        ],
         warning:
-          'Run /qualia-polish only in the Handoff milestone, after every other milestone is closed. Polishing earlier wastes work because later milestones change things.',
+          'The full-app run belongs in the Handoff milestone, after every other milestone is closed. Component / section runs are safe mid-project.',
         isMilestone: true,
       },
       {
@@ -928,7 +944,7 @@ export const guides: Guide[] = [
 
   {
     slug: 'design-integration',
-    title: 'Design Integration (v4.5.0)',
+    title: 'Design Integration',
     subtitle: 'Design woven into every agent: OKLCH, slop-detect, design contracts, rubric scoring',
     category: 'operations',
     projectType: 'workflow',
@@ -937,7 +953,7 @@ export const guides: Guide[] = [
         id: 'di-1',
         title: 'What Changed',
         description:
-          'Previously design was Phase 1 of the Handoff milestone. Build everything ugly, polish at the end. That ordering produced late, expensive rework that never quite matched the brand. Starting with v4.5.0, the design substrate (PRODUCT.md, DESIGN.md, design rules) is loaded by every road agent from day one. Plans carry a design contract. Builders run an anti-slop scan before commit. Verifiers score 8 design dimensions alongside functional checks.',
+          'Previously design was Phase 1 of the Handoff milestone. Build everything ugly, polish at the end. That ordering produced late, expensive rework that never quite matched the brand. Since v4.5, the design substrate (PRODUCT.md, DESIGN.md, design rules) is loaded by every road agent from day one. Plans carry a design contract. Builders run an anti-slop scan before commit. Verifiers score 8 design dimensions alongside functional checks. v6.1 added /qualia-vibe — a fast aesthetic pivot that swaps tokens (color, type, depth, motion) without touching layout.',
       },
       {
         id: 'di-2',
@@ -1014,7 +1030,7 @@ export const guides: Guide[] = [
   {
     slug: 'commands-reference',
     title: 'All Commands Reference',
-    subtitle: 'Every slash command and CLI command in v4.0.5',
+    subtitle: 'Every slash command and CLI command in v6.2.9',
     category: 'reference',
     projectType: 'workflow',
     steps: [
@@ -1065,26 +1081,25 @@ export const guides: Guide[] = [
       },
       {
         id: 'cr-4',
-        title: 'Quick Work',
-        description: 'Commands for work that does not justify a full phase.',
-        commands: [
-          '/qualia-quick "desc"   — Fast fix, under 1 hour, no plan file, atomic commit.',
-          '/qualia-task "desc"    — Focused single task, 1-3 hours, fresh builder context.',
-        ],
+        title: 'Single Feature Work',
+        description:
+          'For work that does not justify a full phase. /qualia-feature auto-scopes: trivia stays inline, 1-5 file features spawn a fresh builder. Replaces the old /qualia-quick and /qualia-task.',
+        commands: ['/qualia-feature "desc"   — Auto-scoped single feature or fix.'],
       },
       {
         id: 'cr-5',
         title: 'Design and Quality',
         description: 'Commands for design and deep quality work.',
         commands: [
-          '/qualia-design     — One-shot design transformation. Use mid-build.',
-          '/qualia-polish     — Full structured pass. Phase 1 of Handoff milestone.',
+          '/qualia-vibe       — Fast aesthetic pivot (tokens only, no layout change).',
+          '/qualia-polish     — Scope-adaptive design + quality pass (file / section / app / --redesign / --critique).',
           '/qualia-review     — Production audit with scored diagnostics.',
           '/qualia-optimize   — Deep optimization pass with parallel specialist agents.',
           '/qualia-test       — Generate or run tests.',
         ],
         tips: [
-          '/qualia-design for mid-build touch-ups. /qualia-polish for the Handoff milestone pass.',
+          '/qualia-vibe proposes ONE direction by default — use --variants N if you want a menu.',
+          '/qualia-polish scales by argument: file (~30s) → section (~3m) → full app (~12m) → --redesign (~30m).',
           '/qualia-optimize spawns parallel agents for perf, UI, backend, and alignment. Use --perf or --ui to focus.',
         ],
       },
@@ -1136,8 +1151,8 @@ export const guides: Guide[] = [
         'Brownfield? /qualia-map → /qualia-new',
         'Phase work? /qualia-plan N → /qualia-build N → /qualia-verify N',
         'Milestone done? /qualia-milestone',
-        'Small fix? /qualia-quick — Focused task? /qualia-task',
-        'Design mid-build? /qualia-design — Handoff polish? /qualia-polish',
+        'Small fix or single feature? /qualia-feature (auto-scoped)',
+        'Aesthetic pivot? /qualia-vibe — Quality pass? /qualia-polish (file / section / app)',
         'Audit? /qualia-review — Perf? /qualia-optimize — Tests? /qualia-test',
         'Deploy? /qualia-ship — Deliver? /qualia-handoff',
         'End of day? /qualia-report (mandatory)',

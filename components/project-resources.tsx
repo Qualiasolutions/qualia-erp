@@ -61,12 +61,14 @@ interface ResourceInput {
 interface ProjectResourcesProps {
   projectId: string;
   initialResources?: ResourceInput[];
+  canManage?: boolean;
   className?: string;
 }
 
 export function ProjectResources({
   projectId,
   initialResources = [],
+  canManage = false,
   className,
 }: ProjectResourcesProps) {
   // Normalize input resources to ensure valid type
@@ -156,59 +158,61 @@ export function ProjectResources({
           <h3 className="font-medium">Resources</h3>
           <span className="text-xs text-muted-foreground">({resources.length})</span>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs">
-              <Plus className="h-3 w-3" />
-              Add
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add Resource Link</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Type</label>
-                <Select value={newType} onValueChange={(v) => setNewType(v as ResourceType)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RESOURCE_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        <div className="flex items-center gap-2">
-                          <t.icon className={cn('h-4 w-4', t.color)} />
-                          {t.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Label (optional)</label>
-                <Input
-                  value={newLabel}
-                  onChange={(e) => setNewLabel(e.target.value)}
-                  placeholder={getTypeConfig(newType).label}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">URL</label>
-                <Input
-                  value={newUrl}
-                  onChange={(e) => setNewUrl(e.target.value)}
-                  placeholder="https://..."
-                  type="url"
-                />
-              </div>
-              <Button onClick={handleAdd} disabled={!newUrl.trim()} className="w-full">
-                Add Resource
+        {canManage && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs">
+                <Plus className="h-3 w-3" />
+                Add
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add Resource Link</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Type</label>
+                  <Select value={newType} onValueChange={(v) => setNewType(v as ResourceType)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RESOURCE_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          <div className="flex items-center gap-2">
+                            <t.icon className={cn('h-4 w-4', t.color)} />
+                            {t.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Label (optional)</label>
+                  <Input
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    placeholder={getTypeConfig(newType).label}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">URL</label>
+                  <Input
+                    value={newUrl}
+                    onChange={(e) => setNewUrl(e.target.value)}
+                    placeholder="https://..."
+                    type="url"
+                  />
+                </div>
+                <Button onClick={handleAdd} disabled={!newUrl.trim()} className="w-full">
+                  Add Resource
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* Resources List */}
@@ -257,15 +261,17 @@ export function ProjectResources({
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 min-h-[44px] w-7 min-w-[44px] text-red-500 hover:text-red-500"
-                      onClick={() => handleDelete(resource.id)}
-                      aria-label="Delete resource"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    {canManage && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 min-h-[44px] w-7 min-w-[44px] text-red-500 hover:text-red-500"
+                        onClick={() => handleDelete(resource.id)}
+                        aria-label="Delete resource"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
