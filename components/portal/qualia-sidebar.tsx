@@ -51,12 +51,12 @@ type PageDef = {
 const PAGES: PageDef[] = [
   {
     id: 'admin-dashboard',
-    label: 'Dashboard',
-    icon: 'home',
-    href: '/dashboard',
+    label: 'Admin',
+    icon: 'admin',
+    href: '/admin',
     exact: true,
     roles: ['admin'],
-    appKey: 'home',
+    appKey: 'control',
   },
   {
     id: 'employee-dashboard',
@@ -75,40 +75,6 @@ const PAGES: PageDef[] = [
     exact: true,
     roles: ['client'],
     appKey: 'home',
-  },
-  {
-    id: 'admin-overview',
-    label: 'Overview',
-    icon: 'admin',
-    href: '/admin',
-    exact: true,
-    roles: ['admin'],
-    appKey: 'control',
-  },
-  {
-    id: 'admin-people',
-    label: 'People',
-    icon: 'team',
-    href: '/admin/people',
-    roles: ['admin'],
-    appKey: 'control',
-  },
-  {
-    id: 'admin-operations',
-    label: 'Operations',
-    icon: 'activity',
-    href: '/admin/reports',
-    roles: ['admin'],
-    appKey: 'control',
-  },
-  {
-    id: 'admin-finance',
-    label: 'Finance',
-    icon: 'payments',
-    href: '/admin',
-    roles: ['admin'],
-    appKey: 'control',
-    matchQuery: { key: 'tab', value: 'finance' },
   },
   {
     id: 'projects',
@@ -161,18 +127,7 @@ const PAGES: PageDef[] = [
 ];
 
 const ROLE_ORDER: Record<Role, string[]> = {
-  admin: [
-    'admin-dashboard',
-    'admin-overview',
-    'admin-people',
-    'projects',
-    'admin-operations',
-    'admin-finance',
-    'schedule',
-    'requests',
-    'knowledge',
-    'settings',
-  ],
+  admin: ['admin-dashboard', 'projects', 'schedule', 'requests', 'knowledge', 'settings'],
   employee: ['employee-dashboard', 'projects', 'schedule', 'requests', 'knowledge', 'settings'],
   client: ['client-dashboard', 'projects', 'requests', 'client-billing', 'settings'],
 };
