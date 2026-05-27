@@ -57,8 +57,10 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
       )
     );
 
+    const todayISO = new Date().toISOString().slice(0, 10);
+
     // Run all remaining dashboard queries in parallel.
-    const [{ count: pendingRequests }, { data: unpaidInvoices }, { data: recentActivity }] =
+    const [{ count: pendingRequests }, upcomingInvoiceResult, { data: recentActivity }] =
       await Promise.all([
         supabase
           .from('client_feature_requests')
@@ -68,11 +70,21 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
         crmClientIds.length > 0
           ? supabase
               .from('financial_invoices')
-              .select('balance')
+              .select('due_date, total, currency')
               .in('client_id', crmClientIds)
               .eq('is_hidden', false)
               .in('status', ['pending', 'overdue'])
-          : Promise.resolve({ data: [] as Array<{ balance: number | string }> }),
+              .gte('due_date', todayISO)
+              .order('due_date', { ascending: true })
+              .limit(1)
+              .maybeSingle()
+          : Promise.resolve({
+              data: null as {
+                due_date: string | null;
+                total: number | string | null;
+                currency: string | null;
+              } | null,
+            }),
         clientProjectIds.length > 0
           ? supabase
               .from('activity_log')
@@ -88,7 +100,15 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
           : Promise.resolve({ data: [] }),
       ]);
 
-    const unpaidTotal = (unpaidInvoices || []).reduce((sum, inv) => sum + Number(inv.balance), 0);
+    const upcomingRow = upcomingInvoiceResult.data;
+    const upcomingInvoice =
+      upcomingRow && upcomingRow.due_date
+        ? {
+            dueDate: upcomingRow.due_date,
+            total: Number(upcomingRow.total ?? 0),
+            currency: upcomingRow.currency ?? 'EUR',
+          }
+        : null;
 
     const normalizedActivity = (recentActivity || []).map((a) => ({
       ...a,
@@ -101,8 +121,7 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
       data: {
         projectCount,
         pendingRequests: pendingRequests || 0,
-        unpaidInvoiceCount: (unpaidInvoices || []).length,
-        unpaidTotal,
+        upcomingInvoice,
         recentActivity: normalizedActivity,
       },
     };

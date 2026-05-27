@@ -166,11 +166,13 @@ export async function getCachedClientDashboardData(clientId: string) {
   // Run all remaining dashboard queries in parallel.
   const [{ count: pendingRequests }, { data: unpaidInvoices }, { data: recentActivity }] =
     await Promise.all([
-      supabase
-        .from('client_feature_requests')
-        .select('id', { count: 'exact', head: true })
-        .eq('client_id', clientId)
-        .in('status', ['pending', 'in_review']),
+      clientProjectIds.length > 0
+        ? supabase
+            .from('client_feature_requests')
+            .select('id', { count: 'exact', head: true })
+            .in('project_id', clientProjectIds)
+            .in('status', ['pending', 'in_review'])
+        : Promise.resolve({ count: 0 }),
       crmClientIds.length > 0
         ? supabase
             .from('financial_invoices')

@@ -8,7 +8,7 @@ import {
   CalendarPlus,
   FolderOpen,
   MessageSquare,
-  FileText,
+  Receipt,
   Video,
 } from 'lucide-react';
 
@@ -25,8 +25,12 @@ import { EmptyState } from '@/components/ui/empty-state';
 interface HubStats {
   projectCount: number;
   pendingRequests: number;
-  unpaidInvoiceCount: number;
-  unpaidTotal: number;
+}
+
+interface HubUpcomingInvoice {
+  dueDate: string;
+  total: number;
+  currency: string;
 }
 
 interface HubProject {
@@ -70,6 +74,7 @@ export interface QualiaPortalHubProps {
   companyName?: string;
   enabledApps?: string[];
   upcomingMeetings?: HubMeeting[];
+  upcomingInvoice: HubUpcomingInvoice | null;
 }
 
 /* ======================================================================
@@ -109,6 +114,7 @@ export function QualiaPortalHub({
   displayName,
   companyName,
   upcomingMeetings = [],
+  upcomingInvoice,
 }: QualiaPortalHubProps) {
   const hue = useMemo(() => hueFromId(clientId), [clientId]);
   const accentColor = useMemo(() => clientAccent(hue), [hue]);
@@ -185,7 +191,7 @@ export function QualiaPortalHub({
 
       {/* Stat strip — flat, separator-divided, sits on the wash */}
       <section className="relative border-y border-border/70 bg-card/40 backdrop-blur-[2px]">
-        <div className="grid grid-cols-2 divide-x divide-border/70 md:grid-cols-4">
+        <div className="grid grid-cols-2 divide-x divide-border/70">
           <PulseMetric
             label="Active projects"
             value={stats?.projectCount ?? (isLoading ? '—' : 0)}
@@ -196,19 +202,6 @@ export function QualiaPortalHub({
             value={stats?.pendingRequests ?? (isLoading ? '—' : 0)}
             hint={!isLoading && (stats?.pendingRequests ?? 0) === 0 ? 'inbox zero' : undefined}
           />
-          <PulseMetric
-            label="Unpaid invoices"
-            value={stats?.unpaidInvoiceCount ?? (isLoading ? '—' : 0)}
-            hint={!isLoading && (stats?.unpaidInvoiceCount ?? 0) === 0 ? 'all clear' : undefined}
-          />
-          <PulseMetric
-            label="Outstanding"
-            value={
-              isLoading ? '—' : stats?.unpaidTotal ? formatEURCompact(stats.unpaidTotal) : '€0'
-            }
-            hint={!isLoading && !stats?.unpaidTotal ? 'nothing due' : undefined}
-            emphasized={!!stats?.unpaidTotal}
-          />
         </div>
       </section>
 
@@ -218,10 +211,7 @@ export function QualiaPortalHub({
           <EngagementsSection projects={projects} accentColor={accentColor} isLoading={isLoading} />
           <aside className="flex flex-col gap-8">
             <MeetingsSidebar meetings={upcomingMeetings} accentColor={accentColor} />
-            <InvoicesSidebar
-              unpaidCount={stats?.unpaidInvoiceCount ?? 0}
-              unpaidTotal={stats?.unpaidTotal ?? 0}
-            />
+            <UpcomingInvoiceCard upcomingInvoice={upcomingInvoice} accentColor={accentColor} />
             <ThreadCard
               destination={threadDestination}
               appLabel={threadAppLabel}
@@ -534,48 +524,56 @@ function MeetingsSidebar({
 }
 
 /* ======================================================================
-   InvoicesSidebar
+   UpcomingInvoiceCard
    ====================================================================== */
 
-function InvoicesSidebar({
-  unpaidCount,
-  unpaidTotal,
+const INVOICE_DATE_FMT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+});
+
+function UpcomingInvoiceCard({
+  upcomingInvoice,
+  accentColor,
 }: {
-  unpaidCount: number;
-  unpaidTotal: number;
+  upcomingInvoice: HubUpcomingInvoice | null;
+  accentColor: string;
 }) {
+  if (!upcomingInvoice) return null;
+
+  const dueLabel = INVOICE_DATE_FMT.format(new Date(upcomingInvoice.dueDate));
+  const totalLabel = formatEURCompact(upcomingInvoice.total);
+
   return (
     <section>
       <div className="mb-3 flex items-center gap-2">
         <span className="inline-block h-px w-6 bg-border" aria-hidden />
         <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-          Recent invoices
+          Upcoming invoice
         </span>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
-          <div className="min-w-0">
-            <div className="text-sm font-medium text-foreground">
-              {unpaidCount > 0 ? `${unpaidCount} unpaid` : 'All paid'}
-            </div>
-            <div className="mt-0.5 text-xs text-muted-foreground">
-              {unpaidCount > 0
-                ? `${formatEURCompact(unpaidTotal)} outstanding`
-                : 'Nothing outstanding'}
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-start gap-3">
+          <div
+            className="flex size-9 shrink-0 items-center justify-center rounded-xl text-white"
+            style={{ background: accentColor }}
+            aria-hidden
+          >
+            <Receipt className="size-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium text-foreground">Due {dueLabel}</div>
+            <div className="mt-0.5 text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+              {totalLabel}
             </div>
           </div>
-          <Link
-            href="/billing"
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-primary underline-offset-4 hover:underline"
-          >
-            <FileText className="size-3" aria-hidden /> View all
-          </Link>
         </div>
-        <div className="flex items-center gap-2 px-5 py-3 text-xs text-muted-foreground">
-          <span className="font-mono text-[10px] uppercase tracking-[0.08em]">Billing</span>
-          <span>·</span>
-          <span>Invoices, payments and history</span>
-        </div>
+        <Link
+          href="/billing"
+          className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
+        >
+          View in billing <ArrowRight className="size-3" aria-hidden />
+        </Link>
       </div>
     </section>
   );

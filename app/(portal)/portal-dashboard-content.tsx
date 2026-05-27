@@ -23,8 +23,7 @@ interface PortalDashboardContentProps {
 interface DashboardStats {
   projectCount: number;
   pendingRequests: number;
-  unpaidInvoiceCount: number;
-  unpaidTotal: number;
+  upcomingInvoice: { dueDate: string; total: number; currency: string } | null;
   recentActivity: Array<{
     id: string;
     action_type: string;
@@ -108,6 +107,7 @@ export function PortalDashboardContent({
         companyName={companyName || undefined}
         enabledApps={enabledApps}
         upcomingMeetings={upcomingMeetings}
+        upcomingInvoice={stats?.upcomingInvoice ?? null}
       />
     </>
   );
