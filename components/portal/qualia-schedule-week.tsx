@@ -26,6 +26,7 @@ import {
   Clock,
   Video,
   Pencil,
+  AlertCircle,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,8 +34,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
 import { EditMeetingModal } from '@/components/edit-meeting-modal';
+import { MeetingRequestActions } from '@/components/portal/meeting-request-actions';
 import { useMeetings, type MeetingWithRelations } from '@/lib/swr';
 import { useRealtimeMeetings } from '@/lib/hooks/use-realtime-meetings';
+
+/** Meeting lifecycle status — mirrors meetings_status_check (migration 20260527181551). */
+type MeetingStatus = 'confirmed' | 'requested' | 'declined' | 'cancelled';
+
+function getMeetingStatus(m: MeetingWithRelations): MeetingStatus {
+  const raw = (m as MeetingWithRelations & { status?: string | null }).status;
+  if (raw === 'requested' || raw === 'declined' || raw === 'cancelled') return raw;
+  return 'confirmed';
+}
 
 type EventType = 'standup' | 'client' | 'focus' | 'internal' | 'launch';
 type ScheduleView = 'day' | 'week' | 'month';
@@ -59,6 +70,16 @@ const eventTypeBlock: Record<EventType, string> = {
   launch: 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400',
 };
 
+/**
+ * Visual overlay for `status='requested'` meetings. Amber accent + dashed
+ * border distinguishes pending requests from confirmed meetings at a
+ * glance, regardless of the underlying event-type colour.
+ */
+const REQUESTED_BLOCK =
+  'bg-amber-500/15 !border-amber-500/60 border-dashed text-amber-700 dark:text-amber-300';
+const REQUESTED_CHIP =
+  'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-dashed border-amber-500/60';
+
 const eventTypeBadge: Record<EventType, string> = {
   standup: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
   client: 'bg-primary/10 text-primary border-primary/20',
@@ -68,11 +89,11 @@ const eventTypeBadge: Record<EventType, string> = {
 };
 
 const eventTypeChip: Record<EventType, string> = {
-  standup: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-l-2 border-emerald-500',
-  client: 'bg-primary/15 text-primary border-l-2 border-primary',
-  focus: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-l-2 border-blue-500',
-  internal: 'bg-violet-500/15 text-violet-700 dark:text-violet-300 border-l-2 border-violet-500',
-  launch: 'bg-red-500/15 text-red-700 dark:text-red-300 border-l-2 border-red-500',
+  standup: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30',
+  client: 'bg-primary/15 text-primary border border-primary/30',
+  focus: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30',
+  internal: 'bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-500/30',
+  launch: 'bg-red-500/15 text-red-700 dark:text-red-300 border border-red-500/30',
 };
 
 const legend: Array<{ label: string; color: string; type: EventType }> = [
@@ -178,11 +199,32 @@ export function QualiaScheduleWeek({
   currentUserId,
 }: QualiaScheduleWeekProps) {
   const router = useRouter();
-  const { meetings } = useMeetings(initialMeetings);
+  const { meetings: rawMeetings } = useMeetings(initialMeetings);
   useRealtimeMeetings();
 
   const anchor = useMemo(() => parseISO(anchorISO), [anchorISO]);
   const today = useMemo(() => new Date(), []);
+
+  // Drop declined / cancelled rows from the schedule entirely — they would
+  // otherwise clutter the grid and confuse the "what's actually happening"
+  // read. Requested + confirmed rows render side-by-side with distinct
+  // visual treatment (see eventTypeBlock + REQUESTED_BLOCK).
+  const meetings = useMemo(
+    () =>
+      rawMeetings.filter((m) => {
+        const status = getMeetingStatus(m);
+        return status === 'confirmed' || status === 'requested';
+      }),
+    [rawMeetings]
+  );
+
+  const pendingRequests = useMemo(
+    () =>
+      meetings
+        .filter((m) => getMeetingStatus(m) === 'requested')
+        .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()),
+    [meetings]
+  );
 
   const [selected, setSelected] = useState<MeetingWithRelations | null>(null);
   const [editing, setEditing] = useState<MeetingWithRelations | null>(null);
@@ -253,7 +295,7 @@ export function QualiaScheduleWeek({
   });
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden p-6 lg:p-8">
+    <div className="flex flex-1 flex-col overflow-hidden p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-4 flex flex-shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="animate-fade-in">
@@ -261,9 +303,11 @@ export function QualiaScheduleWeek({
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
               <CalendarIcon className="h-4 w-4 text-primary" />
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight">Schedule</h1>
+            <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight">
+              Schedule
+            </h1>
           </div>
-          <p className="ml-11 text-sm uppercase tracking-wider text-muted-foreground">
+          <p className="ml-11 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">
             {headerLabel}
           </p>
         </div>
@@ -292,7 +336,7 @@ export function QualiaScheduleWeek({
                   aria-selected={active}
                   onClick={() => switchView(v)}
                   className={cn(
-                    'h-8 cursor-pointer rounded-lg px-3 text-xs font-medium capitalize transition-colors duration-150',
+                    'h-11 min-w-[44px] cursor-pointer rounded-lg px-3 text-xs font-medium capitalize transition-colors duration-150 sm:h-8',
                     active
                       ? 'bg-card text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
@@ -309,7 +353,7 @@ export function QualiaScheduleWeek({
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-lg"
+              className="h-11 w-11 rounded-lg sm:h-9 sm:w-9"
               onClick={() => navigate(-1)}
               aria-label={`Previous ${view}`}
             >
@@ -318,7 +362,7 @@ export function QualiaScheduleWeek({
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 rounded-lg px-2 text-xs"
+              className="h-11 rounded-lg px-3 text-xs sm:h-9 sm:px-2"
               onClick={() => navigate(0)}
             >
               Today
@@ -326,7 +370,7 @@ export function QualiaScheduleWeek({
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-lg"
+              className="h-11 w-11 rounded-lg sm:h-9 sm:w-9"
               onClick={() => navigate(1)}
               aria-label={`Next ${view}`}
             >
@@ -339,14 +383,31 @@ export function QualiaScheduleWeek({
       </div>
 
       {/* Legend */}
-      <div className="stagger-1 mb-3 flex flex-shrink-0 animate-fade-in flex-wrap items-center gap-4">
+      <div className="stagger-1 mb-3 flex flex-shrink-0 animate-fade-in flex-wrap items-center gap-x-4 gap-y-2">
         {legend.map((item) => (
           <div key={item.label} className="flex items-center gap-2">
             <span className={cn('h-2 w-2 rounded-full', item.color)} />
             <span className="text-xs text-muted-foreground">{item.label}</span>
           </div>
         ))}
+        <span className="hidden h-3 w-px bg-border sm:inline-block" aria-hidden />
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block h-2 w-2 rounded-full border border-dashed border-amber-500 bg-amber-500/40"
+            aria-hidden
+          />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-600 dark:text-amber-400">
+            Requested
+          </span>
+        </div>
       </div>
+
+      {/* Pending requests panel — visible whenever there is at least one
+          status='requested' meeting in the loaded range. Acts as the
+          actionable "inbox" so admins don't have to hunt for amber blocks. */}
+      {pendingRequests.length > 0 && (
+        <PendingRequestsPanel requests={pendingRequests} onOpen={setSelected} />
+      )}
 
       {/* Grid */}
       {view === 'day' && <DayGrid meetings={meetings} day={anchor} onSelect={setSelected} />}
@@ -363,13 +424,19 @@ export function QualiaScheduleWeek({
           {selected && (
             <>
               <DialogHeader className="p-6 pb-4">
-                <div className="mb-3 flex items-center gap-3">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
                   <Badge
                     variant="outline"
                     className={cn('text-xs capitalize', eventTypeBadge[classifyMeeting(selected)])}
                   >
                     {classifyMeeting(selected)}
                   </Badge>
+                  {getMeetingStatus(selected) === 'requested' && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-amber-500/60 bg-amber-500/15 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">
+                      <AlertCircle className="h-3 w-3" aria-hidden />
+                      Requested
+                    </span>
+                  )}
                 </div>
                 <DialogTitle className="text-xl font-semibold leading-relaxed">
                   {selected.title}
@@ -437,32 +504,58 @@ export function QualiaScheduleWeek({
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 border-t border-border pt-4">
-                  {(() => {
-                    const link = (
-                      selected as MeetingWithRelations & { meeting_link?: string | null }
-                    ).meeting_link;
-                    return link ? (
-                      <Button asChild className="flex-1 gap-2 rounded-xl">
-                        <a href={link} target="_blank" rel="noopener noreferrer">
-                          <Video className="h-4 w-4" />
-                          Join Meeting
-                        </a>
-                      </Button>
-                    ) : null;
-                  })()}
-                  <Button
-                    variant="outline"
-                    className="flex-1 gap-2 rounded-xl"
-                    onClick={() => {
-                      setEditing(selected);
-                      setSelected(null);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                    Edit
-                  </Button>
-                </div>
+                {getMeetingStatus(selected) === 'requested' ? (
+                  <div className="space-y-3 border-t border-border pt-4">
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                      Respond to this request
+                    </p>
+                    <MeetingRequestActions
+                      meetingId={selected.id}
+                      meetingTitle={selected.title}
+                      layout="stacked"
+                      onResolved={() => setSelected(null)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full gap-2 rounded-xl text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        setEditing(selected);
+                        setSelected(null);
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Edit details before responding
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-stretch gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:gap-3">
+                    {(() => {
+                      const link = (
+                        selected as MeetingWithRelations & { meeting_link?: string | null }
+                      ).meeting_link;
+                      return link ? (
+                        <Button asChild className="flex-1 gap-2 rounded-xl">
+                          <a href={link} target="_blank" rel="noopener noreferrer">
+                            <Video className="h-4 w-4" />
+                            Join Meeting
+                          </a>
+                        </Button>
+                      ) : null;
+                    })()}
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2 rounded-xl"
+                      onClick={() => {
+                        setEditing(selected);
+                        setSelected(null);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </Button>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -635,6 +728,7 @@ function WeekGrid({
                 };
                 const leftPct = (placement.lane / placement.lanes) * 100;
                 const widthPct = (1 / placement.lanes) * 100;
+                const isRequested = getMeetingStatus(e.meeting) === 'requested';
                 return (
                   <button
                     key={e.meeting.id}
@@ -642,7 +736,7 @@ function WeekGrid({
                     onClick={() => onSelect(e.meeting)}
                     className={cn(
                       'absolute cursor-pointer overflow-hidden rounded-md border px-1.5 py-0.5 text-left shadow-sm transition-shadow duration-150 hover:shadow-md',
-                      eventTypeBlock[e.type]
+                      isRequested ? REQUESTED_BLOCK : eventTypeBlock[e.type]
                     )}
                     style={{
                       top: `${Math.max(0, top)}px`,
@@ -650,10 +744,23 @@ function WeekGrid({
                       left: `calc(${leftPct}% + 2px)`,
                       width: `calc(${widthPct}% - 4px)`,
                     }}
+                    aria-label={
+                      isRequested
+                        ? `Pending request: ${e.meeting.title}`
+                        : `Meeting: ${e.meeting.title}`
+                    }
                   >
-                    <p className="truncate text-[10px] font-semibold leading-tight">
-                      {e.meeting.title}
-                    </p>
+                    <div className="flex items-center gap-1">
+                      {isRequested && (
+                        <AlertCircle
+                          className="h-2.5 w-2.5 flex-shrink-0 text-amber-600 dark:text-amber-400"
+                          aria-hidden
+                        />
+                      )}
+                      <p className="truncate text-[10px] font-semibold leading-tight">
+                        {e.meeting.title}
+                      </p>
+                    </div>
                     {height > 30 && (
                       <div className="mt-0.5 flex items-center gap-1">
                         <span className="text-[9px] font-medium opacity-70">
@@ -827,6 +934,7 @@ function DayGrid({
             const widthPct = (1 / placement.lanes) * 100;
             const tall = height >= 44;
             const veryTall = height >= 72;
+            const isRequested = getMeetingStatus(e.meeting) === 'requested';
             return (
               <button
                 key={e.meeting.id}
@@ -835,7 +943,7 @@ function DayGrid({
                 className={cn(
                   'group absolute cursor-pointer overflow-hidden rounded-md border text-left shadow-sm transition-all duration-150',
                   'hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                  eventTypeBlock[e.type]
+                  isRequested ? REQUESTED_BLOCK : eventTypeBlock[e.type]
                 )}
                 style={{
                   top: `${Math.max(0, top)}px`,
@@ -843,24 +951,42 @@ function DayGrid({
                   left: `calc(${leftPct}% + 6px)`,
                   width: `calc(${widthPct}% - ${gap + (placement.lane === placement.lanes - 1 ? 12 : 8)}px)`,
                 }}
+                aria-label={
+                  isRequested
+                    ? `Pending request: ${e.meeting.title}`
+                    : `Meeting: ${e.meeting.title}`
+                }
               >
                 <div className={cn('px-2.5 py-1', tall ? 'py-1.5' : 'py-1')}>
-                  <p
-                    className={cn(
-                      'truncate font-semibold leading-tight',
-                      tall ? 'text-[13px]' : 'text-[12px]'
+                  <div className="flex items-center gap-1.5">
+                    {isRequested && (
+                      <AlertCircle
+                        className="h-3 w-3 flex-shrink-0 text-amber-600 dark:text-amber-400"
+                        aria-hidden
+                      />
                     )}
-                  >
-                    {e.meeting.title}
-                  </p>
+                    <p
+                      className={cn(
+                        'truncate font-semibold leading-tight',
+                        tall ? 'text-[13px]' : 'text-[12px]'
+                      )}
+                    >
+                      {e.meeting.title}
+                    </p>
+                  </div>
                   {tall && (
-                    <div className="mt-1 flex items-center gap-1.5 text-[10.5px] tabular-nums opacity-80">
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10.5px] tabular-nums opacity-80">
                       <Clock className="h-3 w-3" aria-hidden />
                       <span>
                         {e.startLabel}–{e.endLabel}
                       </span>
                       <span className="opacity-50">·</span>
                       <span className="font-mono">{meetingInitials(e.meeting)}</span>
+                      {isRequested && (
+                        <span className="ml-auto rounded-full bg-amber-500/25 px-1.5 py-0 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
+                          Requested
+                        </span>
+                      )}
                     </div>
                   )}
                   {veryTall && flattenAttendees(e.meeting).length > 0 && (
@@ -990,6 +1116,7 @@ function MonthGrid({
               <div className="flex flex-col gap-0.5">
                 {visible.map((m) => {
                   const type = classifyMeeting(m);
+                  const isRequested = getMeetingStatus(m) === 'requested';
                   return (
                     <button
                       key={m.id}
@@ -997,10 +1124,20 @@ function MonthGrid({
                       onClick={() => onSelect(m)}
                       className={cn(
                         'flex w-full items-center gap-1 overflow-hidden rounded-sm px-1.5 py-0.5 text-left text-[10px] font-medium transition-colors hover:opacity-90',
-                        eventTypeChip[type]
+                        isRequested ? REQUESTED_CHIP : eventTypeChip[type]
                       )}
-                      title={`${m.title} · ${format(new Date(m.start_time), 'HH:mm')}`}
+                      title={
+                        isRequested
+                          ? `Requested: ${m.title} · ${format(new Date(m.start_time), 'HH:mm')}`
+                          : `${m.title} · ${format(new Date(m.start_time), 'HH:mm')}`
+                      }
                     >
+                      {isRequested && (
+                        <AlertCircle
+                          className="h-2.5 w-2.5 flex-shrink-0 text-amber-600 dark:text-amber-400"
+                          aria-hidden
+                        />
+                      )}
                       <span className="font-mono opacity-70">
                         {format(new Date(m.start_time), 'HH:mm')}
                       </span>
@@ -1022,5 +1159,91 @@ function MonthGrid({
       {/* keep monthEnd referenced so the linter doesn't strip the import */}
       <span className="sr-only" data-month-end={formatISO(monthEnd, { representation: 'date' })} />
     </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Pending Requests panel — sits between the legend and the grid whenever
+   the loaded range contains any `status='requested'` meetings.
+
+   Acts as an actionable inbox: clicking a row opens the meeting detail
+   dialog (which carries the full confirm / decline flow); the inline
+   confirm / decline buttons on each row let admins resolve a request
+   without leaving the schedule view.
+   ────────────────────────────────────────────────────────────────────────── */
+
+function PendingRequestsPanel({
+  requests,
+  onOpen,
+}: {
+  requests: MeetingWithRelations[];
+  onOpen: (m: MeetingWithRelations) => void;
+}) {
+  return (
+    <section
+      aria-label="Pending meeting requests"
+      className="stagger-1 mb-4 flex flex-shrink-0 animate-fade-in flex-col gap-2 rounded-2xl border border-dashed border-amber-500/40 bg-amber-500/[0.06] p-3 sm:p-4"
+    >
+      <header className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/20">
+            <AlertCircle className="h-3.5 w-3.5 text-amber-700 dark:text-amber-300" aria-hidden />
+          </span>
+          <h2 className="text-sm font-semibold tracking-tight text-foreground">Pending requests</h2>
+          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-700 dark:text-amber-300">
+            {requests.length}
+          </span>
+        </div>
+        <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          Awaiting your response
+        </p>
+      </header>
+
+      <ul className="flex flex-col gap-2">
+        {requests.slice(0, 6).map((m) => {
+          const start = new Date(m.start_time);
+          const end = new Date(m.end_time);
+          const client = Array.isArray(m.client) ? m.client[0] : m.client;
+          return (
+            <li
+              key={m.id}
+              className="group flex flex-col gap-2 rounded-xl border border-border bg-card/80 p-3 transition-shadow duration-150 hover:shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+            >
+              <button
+                type="button"
+                onClick={() => onOpen(m)}
+                className="-m-1 flex min-w-0 flex-1 flex-col gap-0.5 rounded-lg p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                aria-label={`Open details for ${m.title}`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-amber-600 dark:text-amber-400">
+                    {format(start, 'EEE MMM d')} · {format(start, 'HH:mm')}–{format(end, 'HH:mm')}
+                  </span>
+                </div>
+                <p className="truncate text-sm font-semibold leading-tight text-foreground">
+                  {m.title}
+                </p>
+                {client?.display_name && (
+                  <p className="truncate text-xs text-muted-foreground">{client.display_name}</p>
+                )}
+              </button>
+              <MeetingRequestActions
+                meetingId={m.id}
+                meetingTitle={m.title}
+                layout="inline"
+                className="sm:flex-shrink-0"
+              />
+            </li>
+          );
+        })}
+      </ul>
+
+      {requests.length > 6 && (
+        <p className="text-[11px] text-muted-foreground">
+          +{requests.length - 6} more — scroll the grid below to find amber-bordered blocks for the
+          rest.
+        </p>
+      )}
+    </section>
   );
 }

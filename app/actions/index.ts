@@ -97,6 +97,8 @@ export {
   addMeetingAttendee,
   removeMeetingAttendee,
   updateMeetingAttendeeStatus,
+  confirmMeeting,
+  declineMeeting,
 } from './meetings';
 
 // ============ ISSUES ============
