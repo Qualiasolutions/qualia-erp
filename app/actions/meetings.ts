@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 
 import {
@@ -15,6 +16,8 @@ import { logClientActivity } from './clients';
 import {
   createActivity,
   canDeleteMeeting,
+  getCachedUserRole,
+  isUserAdmin,
   type ActionResult,
   type ProfileRef,
   type ActivityType,
@@ -35,6 +38,7 @@ type MeetingResponse = {
   created_at: string;
   project_id: string | null;
   created_by: string | null;
+  status: string;
   project: FKResponse<{ id: string; name: string }>;
   client: FKResponse<{ id: string; display_name: string; lead_status: string | null }>;
   creator: FKResponse<ProfileRef>;
@@ -343,6 +347,7 @@ export async function getMeetings(
             created_at,
             project_id,
             created_by,
+            status,
             read_ai_session_id,
             report_url,
             recording_url,
@@ -449,6 +454,7 @@ export async function getTodaysMeetings(workspaceId?: string | null) {
     .from('meetings')
     .select(
       `id, title, description, start_time, end_time, meeting_link, created_at,
+       status,
        read_ai_session_id, report_url, recording_url, summary, topics, action_items,
        key_questions, chapter_summaries, participants_meta, ingested_at,
        project:projects (id, name),
@@ -851,4 +857,131 @@ export async function updateMeetingAttendeeStatus(
   if (!data) return { success: false, error: 'Not found or permission denied' };
 
   return { success: true };
+}
+
+/**
+ * Admin/employee gate for meeting-request lifecycle actions.
+ *
+ * The `meetings.status='requested'` lane is the client-portal request flow
+ * (see migration 20260527181551_meeting_status.sql). Only internal staff
+ * may confirm or decline — explicitly reject client role and any other
+ * unrecognised role to prevent privilege escalation via direct fetch calls.
+ */
+async function assertStaffRole(userId: string): Promise<ActionResult | null> {
+  if (await isUserAdmin(userId)) return null;
+  const role = await getCachedUserRole(userId);
+  if (role === 'employee') return null;
+  return { success: false, error: 'Not authorized' };
+}
+
+/**
+ * Confirm a pending meeting request. Flips `meetings.status` from
+ * 'requested' to 'confirmed'. Only admin / employee callers may invoke
+ * this — client-role callers are rejected by `assertStaffRole`.
+ */
+export async function confirmMeeting(meetingId: string): Promise<ActionResult> {
+  if (!meetingId || typeof meetingId !== 'string') {
+    return { success: false, error: 'Missing meeting id' };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const denial = await assertStaffRole(user.id);
+  if (denial) return denial;
+
+  const { data, error } = await supabase
+    .from('meetings')
+    .update({ status: 'confirmed', updated_at: new Date().toISOString() })
+    .eq('id', meetingId)
+    .select('id, title, client_id')
+    .single();
+
+  if (error) {
+    console.error('Error confirming meeting:', error);
+    return { success: false, error: error.message };
+  }
+  if (!data) return { success: false, error: 'Meeting not found' };
+
+  if (data.client_id) {
+    await logClientActivity(data.client_id, 'meeting', `Meeting confirmed: ${data.title}`, {
+      meeting_id: data.id,
+      status: 'confirmed',
+    });
+  }
+
+  revalidatePath('/schedule');
+  return { success: true, data };
+}
+
+/**
+ * Decline a pending meeting request. Flips `meetings.status` to
+ * 'declined' and optionally records a reason in `description` (appended,
+ * not overwritten). Declined rows are excluded from the main schedule
+ * grid by the client component.
+ */
+export async function declineMeeting(meetingId: string, reason?: string): Promise<ActionResult> {
+  if (!meetingId || typeof meetingId !== 'string') {
+    return { success: false, error: 'Missing meeting id' };
+  }
+
+  const trimmedReason = typeof reason === 'string' ? reason.trim().slice(0, 500) : '';
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const denial = await assertStaffRole(user.id);
+  if (denial) return denial;
+
+  // Build the update. If a reason was supplied, append it to the
+  // description so the trail is preserved without clobbering the
+  // client's original message.
+  const updates: Record<string, unknown> = {
+    status: 'declined',
+    updated_at: new Date().toISOString(),
+  };
+
+  if (trimmedReason) {
+    const { data: existing } = await supabase
+      .from('meetings')
+      .select('description')
+      .eq('id', meetingId)
+      .single();
+    const prefix = existing?.description ? `${existing.description}\n\n` : '';
+    updates.description = `${prefix}Declined: ${trimmedReason}`;
+  }
+
+  const { data, error } = await supabase
+    .from('meetings')
+    .update(updates)
+    .eq('id', meetingId)
+    .select('id, title, client_id')
+    .single();
+
+  if (error) {
+    console.error('Error declining meeting:', error);
+    return { success: false, error: error.message };
+  }
+  if (!data) return { success: false, error: 'Meeting not found' };
+
+  if (data.client_id) {
+    await logClientActivity(data.client_id, 'meeting', `Meeting declined: ${data.title}`, {
+      meeting_id: data.id,
+      status: 'declined',
+      reason: trimmedReason || null,
+    });
+  }
+
+  revalidatePath('/schedule');
+  return { success: true, data };
 }

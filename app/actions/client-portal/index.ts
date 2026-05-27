@@ -3,3 +3,4 @@ export * from './projects';
 export * from './invoices';
 export * from './action-items';
 export * from './settings';
+export * from './meeting-requests';

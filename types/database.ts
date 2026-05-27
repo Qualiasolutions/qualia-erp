@@ -1830,6 +1830,7 @@ export type Database = {
           recording_url: string | null;
           report_url: string | null;
           start_time: string;
+          status: string;
           summary: string | null;
           title: string;
           topics: Json | null;
@@ -1854,6 +1855,7 @@ export type Database = {
           recording_url?: string | null;
           report_url?: string | null;
           start_time: string;
+          status?: string;
           summary?: string | null;
           title: string;
           topics?: Json | null;
@@ -1878,6 +1880,7 @@ export type Database = {
           recording_url?: string | null;
           report_url?: string | null;
           start_time?: string;
+          status?: string;
           summary?: string | null;
           title?: string;
           topics?: Json | null;

@@ -270,7 +270,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6">
+          <form onSubmit={handleSubmit} className="max-h-[78vh] overflow-y-auto p-6">
             <div className="space-y-5">
               {/* Meeting Type Toggle - Sleek segmented control */}
               <div className="relative flex rounded-xl bg-secondary/50 p-1">
@@ -362,70 +362,59 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                 )}
               </AnimatePresence>
 
-              {/* Date & Time Row */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Date Selection */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-11 justify-start gap-2 rounded-xl border-border bg-secondary/30 font-normal hover:bg-secondary/50"
-                    >
-                      <CalendarIcon className="h-4 w-4 text-primary" />
-                      <span className="truncate">
-                        {selectedDate ? format(selectedDate, 'MMM d') : 'Date'}
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-auto border-border bg-card/95 p-0 backdrop-blur-xl"
-                    align="start"
-                  >
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+              {/* Date & Time row — calendar inline left, time controls right */}
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-[auto_1fr]">
+                {/* Date Selection — inline calendar */}
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Date</p>
+                  <div className="rounded-xl border border-border bg-secondary/30 p-3">
+                    <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} />
+                  </div>
+                  <p className="min-h-[16px] text-xs text-muted-foreground" aria-live="polite">
+                    {selectedDate
+                      ? format(selectedDate, 'EEEE, MMMM d, yyyy')
+                      : 'Pick a date to continue'}
+                  </p>
+                </div>
 
-                {/* Time Selection */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-11 justify-start gap-2 rounded-xl border-border bg-secondary/30 font-normal hover:bg-secondary/50"
+                {/* Time Selection — popover stays (compact time picker) */}
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Time</p>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 w-full justify-start gap-2 rounded-xl border-border bg-secondary/30 font-normal hover:bg-secondary/50"
+                      >
+                        <Clock className="h-4 w-4 text-primary" />
+                        {TIME_SLOTS.find((t) => t.value === selectedTime)?.label}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-40 border-border bg-card/95 p-1 backdrop-blur-xl"
+                      align="start"
                     >
-                      <Clock className="h-4 w-4 text-primary" />
-                      {TIME_SLOTS.find((t) => t.value === selectedTime)?.label}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-40 border-border bg-card/95 p-1 backdrop-blur-xl"
-                    align="start"
-                  >
-                    <div className="max-h-56 overflow-y-auto">
-                      {TIME_SLOTS.filter((_, i) => i >= 14 && i <= 40).map((slot) => (
-                        <button
-                          key={slot.value}
-                          type="button"
-                          onClick={() => setSelectedTime(slot.value)}
-                          className={cn(
-                            'w-full rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                            selectedTime === slot.value
-                              ? 'bg-primary text-primary-foreground'
-                              : 'hover:bg-secondary'
-                          )}
-                        >
-                          {slot.label}
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                      <div className="max-h-56 overflow-y-auto">
+                        {TIME_SLOTS.filter((_, i) => i >= 14 && i <= 40).map((slot) => (
+                          <button
+                            key={slot.value}
+                            type="button"
+                            onClick={() => setSelectedTime(slot.value)}
+                            className={cn(
+                              'w-full rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                              selectedTime === slot.value
+                                ? 'bg-primary text-primary-foreground'
+                                : 'hover:bg-secondary'
+                            )}
+                          >
+                            {slot.label}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
 
               {/* Duration Chips */}
@@ -621,7 +610,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
         </DialogTrigger>
       )}
       <DialogContent
-        className="overflow-hidden border-border bg-gradient-to-b from-card to-card/95 p-0 shadow-2xl backdrop-blur-xl sm:max-w-[420px]"
+        className="overflow-hidden border-border bg-gradient-to-b from-card to-card/95 p-0 shadow-2xl backdrop-blur-xl sm:max-w-[720px]"
         showCloseButton={false}
       >
         <DialogHeader className="sr-only">

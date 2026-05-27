@@ -1,6 +1,11 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import {
+  getMonitors,
+  matchMonitorForProject,
+  type ServerStatus,
+} from '@/lib/integrations/uptimerobot';
 import { type ActionResult, isUserAdmin } from '../shared';
 
 // ============================================================================
@@ -52,8 +57,10 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
       )
     );
 
+    const todayISO = new Date().toISOString().slice(0, 10);
+
     // Run all remaining dashboard queries in parallel.
-    const [{ count: pendingRequests }, { data: unpaidInvoices }, { data: recentActivity }] =
+    const [{ count: pendingRequests }, upcomingInvoiceResult, { data: recentActivity }] =
       await Promise.all([
         supabase
           .from('client_feature_requests')
@@ -63,11 +70,21 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
         crmClientIds.length > 0
           ? supabase
               .from('financial_invoices')
-              .select('balance')
+              .select('due_date, total, currency')
               .in('client_id', crmClientIds)
               .eq('is_hidden', false)
               .in('status', ['pending', 'overdue'])
-          : Promise.resolve({ data: [] as Array<{ balance: number | string }> }),
+              .gte('due_date', todayISO)
+              .order('due_date', { ascending: true })
+              .limit(1)
+              .maybeSingle()
+          : Promise.resolve({
+              data: null as {
+                due_date: string | null;
+                total: number | string | null;
+                currency: string | null;
+              } | null,
+            }),
         clientProjectIds.length > 0
           ? supabase
               .from('activity_log')
@@ -83,7 +100,15 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
           : Promise.resolve({ data: [] }),
       ]);
 
-    const unpaidTotal = (unpaidInvoices || []).reduce((sum, inv) => sum + Number(inv.balance), 0);
+    const upcomingRow = upcomingInvoiceResult.data;
+    const upcomingInvoice =
+      upcomingRow && upcomingRow.due_date
+        ? {
+            dueDate: upcomingRow.due_date,
+            total: Number(upcomingRow.total ?? 0),
+            currency: upcomingRow.currency ?? 'EUR',
+          }
+        : null;
 
     const normalizedActivity = (recentActivity || []).map((a) => ({
       ...a,
@@ -96,8 +121,7 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
       data: {
         projectCount,
         pendingRequests: pendingRequests || 0,
-        unpaidInvoiceCount: (unpaidInvoices || []).length,
-        unpaidTotal,
+        upcomingInvoice,
         recentActivity: normalizedActivity,
       },
     };
@@ -176,6 +200,41 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
       byId.set(proj.id, proj);
     }
     const projects = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+    const projectIds = projects.map((p) => p.id);
+
+    // Resolve uptime monitors + latest production deployment per project in
+    // parallel. Both calls are best-effort: a failure leaves `serverStatus`
+    // at `null` and the dashboard renders without a pill.
+    const [monitors, deploymentsResult] = await Promise.all([
+      getMonitors(),
+      projectIds.length > 0
+        ? supabase
+            .from('project_deployments')
+            .select('project_id, url, ready_at')
+            .in('project_id', projectIds)
+            .eq('environment', 'production')
+            .not('url', 'is', null)
+            .order('ready_at', { ascending: false })
+        : Promise.resolve({
+            data: [] as Array<{
+              project_id: string | null;
+              url: string | null;
+              ready_at: string | null;
+            }>,
+          }),
+    ]);
+
+    // Pick the latest production URL per project (rows already ordered DESC).
+    const latestUrlByProject = new Map<string, string>();
+    for (const row of (deploymentsResult.data || []) as Array<{
+      project_id: string | null;
+      url: string | null;
+    }>) {
+      if (!row.project_id || !row.url) continue;
+      if (!latestUrlByProject.has(row.project_id)) {
+        latestUrlByProject.set(row.project_id, row.url);
+      }
+    }
 
     const projectsWithPhases = projects.map((project) => {
       // Exclude milestone rollup rows — they're derived headers, not real phases.
@@ -197,6 +256,13 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
           ? projectPhases[currentPhaseIndex + 1]
           : null;
 
+      const serverStatus: ServerStatus = monitors
+        ? matchMonitorForProject(monitors, {
+            projectName: project.name,
+            deploymentUrl: latestUrlByProject.get(project.id) ?? null,
+          })
+        : null;
+
       return {
         id: project.id,
         name: project.name,
@@ -210,6 +276,7 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
           ? { name: currentPhase.name, status: currentPhase.status }
           : null,
         nextPhase: nextPhase ? { name: nextPhase.name } : null,
+        serverStatus,
       };
     });
 

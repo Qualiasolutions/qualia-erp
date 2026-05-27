@@ -9,8 +9,6 @@ const baseProps = {
   stats: {
     projectCount: 1,
     pendingRequests: 0,
-    unpaidInvoiceCount: 0,
-    unpaidTotal: 0,
   },
   recentActivity: [],
   isLoading: false,
@@ -18,6 +16,8 @@ const baseProps = {
   clientId: 'client-1',
   displayName: 'Seven Buddhas',
   upcomingMeetings: [],
+  upcomingInvoice: null,
+  userRole: 'client' as const,
 };
 
 beforeAll(() => {
@@ -92,9 +92,7 @@ describe('QualiaPortalHub', () => {
     );
 
     expect(screen.queryByText(/open requests/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/unpaid invoices/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/outstanding/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /view all/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/upcoming invoice/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /start a conversation/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /book a meeting/i })).toBeInTheDocument();
   });
@@ -105,12 +103,16 @@ describe('QualiaPortalHub', () => {
         {...baseProps}
         enabledApps={['home', 'projects', 'requests', 'billing', 'settings']}
         projects={[]}
+        upcomingInvoice={{ dueDate: '2026-06-15', total: 1500, currency: 'EUR' }}
       />
     );
 
     expect(screen.getByText(/open requests/i)).toBeInTheDocument();
-    expect(screen.getByText(/unpaid invoices/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /view all/i })).toHaveAttribute('href', '/billing');
+    expect(screen.getByText(/upcoming invoice/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /view in billing/i })).toHaveAttribute(
+      'href',
+      '/billing'
+    );
     expect(screen.getByRole('link', { name: /start a conversation/i })).toHaveAttribute(
       'href',
       '/requests'

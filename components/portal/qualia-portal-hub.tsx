@@ -8,7 +8,7 @@ import {
   CalendarPlus,
   FolderOpen,
   MessageSquare,
-  FileText,
+  Receipt,
   Video,
 } from 'lucide-react';
 
@@ -16,7 +16,10 @@ import { cn } from '@/lib/utils';
 import { hueFromId, clientAccent } from '@/lib/color-constants';
 import { formatEURCompact } from '@/lib/currency';
 import { NewMeetingModalControlled } from '@/components/new-meeting-modal';
+import { ClientMeetingRequestDialog } from '@/components/portal/client-meeting-request-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
+
+export type PortalUserRole = 'admin' | 'employee' | 'client';
 
 /* ======================================================================
    Types
@@ -25,8 +28,12 @@ import { EmptyState } from '@/components/ui/empty-state';
 interface HubStats {
   projectCount: number;
   pendingRequests: number;
-  unpaidInvoiceCount: number;
-  unpaidTotal: number;
+}
+
+interface HubUpcomingInvoice {
+  dueDate: string;
+  total: number;
+  currency: string;
 }
 
 interface HubProject {
@@ -39,6 +46,7 @@ interface HubProject {
   totalPhases: number;
   completedPhases: number;
   currentPhase?: string;
+  serverStatus?: 'online' | 'offline' | null;
 }
 
 interface HubMeeting {
@@ -69,6 +77,8 @@ export interface QualiaPortalHubProps {
   companyName?: string;
   enabledApps?: string[];
   upcomingMeetings?: HubMeeting[];
+  upcomingInvoice: HubUpcomingInvoice | null;
+  userRole: PortalUserRole;
 }
 
 /* ======================================================================
@@ -126,6 +136,8 @@ export function QualiaPortalHub({
   companyName,
   enabledApps,
   upcomingMeetings = [],
+  upcomingInvoice,
+  userRole,
 }: QualiaPortalHubProps) {
   const hue = useMemo(() => hueFromId(clientId), [clientId]);
   const accentColor = useMemo(() => clientAccent(hue), [hue]);
@@ -165,25 +177,6 @@ export function QualiaPortalHub({
             label: 'Open requests',
             value: stats?.pendingRequests ?? (isLoading ? '—' : 0),
             hint: !isLoading && (stats?.pendingRequests ?? 0) === 0 ? 'inbox zero' : undefined,
-          },
-        ]
-      : []),
-    ...(canUseBilling
-      ? [
-          {
-            label: 'Unpaid invoices',
-            value: stats?.unpaidInvoiceCount ?? (isLoading ? '—' : 0),
-            hint: !isLoading && (stats?.unpaidInvoiceCount ?? 0) === 0 ? 'all clear' : undefined,
-          },
-          {
-            label: 'Outstanding',
-            value: isLoading
-              ? '—'
-              : stats?.unpaidTotal
-                ? formatEURCompact(stats.unpaidTotal)
-                : '€0',
-            hint: !isLoading && !stats?.unpaidTotal ? 'nothing due' : undefined,
-            emphasized: !!stats?.unpaidTotal,
           },
         ]
       : []),
@@ -258,7 +251,7 @@ export function QualiaPortalHub({
       </header>
 
       {/* Stat strip — flat and separator-divided for a dense cockpit read. */}
-      <section className="relative border-b border-border bg-card">
+      <section className="relative border-y border-border/70 bg-card/40 backdrop-blur-[2px]">
         <div className={cn('grid divide-x divide-border/70', metricGridClass(metrics.length))}>
           {metrics.map((metric) => (
             <PulseMetric
@@ -266,7 +259,6 @@ export function QualiaPortalHub({
               label={metric.label}
               value={metric.value}
               hint={metric.hint}
-              emphasized={metric.emphasized}
             />
           ))}
         </div>
@@ -276,13 +268,15 @@ export function QualiaPortalHub({
       <div className="relative px-[clamp(1.25rem,4vw,2rem)] pb-12 pt-6">
         <div className="grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-[2fr_1fr]">
           <EngagementsSection projects={projects} accentColor={accentColor} isLoading={isLoading} />
-          <aside className="flex flex-col gap-6">
-            <MeetingsSidebar meetings={upcomingMeetings} accentColor={accentColor} />
+          <aside className="flex flex-col gap-8">
+            <MeetingsSidebar
+              meetings={upcomingMeetings}
+              accentColor={accentColor}
+              userRole={userRole}
+              clientId={clientId}
+            />
             {canUseBilling ? (
-              <InvoicesSidebar
-                unpaidCount={stats?.unpaidInvoiceCount ?? 0}
-                unpaidTotal={stats?.unpaidTotal ?? 0}
-              />
+              <UpcomingInvoiceCard upcomingInvoice={upcomingInvoice} accentColor={accentColor} />
             ) : null}
             {canUseRequests ? (
               <ThreadCard
@@ -434,6 +428,15 @@ const EngagementRow = memo(function EngagementRow({
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                 {status.label}
               </span>
+              {project.serverStatus === 'online' ? (
+                <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-emerald-600 dark:text-emerald-400">
+                  Server online
+                </span>
+              ) : project.serverStatus === 'offline' ? (
+                <span className="inline-flex items-center rounded-full bg-red-500/15 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-red-600 dark:text-red-400">
+                  Server offline
+                </span>
+              ) : null}
             </div>
             <div className="text-base font-semibold leading-snug tracking-tight text-foreground">
               {project.name}
@@ -492,11 +495,16 @@ function formatMeetingDate(value: string) {
 function MeetingsSidebar({
   meetings,
   accentColor,
+  userRole,
+  clientId,
 }: {
   meetings: HubMeeting[];
   accentColor: string;
+  userRole: PortalUserRole;
+  clientId: string;
 }) {
   const [meetingModalOpen, setMeetingModalOpen] = useState(false);
+  const isClient = userRole === 'client';
 
   return (
     <section>
@@ -583,54 +591,70 @@ function MeetingsSidebar({
           )}
         </div>
       </div>
-      <NewMeetingModalControlled open={meetingModalOpen} onOpenChange={setMeetingModalOpen} />
+      {isClient ? (
+        <ClientMeetingRequestDialog
+          open={meetingModalOpen}
+          onOpenChange={setMeetingModalOpen}
+          clientId={clientId}
+        />
+      ) : (
+        <NewMeetingModalControlled open={meetingModalOpen} onOpenChange={setMeetingModalOpen} />
+      )}
     </section>
   );
 }
 
 /* ======================================================================
-   InvoicesSidebar
+   UpcomingInvoiceCard
    ====================================================================== */
 
-function InvoicesSidebar({
-  unpaidCount,
-  unpaidTotal,
+const INVOICE_DATE_FMT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+});
+
+function UpcomingInvoiceCard({
+  upcomingInvoice,
+  accentColor,
 }: {
-  unpaidCount: number;
-  unpaidTotal: number;
+  upcomingInvoice: HubUpcomingInvoice | null;
+  accentColor: string;
 }) {
+  if (!upcomingInvoice) return null;
+
+  const dueLabel = INVOICE_DATE_FMT.format(new Date(upcomingInvoice.dueDate));
+  const totalLabel = formatEURCompact(upcomingInvoice.total);
+
   return (
     <section>
       <div className="mb-3 flex items-center gap-2">
         <span className="inline-block h-px w-6 bg-border" aria-hidden />
         <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-          Recent invoices
+          Upcoming invoice
         </span>
       </div>
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
-          <div className="min-w-0">
-            <div className="text-sm font-medium text-foreground">
-              {unpaidCount > 0 ? `${unpaidCount} unpaid` : 'All paid'}
-            </div>
-            <div className="mt-0.5 text-xs text-muted-foreground">
-              {unpaidCount > 0
-                ? `${formatEURCompact(unpaidTotal)} outstanding`
-                : 'Nothing outstanding'}
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-start gap-3">
+          <div
+            className="flex size-9 shrink-0 items-center justify-center rounded-xl text-white"
+            style={{ background: accentColor }}
+            aria-hidden
+          >
+            <Receipt className="size-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium text-foreground">Due {dueLabel}</div>
+            <div className="mt-0.5 text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+              {totalLabel}
             </div>
           </div>
-          <Link
-            href="/billing"
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-primary underline-offset-4 hover:underline"
-          >
-            <FileText className="size-3" aria-hidden /> View all
-          </Link>
         </div>
-        <div className="flex items-center gap-2 px-5 py-3 text-xs text-muted-foreground">
-          <span className="font-mono text-[10px] uppercase tracking-[0.08em]">Billing</span>
-          <span>·</span>
-          <span>Invoices, payments and history</span>
-        </div>
+        <Link
+          href="/billing"
+          className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
+        >
+          View in billing <ArrowRight className="size-3" aria-hidden />
+        </Link>
       </div>
     </section>
   );

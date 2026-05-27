@@ -1,7 +1,7 @@
 'use client';
 
 import { usePortalDashboard } from '@/lib/swr';
-import { QualiaPortalHub } from '@/components/portal/qualia-portal-hub';
+import { QualiaPortalHub, type PortalUserRole } from '@/components/portal/qualia-portal-hub';
 import dynamic from 'next/dynamic';
 const PortalWelcomeTour = dynamic(
   () =>
@@ -18,13 +18,13 @@ interface PortalDashboardContentProps {
   enabledApps?: string[];
   logoUrl?: string | null;
   showWelcomeTour?: boolean;
+  userRole: PortalUserRole;
 }
 
 interface DashboardStats {
   projectCount: number;
   pendingRequests: number;
-  unpaidInvoiceCount: number;
-  unpaidTotal: number;
+  upcomingInvoice: { dueDate: string; total: number; currency: string } | null;
   recentActivity: Array<{
     id: string;
     action_type: string;
@@ -45,6 +45,7 @@ interface ProjectWithPhases {
   completedPhases: number;
   currentPhase: { name: string; status: string } | null;
   nextPhase: { name: string } | null;
+  serverStatus: 'online' | 'offline' | null;
 }
 
 interface ClientUpcomingMeeting {
@@ -64,6 +65,7 @@ export function PortalDashboardContent({
   enabledApps,
   logoUrl,
   showWelcomeTour = true,
+  userRole,
 }: PortalDashboardContentProps) {
   const { data, isLoading, isError, revalidate } = usePortalDashboard(clientId);
 
@@ -81,6 +83,7 @@ export function PortalDashboardContent({
     totalPhases: p.totalPhases,
     completedPhases: p.completedPhases,
     currentPhase: p.currentPhase?.name,
+    serverStatus: p.serverStatus ?? null,
   }));
 
   const recentActivity = stats?.recentActivity || [];
@@ -106,6 +109,8 @@ export function PortalDashboardContent({
         companyName={companyName || undefined}
         enabledApps={enabledApps}
         upcomingMeetings={upcomingMeetings}
+        upcomingInvoice={stats?.upcomingInvoice ?? null}
+        userRole={userRole}
       />
     </>
   );

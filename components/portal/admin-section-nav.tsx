@@ -62,6 +62,13 @@ const LINKS: SectionLink[] = [
     match: (p, tab) => p === '/admin' && tab === 'system',
   },
   {
+    href: '/admin/people',
+    label: 'People',
+    group: 'Clients',
+    icon: Users,
+    match: (p) => p.startsWith('/admin/people') || p.startsWith('/admin/employee'),
+  },
+  {
     href: '/admin/clients',
     label: 'Portal Clients',
     group: 'Clients',
@@ -108,7 +115,7 @@ const LINKS: SectionLink[] = [
     label: 'Audit',
     group: 'Governance',
     icon: ClipboardCheck,
-    match: (p) => p.startsWith('/admin/audit') || p.startsWith('/admin/employee'),
+    match: (p) => p.startsWith('/admin/audit'),
   },
 ];
 
