@@ -194,8 +194,7 @@ describe('getClientDashboardData — characterization', () => {
     const data = result.data as Record<string, unknown>;
     expect(data).toHaveProperty('projectCount');
     expect(data).toHaveProperty('pendingRequests');
-    expect(data).toHaveProperty('unpaidInvoiceCount');
-    expect(data).toHaveProperty('unpaidTotal');
+    expect(data).toHaveProperty('upcomingInvoice');
     expect(data).toHaveProperty('recentActivity');
   });
 
@@ -207,7 +206,8 @@ describe('getClientDashboardData — characterization', () => {
     expect(result.success).toBe(true);
     const data = result.data as Record<string, unknown>;
     expect(data).toHaveProperty('projectCount');
-    expect(typeof data.unpaidTotal).toBe('number');
+    // upcomingInvoice is null when there's no pending invoice with a future due date
+    expect(data.upcomingInvoice === null || typeof data.upcomingInvoice === 'object').toBe(true);
   });
 });
 

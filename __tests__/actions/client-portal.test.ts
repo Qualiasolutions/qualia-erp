@@ -346,7 +346,7 @@ describe('getClientDashboardData', () => {
     expect(result.success).toBe(true);
     const data = result.data as Record<string, unknown>;
     expect(data).toHaveProperty('projectCount');
-    expect(data).toHaveProperty('unpaidTotal');
+    expect(data).toHaveProperty('upcomingInvoice');
   });
 });
 
