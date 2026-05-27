@@ -39,6 +39,7 @@ interface HubProject {
   totalPhases: number;
   completedPhases: number;
   currentPhase?: string;
+  serverStatus?: 'online' | 'offline' | null;
 }
 
 interface HubMeeting {
@@ -369,6 +370,15 @@ const EngagementRow = memo(function EngagementRow({
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                 {status.label}
               </span>
+              {project.serverStatus === 'online' ? (
+                <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-emerald-600 dark:text-emerald-400">
+                  Server online
+                </span>
+              ) : project.serverStatus === 'offline' ? (
+                <span className="inline-flex items-center rounded-full bg-red-500/15 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-red-600 dark:text-red-400">
+                  Server offline
+                </span>
+              ) : null}
             </div>
             <div className="text-base font-semibold leading-snug tracking-tight text-foreground">
               {project.name}

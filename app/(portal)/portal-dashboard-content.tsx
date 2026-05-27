@@ -45,6 +45,7 @@ interface ProjectWithPhases {
   completedPhases: number;
   currentPhase: { name: string; status: string } | null;
   nextPhase: { name: string } | null;
+  serverStatus: 'online' | 'offline' | null;
 }
 
 interface ClientUpcomingMeeting {
@@ -81,6 +82,7 @@ export function PortalDashboardContent({
     totalPhases: p.totalPhases,
     completedPhases: p.completedPhases,
     currentPhase: p.currentPhase?.name,
+    serverStatus: p.serverStatus ?? null,
   }));
 
   const recentActivity = stats?.recentActivity || [];

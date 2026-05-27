@@ -1,6 +1,11 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import {
+  getMonitors,
+  matchMonitorForProject,
+  type ServerStatus,
+} from '@/lib/integrations/uptimerobot';
 import { type ActionResult, isUserAdmin } from '../shared';
 
 // ============================================================================
@@ -176,6 +181,41 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
       byId.set(proj.id, proj);
     }
     const projects = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+    const projectIds = projects.map((p) => p.id);
+
+    // Resolve uptime monitors + latest production deployment per project in
+    // parallel. Both calls are best-effort: a failure leaves `serverStatus`
+    // at `null` and the dashboard renders without a pill.
+    const [monitors, deploymentsResult] = await Promise.all([
+      getMonitors(),
+      projectIds.length > 0
+        ? supabase
+            .from('project_deployments')
+            .select('project_id, url, ready_at')
+            .in('project_id', projectIds)
+            .eq('environment', 'production')
+            .not('url', 'is', null)
+            .order('ready_at', { ascending: false })
+        : Promise.resolve({
+            data: [] as Array<{
+              project_id: string | null;
+              url: string | null;
+              ready_at: string | null;
+            }>,
+          }),
+    ]);
+
+    // Pick the latest production URL per project (rows already ordered DESC).
+    const latestUrlByProject = new Map<string, string>();
+    for (const row of (deploymentsResult.data || []) as Array<{
+      project_id: string | null;
+      url: string | null;
+    }>) {
+      if (!row.project_id || !row.url) continue;
+      if (!latestUrlByProject.has(row.project_id)) {
+        latestUrlByProject.set(row.project_id, row.url);
+      }
+    }
 
     const projectsWithPhases = projects.map((project) => {
       // Exclude milestone rollup rows — they're derived headers, not real phases.
@@ -197,6 +237,13 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
           ? projectPhases[currentPhaseIndex + 1]
           : null;
 
+      const serverStatus: ServerStatus = monitors
+        ? matchMonitorForProject(monitors, {
+            projectName: project.name,
+            deploymentUrl: latestUrlByProject.get(project.id) ?? null,
+          })
+        : null;
+
       return {
         id: project.id,
         name: project.name,
@@ -210,6 +257,7 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
           ? { name: currentPhase.name, status: currentPhase.status }
           : null,
         nextPhase: nextPhase ? { name: nextPhase.name } : null,
+        serverStatus,
       };
     });
 
