@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     template: '%s | Qualia',
   },
   description:
-    'Client portal and project management platform by Qualia Solutions. Streamline your workflow with AI-powered project management.',
+    'Projects, clients, finance, and AI — one workspace. The internal platform that runs Qualia Solutions.',
   keywords: [
     'project management',
     'task management',
@@ -67,21 +67,23 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: siteUrl,
     siteName: 'Qualia Suite',
-    title: 'Qualia Suite',
-    description: 'Client portal and project management platform by Qualia Solutions',
+    title: 'Qualia Suite — Projects · Clients · Finance · AI',
+    description:
+      'Projects, clients, finance, and AI — one workspace. The internal platform that runs Qualia Solutions.',
     images: [
       {
         url: '/opengraph-image.png',
         width: 1200,
         height: 630,
-        alt: 'Qualia Suite',
+        alt: 'Qualia Suite — Projects · Clients · Finance · AI · one workspace',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Qualia Suite',
-    description: 'Client portal and project management platform by Qualia Solutions',
+    title: 'Qualia Suite — Projects · Clients · Finance · AI',
+    description:
+      'Projects, clients, finance, and AI — one workspace. The internal platform that runs Qualia Solutions.',
     images: ['/twitter-image.png'],
   },
   icons: {
