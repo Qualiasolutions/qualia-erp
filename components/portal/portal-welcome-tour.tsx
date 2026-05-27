@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -371,7 +372,7 @@ function WelcomeModal({
         </button>
 
         <div className="px-9 pb-9 pt-12 text-center">
-          {/* Refined wordmark — Q monogram in a soft glow ring, no gradient blob */}
+          {/* Qualia brand mark in a soft glow ring */}
           <div className="relative mx-auto mb-7 flex h-16 w-16 items-center justify-center">
             <div
               className="absolute inset-0 rounded-full bg-primary/10 blur-xl"
@@ -385,17 +386,14 @@ function WelcomeModal({
               className="absolute inset-1.5 rounded-full ring-1 ring-primary/15"
               aria-hidden="true"
             />
-            <svg
-              viewBox="0 0 32 32"
-              className="relative size-8 text-primary"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              aria-hidden="true"
-            >
-              <circle cx="16" cy="16" r="11" />
-              <line x1="22" y1="22" x2="27" y2="27" strokeLinecap="round" />
-            </svg>
+            <Image
+              src="/logo.webp"
+              alt="Qualia"
+              width={40}
+              height={40}
+              className="relative size-10 rounded-lg"
+              priority
+            />
           </div>
 
           {/* Eyebrow */}
