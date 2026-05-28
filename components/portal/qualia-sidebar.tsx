@@ -51,12 +51,12 @@ type PageDef = {
 const PAGES: PageDef[] = [
   {
     id: 'admin-dashboard',
-    label: 'Admin',
-    icon: 'admin',
-    href: '/admin',
+    label: 'Dashboard',
+    icon: 'home',
+    href: '/dashboard',
     exact: true,
     roles: ['admin'],
-    appKey: 'control',
+    appKey: 'home',
   },
   {
     id: 'employee-dashboard',
