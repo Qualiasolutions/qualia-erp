@@ -51,9 +51,9 @@
     }
   ],
   "phase": 1,
-  "phase_name": "Rolling Polish",
+  "phase_name": "Portal + Admin Modernize",
   "total_phases": 1,
-  "status": "verified",
+  "status": "shipped",
   "wave": 0,
   "tasks_done": 0,
   "tasks_total": 0,
@@ -61,11 +61,11 @@
   "gap_cycles": {},
   "blockers": [],
   "session_started_at": "2026-04-26T14:53:53.986Z",
-  "last_updated": "2026-05-27T21:51:29Z",
+  "last_updated": "2026-05-28T12:20:17.515Z",
   "last_pushed_at": "2026-05-27T21:51:29Z",
   "last_commit": "6fdf02df",
   "build_count": 0,
-  "deploy_count": 1,
+  "deploy_count": 2,
   "deployed_url": "https://portal.qualiasolutions.net",
   "notes": "Audit /settings — every section is wired end-to-end; no fixes needed. Profile (full_name+company) → updateClientProfile, password → supabase.auth.updateUser via _actions.ts changePassword, notifications → updateNotificationPreferences with Zod strict schema and notification_preferences table+RLS verified. Email field is intentionally read-only with help text. No dead code or stubs. Reinforced Vercel-team memory with explicit 'not Hobby' note.",
   "submitted_by": "",
@@ -76,5 +76,5 @@
     "total_phases": 32,
     "last_closed_milestone": 4
   },
-  "report_seq": 8
+  "report_seq": 10
 }
