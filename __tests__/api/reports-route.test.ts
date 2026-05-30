@@ -133,6 +133,93 @@ describe('POST /api/v1/reports', () => {
     });
   });
 
+  // B1 auto-capture: source provenance flag.
+  function setupWrite() {
+    const idempotencyRead = query({ data: null, error: null });
+    const directProject = query({
+      data: { id: PROJECT_ID, name: 'Acme Portal', client_id: CLIENT_ID },
+      error: null,
+    });
+    const reportWrite = query({ data: { id: 'internal-report-id' }, error: null });
+    const idempotencyWrite = query({ data: null, error: null });
+    const sessionsRead = query({ data: [], error: null });
+
+    const captured: { row?: Record<string, unknown> } = {};
+    reportWrite.upsert.mockImplementation((row) => {
+      captured.row = row;
+      return reportWrite;
+    });
+    reportWrite.insert.mockImplementation((row) => {
+      captured.row = row;
+      return reportWrite;
+    });
+
+    adminClient.from.mockImplementation((table: string) => {
+      if (table === 'idempotency_keys') {
+        return adminClient.from.mock.calls.filter(([name]) => name === 'idempotency_keys')
+          .length === 1
+          ? idempotencyRead
+          : idempotencyWrite;
+      }
+      if (table === 'projects') return directProject;
+      if (table === 'session_reports') return reportWrite;
+      if (table === 'work_sessions') return sessionsRead;
+      return query();
+    });
+
+    return captured;
+  }
+
+  it('persists source: "auto" for an auto-captured report', async () => {
+    const captured = setupWrite();
+
+    const response = await POST(
+      requestWithPayload({
+        project: 'acme',
+        project_id: 'qs-acme-portal',
+        erp_project_id: PROJECT_ID,
+        client_report_id: 'QS-REPORT-02',
+        source: 'auto',
+        submitted_at: '2026-05-30T00:00:00.000Z',
+      }) as never
+    );
+
+    expect(response.status).toBe(200);
+    expect(captured.row).toMatchObject({ source: 'auto' });
+  });
+
+  it('defaults source to "manual" when the field is omitted (pre-B1 callers)', async () => {
+    const captured = setupWrite();
+
+    const response = await POST(
+      requestWithPayload({
+        project: 'acme',
+        project_id: 'qs-acme-portal',
+        erp_project_id: PROJECT_ID,
+        client_report_id: 'QS-REPORT-03',
+        submitted_at: '2026-05-30T00:00:00.000Z',
+      }) as never
+    );
+
+    expect(response.status).toBe(200);
+    expect(captured.row).toMatchObject({ source: 'manual' });
+  });
+
+  it('rejects an invalid source value', async () => {
+    const response = await POST(
+      requestWithPayload({
+        project: 'acme',
+        erp_project_id: PROJECT_ID,
+        source: 'robot',
+        submitted_at: '2026-05-30T00:00:00.000Z',
+      }) as never
+    );
+
+    const body = await response.json();
+    expect(response.status).toBe(422);
+    expect(body).toMatchObject({ ok: false, error: 'VALIDATION_FAILED' });
+  });
+
   it('rejects malformed erp_project_id values instead of silently guessing', async () => {
     const response = await POST(
       requestWithPayload({

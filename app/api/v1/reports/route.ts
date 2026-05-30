@@ -86,6 +86,11 @@ const payloadSchema = z.object({
     .regex(/^QS-REPORT-\d+$/)
     .optional(),
   dry_run: z.boolean().optional().default(false),
+  // B1 — observed-vs-self-reported. 'auto' = captured at ship/session-end without
+  // a human running /qualia-report; 'manual' = a deliberate /qualia-report. Defaults
+  // to 'manual' so every pre-B1 caller keeps its existing meaning. Not part of the
+  // dedupe key — purely a provenance flag for dashboards.
+  source: z.enum(['auto', 'manual']).optional().default('manual'),
   // v4.2 — ERP linkage. client_id is a UUID FK to public.clients;
   // erp_project_id is a UUID FK to public.projects and is the strongest
   // Framework -> ERP project link when the framework already knows it.
@@ -518,6 +523,7 @@ export async function POST(request: NextRequest) {
     deploy_count: body.deploy_count ?? null,
     client_report_id: body.client_report_id || null,
     dry_run: body.dry_run,
+    source: body.source,
     client_id: reportClientId,
     erp_project_id: erpProjectId,
     framework_version: body.framework_version || null,
