@@ -312,6 +312,9 @@ export interface FrameworkReportRow {
   commits: string[] | null;
   notes: string | null;
   auth_method: string | null;
+  // B1 — 'auto' (observed at ship/session-end) vs 'manual' (deliberate /qualia-report).
+  // Defaults to 'manual' for legacy rows via the migration.
+  source: 'auto' | 'manual';
 }
 
 type RawFrameworkReportRow = Omit<FrameworkReportRow, 'erp_project_name'> & {
@@ -369,7 +372,7 @@ export async function getFrameworkReports(
   let query = admin
     .from('session_reports')
     .select(
-      'id, client_report_id, project_name, erp_project_id, erp_project:projects!session_reports_erp_project_id_fkey(id, name), client, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, commits, notes, auth_method'
+      'id, client_report_id, project_name, erp_project_id, erp_project:projects!session_reports_erp_project_id_fkey(id, name), client, submitted_at, submitted_by, milestone, milestone_name, phase, phase_name, total_phases, status, verification, tasks_done, tasks_total, deployed_url, build_count, deploy_count, commits, notes, auth_method, source'
     )
     .order('submitted_at', { ascending: false, nullsFirst: false });
 
