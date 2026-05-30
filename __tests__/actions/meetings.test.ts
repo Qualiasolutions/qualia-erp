@@ -27,6 +27,14 @@ jest.mock('@/app/actions/clients', () => ({
   logClientActivity: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+jest.mock('@/lib/google-calendar', () => ({
+  isGoogleMeetLink: jest.fn().mockReturnValue(false),
+  hasGoogleCalendarConfig: jest.fn().mockReturnValue(false),
+  createGoogleMeetCalendarEvent: jest
+    .fn()
+    .mockResolvedValue({ meetingLink: null, eventId: null, htmlLink: null }),
+}));
+
 const supabase = {
   from: jest.fn() as jest.Mock,
   auth: { getUser: jest.fn() as jest.Mock },
